@@ -116,6 +116,11 @@
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
+                // Safe ID link or fallback text label rendering
+                const idCellContent = buyer.national_id_url && buyer.national_id_url.startsWith('http')
+                    ? `<a href="${buyer.national_id_url}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`
+                    : `<span class="text-gray-400 text-xs">${buyer.national_id_url ? escapeHtml(buyer.national_id_url) : 'No ID'}</span>`;
+
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
                         <td class="p-3">
@@ -124,7 +129,7 @@
                             <div class="text-xs text-gray-400">${escapeHtml(buyer.whatsapp_number || buyer.phone || '')}</div>
                         </td>
                         <td class="p-3">
-                            ${buyer.national_id_url ? `<a href="${buyer.national_id_url.startsWith('http') ? buyer.national_id_url : '#'}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>` : '<span class="text-gray-400 text-xs">No ID</span>'}
+                            ${idCellContent}
                         </td>
                         <td class="p-3">${statusBadge}</td>
                         <td class="p-3 text-center">${actionButton}</td>
