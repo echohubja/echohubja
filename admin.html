@@ -116,16 +116,24 @@
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
-                // ID link resolution supporting full URLs, storage bucket paths, and legacy flags
+                // ID link resolution using the official Supabase Storage SDK method
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
                 if (buyer.national_id_url) {
                     const rawVal = buyer.national_id_url.trim();
                     if (rawVal.startsWith('http')) {
                         idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
                     } else if (rawVal.includes('/')) {
-                        // Construct public Supabase storage URL including the 'national-ids' bucket
-                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/national-ids/${rawVal}`;
-                        idCellContent = `<a href="${publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                        // Clean up any leading bucket prefixes if duplicated
+                        const cleanPath = rawVal.replace(/^national-ids\//, '');
+                        
+                        // Use Supabase SDK to generate the correct public URL natively
+                        const { data: publicUrlData } = db.storage.from('national-ids').getPublicUrl(cleanPath);
+                        
+                        if (publicUrlData && publicUrlData.publicUrl) {
+                            idCellContent = `<a href="${publicUrlData.publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                        } else {
+                            idCellContent = `<span class="text-gray-400 text-xs">Error loading link</span>`;
+                        }
                     } else {
                         // Fallback text for flags like 'legacy_import'
                         idCellContent = `<span class="text-gray-400 text-xs">${escapeHtml(rawVal)}</span>`;
