@@ -46,7 +46,7 @@
         }
         .btn-invite { background: #2ecc71; color: white; }
         .btn:hover { opacity: 0.85; }
-        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; }
         .id-link:hover { text-decoration: underline; }
         .status-badge {
             padding: 4px 8px;
@@ -111,7 +111,7 @@
                     <tbody>
             `;
 
-            for (const buyer of data) {
+            data.forEach(buyer => {
                 let idDisplayHtml = '<span style="color: #a0aec0;">No file uploaded</span>';
                 
                 if (buyer.national_id_url) {
@@ -120,28 +120,15 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        // Clean path string to extract just the file name / subpath inside the bucket
-                        let filePath = rawPath;
-                        if (filePath.startsWith('national-ids/')) {
-                            filePath = filePath.replace('national-ids/', '');
-                        } else if (filePath.startsWith('ids/')) {
-                            filePath = filePath.replace('ids/', '');
+                        // Ensures clean path maps to national-ids bucket + internal ids folder path
+                        let cleanPath = rawPath;
+                        if (cleanPath.startsWith('national-ids/')) {
+                            cleanPath = cleanPath.replace('national-ids/', '');
                         }
 
-                        // Generate a secure signed URL dynamically using the Supabase SDK (valid for 1 hour)
-                        try {
-                            const { data: signedData, error: signError } = await db.storage
-                                .from('national-ids')
-                                .createSignedUrl(filePath, 3600);
-
-                            if (!signError && signedData) {
-                                idDisplayHtml = `<a href="${signedData.signedUrl}" target="_blank" class="id-link">View ID File</a>`;
-                            } else {
-                                idDisplayHtml = `<span style="color: #e74c3c; font-size: 12px;">File missing / error</span>`;
-                            }
-                        } catch (err) {
-                            idDisplayHtml = `<span style="color: #e74c3c; font-size: 12px;">Could not load file</span>`;
-                        }
+                        let publicUrl = `${SUPABASE_URL}/storage/v1/object/public/national-ids/${cleanPath}`;
+                        
+                        idDisplayHtml = `<a href="${publicUrl}" target="_blank" class="id-link">View ID File</a>`;
                     }
                 }
                 
@@ -165,7 +152,7 @@
                         </td>
                     </tr>
                 `;
-            }
+            });
 
             html += `</tbody></table>`;
             container.innerHTML = html;
