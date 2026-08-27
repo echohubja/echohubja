@@ -46,7 +46,7 @@
         }
         .btn-invite { background: #2ecc71; color: white; }
         .btn:hover { opacity: 0.85; }
-        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; }
+        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; cursor: pointer; }
         .id-link:hover { text-decoration: underline; }
         .status-badge {
             padding: 4px 8px;
@@ -111,7 +111,7 @@
                     <tbody>
             `;
 
-            data.forEach(buyer => {
+            for (const buyer of data) {
                 let idDisplayHtml = '<span style="color: #a0aec0;">No file uploaded</span>';
                 
                 if (buyer.national_id_url) {
@@ -120,18 +120,26 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        // Ensure any accidental 'national-ids/' prefix from earlier queries is cleaned up,
-                        // leaving the exact 'ids/filename.avif' path intact.
+                        // Clean path to point to the file inside the 'ids' subfolder
                         let filePath = rawPath.replace('national-ids/', '');
+                        if (!filePath.startsWith('ids/')) {
+                            filePath = 'ids/' + filePath.split('/').pop();
+                        }
 
-                        // Generate the correct public URL: bucket is 'national-ids', path includes the 'ids/' subfolder
-                        const { data: publicUrlData } = db.storage
-                            .from('national-ids')
-                            .getPublicUrl(filePath);
+                        // Use Supabase SDK to generate a secure signed URL dynamically on load
+                        try {
+                            const { data: signedData, error: signError } = await db.storage
+                                .from('national-ids')
+                                .createSignedUrl(filePath, 3600); // Valid for 1 hour
 
-                        let fileUrl = publicUrlData ? publicUrlData.publicUrl : '#';
-                        
-                        idDisplayHtml = `<a href="${fileUrl}" target="_blank" class="id-link">View ID File</a>`;
+                            if (!signError && signedData) {
+                                idDisplayHtml = `<a href="${signedData.signedUrl}" target="_blank" class="id-link">View ID File</a>`;
+                            } else {
+                                idDisplayHtml = `<span style="color: #e74c3c;">File missing / error</span>`;
+                            }
+                        } catch (err) {
+                            idDisplayHtml = `<span style="color: #e74c3c;">Error loading file</span>`;
+                        }
                     }
                 }
                 
@@ -155,7 +163,7 @@
                         </td>
                     </tr>
                 `;
-            });
+            }
 
             html += `</tbody></table>`;
             container.innerHTML = html;
