@@ -105,6 +105,7 @@
 
         input[type="text"],
         input[type="email"],
+        input[type="password"],
         textarea,
         select {
             width: 100%;
@@ -240,7 +241,7 @@
                 <h2>🤝 Vendor Registration</h2>
                 
                 <div id="successAlert" class="success">
-                    <strong>Registration Successful!</strong> Your application has been submitted and your custom Vendor ID has been generated.
+                    <strong>Registration Successful!</strong> Please check your email inbox to confirm your account before logging in.
                 </div>
 
                 <div id="errorAlert" class="error">
@@ -275,6 +276,11 @@
                     <div class="form-group">
                         <label for="email">PayPal Email Address (For Payouts) <span class="required">*</span></label>
                         <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Account Password <span class="required">*</span></label>
+                        <input type="password" id="password" name="password" required minlength="6" placeholder="At least 6 characters">
                     </div>
 
                     <div class="form-group">
@@ -313,58 +319,31 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting Application...';
+            submitBtn.textContent = 'Creating Account & Sending Email...';
 
             const vendorType = document.querySelector('input[name="vendor_type"]:checked').value;
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
             const businessDetails = document.getElementById('businessDetails').value.trim();
-            
-            const initialStatus = vendorType === 'UPFRONT' ? 'APPROVED' : 'PENDING';
 
             try {
-                let nextNumber = 1;
-                const { data: latestVendors, error: fetchError } = await supabaseClient
-                    .from('vendors')
-                    .select('id')
-                    .not('id', 'is', null)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-
-                console.log('--- DEBUG: Fetch latest vendors result ---', { latestVendors, fetchError });
-
-                if (!fetchError && latestVendors && latestVendors.length > 0 && latestVendors[0].id) {
-                    const lastId = latestVendors[0].id;
-                    const parts = lastId.split('-');
-                    const lastNumber = parseInt(parts[parts.length - 1], 10);
-                    if (!isNaN(lastNumber)) {
-                        nextNumber = lastNumber + 1;
-                    }
-                }
-
-                const formattedNumber = String(nextNumber).padStart(5, '0');
-                const safeFirstName = firstName.replace(/[^a-zA-Z0-9]/g, '');
-                const safeLastName = lastName.replace(/[^a-zA-Z0-9]/g, '');
-                const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
-
-                const insertPayload = {
-                    id: newVendorId,
-                    first_name: firstName,
-                    last_name: lastName,
+                // Trigger Supabase Auth sign up (this creates the user and fires the verification email automatically)
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
-                    vendor_type: vendorType,
-                    business_details: businessDetails,
-                    status: initialStatus
-                };
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            vendor_type: vendorType,
+                            business_details: businessDetails
+                        }
+                    }
+                });
 
-                console.log('--- DEBUG: Attempting to insert payload ---', insertPayload);
-
-                const { data, error } = await supabaseClient
-                    .from('vendors')
-                    .insert([insertPayload]);
-
-                console.log('--- DEBUG: Insert response ---', { data, error });
+                console.log('--- DEBUG: Auth signup response ---', { data, error });
 
                 if (error) throw error;
 
