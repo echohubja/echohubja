@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Vendor Product Management Portal</title>
-    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -173,6 +172,11 @@
             text-transform: uppercase;
         }
 
+        .badge-edit {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
         /* Inventory Table */
         .table-responsive {
             overflow-x: auto;
@@ -298,9 +302,22 @@
             background: #174887;
         }
 
-        .btn-submit:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
+        .btn-cancel {
+            width: 100%;
+            background: #e2e8f0;
+            color: #475569;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .btn-cancel:hover {
+            background: #cbd5e1;
         }
 
         .alert-msg {
@@ -333,7 +350,6 @@
     </header>
 
     <div class="container">
-        <!-- Loading & Error States -->
         <div id="loadingState" class="loading-state">
             Authenticating vendor portal session...
         </div>
@@ -342,10 +358,8 @@
             Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
         </div>
 
-        <!-- Main Portal Workspace -->
         <div id="portalContent" style="display: none;">
             
-            <!-- Vendor Info Bar -->
             <div class="profile-bar">
                 <div class="welcome-text">
                     <h2 id="welcomeHeading">Welcome back!</h2>
@@ -359,7 +373,6 @@
 
             <div class="portal-grid">
                 
-                <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Your Products Inventory</h2>
@@ -378,8 +391,7 @@
                                 </tr>
                             </thead>
                             <tbody id="inventoryBody">
-                                <!-- Dynamic rows inserted here -->
-                            </tbody>
+                                </tbody>
                         </table>
 
                         <div id="emptyInventory" class="empty-inventory" style="display: none;">
@@ -392,11 +404,10 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Create Listing Form -->
                 <div class="panel">
                     <div class="panel-header">
-                        <h2>Create New Product Listing</h2>
-                        <span class="badge">CREATING MODE</span>
+                        <h2 id="formTitle">Create New Product Listing</h2>
+                        <span class="badge" id="formModeBadge">CREATING MODE</span>
                     </div>
 
                     <div id="formAlert" class="alert-msg"></div>
@@ -409,240 +420,4 @@
 
                         <div class="form-group">
                             <label for="productName">Product Name</label>
-                            <input type="text" id="productName" required placeholder="e.g. Wireless Earbuds">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="category">Category</label>
-                            <select id="category" required>
-                                <option value="">-- Select a category --</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Smart Home">Smart Home</option>
-                                <option value="Hair & Beauty">Hair & Beauty</option>
-                                <option value="Fashion">Fashion</option>
-                                <option value="Adult Novelties">Adult Novelties</option>
-                                <option value="General">General</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="price">Price ($)</label>
-                            <input type="number" id="price" step="0.01" min="0" required placeholder="29.99">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="primaryImage">Primary Image URL (.jpg, .png)</label>
-                            <input type="text" id="primaryImage" required placeholder="https://example.com/image1.jpg">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="secondaryImage">Secondary Image URL (Optional)</label>
-                            <input type="text" id="secondaryImage" placeholder="https://example.com/image2.jpg">
-                        </div>
-
-                        <button type="submit" id="submitProductBtn" class="btn-submit">Publish Listing</button>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-        let currentVendor = null;
-
-        // DOM Elements
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const portalContent = document.getElementById('portalContent');
-
-        const welcomeHeading = document.getElementById('welcomeHeading');
-        const profileEmail = document.getElementById('profileEmail');
-        const profileType = document.getElementById('profileType');
-
-        const inventoryTable = document.getElementById('inventoryTable');
-        const inventoryBody = document.getElementById('inventoryBody');
-        const emptyInventory = document.getElementById('emptyInventory');
-        const itemCountBadge = document.getElementById('itemCountBadge');
-
-        const productForm = document.getElementById('productForm');
-        const vendorIdInput = document.getElementById('vendorId');
-        const submitProductBtn = document.getElementById('submitProductBtn');
-        const formAlert = document.getElementById('formAlert');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        async function initPortal() {
-            if (!sbClient) {
-                showError();
-                return;
-            }
-
-            // 1. Verify Active Auth Session
-            const { data: { session }, error: sessionError } = await sbClient.auth.getSession();
-
-            if (sessionError || !session) {
-                showError();
-                return;
-            }
-
-            const userId = session.user.id;
-
-            // 2. Fetch Vendor Profile Data using the mapped user_id column
-            const { data: vendorData, error: vendorError } = await sbClient
-                .from('vendors')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
-
-            if (vendorError || !vendorData) {
-                showError();
-                return;
-            }
-
-            currentVendor = vendorData;
-
-            // 3. Populate Header / Profile Details & Real Vendor ID
-            welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
-            profileEmail.textContent = vendorData.email || session.user.email;
-            profileType.textContent = vendorData.vendor_type || 'STANDARD';
-            vendorIdInput.value = vendorData.id;
-
-            // 4. Fetch Products for this Vendor
-            await loadVendorProducts();
-
-            // Reveal Portal
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'block';
-        }
-
-        async function loadVendorProducts() {
-            if (!currentVendor) return;
-
-            const { data: products, error } = await sbClient
-                .from('products')
-                .select('*')
-                .eq('vendor_id', currentVendor.id);
-
-            inventoryBody.innerHTML = '';
-
-            if (error || !products || products.length === 0) {
-                inventoryTable.style.display = 'none';
-                emptyInventory.style.display = 'block';
-                itemCountBadge.textContent = '0 items';
-                return;
-            }
-
-            inventoryTable.style.display = 'table';
-            emptyInventory.style.display = 'none';
-            itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
-
-            products.forEach(prod => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <img src="${prod.image_url_1 || 'https://via.placeholder.com/42'}" class="product-img" alt="${prod.name || 'Product'}">
-                    </td>
-                    <td><strong>${prod.name || 'Untitled'}</strong></td>
-                    <td>${prod.category || 'General'}</td>
-                    <td><strong>$${parseFloat(prod.price || 0).toFixed(2)}</strong></td>
-                    <td>
-                        <button class="btn-action btn-edit" onclick="editProduct('${prod.id}')">Edit</button>
-                        <button class="btn-action btn-delete" onclick="deleteProduct('${prod.id}')">Delete</button>
-                    </td>
-                `;
-                inventoryBody.appendChild(tr);
-            });
-        }
-
-        // Expose editProduct globally to fix ReferenceError on inline onclick
-        window.editProduct = function(productId) {
-            console.log("Editing product:", productId);
-            alert("Edit functionality for product ID: " + productId);
-            // Add your edit modal/form population logic here
-        };
-
-        // Expose deleteProduct globally
-        window.deleteProduct = async function(productId) {
-            if (!confirm('Are you sure you want to delete this listing?')) return;
-
-            const { error } = await sbClient
-                .from('products')
-                .delete()
-                .eq('id', productId);
-
-            if (!error) {
-                await loadVendorProducts();
-            } else {
-                alert('Could not delete product: ' + error.message);
-            }
-        };
-
-        // Handle Product Submission
-        productForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            showAlert('', false);
-
-            submitProductBtn.disabled = true;
-            submitProductBtn.textContent = 'Publishing...';
-
-            const name = document.getElementById('productName').value.trim();
-            const category = document.getElementById('category').value;
-            const price = parseFloat(document.getElementById('price').value);
-            const image_url_1 = document.getElementById('primaryImage').value.trim();
-            const image_url_2 = document.getElementById('secondaryImage').value.trim();
-
-            const newProduct = {
-                vendor_id: currentVendor.id,
-                name: name,
-                category: category,
-                price: price,
-                image_url_1: image_url_1,
-                image_url_2: image_url_2 || null,
-                created_at: new Date()
-            };
-
-            const { error } = await sbClient.from('products').insert([newProduct]);
-
-            if (error) {
-                console.error('Error inserting product:', error);
-                showAlert('Failed to publish product: ' + error.message, true);
-            } else {
-                showAlert('Product published successfully!', false);
-                productForm.reset();
-                vendorIdInput.value = currentVendor.id;
-                await loadVendorProducts();
-            }
-
-            submitProductBtn.disabled = false;
-            submitProductBtn.textContent = 'Publish Listing';
-        });
-
-        function showAlert(msg, isError) {
-            if (!msg) {
-                formAlert.style.display = 'none';
-                return;
-            }
-            formAlert.textContent = msg;
-            formAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
-            formAlert.style.display = 'block';
-        }
-
-        function showError() {
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'none';
-            errorState.style.display = 'block';
-        }
-
-        logoutBtn.addEventListener('click', async () => {
-            if (sbClient) await sbClient.auth.signOut();
-            window.location.href = 'login.html';
-        });
-
-        initPortal();
-    </script>
-</body>
-</html>
+                            <input type="text" id="productName" required placeholder="e.g.
