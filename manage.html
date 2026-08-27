@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Vendor Product Management Portal</title>
+    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -352,6 +353,7 @@
     </header>
 
     <div class="container">
+        <!-- Loading & Error States -->
         <div id="loadingState" class="loading-state">
             Authenticating vendor portal session...
         </div>
@@ -360,8 +362,10 @@
             Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
         </div>
 
+        <!-- Main Portal Workspace -->
         <div id="portalContent" style="display: none;">
             
+            <!-- Vendor Info Bar -->
             <div class="profile-bar">
                 <div class="welcome-text">
                     <h2 id="welcomeHeading">Welcome back!</h2>
@@ -375,6 +379,7 @@
 
             <div class="portal-grid">
                 
+                <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Your Products Inventory</h2>
@@ -393,7 +398,8 @@
                                 </tr>
                             </thead>
                             <tbody id="inventoryBody">
-                                </tbody>
+                                <!-- Dynamic rows inserted here -->
+                            </tbody>
                         </table>
 
                         <div id="emptyInventory" class="empty-inventory" style="display: none;">
@@ -406,6 +412,7 @@
                     </div>
                 </div>
 
+                <!-- Right Column: Create / Edit Listing Form -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2 id="formTitle">Create New Product Listing</h2>
@@ -495,7 +502,6 @@
         const submitProductBtn = document.getElementById('submitProductBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const formAlert = document.getElementById('formAlert');
-        const logoutBtn = document.getElementById('logoutBtn');
 
         async function initPortal() {
             if (!sbClient) {
@@ -708,4 +714,77 @@
                     const { error } = await sbClient
                         .from('products')
                         .update(updatedFields)
-                        .eq('id', editingProductId
+                        .eq('id', editingProductId);
+
+                    if (error) throw error;
+
+                    showAlert('Product updated successfully!', false);
+                    resetFormMode();
+                    await loadVendorProducts();
+                } else {
+                    const newProduct = {
+                        vendor_id: currentVendor.id,
+                        name: name,
+                        category: category,
+                        price: price,
+                        image_url_1: primaryImageFinal,
+                        image_url_2: secondaryImageFinal || null,
+                        created_at: new Date()
+                    };
+
+                    const { error } = await sbClient.from('products').insert([newProduct]);
+
+                    if (error) throw error;
+
+                    showAlert('Product published successfully!', false);
+                    productForm.reset();
+                    vendorIdInput.value = currentVendor.id;
+                    await loadVendorProducts();
+                }
+            } catch (err) {
+                console.error('Submission error:', err);
+                showAlert(err.message || 'Operation failed.', true);
+            } finally {
+                submitProductBtn.disabled = false;
+                submitProductBtn.textContent = editingProductId ? 'Save Changes' : 'Publish Listing';
+            }
+        });
+
+        function showAlert(msg, isError) {
+            if (!msg) {
+                formAlert.style.display = 'none';
+                return;
+            }
+            formAlert.textContent = msg;
+            formAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
+            formAlert.style.display = 'block';
+        }
+
+        function showError() {
+            loadingState.style.display = 'none';
+            portalContent.style.display = 'none';
+            errorState.style.display = 'block';
+        }
+
+        // Guaranteed DOM-safe event listener for logout
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        if (sbClient) {
+                            await sbClient.auth.signOut();
+                        }
+                    } catch (err) {
+                        console.error("Sign out error:", err);
+                    } finally {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+        });
+
+        initPortal();
+    </script>
+</body>
+</html>
