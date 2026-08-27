@@ -123,8 +123,8 @@
                     if (rawVal.startsWith('http')) {
                         idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
                     } else if (rawVal.includes('/')) {
-                        // Construct public Supabase storage URL for relative paths (e.g. ids/... or national-ids/...)
-                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${rawVal}`;
+                        // Construct public Supabase storage URL including the 'national-ids' bucket
+                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/national-ids/${rawVal}`;
                         idCellContent = `<a href="${publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
                     } else {
                         // Fallback text for flags like 'legacy_import'
