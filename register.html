@@ -82,6 +82,7 @@ label {
 }
 input[type="text"],
 input[type="email"],
+input[type="password"],
 textarea,
 select {
   width: 100%;
@@ -199,17 +200,22 @@ button[type="submit"]:hover {
                 <form id="buyerForm">
                     <div class="form-group">
                         <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" placeholder="Enter your full name" required>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required[cite: 3]>
                     </div>
 
                     <div class="form-group">
                         <label for="email">Contact Email *</label>
-                        <input type="email" id="email" placeholder="Enter your email address" required>
+                        <input type="email" id="email" placeholder="Enter your email address" required[cite: 3]>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Create Password *</label>
+                        <input type="password" id="password" placeholder="At least 6 characters" required>
                     </div>
 
                     <div class="form-group">
                         <label for="whatsapp">WhatsApp Number (Optional)</label>
-                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555"[cite: 3]>
                     </div>
 
                     <div class="form-group">
@@ -226,7 +232,7 @@ button[type="submit"]:hover {
 
                     <div class="form-group">
                         <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
-                        <input type="file" id="nationalIdFile" required>
+                        <input type="file" id="nationalIdFile" required[cite: 3]>
                     </div>
 
                     <button type="submit">Register Account</button>
@@ -236,12 +242,13 @@ button[type="submit"]:hover {
     </div>
 
     <script>
+        // Configuration with your project credentials
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         
-        // Ensure global window.supabase namespace is correctly targeted
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Safely capture optional referral query parameter
         let referredBy = null;
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -257,17 +264,13 @@ button[type="submit"]:hover {
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
 
-            if (!supabaseClient) {
-                errorDiv.textContent = 'Supabase client failed to initialize.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
-            const whatsapp = document.getElementById('whatsapp').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const whatsapp = document.getElementById('whatsapp').value.trim();
             const fileInput = document.getElementById('nationalIdFile').files[0];
 
+            // Collect selected category checkboxes
             const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
                 .map(cb => cb.value);
 
@@ -278,32 +281,37 @@ button[type="submit"]:hover {
             }
 
             try {
+                // 1. Upload National ID file to Supabase Storage bucket 'national-ids'
                 const fileExt = fileInput.name.split('.').pop();
                 const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
                 const filePath = `ids/${fileName}`;
 
-                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                const { error: uploadError } = await supabaseClient.storage
                     .from('national-ids')
                     .upload(filePath, fileInput);
 
                 if (uploadError) throw uploadError;
 
-                const nationalIdUrl = filePath;
+                // 2. Register user via Supabase Auth with email confirmation & profile metadata
+                const { error: authError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        emailRedirectTo: 'https://echohubja.github.io/echohubja/index.html',
+                        data: {
+                            full_name: fullName,
+                            whatsapp_number: whatsapp || null,
+                            national_id_url: filePath,
+                            categories_interest: selectedCategories,
+                            referred_by: referredBy,
+                            role: 'buyer'
+                        }
+                    }
+                });
 
-                const { error: dbError } = await supabaseClient
-                    .from('buyers')
-                    .insert([{
-                        full_name: fullName,
-                        email: email,
-                        whatsapp_number: whatsapp || null,
-                        national_id_url: nationalIdUrl,
-                        categories_interest: selectedCategories,
-                        referred_by: referredBy
-                    }]);
+                if (authError) throw authError;
 
-                if (dbError) throw dbError;
-
-                successDiv.textContent = 'Registration successful! Awaiting admin approval for access.';
+                successDiv.textContent = 'Registration successful! Please check your email to verify your account.';
                 successDiv.style.display = 'block';
                 document.getElementById('buyerForm').reset();
 
