@@ -120,7 +120,6 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        // Strip out bucket prefix if present to get the clean file path inside the bucket
                         let filePath = rawPath;
                         if (filePath.startsWith('national-ids/')) {
                             filePath = filePath.replace('national-ids/', '');
@@ -128,7 +127,6 @@
                             filePath = filePath.replace('ids/', '');
                         }
 
-                        // Use Supabase SDK native public URL generator for the 'national-ids' bucket
                         const { data: publicUrlData } = db.storage
                             .from('national-ids')
                             .getPublicUrl(filePath);
@@ -146,7 +144,7 @@
                             <span style="color: #718096; font-size: 12px;">${buyer.email || 'N/A'}</span>
                         </td>
                         <td>
-                            ${idDividerHtml = idDisplayHtml}
+                            ${idDisplayHtml}
                         </td>
                         <td>
                             <span style="color: #4a5568; font-size: 13px;">${buyer.whatsapp_number || 'N/A'}</span>
