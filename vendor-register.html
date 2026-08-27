@@ -263,6 +263,9 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
+            
+            // Set status to APPROVED automatically if they are an UPFRONT vendor
+            const initialStatus = vendorType === 'UPFRONT' ? 'APPROVED' : 'PENDING';
 
             try {
                 // 1. Fetch the latest vendor ID from your table to calculate the next incrementing number
@@ -289,7 +292,7 @@
                 const safeLastName = lastName.replace(/[^a-zA-Z0-9]/g, '');
                 const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
 
-                // 3. Insert the complete record into your fully synced table
+                // 3. Insert the complete record into your fully synced table using the dynamically set status
                 const { data, error } = await supabase
                     .from('vendors')
                     .insert([
@@ -299,7 +302,7 @@
                             last_name: lastName,
                             email: email,
                             vendor_type: vendorType,
-                            status: 'PENDING'
+                            status: initialStatus
                         }
                     ]);
 
