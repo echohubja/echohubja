@@ -120,12 +120,22 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        // Use 'ids' as the storage bucket name based on the database path structure
-                        let publicUrl = rawPath.startsWith('http') 
-                            ? rawPath 
-                            : `${SUPABASE_URL}/storage/v1/object/public/${rawPath}`;
+                        // Strip out bucket prefix if present to get the clean file path inside the bucket
+                        let filePath = rawPath;
+                        if (filePath.startsWith('national-ids/')) {
+                            filePath = filePath.replace('national-ids/', '');
+                        } else if (filePath.startsWith('ids/')) {
+                            filePath = filePath.replace('ids/', '');
+                        }
+
+                        // Use Supabase SDK native public URL generator for the 'national-ids' bucket
+                        const { data: publicUrlData } = db.storage
+                            .from('national-ids')
+                            .getPublicUrl(filePath);
+
+                        let fileUrl = publicUrlData ? publicUrlData.publicUrl : '#';
                         
-                        idDisplayHtml = `<a href="${publicUrl}" target="_blank" class="id-link">View ID File</a>`;
+                        idDisplayHtml = `<a href="${fileUrl}" target="_blank" class="id-link">View ID File</a>`;
                     }
                 }
                 
@@ -136,7 +146,7 @@
                             <span style="color: #718096; font-size: 12px;">${buyer.email || 'N/A'}</span>
                         </td>
                         <td>
-                            ${idDisplayHtml}
+                            ${idDividerHtml = idDisplayHtml}
                         </td>
                         <td>
                             <span style="color: #4a5568; font-size: 13px;">${buyer.whatsapp_number || 'N/A'}</span>
