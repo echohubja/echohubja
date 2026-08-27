@@ -79,11 +79,10 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function fetchPendingRegistrations() {
-            // Query records where Ready To Invite is Pending (or null/empty)
             const { data, error } = await db
                 .from('buyers')
                 .select('*')
-                .or('"Ready To Invite".eq.Pending,"Ready To Invite".is.null');
+                .eq('ready_to_invite', 'Pending');
 
             const container = document.getElementById('admin-content');
 
@@ -114,7 +113,6 @@
 
             data.forEach(buyer => {
                 let idUrl = buyer.national_id_url || '#';
-                let currentStatus = buyer['Ready To Invite'] || 'Pending';
                 
                 html += `
                     <tr id="row-${buyer.id}">
@@ -129,7 +127,7 @@
                             <span style="color: #4a5568; font-size: 13px;">${buyer.whatsapp_number || 'N/A'}</span>
                         </td>
                         <td>
-                            <span class="status-badge status-ready">${currentStatus}</span>
+                            <span class="status-badge status-ready">${buyer.ready_to_invite}</span>
                         </td>
                         <td>
                             <button class="btn btn-invite" onclick="updateInviteStatus('${buyer.id}', 'Ready To Invite')">Mark Ready To Invite</button>
@@ -145,7 +143,7 @@
         async function updateInviteStatus(buyerId, newState) {
             const { error } = await db
                 .from('buyers')
-                .update({ 'Ready To Invite': newState })
+                .update({ ready_to_invite: newState })
                 .eq('id', buyerId);
 
             if (error) {
