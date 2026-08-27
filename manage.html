@@ -491,11 +491,11 @@
 
             const userId = session.user.id;
 
-            // 2. Fetch Vendor Profile Data
+            // 2. Fetch Vendor Profile Data using the mapped user_id column
             const { data: vendorData, error: vendorError } = await sbClient
                 .from('vendors')
                 .select('*')
-                .eq('id', userId)
+                .eq('user_id', userId)
                 .single();
 
             if (vendorError || !vendorData) {
@@ -505,11 +505,11 @@
 
             currentVendor = vendorData;
 
-            // 3. Populate Header / Profile Details
+            // 3. Populate Header / Profile Details & Real Vendor ID (e.g. India-Stronghold-00012)
             welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
             profileEmail.textContent = vendorData.email || session.user.email;
             profileType.textContent = vendorData.vendor_type || 'STANDARD';
-            vendorIdInput.value = `${vendorData.first_name || 'Vendor'}-${vendorData.id.substring(0, 5)}`;
+            vendorIdInput.value = vendorData.id;
 
             // 4. Fetch Products for this Vendor
             await loadVendorProducts();
@@ -590,7 +590,7 @@
             } else {
                 showAlert('Product published successfully!', false);
                 productForm.reset();
-                vendorIdInput.value = `${currentVendor.first_name || 'Vendor'}-${currentVendor.id.substring(0, 5)}`;
+                vendorIdInput.value = currentVendor.id;
                 await loadVendorProducts();
             }
 
@@ -632,7 +632,7 @@
 
         logoutBtn.addEventListener('click', async () => {
             if (sbClient) await sbClient.auth.signOut();
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         });
 
         initPortal();
