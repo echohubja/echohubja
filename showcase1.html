@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Minimalist View</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #fafafa; color: #111; }
+        .top-nav { background: #fff; padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .layout { max-width: 1400px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 240px 1fr; gap: 40px; }
+        .filter-group h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 15px; }
+        .filter-links { display: flex; flex-direction: column; gap: 8px; }
+        .filter-link { background: none; border: none; text-align: left; padding: 8px 0; font-size: 15px; color: #444; cursor: pointer; }
+        .filter-link:hover, .filter-link.active { color: #000; font-weight: 600; }
+        .content-area { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-box { background: #fff; border: 1px solid #eaeaea; border-radius: 6px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-box h5 { font-size: 15px; margin-bottom: 6px; font-weight: 600; }
+        .product-box .cost { font-size: 16px; color: #2563eb; margin-bottom: 12px; font-weight: 700; }
+        .product-box button { background: #111; color: #fff; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
+        .product-box button:hover { background: #333; }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <h2>Echo Hub</h2>
+        <span>Authenticated User</span>
+    </div>
+    <div class="layout">
+        <aside>
+            <div class="filter-group">
+                <h3>Catalog Sections</h3>
+                <div class="filter-links">
+                    <button class="filter-link active">All Categories</button>
+                    <button class="filter-link">Electronics</button>
+                    <button class="filter-link">Beauty & Skincare</button>
+                    <button class="filter-link">Wellness & Health</button>
+                </div>
+            </div>
+        </aside>
+        <main class="content-area">
+            <div class="products-grid">
+                <div class="product-box">
+                    <div>
+                        <h5>Hydrating Vitamin C Skincare Set</h5>
+                        <div class="cost">$45.00</div>
+                    </div>
+                    <button>Inquire</button>
+                </div>
+                <div class="product-box">
+                    <div>
+                        <h5>Organic Multivitamin Complex</h5>
+                        <div class="cost">$29.99</div>
+                    </div>
+                    <button>Inquire</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

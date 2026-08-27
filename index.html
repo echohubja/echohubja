@@ -4,91 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Marketplace</title>
-    <!-- Include Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #2c3e50; 
+        }
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin: 0;
+        }
+        .layout { 
+            max-width: 1400px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            display: grid; 
+            grid-template-columns: 240px 1fr; 
+            gap: 40px; 
+        }
+        aside {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            height: fit-content;
+        }
+        .filter-group h3 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #1e5aa8; 
+            margin-bottom: 15px; 
+            font-weight: 700;
+        }
+        .filter-links { display: flex; flex-direction: column; gap: 8px; }
+        .filter-link { 
+            background: none; 
+            border: none; 
+            text-align: left; 
+            padding: 10px 12px; 
+            border-radius: 8px;
+            font-size: 15px; 
+            color: #4a5568; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+        }
+        .filter-link:hover, .filter-link.active { 
+            background: #f0f4f8;
+            color: #1e5aa8; 
+            font-weight: 600; 
+        }
+        .content-area { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-box { 
+            background: #fff; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 12px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(30, 90, 168, 0.1);
+        }
+        .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
+        .product-box button { 
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
+            color: #fff; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+        .product-box button:hover { opacity: 0.9; }
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-
-    <!-- Navigation Header -->
-    <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-800">Echo Hub Marketplace</h1>
-        <a href="manage.html" class="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800 transition">Vendor Portal</a>
+<body>
+    <header>
+        <h1>Echo Hub</h1>
+        <p>Marketplace Storefront</p>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="max-w-6xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-gray-700">Available Products</h2>
-            <span id="product-count" class="text-sm text-gray-500">Loading listings...</span>
-        </div>
-
-        <!-- Product Grid Container -->
-        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Dynamic product cards will load here -->
-        </div>
-    </main>
+    <div class="layout">
+        <aside>
+            <div class="filter-group">
+                <h3>Catalog Sections</h3>
+                <div class="filter-links">
+                    <button class="filter-link active">All Categories</button>
+                    <button class="filter-link">Electronics</button>
+                    <button class="filter-link">Beauty & Skincare</button>
+                    <button class="filter-link">Wellness & Health</button>
+                </div>
+            </div>
+        </aside>
+        <main class="content-area">
+            <div class="products-grid" id="products-container">
+                <!-- Dynamic products will load here -->
+            </div>
+        </main>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (!window.supabaseClient) {
-            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-        const db = window.supabaseClient;
-
-        async function loadMarketplaceProducts() {
-            const grid = document.getElementById('product-grid');
-            const countLabel = document.getElementById('product-count');
+        async function loadProducts() {
+            const { data, error } = await db.from('products').select('*');
+            const container = document.getElementById('products-container');
             
-            grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">Loading marketplace items...</p>';
-
-            const { data, error } = await db.from('products').select('*').order('id', { ascending: false });
-
             if (error) {
                 console.error('Error loading products:', error.message);
-                grid.innerHTML = '<p class="text-red-500 col-span-full text-center py-10">Failed to load marketplace products.</p>';
-                countLabel.textContent = 'Error';
                 return;
             }
 
-            if (!data || data.length === 0) {
-                grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No products available right now. Check back soon!</p>';
-                countLabel.textContent = '0 products';
-                return;
-            }
-
-            countLabel.textContent = `${data.length} product${data.length === 1 ? '' : 's'}`;
-            grid.innerHTML = '';
-
-            data.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg shadow-md overflow-hidden flex flex-col';
-                
-                card.innerHTML = `
-                    <div class="h-48 bg-gray-200 overflow-hidden relative">
-                        <img src="${product.image_url_1 || 'https://via.placeholder.com/300'}" alt="${product.name}" class="w-full h-full object-cover">
-                        <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${product.category || 'General'}</span>
-                    </div>
-                    <div class="p-4 flex flex-col flex-1 justify-between">
+            if (data && data.length > 0) {
+                container.innerHTML = data.map(product => `
+                    <div class="product-box">
                         <div>
-                            <h3 class="font-bold text-gray-800 text-lg mb-1">${product.name}</h3>
-                            <p class="text-gray-500 text-sm mb-3">Vendor: ${product.vendor_id || 'Verified Partner'}</p>
+                            <h5>${product.name}</h5>
+                            <div class="cost">$${product.price}</div>
                         </div>
-                        <div class="flex items-center justify-between mt-4 pt-3 border-t">
-                            <span class="text-xl font-bold text-gray-900">$${parseFloat(product.price).toFixed(2)}</span>
-                            <button onclick="alert('Viewing product details for: ${product.name}')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition">View Item</button>
-                        </div>
+                        <button onclick="alert('Inquiring about ${product.name}')">Inquire</button>
                     </div>
-                `;
-                grid.appendChild(card);
-            });
+                `).join('');
+            } else {
+                container.innerHTML = '<p style="color: #666;">No products available at the moment.</p>';
+            }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadMarketplaceProducts();
-        });
+        window.addEventListener('DOMContentLoaded', loadProducts);
     </script>
 </body>
 </html>
