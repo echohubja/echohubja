@@ -66,10 +66,10 @@
 
     <script>
         let db;
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
-                const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
                 const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
@@ -116,10 +116,21 @@
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
-                // Safe ID link or fallback text label rendering
-                const idCellContent = buyer.national_id_url && buyer.national_id_url.startsWith('http')
-                    ? `<a href="${buyer.national_id_url}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`
-                    : `<span class="text-gray-400 text-xs">${buyer.national_id_url ? escapeHtml(buyer.national_id_url) : 'No ID'}</span>`;
+                // ID link resolution supporting full URLs, storage bucket paths, and legacy flags
+                let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
+                if (buyer.national_id_url) {
+                    const rawVal = buyer.national_id_url.trim();
+                    if (rawVal.startsWith('http')) {
+                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                    } else if (rawVal.includes('/')) {
+                        // Construct public Supabase storage URL for relative paths (e.g. ids/... or national-ids/...)
+                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${rawVal}`;
+                        idCellContent = `<a href="${publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                    } else {
+                        // Fallback text for flags like 'legacy_import'
+                        idCellContent = `<span class="text-gray-400 text-xs">${escapeHtml(rawVal)}</span>`;
+                    }
+                }
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
