@@ -272,7 +272,7 @@
                         <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
                     </div>
 
-                    <div class="form-group">
+                        <div class="form-group">
                         <label for="email">PayPal Email Address (For Payouts) <span class="required">*</span></label>
                         <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
                     </div>
@@ -289,10 +289,10 @@
     </div>
 
     <script>
-        // Initialize Supabase Client with credentials
+        // Initialize Supabase Client safely using a distinct variable name
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         const form = document.getElementById('vendorForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -303,10 +303,17 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting Application...';
             successAlert.style.display = 'none';
             errorAlert.style.display = 'none';
+
+            if (!supabaseClient) {
+                errorMessage.textContent = 'Supabase client failed to initialize.';
+                errorAlert.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting Application...';
 
             const vendorType = document.querySelector('input[name="vendor_type"]:checked').value;
             const firstName = document.getElementById('firstName').value.trim();
@@ -320,7 +327,7 @@
             try {
                 // 1. Fetch the latest vendor ID from your table to calculate the next incrementing number
                 let nextNumber = 1;
-                const { data: latestVendors, error: fetchError } = await supabase
+                const { data: latestVendors, error: fetchError } = await supabaseClient
                     .from('vendors')
                     .select('id')
                     .not('id', 'is', null)
@@ -343,7 +350,7 @@
                 const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
 
                 // 3. Insert the complete record into your 9-column table
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('vendors')
                     .insert([
                         {
