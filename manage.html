@@ -446,7 +446,8 @@
                         <div class="form-group">
                             <label for="imageFile1">Primary Product Image File</label>
                             <input type="file" id="imageFile1" accept="image/*">
-                            <input type="hidden" id="primaryImage"> <small style="color: #64748b; font-size: 0.75em;">Select a file from your device, or the existing URL will be kept if editing.</small>
+                            <input type="hidden" id="primaryImage">
+                            <small style="color: #64748b; font-size: 0.75em;">Select a file from your device, or the existing URL will be kept if editing.</small>
                         </div>
 
                         <div class="form-group">
@@ -601,7 +602,6 @@
             document.getElementById('primaryImage').value = product.image_url_1 || '';
             document.getElementById('secondaryImage').value = product.image_url_2 || '';
             
-            // Clear file inputs when switching to edit mode
             document.getElementById('imageFile1').value = '';
             document.getElementById('imageFile2').value = '';
 
@@ -648,16 +648,15 @@
             }
         };
 
-        // Helper function to upload an image file to Supabase Storage Bucket
         async function uploadImageFile(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
             if (!fileInput.files || fileInput.files.length === 0) {
-                return null; // No new file selected
+                return null;
             }
 
             const file = fileInput.files[0];
             const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36.substring(2, 9))}.${fileExt}`;
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
             const filePath = `${currentVendor.id}/${fileName}`;
 
             const { data, error } = await sbClient.storage
@@ -668,7 +667,6 @@
                 throw new Error('Image upload failed: ' + error.message);
             }
 
-            // Get public URL of the uploaded asset
             const { data: publicUrlData } = sbClient.storage
                 .from('product-images')
                 .getPublicUrl(filePath);
@@ -684,7 +682,6 @@
             submitProductBtn.textContent = editingProductId ? 'Saving...' : 'Publishing...';
 
             try {
-                // 1. Upload files if selected, otherwise keep existing values if editing
                 const uploadedPrimary = await uploadImageFile('imageFile1');
                 const uploadedSecondary = await uploadImageFile('imageFile2');
 
@@ -711,64 +708,4 @@
                     const { error } = await sbClient
                         .from('products')
                         .update(updatedFields)
-                        .eq('id', editingProductId);
-
-                    if (error) throw error;
-
-                    showAlert('Product updated successfully!', false);
-                    resetFormMode();
-                    await loadVendorProducts();
-                } else {
-                    const newProduct = {
-                        vendor_id: currentVendor.id,
-                        name: name,
-                        category: category,
-                        price: price,
-                        image_url_1: primaryImageFinal,
-                        image_url_2: secondaryImageFinal || null,
-                        created_at: new Date()
-                    };
-
-                    const { error } = await sbClient.from('products').insert([newProduct]);
-
-                    if (error) throw error;
-
-                    showAlert('Product published successfully!', false);
-                    productForm.reset();
-                    vendorIdInput.value = currentVendor.id;
-                    await loadVendorProducts();
-                }
-            } catch (err) {
-                console.error('Submission error:', err);
-                showAlert(err.message || 'Operation failed.', true);
-            } finally {
-                submitProductBtn.disabled = false;
-                submitProductBtn.textContent = editingProductId ? 'Save Changes' : 'Publish Listing';
-            }
-        });
-
-        function showAlert(msg, isError) {
-            if (!msg) {
-                formAlert.style.display = 'none';
-                return;
-            }
-            formAlert.textContent = msg;
-            formAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
-            formAlert.style.display = 'block';
-        }
-
-        function showError() {
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'none';
-            errorState.style.display = 'block';
-        }
-
-        logoutBtn.addEventListener('click', async () => {
-            if (sbClient) await sbClient.auth.signOut();
-            window.location.href = 'login.html';
-        });
-
-        initPortal();
-    </script>
-</body>
-</html>
+                        .eq('id', editingProductId
