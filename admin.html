@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Buyer Management Portal</title>
+    <title>Echo Hub - Unified Admin Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,7 +19,7 @@
             padding: 25px;
             text-align: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
         header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
@@ -29,17 +29,32 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
         }
+        .tab-btn.active {
+            background-color: #1e5aa8;
+            color: white;
+            border-color: #1e5aa8;
+        }
     </style>
 </head>
 <body class="p-6">
 
     <header>
         <h1>Echo Hub</h1>
-        <p>Buyer Registration & Access Management Portal</p>
+        <p>Unified Marketplace Admin & Access Management Portal</p>
     </header>
 
-    <!-- Main Container -->
-    <div class="max-w-6xl mx-auto hub-card p-6">
+    <!-- Navigation Tabs -->
+    <div class="max-w-6xl mx-auto mb-6 flex gap-3">
+        <button id="nav-buyers" onclick="switchTab('buyers')" class="tab-btn active px-5 py-2.5 rounded-lg font-semibold border border-gray-300 bg-white text-gray-700 transition shadow-sm">
+            Buyer Registrations
+        </button>
+        <button id="nav-vendors" onclick="switchTab('vendors')" class="tab-btn px-5 py-2.5 rounded-lg font-semibold border border-gray-300 bg-white text-gray-700 transition shadow-sm">
+            Vendor Portal
+        </button>
+    </div>
+
+    <!-- Buyers Container -->
+    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-6">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
             <h2 class="text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
             <span id="buyer-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
@@ -64,6 +79,33 @@
         </div>
     </div>
 
+    <!-- Vendors Container -->
+    <div id="section-vendors" class="max-w-6xl mx-auto hub-card p-6 hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-3">
+            <h2 class="text-xl font-bold text-[#1e5aa8]">Vendor Management Portal</h2>
+            <span id="vendor-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 vendors</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
+                        <th class="p-3">Vendor ID & Name</th>
+                        <th class="p-3">PayPal Email / Details</th>
+                        <th class="p-3">Type</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3 text-center">Action Control</th>
+                    </tr>
+                </thead>
+                <tbody id="vendors-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr>
+                        <td colspan="5" class="p-4 text-center text-gray-500">Loading vendor records...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script>
         let db;
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
@@ -73,12 +115,34 @@
                 const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
+                loadVendorsPortal();
             } else {
                 console.error("Supabase library failed to load.");
                 document.getElementById('buyers-table-body').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
+                document.getElementById('vendors-table-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
             }
         });
 
+        function switchTab(tab) {
+            const buyersSection = document.getElementById('section-buyers');
+            const vendorsSection = document.getElementById('section-vendors');
+            const buyersBtn = document.getElementById('nav-buyers');
+            const vendorsBtn = document.getElementById('nav-vendors');
+
+            if (tab === 'buyers') {
+                buyersSection.classList.remove('hidden');
+                vendorsSection.classList.add('hidden');
+                buyersBtn.classList.add('active');
+                vendorsBtn.classList.remove('active');
+            } else {
+                vendorsSection.classList.remove('hidden');
+                buyersSection.classList.add('hidden');
+                vendorsBtn.classList.add('active');
+                buyersBtn.classList.remove('active');
+            }
+        }
+
+        // --- BUYERS LOGIC ---
         async function loadBuyersPortal() {
             const tableBody = document.getElementById('buyers-table-body');
             if (!tableBody) return;
@@ -102,7 +166,6 @@
                 let statusBadge = '';
                 let actionButton = '';
 
-                // Normalize database value: trim spaces and convert to uppercase for safe comparison
                 const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
 
                 if (rawStatus === 'READY' || rawStatus === 'READY TO INVITE' || rawStatus === 'APPROVED') {
@@ -116,7 +179,6 @@
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
-                // Bulletproof ID link resolution with automated path normalization
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
                 if (buyer.national_id_url) {
                     const rawVal = buyer.national_id_url.trim();
@@ -126,16 +188,11 @@
                             <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">${escapeHtml(rawVal)}</div>
                         `;
                     } else if (rawVal.includes('/')) {
-                        // Strip out bucket prefix if present
                         let cleanPath = rawVal.replace(/^national-ids\//, '');
-                        
-                        // Ensure the 'ids/' subfolder is explicitly included for consistent resolution
                         if (!cleanPath.startsWith('ids/')) {
                             cleanPath = 'ids/' + cleanPath;
                         }
-                        
                         const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/national-ids/${cleanPath}`;
-                        
                         idCellContent = `
                             <div><a href="${publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a></div>
                             <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">Path: ${escapeHtml(cleanPath)}</div>
@@ -152,9 +209,7 @@
                             <div class="text-xs text-gray-500">${escapeHtml(buyer.email)}</div>
                             <div class="text-xs text-gray-400">${escapeHtml(buyer.whatsapp_number || buyer.phone || '')}</div>
                         </td>
-                        <td class="p-3">
-                            ${idCellContent}
-                        </td>
+                        <td class="p-3">${idCellContent}</td>
                         <td class="p-3">${statusBadge}</td>
                         <td class="p-3 text-center">${actionButton}</td>
                     </tr>
@@ -164,28 +219,81 @@
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             const actionLabel = newStatus.includes('Ready') || newStatus === 'READY' ? 'approve' : 'block';
-            if (!confirm(`Are you sure you want to ${actionLabel} access for ${buyerEmail}?`)) {
-                return;
-            }
+            if (!confirm(`Are you sure you want to ${actionLabel} access for ${buyerEmail}?`)) return;
 
-            const { error } = await db.from('buyers')
-                .update({ ready_to_invite: newStatus })
-                .eq('id', buyerId);
-
+            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
             if (error) {
                 alert('Error updating buyer status: ' + error.message);
                 return;
             }
+            loadBuyersPortal();
+        }
 
-            if (newStatus.includes('Ready') || newStatus === 'READY') {
-                console.log(`[Email Relay] Sending Welcome / Approval email to: ${buyerEmail}`);
-                alert(`Buyer approved successfully! Welcome email triggered for ${buyerEmail}.`);
-            } else {
-                console.log(`[Email Relay] Sending Marketplace Suspension notice to: ${buyerEmail}`);
-                alert(`Buyer access blocked. Suspension notice triggered for ${buyerEmail}.`);
+        // --- VENDORS LOGIC ---
+        async function loadVendorsPortal() {
+            const tableBody = document.getElementById('vendors-table-body');
+            if (!tableBody) return;
+            
+            const { data, error } = await db.from('vendors').select('*').order('created_at', { ascending: false });
+
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading vendors: ${error.message}</td></tr>`;
+                return;
             }
 
-            loadBuyersPortal();
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vendor registrations found.</td></tr>`;
+                document.getElementById('vendor-count').textContent = '0 vendors';
+                return;
+            }
+
+            document.getElementById('vendor-count').textContent = `${data.length} vendor${data.length === 1 ? '' : 's'}`;
+
+            tableBody.innerHTML = data.map(vendor => {
+                let statusBadge = '';
+                let actionButton = '';
+                const rawStatus = (vendor.status || '').trim().toUpperCase();
+
+                if (rawStatus === 'APPROVED') {
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
+                    actionButton = `<button onclick="updateVendorStatus('${vendor.id}', '${escapeHtml(vendor.email)}', 'PENDING')" class="bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Set Pending</button>`;
+                } else {
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>';
+                    actionButton = `<button onclick="updateVendorStatus('${vendor.id}', '${escapeHtml(vendor.email)}', 'APPROVED')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                }
+
+                const fullName = `${vendor.first_name || ''} ${vendor.last_name || ''}`.trim() || 'Unknown';
+                const typeBadge = vendor.vendor_type === 'UPFRONT' 
+                    ? '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-medium">UPFRONT</span>'
+                    : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">REFUND AFTER REVIEW</span>';
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-3">
+                            <div class="font-medium text-gray-800">${escapeHtml(fullName)}</div>
+                            <div class="text-xs text-gray-400 font-mono">ID: ${escapeHtml(vendor.id)}</div>
+                        </td>
+                        <td class="p-3">
+                            <div class="text-xs text-gray-700 font-medium">${escapeHtml(vendor.email)}</div>
+                            <div class="text-[11px] text-gray-400 truncate max-w-xs">${escapeHtml(vendor.business_details || 'No details provided')}</div>
+                        </td>
+                        <td class="p-3">${typeBadge}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-center">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updateVendorStatus(vendorId, vendorEmail, newStatus) {
+            if (!confirm(`Are you sure you want to change status to ${newStatus} for ${vendorEmail}?`)) return;
+
+            const { error } = await db.from('vendors').update({ status: newStatus }).eq('id', vendorId);
+            if (error) {
+                alert('Error updating vendor status: ' + error.message);
+                return;
+            }
+            loadVendorsPortal();
         }
 
         function escapeHtml(str) {
