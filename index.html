@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Marketplace</title>
+    <!-- Include Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">Echo Hub Marketplace</h1>
+        <a href="manage.html" class="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800 transition">Vendor Portal</a>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-700">Available Products</h2>
+            <span id="product-count" class="text-sm text-gray-500">Loading listings...</span>
+        </div>
+
+        <!-- Product Grid Container -->
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Dynamic product cards will load here -->
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+        const db = window.supabaseClient;
+
+        async function loadMarketplaceProducts() {
+            const grid = document.getElementById('product-grid');
+            const countLabel = document.getElementById('product-count');
+            
+            grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">Loading marketplace items...</p>';
+
+            const { data, error } = await db.from('products').select('*').order('id', { ascending: false });
+
+            if (error) {
+                console.error('Error loading products:', error.message);
+                grid.innerHTML = '<p class="text-red-500 col-span-full text-center py-10">Failed to load marketplace products.</p>';
+                countLabel.textContent = 'Error';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10">No products available right now. Check back soon!</p>';
+                countLabel.textContent = '0 products';
+                return;
+            }
+
+            countLabel.textContent = `${data.length} product${data.length === 1 ? '' : 's'}`;
+            grid.innerHTML = '';
+
+            data.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md overflow-hidden flex flex-col';
+                
+                card.innerHTML = `
+                    <div class="h-48 bg-gray-200 overflow-hidden relative">
+                        <img src="${product.image_url_1 || 'https://via.placeholder.com/300'}" alt="${product.name}" class="w-full h-full object-cover">
+                        <span class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">${product.category || 'General'}</span>
+                    </div>
+                    <div class="p-4 flex flex-col flex-1 justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-1">${product.name}</h3>
+                            <p class="text-gray-500 text-sm mb-3">Vendor: ${product.vendor_id || 'Verified Partner'}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-3 border-t">
+                            <span class="text-xl font-bold text-gray-900">$${parseFloat(product.price).toFixed(2)}</span>
+                            <button onclick="alert('Viewing product details for: ${product.name}')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition">View Item</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadMarketplaceProducts();
+        });
+    </script>
+</body>
+</html>
