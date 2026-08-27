@@ -79,7 +79,6 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function fetchPendingRegistrations() {
-            // Case-insensitive check for pending status on ready_to_invite column
             const { data, error } = await db
                 .from('buyers')
                 .select('*')
@@ -121,9 +120,14 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        let fullIdUrl = rawPath.startsWith('http') 
-                            ? rawPath 
-                            : `${SUPABASE_URL}/storage/v1/object/public/${rawPath}`;
+                        // Map the path to use the correct 'national-ids' bucket name
+                        let correctedPath = rawPath.startsWith('ids/') 
+                            ? rawPath.replace('ids/', 'national-ids/') 
+                            : rawPath;
+
+                        let fullIdUrl = correctedPath.startsWith('http') 
+                            ? correctedPath 
+                            : `${SUPABASE_URL}/storage/v1/object/public/${correctedPath}`;
                         
                         idDisplayHtml = `<a href="${fullIdUrl}" target="_blank" class="id-link">View ID File</a>`;
                     }
