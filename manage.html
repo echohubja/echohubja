@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Vendor Product Management Portal</title>
-    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -208,10 +207,10 @@
         .product-img {
             width: 42px;
             height: 42px;
-            object-fit: cover;
-            border-radius: 6px;
+            object-fit: contain;
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
+            border-radius: 6px;
         }
 
         .btn-action {
@@ -268,6 +267,7 @@
 
         input[type="text"],
         input[type="number"],
+        input[type="file"],
         select {
             width: 100%;
             padding: 10px 14px;
@@ -277,6 +277,7 @@
             font-size: 14px;
             color: #1e293b;
             transition: border-color 0.2s;
+            background: white;
         }
 
         input:focus, select:focus {
@@ -351,7 +352,6 @@
     </header>
 
     <div class="container">
-        <!-- Loading & Error States -->
         <div id="loadingState" class="loading-state">
             Authenticating vendor portal session...
         </div>
@@ -360,10 +360,8 @@
             Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
         </div>
 
-        <!-- Main Portal Workspace -->
         <div id="portalContent" style="display: none;">
             
-            <!-- Vendor Info Bar -->
             <div class="profile-bar">
                 <div class="welcome-text">
                     <h2 id="welcomeHeading">Welcome back!</h2>
@@ -377,7 +375,6 @@
 
             <div class="portal-grid">
                 
-                <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Your Products Inventory</h2>
@@ -396,8 +393,7 @@
                                 </tr>
                             </thead>
                             <tbody id="inventoryBody">
-                                <!-- Dynamic rows inserted here -->
-                            </tbody>
+                                </tbody>
                         </table>
 
                         <div id="emptyInventory" class="empty-inventory" style="display: none;">
@@ -410,7 +406,6 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Create / Edit Listing Form -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2 id="formTitle">Create New Product Listing</h2>
@@ -449,13 +444,15 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="primaryImage">Primary Image URL (.jpg, .png)</label>
-                            <input type="text" id="primaryImage" required placeholder="https://example.com/image1.jpg">
+                            <label for="imageFile1">Primary Product Image File</label>
+                            <input type="file" id="imageFile1" accept="image/*">
+                            <input type="hidden" id="primaryImage"> <small style="color: #64748b; font-size: 0.75em;">Select a file from your device, or the existing URL will be kept if editing.</small>
                         </div>
 
                         <div class="form-group">
-                            <label for="secondaryImage">Secondary Image URL (Optional)</label>
-                            <input type="text" id="secondaryImage" placeholder="https://example.com/image2.jpg">
+                            <label for="imageFile2">Secondary Product Image File (Optional)</label>
+                            <input type="file" id="imageFile2" accept="image/*">
+                            <input type="hidden" id="secondaryImage">
                         </div>
 
                         <button type="submit" id="submitProductBtn" class="btn-submit">Publish Listing</button>
@@ -603,6 +600,10 @@
             document.getElementById('price').value = product.price || '';
             document.getElementById('primaryImage').value = product.image_url_1 || '';
             document.getElementById('secondaryImage').value = product.image_url_2 || '';
+            
+            // Clear file inputs when switching to edit mode
+            document.getElementById('imageFile1').value = '';
+            document.getElementById('imageFile2').value = '';
 
             formTitle.textContent = 'Edit Product Listing';
             formModeBadge.textContent = 'EDITING MODE';
@@ -616,6 +617,8 @@
         function resetFormMode() {
             editingProductId = null;
             productForm.reset();
+            document.getElementById('primaryImage').value = '';
+            document.getElementById('secondaryImage').value = '';
             vendorIdInput.value = currentVendor.id;
             formTitle.textContent = 'Create New Product Listing';
             formModeBadge.textContent = 'CREATING MODE';
@@ -645,6 +648,34 @@
             }
         };
 
+        // Helper function to upload an image file to Supabase Storage Bucket
+        async function uploadImageFile(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return null; // No new file selected
+            }
+
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36.substring(2, 9))}.${fileExt}`;
+            const filePath = `${currentVendor.id}/${fileName}`;
+
+            const { data, error } = await sbClient.storage
+                .from('product-images')
+                .upload(filePath, file);
+
+            if (error) {
+                throw new Error('Image upload failed: ' + error.message);
+            }
+
+            // Get public URL of the uploaded asset
+            const { data: publicUrlData } = sbClient.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+
+            return publicUrlData.publicUrl;
+        }
+
         productForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             showAlert('', false);
@@ -652,60 +683,68 @@
             submitProductBtn.disabled = true;
             submitProductBtn.textContent = editingProductId ? 'Saving...' : 'Publishing...';
 
-            const name = document.getElementById('productName').value.trim();
-            const category = document.getElementById('category').value;
-            const price = parseFloat(document.getElementById('price').value);
-            const image_url_1 = document.getElementById('primaryImage').value.trim();
-            const image_url_2 = document.getElementById('secondaryImage').value.trim();
+            try {
+                // 1. Upload files if selected, otherwise keep existing values if editing
+                const uploadedPrimary = await uploadImageFile('imageFile1');
+                const uploadedSecondary = await uploadImageFile('imageFile2');
 
-            if (editingProductId) {
-                const updatedFields = {
-                    name: name,
-                    category: category,
-                    price: price,
-                    image_url_1: image_url_1,
-                    image_url_2: image_url_2 || null
-                };
+                const primaryImageFinal = uploadedPrimary || document.getElementById('primaryImage').value.trim();
+                const secondaryImageFinal = uploadedSecondary || document.getElementById('secondaryImage').value.trim();
 
-                const { error } = await sbClient
-                    .from('products')
-                    .update(updatedFields)
-                    .eq('id', editingProductId);
+                if (!primaryImageFinal) {
+                    throw new Error('A primary image file or URL is required.');
+                }
 
-                if (error) {
-                    console.error('Error updating product:', error);
-                    showAlert('Failed to update product: ' + error.message, true);
-                } else {
+                const name = document.getElementById('productName').value.trim();
+                const category = document.getElementById('category').value;
+                const price = parseFloat(document.getElementById('price').value);
+
+                if (editingProductId) {
+                    const updatedFields = {
+                        name: name,
+                        category: category,
+                        price: price,
+                        image_url_1: primaryImageFinal,
+                        image_url_2: secondaryImageFinal || null
+                    };
+
+                    const { error } = await sbClient
+                        .from('products')
+                        .update(updatedFields)
+                        .eq('id', editingProductId);
+
+                    if (error) throw error;
+
                     showAlert('Product updated successfully!', false);
                     resetFormMode();
                     await loadVendorProducts();
-                }
-            } else {
-                const newProduct = {
-                    vendor_id: currentVendor.id,
-                    name: name,
-                    category: category,
-                    price: price,
-                    image_url_1: image_url_1,
-                    image_url_2: image_url_2 || null,
-                    created_at: new Date()
-                };
-
-                const { error } = await sbClient.from('products').insert([newProduct]);
-
-                if (error) {
-                    console.error('Error inserting product:', error);
-                    showAlert('Failed to publish product: ' + error.message, true);
                 } else {
+                    const newProduct = {
+                        vendor_id: currentVendor.id,
+                        name: name,
+                        category: category,
+                        price: price,
+                        image_url_1: primaryImageFinal,
+                        image_url_2: secondaryImageFinal || null,
+                        created_at: new Date()
+                    };
+
+                    const { error } = await sbClient.from('products').insert([newProduct]);
+
+                    if (error) throw error;
+
                     showAlert('Product published successfully!', false);
                     productForm.reset();
                     vendorIdInput.value = currentVendor.id;
                     await loadVendorProducts();
                 }
+            } catch (err) {
+                console.error('Submission error:', err);
+                showAlert(err.message || 'Operation failed.', true);
+            } finally {
+                submitProductBtn.disabled = false;
+                submitProductBtn.textContent = editingProductId ? 'Save Changes' : 'Publish Listing';
             }
-
-            submitProductBtn.disabled = false;
-            submitProductBtn.textContent = editingProductId ? 'Save Changes' : 'Publish Listing';
         });
 
         function showAlert(msg, isError) {
