@@ -200,12 +200,12 @@ button[type="submit"]:hover {
                 <form id="buyerForm">
                     <div class="form-group">
                         <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" placeholder="Enter your full name" required[cite: 3]>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required>
                     </div>
 
                     <div class="form-group">
                         <label for="email">Contact Email *</label>
-                        <input type="email" id="email" placeholder="Enter your email address" required[cite: 3]>
+                        <input type="email" id="email" placeholder="Enter your email address" required>
                     </div>
 
                     <div class="form-group">
@@ -215,7 +215,12 @@ button[type="submit"]:hover {
 
                     <div class="form-group">
                         <label for="whatsapp">WhatsApp Number (Optional)</label>
-                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555"[cite: 3]>
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="referral-code-input">Referral Code (Optional)</label>
+                        <input type="text" id="referral-code-input" placeholder="e.g., username">
                     </div>
 
                     <div class="form-group">
@@ -232,7 +237,7 @@ button[type="submit"]:hover {
 
                     <div class="form-group">
                         <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
-                        <input type="file" id="nationalIdFile" required[cite: 3]>
+                        <input type="file" id="nationalIdFile" required>
                     </div>
 
                     <button type="submit">Register Account</button>
@@ -248,14 +253,24 @@ button[type="submit"]:hover {
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Safely capture optional referral query parameter
-        let referredBy = null;
-        try {
+        // Capture ?ref=code from URL on page load, store it, and prepopulate fallback field
+        window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
-            referredBy = urlParams.get('ref');
-        } catch (err) {
-            console.log('Query param parse note:', err);
-        }
+            const refCode = urlParams.get('ref');
+            const manualInput = document.getElementById('referral-code-input');
+
+            if (refCode) {
+                localStorage.setItem('echo_hub_ref', refCode);
+                if (manualInput) {
+                    manualInput.value = refCode;
+                }
+            } else {
+                const savedRef = localStorage.getItem('echo_hub_ref');
+                if (savedRef && manualInput) {
+                    manualInput.value = savedRef;
+                }
+            }
+        });
 
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -269,6 +284,7 @@ button[type="submit"]:hover {
             const password = document.getElementById('password').value;
             const whatsapp = document.getElementById('whatsapp').value.trim();
             const fileInput = document.getElementById('nationalIdFile').files[0];
+            const finalRefCode = document.getElementById('referral-code-input')?.value.trim() || localStorage.getItem('echo_hub_ref');
 
             // Collect selected category checkboxes
             const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
@@ -292,7 +308,21 @@ button[type="submit"]:hover {
 
                 if (uploadError) throw uploadError;
 
-                // 2. Register user via Supabase Auth
+                // 2. Resolve referrer UUID if a referral code was provided
+                let referrerId = null;
+                if (finalRefCode) {
+                    const { data: referrerData } = await supabaseClient
+                        .from('user_profiles')
+                        .select('id')
+                        .eq('referral_code', finalRefCode)
+                        .single();
+                        
+                    if (referrerData) {
+                        referrerId = referrerData.id;
+                    }
+                }
+
+                // 3. Register user via Supabase Auth
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
@@ -303,7 +333,7 @@ button[type="submit"]:hover {
                             whatsapp_number: whatsapp || null,
                             national_id_url: filePath,
                             categories_interest: selectedCategories,
-                            referred_by: referredBy,
+                            referred_by: referrerId,
                             role: 'buyer'
                         }
                     }
@@ -311,20 +341,57 @@ button[type="submit"]:hover {
 
                 if (authError) throw authError;
 
-                // 3. Explicitly insert record into the public 'buyers' table
+                const userId = authData.user ? authData.user.id : null;
+                const generatedCode = email.split('@')[0] + Math.floor(Math.random() * 1000);
+
+                // 4. Insert record into public 'user_profiles' table
+                if (userId) {
+                    const { error: profileError } = await supabaseClient
+                        .from('user_profiles')
+                        .insert([{
+                            id: userId,
+                            email: email,
+                            referral_code: generatedCode,
+                            referred_by: referrerId
+                        }]);
+
+                    if (profileError) {
+                        console.error("Profile creation warning:", profileError.message);
+                    }
+                }
+
+                // 5. Log connection in the 'referrals' tracking table if referrer exists
+                if (userId && referrerId) {
+                    const { error: refLogError } = await supabaseClient
+                        .from('referrals')
+                        .insert([{
+                            referrer_id: referrerId,
+                            referred_id: userId,
+                            user_type: 'buyer'
+                        }]);
+
+                    if (refLogError) {
+                        console.error("Referral log warning:", refLogError.message);
+                    }
+                    localStorage.removeItem('echo_hub_ref');
+                }
+
+                // 6. Explicitly insert record into the legacy/public 'buyers' table if present
                 const { error: dbError } = await supabaseClient
                     .from('buyers')
                     .insert([{
-                        id: authData.user ? authData.user.id : undefined,
+                        id: userId,
                         full_name: fullName,
                         email: email,
                         whatsapp_number: whatsapp || null,
                         national_id_url: filePath,
                         categories_interest: selectedCategories,
-                        referred_by: referredBy
+                        referred_by: referrerId
                     }]);
 
-                if (dbError) throw dbError;
+                if (dbError) {
+                    console.log("Buyers table insert notice:", dbError.message);
+                }
 
                 successDiv.textContent = 'Registration successful! Awaiting admin approval for access.';
                 successDiv.style.display = 'block';
