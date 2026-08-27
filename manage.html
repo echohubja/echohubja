@@ -558,6 +558,29 @@
             });
         }
 
+        // Expose editProduct globally to fix ReferenceError on inline onclick
+        window.editProduct = function(productId) {
+            console.log("Editing product:", productId);
+            alert("Edit functionality for product ID: " + productId);
+            // Add your edit modal/form population logic here
+        };
+
+        // Expose deleteProduct globally
+        window.deleteProduct = async function(productId) {
+            if (!confirm('Are you sure you want to delete this listing?')) return;
+
+            const { error } = await sbClient
+                .from('products')
+                .delete()
+                .eq('id', productId);
+
+            if (!error) {
+                await loadVendorProducts();
+            } else {
+                alert('Could not delete product: ' + error.message);
+            }
+        };
+
         // Handle Product Submission
         productForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -597,22 +620,6 @@
             submitProductBtn.disabled = false;
             submitProductBtn.textContent = 'Publish Listing';
         });
-
-        // Delete Product Handler
-        async function deleteProduct(productId) {
-            if (!confirm('Are you sure you want to delete this listing?')) return;
-
-            const { error } = await sbClient
-                .from('products')
-                .delete()
-                .eq('id', productId);
-
-            if (!error) {
-                await loadVendorProducts();
-            } else {
-                alert('Could not delete product: ' + error.message);
-            }
-        }
 
         function showAlert(msg, isError) {
             if (!msg) {
