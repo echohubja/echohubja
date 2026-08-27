@@ -1,16 +1,144 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Marketplace</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #2c3e50; 
+        }
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin: 0;
+        }
+        .layout { 
+            max-width: 1400px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            display: grid; 
+            grid-template-columns: 240px 1fr; 
+            gap: 40px; 
+        }
+        aside {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            height: fit-content;
+        }
+        .filter-group h3 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #1e5aa8; 
+            margin-bottom: 15px; 
+            font-weight: 700;
+        }
+        .filter-links { display: flex; flex-direction: column; gap: 8px; }
+        .filter-link { 
+            background: none; 
+            border: none; 
+            text-align: left; 
+            padding: 10px 12px; 
+            border-radius: 8px;
+            font-size: 15px; 
+            color: #4a5568; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .filter-link:hover, .filter-link.active { 
+            background: #f0f4f8;
+            color: #1e5aa8; 
+            font-weight: 600; 
+        }
+        .content-area { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-box { 
+            background: #fff; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 12px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(30, 90, 168, 0.1);
+        }
+        .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
+        .product-box button { 
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
+            color: #fff; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+        .product-box button:hover { opacity: 0.9; }
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Echo Hub</h1>
+        <p>Marketplace Storefront</p>
+    </header>
+
+    <div class="layout">
+        <aside>
+            <div class="filter-group">
+                <h3>Catalog Sections</h3>
+                <div class="filter-links" id="category-filters">
+                    <!-- Dynamically populated from database -->
+                    <button class="filter-link active" onclick="filterCategory('All', null, this)">All Categories</button>
+                </div>
+            </div>
+        </aside>
+        <main class="content-area">
+            <div class="products-grid" id="products-container">
+                <!-- Dynamic products will load here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadCategories() {
-            // Fetch category and subcategory fields from products table
             const { data, error } = await db.from('products').select('category, subcategory');
             const filterContainer = document.getElementById('category-filters');
             
             if (error || !data) return;
 
-            // Build a structured mapping of category -> subcategories
             const taxonomy = {};
             data.forEach(item => {
                 const cat = item.category;
@@ -25,13 +153,12 @@
                 }
             });
 
-            // Generate dynamic HTML for categories and nested subcategories
             let html = `<button class="filter-link active" onclick="filterCategory('All', null, this)">All Categories</button>`;
             
-            for (const [cat, subs] + of Object.entries(taxonomy)) {
+            for (const [cat, subs] of Object.entries(taxonomy)) {
                 html += `
                     <div class="category-group" style="margin-top: 10px;">
-                        <button class="filter-link" style="font-weight: 600; width: 100%;" onclick="filterCategory('${cat}', null, this)">${cat}</button>
+                        <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${cat}', null, this)">${cat}</button>
                 `;
                 
                 if (subs.size > 0) {
@@ -94,3 +221,5 @@
             await loadProducts('All', null);
         });
     </script>
+</body>
+</html>
