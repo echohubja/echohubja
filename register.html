@@ -292,8 +292,8 @@ button[type="submit"]:hover {
 
                 if (uploadError) throw uploadError;
 
-                // 2. Register user via Supabase Auth with email confirmation & profile metadata
-                const { error: authError } = await supabaseClient.auth.signUp({
+                // 2. Register user via Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
                     options: {
@@ -311,7 +311,22 @@ button[type="submit"]:hover {
 
                 if (authError) throw authError;
 
-                successDiv.textContent = 'Registration successful! Please check your email to verify your account.';
+                // 3. Explicitly insert record into the public 'buyers' table
+                const { error: dbError } = await supabaseClient
+                    .from('buyers')
+                    .insert([{
+                        id: authData.user ? authData.user.id : undefined,
+                        full_name: fullName,
+                        email: email,
+                        whatsapp_number: whatsapp || null,
+                        national_id_url: filePath,
+                        categories_interest: selectedCategories,
+                        referred_by: referredBy
+                    }]);
+
+                if (dbError) throw dbError;
+
+                successDiv.textContent = 'Registration successful! Awaiting admin approval for access.';
                 successDiv.style.display = 'block';
                 document.getElementById('buyerForm').reset();
 
