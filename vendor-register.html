@@ -272,7 +272,7 @@
                         <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
                     </div>
 
-                        <div class="form-group">
+                    <div class="form-group">
                         <label for="email">PayPal Email Address (For Payouts) <span class="required">*</span></label>
                         <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
                     </div>
@@ -289,7 +289,7 @@
     </div>
 
     <script>
-        // Initialize Supabase Client safely using a distinct variable name
+        // Initialize Supabase Client safely
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -321,11 +321,9 @@
             const email = document.getElementById('email').value.trim();
             const businessDetails = document.getElementById('businessDetails').value.trim();
             
-            // Automatic approval status for UPFRONT vendors
             const initialStatus = vendorType === 'UPFRONT' ? 'APPROVED' : 'PENDING';
 
             try {
-                // 1. Fetch the latest vendor ID from your table to calculate the next incrementing number
                 let nextNumber = 1;
                 const { data: latestVendors, error: fetchError } = await supabaseClient
                     .from('vendors')
@@ -333,6 +331,8 @@
                     .not('id', 'is', null)
                     .order('created_at', { ascending: false })
                     .limit(1);
+
+                console.log('--- DEBUG: Fetch latest vendors result ---', { latestVendors, fetchError });
 
                 if (!fetchError && latestVendors && latestVendors.length > 0 && latestVendors[0].id) {
                     const lastId = latestVendors[0].id;
@@ -343,26 +343,28 @@
                     }
                 }
 
-                // 2. Generate the ID matching your table's format: FirstName-LastName-00001
                 const formattedNumber = String(nextNumber).padStart(5, '0');
                 const safeFirstName = firstName.replace(/[^a-zA-Z0-9]/g, '');
                 const safeLastName = lastName.replace(/[^a-zA-Z0-9]/g, '');
                 const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
 
-                // 3. Insert the complete record into your 9-column table
+                const insertPayload = {
+                    id: newVendorId,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
+                    vendor_type: vendorType,
+                    business_details: businessDetails,
+                    status: initialStatus
+                };
+
+                console.log('--- DEBUG: Attempting to insert payload ---', insertPayload);
+
                 const { data, error } = await supabaseClient
                     .from('vendors')
-                    .insert([
-                        {
-                            id: newVendorId,
-                            first_name: firstName,
-                            last_name: lastName,
-                            email: email,
-                            vendor_type: vendorType,
-                            business_details: businessDetails,
-                            status: initialStatus
-                        }
-                    ]);
+                    .insert([insertPayload]);
+
+                console.log('--- DEBUG: Insert response ---', { data, error });
 
                 if (error) throw error;
 
@@ -371,7 +373,7 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (err) {
-                console.error('Error submitting vendor registration:', err);
+                console.error('--- DEBUG: Caught Error ---', err);
                 errorMessage.textContent = err.message || 'An unexpected error occurred.';
                 errorAlert.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
