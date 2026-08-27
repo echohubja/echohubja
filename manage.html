@@ -6,38 +6,28 @@
     <title>Echo Hub - Vendor Product Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .echo-gradient {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-        }
-        .echo-btn:hover {
-            opacity: 0.95;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(30, 90, 168, 0.2);
-        }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen p-6">
+<body class="bg-gray-50 p-6">
 
-    <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-blue-100">
-        <h2 id="form-title" class="text-2xl font-bold mb-6 text-[#1e5aa8]">Create New Product Listing</h2>
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h2 id="form-title" class="text-2xl font-bold mb-6 text-gray-800">Create New Product Listing</h2>
         
         <form id="product-form" onsubmit="handleFormSubmit(event)">
             <input type="hidden" id="product-id">
 
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-2">Vendor ID</label>
-                <input type="text" id="vendor-id" required placeholder="e.g. Roxroy-Brown-00001" class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100">
+                <input type="text" id="vendor-id" required placeholder="e.g. Roxroy-Brown-00001" class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-2">Product Name</label>
-                <input type="text" id="product-name" required placeholder="e.g. Wireless Earbuds" class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100">
+                <input type="text" id="product-name" required placeholder="e.g. Wireless Earbuds" class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-2">Category</label>
-                <select id="product-category" required class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100 bg-white">
+                <select id="product-category" required class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500 bg-white">
                     <option value="">-- Select Category --</option>
                     <option value="Wigs">Wigs</option>
                     <option value="Toys">Toys</option>
@@ -49,32 +39,32 @@
 
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-2">Price ($)</label>
-                <input type="number" step="0.01" id="product-price" required placeholder="29.99" class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100">
+                <input type="number" step="0.01" id="product-price" required placeholder="29.99" class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-2">Primary Image URL (.jpg, .png)</label>
-                <input type="url" id="image-url-1" required placeholder="https://example.com/image1.jpg" class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100">
+                <input type="url" id="image-url-1" required placeholder="https://example.com/image1.jpg" class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
             </div>
 
             <div class="mb-6">
                 <label class="block text-gray-700 font-medium mb-2">Secondary Image URL (Optional)</label>
-                <input type="url" id="image-url-2" placeholder="https://example.com/image2.jpg" class="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100">
+                <input type="url" id="image-url-2" placeholder="https://example.com/image2.jpg" class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
             </div>
 
             <div class="flex gap-4">
-                <button type="submit" id="submit-btn" class="flex-1 echo-gradient text-white py-3 px-4 rounded-xl font-semibold transition echo-btn">Publish Listing</button>
-                <button type="button" onclick="resetForm()" class="bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
+                <button type="submit" id="submit-btn" class="flex-1 bg-black text-white py-2 px-4 rounded hover:bg-gray-800 transition">Publish Listing</button>
+                <button type="button" onclick="resetForm()" class="bg-gray-200 text-gray-700 py-2 px-4 rounded hover:bg-gray-300 transition">Cancel</button>
             </div>
         </form>
 
-        <div class="mt-8 border-t border-gray-100 pt-6">
+        <div class="mt-8 border-t pt-6">
             <h3 class="text-lg font-semibold mb-3 text-gray-800">Select Existing Product to Edit</h3>
             <div class="flex gap-2">
-                <select id="product-select" class="flex-1 border border-gray-300 p-3 rounded-xl focus:outline-none focus:border-[#1e5aa8] focus:ring-2 focus:ring-blue-100 bg-white">
+                <select id="product-select" class="flex-1 border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500">
                     <option value="">-- Choose a product --</option>
                 </select>
-                <button type="button" onclick="loadSelectedProduct()" class="echo-gradient text-white px-5 py-3 rounded-xl font-semibold transition echo-btn">Load</button>
+                <button type="button" onclick="loadSelectedProduct()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Load</button>
             </div>
         </div>
     </div>
