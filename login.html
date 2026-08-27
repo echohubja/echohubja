@@ -87,7 +87,8 @@
             font-size: 0.95em;
         }
 
-        input[type="email"] {
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e1e8ed;
@@ -188,11 +189,11 @@
 
         <div class="content">
             <div id="successAlert" class="success">
-                <strong>Check your email!</strong> We've sent a secure magic link to your inbox. Click it to log in instantly.
+                <strong>Welcome back!</strong> Redirecting to your dashboard...
             </div>
 
             <div id="errorAlert" class="error">
-                <strong>Error:</strong> <span id="errorMessage">Failed to send login link. Please try again.</span>
+                <strong>Error:</strong> <span id="errorMessage">Invalid email or password. Please try again.</span>
             </div>
 
             <form id="loginForm">
@@ -201,7 +202,12 @@
                     <input type="email" id="email" required placeholder="Enter your registered email">
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn-submit">Send Magic Link</button>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
             </form>
 
             <div class="back-link">
@@ -227,37 +233,33 @@
             
             // Reset UI states
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Sending Link...';
+            submitBtn.textContent = 'Signing In...';
             successAlert.style.display = 'none';
             errorAlert.style.display = 'none';
 
             const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
 
             try {
-                // Generate the redirect URL based on the current GitHub Pages environment
-                // This ensures after they click the link, they come back to the right place
-                const redirectUrl = window.location.href.replace('login.html', 'dashboard.html');
-
-                const { error } = await supabase.auth.signInWithOtp({
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
-                    options: {
-                        emailRedirectTo: redirectUrl
-                    }
+                    password: password
                 });
 
                 if (error) throw error;
 
-                // Show success message
+                // Show success message and redirect to dashboard
                 successAlert.style.display = 'block';
-                form.reset();
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
 
             } catch (err) {
                 console.error('Login error:', err);
                 errorMessage.textContent = err.message || 'An unexpected error occurred.';
                 errorAlert.style.display = 'block';
-            } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Magic Link';
+                submitBtn.textContent = 'Sign In';
             }
         });
     </script>
