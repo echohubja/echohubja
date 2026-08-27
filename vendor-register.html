@@ -1,212 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Echo Hub - Vendor Registration</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0"></script>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  padding: 20px;
-}
-.container {
-  max-width: 800px;
-  margin: 40px auto;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
-  overflow: hidden;
-}
-header {
-  background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-  color: white;
-  padding: 30px;
-  text-align: center;
-}
-header h1 {
-  font-size: 2.5em;
-  margin-bottom: 5px;
-}
-header p {
-  font-size: 1.1em;
-  opacity: 0.95;
-  margin: 0;
-}
-.content {
-  padding: 40px;
-}
-.section h2 {
-  color: #1e5aa8;
-  margin-bottom: 25px;
-  font-size: 1.6em;
-  font-weight: 700;
-}
-.form-group {
-  margin-bottom: 22px;
-}
-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 0.95em;
-}
-input[type="text"],
-input[type="email"],
-textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e1e8ed;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 15px;
-  transition: all 0.35s ease;
-  background: white;
-  color: #2c3e50;
-}
-input:focus, textarea:focus {
-  outline: none;
-  border-color: #1e5aa8;
-  background: #f8fbff;
-  box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08);
-}
-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-button[type="submit"] {
-  background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-  color: white;
-  padding: 14px 32px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: 100%;
-  margin-top: 10px;
-}
-button[type="submit"]:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
-}
-.error {
-  color: #c0392b;
-  background: #fadbd8;
-  padding: 16px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  display: none;
-  border-left: 4px solid #c0392b;
-  font-weight: 500;
-  font-size: 14px;
-}
-.success {
-  color: #27ae60;
-  background: #d5f4e6;
-  padding: 16px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  display: none;
-  border-left: 4px solid #27ae60;
-  font-weight: 500;
-  font-size: 14px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Vendor Onboarding Portal</title>
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+            --input-bg: #ffffff;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 28px 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 6px 0;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .form-body {
+            padding: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        label .required {
+            color: #dc2626;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+            cursor: pointer;
+            font-size: 14px;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .radio-label:hover {
+            background-color: #f1f5f9;
+            border-color: var(--primary);
+        }
+
+        .radio-label input {
+            margin-right: 12px;
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 8px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.99);
+        }
+
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #fecaca;
+        }
+    </style>
 </head>
 <body>
+
     <div class="container">
-        <header>
+        <div class="header">
             <h1>Echo Hub</h1>
             <p>Vendor Onboarding Portal</p>
-        </header>
+        </div>
 
-        <div class="content">
-            <div class="section">
-                <h2>📦 Vendor Registration</h2>
-                <div class="error" id="vendorError"></div>
-                <div class="success" id="vendorSuccess"></div>
-
-                <form id="vendorForm">
-                    <div class="form-group">
-                        <label for="firstName">First Name *</label>
-                        <input type="text" id="firstName" placeholder="Enter your first name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="lastName">Last Name *</label>
-                        <input type="text" id="lastName" placeholder="Enter your last name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="paypalEmail">PayPal Email * (For Payouts)</label>
-                        <input type="email" id="paypalEmail" placeholder="your-paypal@email.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="businessDetails">Business Details / Products Offered</label>
-                        <textarea id="businessDetails" placeholder="Briefly describe what you sell..."></textarea>
-                    </div>
-
-                    <button type="submit">Register as Vendor</button>
-                </form>
+        <div class="form-body">
+            <div id="successAlert" class="alert alert-success">
+                <strong>Registration Successful!</strong> Your application has been submitted and your custom Vendor ID has been generated.
             </div>
+
+            <div id="errorAlert" class="alert alert-error">
+                <strong>Submission Failed:</strong> <span id="errorMessage">Please check your inputs and try again.</span>
+            </div>
+
+            <form id="vendorForm">
+                <div class="form-group">
+                    <label>Are you an UPFRONT or REFUND AFTER REVIEW vendor? <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="vendor_type" value="UPFRONT" required> 
+                            <div><strong>UPFRONT</strong></div>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="vendor_type" value="REFUND_AFTER_REVIEW" required> 
+                            <div><strong>REFUND AFTER REVIEW</strong></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="firstName">First Name <span class="required">*</span></label>
+                    <input type="text" id="firstName" name="firstName" required placeholder="Enter your first name">
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name <span class="required">*</span></label>
+                    <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">PayPal Email Address (For Payouts) <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-submit">REGISTER AS VENDOR</button>
+            </form>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';[cite: 2]
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';[cite: 2]
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);[cite: 2]
+        // Initialize Supabase Client
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const referredBy = urlParams.get('ref') || null;
+        const form = document.getElementById('vendorForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successAlert = document.getElementById('successAlert');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
 
-        document.getElementById('vendorForm').addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const errorDiv = document.getElementById('vendorError');
-            const successDiv = document.getElementById('vendorSuccess');
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting Application...';
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
 
+            const vendorType = document.querySelector('input[name="vendor_type"]:checked').value;
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
-            const paypalEmail = document.getElementById('paypalEmail').value.trim();
-            const businessDetails = document.getElementById('businessDetails').value.trim();
+            const email = document.getElementById('email').value.trim();
 
             try {
-                const { error: dbError } = await supabaseClient
+                // 1. Fetch the latest vendor ID from your table to calculate the next incrementing number
+                let nextNumber = 1;
+                const { data: latestVendors, error: fetchError } = await supabase
                     .from('vendors')
-                    .insert([{
-                        first_name: firstName,
-                        last_name: lastName,
-                        paypal_email: paypalEmail,
-                        business_details: businessDetails || null,
-                        referred_by: referredBy
-                    }]);
+                    .select('id')
+                    .not('id', 'is', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
 
-                if (dbError) throw dbError;
+                if (!fetchError && latestVendors && latestVendors.length > 0 && latestVendors[0].id) {
+                    const lastId = latestVendors[0].id;
+                    const parts = lastId.split('-');
+                    const lastNumber = parseInt(parts[parts.length - 1], 10);
+                    if (!isNaN(lastNumber)) {
+                        nextNumber = lastNumber + 1;
+                    }
+                }
 
-                successDiv.textContent = 'Vendor registration successful! Your ID will be generated upon review.';
-                successDiv.style.display = 'block';
-                document.getElementById('vendorForm').reset();
+                // 2. Generate the ID matching your table's format: FirstName-LastName-00001
+                const formattedNumber = String(nextNumber).padStart(5, '0');
+                const safeFirstName = firstName.replace(/[^a-zA-Z0-9]/g, '');
+                const safeLastName = lastName.replace(/[^a-zA-Z0-9]/g, '');
+                const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
+
+                // 3. Insert the complete record into your fully synced table
+                const { data, error } = await supabase
+                    .from('vendors')
+                    .insert([
+                        {
+                            id: newVendorId,
+                            first_name: firstName,
+                            last_name: lastName,
+                            email: email,
+                            vendor_type: vendorType,
+                            status: 'PENDING'
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                successAlert.style.display = 'block';
+                form.reset();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (err) {
-                console.error(err);
-                errorDiv.textContent = 'Error during registration: ' + err.message;
-                errorDiv.style.display = 'block';
+                console.error('Error submitting vendor registration:', err);
+                errorMessage.textContent = err.message || 'An unexpected error occurred.';
+                errorAlert.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'REGISTER AS VENDOR';
             }
         });
     </script>
