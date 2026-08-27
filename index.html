@@ -116,6 +116,7 @@
             <div class="filter-group">
                 <h3>Catalog Sections</h3>
                 <div class="filter-links" id="category-filters">
+                    <!-- Dynamic categories will map here -->
                     <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
                 </div>
             </div>
@@ -133,7 +134,6 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadCategories() {
-            // Fixed query to only target the existing 'category' column
             const { data, error } = await db.from('products').select('category');
             const filterContainer = document.getElementById('category-filters');
             
@@ -142,29 +142,62 @@
                 return;
             }
 
-            const categories = new Set();
+            // Organize strings like "Adult Novelties > Adult Toys" into a hierarchy
+            const taxonomy = {};
             if (data && data.length > 0) {
                 data.forEach(item => {
                     if (item.category) {
-                        categories.add(item.category.trim());
+                        const rawCat = item.category.trim();
+                        const parts = rawCat.split('>').map(p => p.trim());
+                        const mainCat = parts[0];
+                        
+                        if (!taxonomy[mainCat]) {
+                            taxonomy[mainCat] = {};
+                        }
+                        
+                        // If there is a subcategory after the ">"
+                        if (parts.length > 1) {
+                            const subCat = parts[1];
+                            taxonomy[mainCat][subCat] = rawCat; // Store exact database string
+                        }
                     }
                 });
             }
 
             let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
             
-            categories.forEach(cat => {
-                html += `<button class="filter-link" onclick="filterCategory('${cat}', this)">${cat}</button>`;
-            });
+            for (const [mainCat, subs] of Object.entries(taxonomy)) {
+                html += `
+                    <div class="category-group" style="margin-top: 10px;">
+                        <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
+                `;
+                
+                const subKeys = Object.keys(subs);
+                if (subKeys.length > 0) {
+                    html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
+                    subKeys.forEach(subCat => {
+                        const exactDbString = subs[subCat];
+                        html += `<button class="filter-link" style="font-size: 13px; padding: 6px 10px;" onclick="filterCategory('${exactDbString}', this, false)">↳ ${subCat}</button>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
             
             filterContainer.innerHTML = html;
         }
 
-        async function loadProducts(category = 'All') {
+        async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
             let query = db.from('products').select('*');
             
-            if (category !== 'All') {
-                query = query.eq('category', category);
+            if (categoryQuery !== 'All') {
+                if (isMainGroup) {
+                    // Fetch everything that starts with the Main Category name (e.g. "Adult Novelties%")
+                    query = query.ilike('category', `${categoryQuery}%`);
+                } else {
+                    // Fetch the exact subcategory string (e.g. "Adult Novelties > Adult Toys")
+                    query = query.eq('category', categoryQuery);
+                }
             }
 
             const { data, error } = await query;
@@ -193,10 +226,10 @@
             }
         }
 
-        function filterCategory(category, buttonElement) {
+        function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
             document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
             buttonElement.classList.add('active');
-            loadProducts(category);
+            loadProducts(categoryQuery, isMainGroup);
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
