@@ -236,13 +236,12 @@ button[type="submit"]:hover {
     </div>
 
     <script>
-        // Configuration with your project credentials
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Ensure global window.supabase namespace is correctly targeted
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        // Safely capture optional referral query parameter
         let referredBy = null;
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -258,12 +257,17 @@ button[type="submit"]:hover {
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
 
+            if (!supabaseClient) {
+                errorDiv.textContent = 'Supabase client failed to initialize.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
             const fullName = document.getElementById('fullName').value;
             const email = document.getElementById('email').value;
             const whatsapp = document.getElementById('whatsapp').value;
             const fileInput = document.getElementById('nationalIdFile').files[0];
 
-            // Collect selected category checkboxes
             const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
                 .map(cb => cb.value);
 
@@ -274,7 +278,6 @@ button[type="submit"]:hover {
             }
 
             try {
-                // 1. Upload National ID file to Supabase Storage bucket 'national-ids'
                 const fileExt = fileInput.name.split('.').pop();
                 const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
                 const filePath = `ids/${fileName}`;
@@ -285,10 +288,8 @@ button[type="submit"]:hover {
 
                 if (uploadError) throw uploadError;
 
-                // File path reference for database storage
                 const nationalIdUrl = filePath;
 
-                // 2. Insert buyer record into database
                 const { error: dbError } = await supabaseClient
                     .from('buyers')
                     .insert([{
