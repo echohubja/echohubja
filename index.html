@@ -114,14 +114,13 @@
         <aside>
             <div class="filter-group">
                 <h3>Catalog Sections</h3>
-                <div class="filter-links">
-                    <button class="filter-link active">All Categories</button>
-                    <button class="filter-link">Electronics</button>
-                    <button class="filter-link">Home and Kitchen</button>
-                    <button class="filter-link">Beauty and Personal Care</button>
-                    <button class="filter-link">Fitness and Outdoors</button>
-                    <button class="filter-link">Office and Productivity</button>
-                    <button class="filter-link">Adult Novelties</button>
+                <div class="filter-links" id="category-filters">
+                    <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
+                    <button class="filter-link" onclick="filterCategory('Wigs', this)">Wigs</button>
+                    <button class="filter-link" onclick="filterCategory('Toys', this)">Toys</button>
+                    <button class="filter-link" onclick="filterCategory('Gadgets', this)">Gadgets</button>
+                    <button class="filter-link" onclick="filterCategory('Clothing', this)">Clothing</button>
+                    <button class="filter-link" onclick="filterCategory('Office Furniture', this)">Office Furniture</button>
                 </div>
             </div>
         </aside>
@@ -137,12 +136,19 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function loadProducts() {
-            const { data, error } = await db.from('products').select('*');
+        async function loadProducts(category = 'All') {
+            let query = db.from('products').select('*');
+            
+            if (category !== 'All') {
+                query = query.eq('category', category);
+            }
+
+            const { data, error } = await query;
             const container = document.getElementById('products-container');
             
             if (error) {
                 console.error('Error loading products:', error.message);
+                container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
                 return;
             }
 
@@ -158,11 +164,20 @@
                     </div>
                 `).join('');
             } else {
-                container.innerHTML = '<p style="color: #666;">No products available at the moment.</p>';
+                container.innerHTML = '<p style="color: #666;">No products found in this category.</p>';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', loadProducts);
+        function filterCategory(category, buttonElement) {
+            // Update active state styling on buttons
+            document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+
+            // Load products for the chosen category
+            loadProducts(category);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => loadProducts('All'));
     </script>
 </body>
 </html>
