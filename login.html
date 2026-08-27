@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Secure Sign In</title>
+    <title>Echo Hub - Vendor Portal & Authentication</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -16,281 +16,323 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
-            background-attachment: fixed;
             min-height: 100vh;
-            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            animation: backgroundFade 0.8s ease-out;
+            padding: 20px;
+            color: #2c3e50;
         }
 
-        @keyframes backgroundFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .container {
+        .auth-container {
             width: 100%;
             max-width: 450px;
             background: white;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
             overflow: hidden;
-            animation: containerSlideIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 40px;
         }
 
-        @keyframes containerSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.2em;
-            margin-bottom: 5px;
+        h2 {
+            color: #1e5aa8;
+            font-size: 1.8em;
+            margin-bottom: 8px;
             font-weight: 700;
-            letter-spacing: -0.5px;
         }
 
-        header p {
-            font-size: 1.05em;
-            opacity: 0.95;
-            margin: 0;
-        }
-
-        .content {
-            padding: 35px;
+        p.subtitle {
+            color: #64748b;
+            font-size: 0.95em;
+            margin-bottom: 24px;
         }
 
         .form-group {
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 0.85em;
             font-weight: 600;
-            font-size: 0.95em;
+            color: #475569;
         }
 
-        input[type="email"],
-        input[type="password"] {
+        input {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
             font-family: inherit;
-            font-size: 15px;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            background: white;
-            color: #2c3e50;
-        }
-
-        input::placeholder {
-            color: #a0aec0;
+            font-size: 14px;
+            color: #1e293b;
+            transition: border-color 0.2s;
         }
 
         input:focus {
             outline: none;
             border-color: #1e5aa8;
-            background: #f8fbff;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
-            transform: translateY(-2px);
+            background: #f8fafc;
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 14px 32px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             width: 100%;
+            background: #1e5aa8;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
             margin-top: 10px;
         }
 
         .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
+            background: #174887;
         }
 
         .btn-submit:disabled {
-            background: #a0aec0;
+            background: #94a3b8;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
-        .error, .success {
-            padding: 16px;
-            border-radius: 10px;
+        .alert-msg {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.85em;
             margin-bottom: 20px;
             display: none;
-            font-weight: 500;
-            font-size: 14px;
         }
 
-        .error {
-            color: #c0392b;
-            background: #fadbd8;
-            border-left: 4px solid #c0392b;
+        .alert-success {
+            background: #dcfce7;
+            color: #15803d;
         }
 
-        .success {
-            color: #27ae60;
-            background: #d5f4e6;
-            border-left: 4px solid #27ae60;
+        .alert-error {
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
-        .back-link {
+        .toggle-mode {
             text-align: center;
             margin-top: 20px;
-        }
-
-        .back-link a {
+            font-size: 0.9em;
             color: #64748b;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
         }
 
-        .back-link a:hover {
+        .toggle-mode a {
             color: #1e5aa8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toggle-mode a:hover {
+            text-decoration: underline;
+        }
+
+        .row-fields {
+            display: flex;
+            gap: 12px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Echo Hub</h1>
-            <p>Secure Account Access</p>
-        </header>
+    <div class="auth-container">
+        <div id="formHeader">
+            <h2 id="formTitle">Vendor Login</h2>
+            <p class="subtitle" id="formSubtitle">Access your Echo Hub marketplace dashboard</p>
+        </div>
 
-        <div class="content">
-            <div id="successAlert" class="success">
-                <strong>Welcome back!</strong> Redirecting...
-            </div>
+        <div id="authAlert" class="alert-msg"></div>
 
-            <div id="errorAlert" class="error">
-                <strong>Error:</strong> <span id="errorMessage">Invalid email or password. Please try again.</span>
-            </div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" required placeholder="Enter your registered email">
+        <form id="authForm">
+            <!-- Extra Registration Fields (Hidden by default) -->
+            <div id="registerFields" style="display: none;">
+                <div class="row-fields">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" placeholder="India">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" placeholder="Stronghold">
+                    </div>
                 </div>
-
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter your password">
+                    <label for="vendorType">Vendor Classification</label>
+                    <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
                 </div>
-
-                <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
-            </form>
-
-            <div class="back-link">
-                <a href="portal.html">&larr; Back to Portal</a>
             </div>
+
+            <div class="form-group">
+                <label for="email">Account Email</label>
+                <input type="email" id="email" required placeholder="vendor@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
+        </form>
+
+        <div class="toggle-mode">
+            <span id="toggleText">New vendor?</span> 
+            <a href="#" id="toggleBtn">Create an account</a>
         </div>
     </div>
 
     <script>
-        (function() {
-            const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-            const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-            const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-            const form = document.getElementById('loginForm');
-            const submitBtn = document.getElementById('submitBtn');
-            const successAlert = document.getElementById('successAlert');
-            const errorAlert = document.getElementById('errorAlert');
-            const errorMessage = document.getElementById('errorMessage');
+        let isRegisterMode = false;
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Signing In...';
-                successAlert.style.display = 'none';
-                errorAlert.style.display = 'none';
+        const authForm = document.getElementById('authForm');
+        const formTitle = document.getElementById('formTitle');
+        const formSubtitle = document.getElementById('formSubtitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const toggleText = document.getElementById('toggleText');
+        const registerFields = document.getElementById('registerFields');
+        const authAlert = document.getElementById('authAlert');
 
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
+        // Toggle between Login and Registration views
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isRegisterMode = !isRegisterMode;
+            showAlert('', false);
 
-                try {
-                    // 1. Authenticate user via Supabase Auth
-                    const { data: authData, error: authError } = await sbClient.auth.signInWithPassword({
-                        email: email,
-                        password: password
+            if (isRegisterMode) {
+                formTitle.textContent = 'Vendor Registration';
+                formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
+                submitBtn.textContent = 'Complete Registration';
+                registerFields.style.display = 'block';
+                toggleText.textContent = 'Already have an account?';
+                toggleBtn.textContent = 'Sign in';
+            } else {
+                formTitle.textContent = 'Vendor Login';
+                formSubtitle.textContent = 'Access your Echo Hub marketplace dashboard';
+                submitBtn.textContent = 'Sign In';
+                registerFields.style.display = 'none';
+                toggleText.textContent = 'New vendor?';
+                toggleBtn.textContent = 'Create an account';
+            }
+        });
+
+        // Handle Form Submission (Login or Register)
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showAlert('', false);
+            submitBtn.disabled = true;
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            try {
+                if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
+
+                if (isRegisterMode) {
+                    // --- REGISTRATION FLOW ---
+                    const firstName = document.getElementById('firstName').value.trim() || 'Vendor';
+                    const lastName = document.getElementById('lastName').value.trim() || 'Partner';
+                    const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
+
+                    submitBtn.textContent = 'Creating account...';
+
+                    // 1. Create Supabase Auth User
+                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: { data: { first_name: firstName, last_name: lastName } }
                     });
 
-                    if (authError) throw authError;
+                    if (authError) throw new Error(authError.message);
+                    if (!authData.user) throw new Error('Registration failed to return user session.');
 
-                    const userId = authData.user.id;
-                    successAlert.style.display = 'block';
+                    const authUuid = authData.user.id;
 
-                    // 2. Check if user is a Vendor
-                    const { data: vendorData } = await sbClient
+                    // 2. Safely generate the next sequential human-readable ID
+                    // Count existing vendors to compute the sequential ID suffix
+                    const { count, error: countError } = await supabaseClient
                         .from('vendors')
-                        .select('id')
-                        .eq('id', userId)
-                        .maybeSingle();
+                        .select('*', { count: 'exact', head: true });
 
-                    if (vendorData) {
-                        setTimeout(() => {
-                            window.location.href = 'manage.html';
-                        }, 800);
-                        return;
+                    if (countError) throw new Error('Could not calculate vendor sequence.');
+
+                    const nextNum = (count || 0) + 1;
+                    const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
+
+                    // 3. Insert record mapping Custom ID (primary key) + Auth UUID (user_id)
+                    const { error: insertError } = await supabaseClient.from('vendors').insert([
+                        {
+                            id: formattedId,
+                            user_id: authUuid,
+                            email: email,
+                            first_name: firstName,
+                            last_name: lastName,
+                            vendor_type: vendorType,
+                            status: 'ACTIVE',
+                            created_at: new Date()
+                        }
+                    ]);
+
+                    if (insertError) throw new Error('Profile creation error: ' + insertError.message);
+
+                    showAlert('Registration successful! Redirecting to dashboard...', false);
+                    setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
+
+                } else {
+                    // --- LOGIN FLOW ---
+                    submitBtn.textContent = 'Signing in...';
+
+                    // 1. Authenticate via Supabase Auth
+                    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (authError) throw new Error(authError.message);
+                    const authUser = authData.user;
+
+                    // 2. Query vendor profile safely via the mapped user_id column
+                    const { data: vendorData, error: vendorError } = await supabaseClient
+                        .from('vendors')
+                        .select('*')
+                        .eq('user_id', authUser.id)
+                        .single();
+
+                    if (vendorError || !vendorData) {
+                        throw new Error('User profile record not found. Please contact support.');
                     }
 
-                    // 3. Check if user is a Buyer
-                    const { data: buyerData } = await sbClient
-                        .from('buyers')
-                        .select('id')
-                        .eq('id', userId)
-                        .maybeSingle();
-
-                    if (buyerData) {
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 800);
-                        return;
-                    }
-
-                    // Fallback if role record isn't found in either table
-                    throw new Error('User profile record not found. Please contact support.');
-
-                } catch (err) {
-                    console.error('Login error:', err);
-                    errorMessage.textContent = err.message || 'An unexpected error occurred.';
-                    errorAlert.style.display = 'block';
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Sign In';
+                    // 3. Success -> Proceed to management portal
+                    window.location.href = 'manage.html';
                 }
-            });
-        })();
+
+            } catch (err) {
+                showAlert(err.message, true);
+                submitBtn.disabled = false;
+                submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
+            }
+        });
+
+        function showAlert(msg, isError) {
+            if (!msg) {
+                authAlert.style.display = 'none';
+                return;
+            }
+            authAlert.textContent = msg;
+            authAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
+            authAlert.style.display = 'block';
+        }
     </script>
 </body>
 </html>
