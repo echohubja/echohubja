@@ -1,85 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Buyer Management Portal</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
-            background-attachment: fixed !important;
-            min-height: 100vh;
-            color: #2c3e50; 
-        }
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
-            color: white !important;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 30px;
-        }
-        header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
-        header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
-        .hub-card {
-            background: #ffffff !important;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-        }
-    </style>
-</head>
-<body class="p-6">
-
-    <header>
-        <h1>Echo Hub</h1>
-        <p>Buyer Registration & Access Management Portal</p>
-    </header>
-
-    <!-- Main Container -->
-    <div class="max-w-6xl mx-auto hub-card p-6">
-        <div class="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 class="text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
-            <span id="buyer-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Buyer Details</th>
-                        <th class="p-3">ID Verification</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 text-center">Action Control</th>
-                    </tr>
-                </thead>
-                <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr>
-                        <td colspan="4" class="p-4 text-center text-gray-500">Loading buyer registrations...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <script>
-        let db;
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (window.supabase) {
-                const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                loadBuyersPortal();
-            } else {
-                console.error("Supabase library failed to load.");
-                document.getElementById('buyers-table-body').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
-            }
-        });
-
-        async function loadBuyersPortal() {
+async function loadBuyersPortal() {
             const tableBody = document.getElementById('buyers-table-body');
             
             const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
@@ -101,10 +20,13 @@
                 let statusBadge = '';
                 let actionButton = '';
 
-                if (buyer.status === 'READY' || buyer.status === 'APPROVED') {
+                // Map using your exact database column: ready_to_invite
+                const status = (buyer.ready_to_invite || '').toUpperCase();
+
+                if (status === 'READY' || status === 'APPROVED') {
                     statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Block Access</button>`;
-                } else if (buyer.status === 'BLOCKED') {
+                } else if (status === 'BLOCKED') {
                     statusBadge = '<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">BLOCKED</span>';
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'READY')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
                 } else {
@@ -115,12 +37,12 @@
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
                         <td class="p-3">
-                            <div class="font-medium text-gray-800">${escapeHtml(buyer.name || 'Unknown')}</div>
+                            <div class="font-medium text-gray-800">${escapeHtml(buyer.full_name || 'Unknown')}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(buyer.email)}</div>
                             <div class="text-xs text-gray-400">${escapeHtml(buyer.phone || '')}</div>
                         </td>
                         <td class="p-3">
-                            ${buyer.id_file_url ? `<a href="${buyer.id_file_url}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>` : '<span class="text-gray-400 text-xs">No ID</span>'}
+                            ${buyer.national_id_url ? `<a href="${buyer.national_id_url}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>` : '<span class="text-gray-400 text-xs">No ID</span>'}
                         </td>
                         <td class="p-3">${statusBadge}</td>
                         <td class="p-3 text-center">${actionButton}</td>
@@ -135,8 +57,9 @@
                 return;
             }
 
+            // Update the correct database field: ready_to_invite
             const { error } = await db.from('buyers')
-                .update({ status: newStatus })
+                .update({ ready_to_invite: newStatus })
                 .eq('id', buyerId);
 
             if (error) {
@@ -154,11 +77,3 @@
 
             loadBuyersPortal();
         }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-    </script>
-</body>
-</html>
