@@ -46,7 +46,7 @@
         }
         .btn-invite { background: #2ecc71; color: white; }
         .btn:hover { opacity: 0.85; }
-        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; }
+        .id-link { color: #1e5aa8; text-decoration: none; font-weight: 600; cursor: pointer; }
         .id-link:hover { text-decoration: underline; }
         .status-badge {
             padding: 4px 8px;
@@ -111,7 +111,7 @@
                     <tbody>
             `;
 
-            data.forEach(buyer => {
+            for (const buyer of data) {
                 let idDisplayHtml = '<span style="color: #a0aec0;">No file uploaded</span>';
                 
                 if (buyer.national_id_url) {
@@ -120,16 +120,28 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        // Map the path to use the correct 'national-ids' bucket name
-                        let correctedPath = rawPath.startsWith('ids/') 
-                            ? rawPath.replace('ids/', 'national-ids/') 
-                            : rawPath;
+                        // Clean path string to extract just the file name / subpath inside the bucket
+                        let filePath = rawPath;
+                        if (filePath.startsWith('national-ids/')) {
+                            filePath = filePath.replace('national-ids/', '');
+                        } else if (filePath.startsWith('ids/')) {
+                            filePath = filePath.replace('ids/', '');
+                        }
 
-                        let fullIdUrl = correctedPath.startsWith('http') 
-                            ? correctedPath 
-                            : `${SUPABASE_URL}/storage/v1/object/public/${correctedPath}`;
-                        
-                        idDisplayHtml = `<a href="${fullIdUrl}" target="_blank" class="id-link">View ID File</a>`;
+                        // Generate a secure signed URL dynamically using the Supabase SDK (valid for 1 hour)
+                        try {
+                            const { data: signedData, error: signError } = await db.storage
+                                .from('national-ids')
+                                .createSignedUrl(filePath, 3600);
+
+                            if (!signError && signedData) {
+                                idDisplayHtml = `<a href="${signedData.signedUrl}" target="_blank" class="id-link">View ID File</a>`;
+                            } else {
+                                idDisplayHtml = `<span style="color: #e74c3c; font-size: 12px;">File missing / error</span>`;
+                            }
+                        } catch (err) {
+                            idDisplayHtml = `<span style="color: #e74c3c; font-size: 12px;">Could not load file</span>`;
+                        }
                     }
                 }
                 
@@ -153,7 +165,7 @@
                         </td>
                     </tr>
                 `;
-            });
+            }
 
             html += `</tbody></table>`;
             container.innerHTML = html;
