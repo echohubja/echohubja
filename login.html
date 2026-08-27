@@ -217,10 +217,10 @@
     </div>
 
     <script>
-        // Initialize Supabase Client with your credentials
+        // Initialize Supabase Client with unique instance name
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -241,7 +241,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
