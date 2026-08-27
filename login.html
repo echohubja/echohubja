@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Secure Sign In</title>
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: backgroundFade 0.8s ease-out;
+        }
+
+        @keyframes backgroundFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
+            overflow: hidden;
+            animation: containerSlideIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes containerSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 1.05em;
+            opacity: 0.95;
+            margin: 0;
+        }
+
+        .content {
+            padding: 35px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            color: #2c3e50;
+        }
+
+        input::placeholder {
+            color: #a0aec0;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1e5aa8;
+            background: #f8fbff;
+            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
+        }
+
+        .btn-submit:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error, .success {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #c0392b;
+            background: #fadbd8;
+            border-left: 4px solid #c0392b;
+        }
+
+        .success {
+            color: #27ae60;
+            background: #d5f4e6;
+            border-left: 4px solid #27ae60;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .back-link a:hover {
+            color: #1e5aa8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Echo Hub</h1>
+            <p>Secure Account Access</p>
+        </header>
+
+        <div class="content">
+            <div id="successAlert" class="success">
+                <strong>Check your email!</strong> We've sent a secure magic link to your inbox. Click it to log in instantly.
+            </div>
+
+            <div id="errorAlert" class="error">
+                <strong>Error:</strong> <span id="errorMessage">Failed to send login link. Please try again.</span>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="Enter your registered email">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-submit">Send Magic Link</button>
+            </form>
+
+            <div class="back-link">
+                <a href="portal.html">&larr; Back to Portal</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase Client with your credentials
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successAlert = document.getElementById('successAlert');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Reset UI states
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending Link...';
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+
+            const email = document.getElementById('email').value.trim();
+
+            try {
+                // Generate the redirect URL based on the current GitHub Pages environment
+                // This ensures after they click the link, they come back to the right place
+                const redirectUrl = window.location.href.replace('login.html', 'dashboard.html');
+
+                const { error } = await supabase.auth.signInWithOtp({
+                    email: email,
+                    options: {
+                        emailRedirectTo: redirectUrl
+                    }
+                });
+
+                if (error) throw error;
+
+                // Show success message
+                successAlert.style.display = 'block';
+                form.reset();
+
+            } catch (err) {
+                console.error('Login error:', err);
+                errorMessage.textContent = err.message || 'An unexpected error occurred.';
+                errorAlert.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Magic Link';
+            }
+        });
+    </script>
+</body>
+</html>
