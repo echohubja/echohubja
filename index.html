@@ -213,7 +213,7 @@
                 container.innerHTML = data.map(product => `
                     <div class="product-box">
                         <div>
-                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">` : ''}
+                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
                             <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
                             <h5 style="margin-top: 4px;">${product.name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
