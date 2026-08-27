@@ -16,18 +16,35 @@
         header {
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
         }
-        header h1 {
+        .header-left h1 {
             font-size: 2.5em;
             margin-bottom: 5px;
         }
-        header p {
+        .header-left p {
             font-size: 1.1em;
             opacity: 0.95;
             margin: 0;
+        }
+        .btn-portal {
+            background: white;
+            color: #1e5aa8;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 10, 0.1);
+            transition: all 0.2s ease;
+        }
+        .btn-portal:hover {
+            background: #f8fbff;
+            transform: translateY(-1px);
         }
         .layout { 
             max-width: 1400px; 
@@ -102,13 +119,19 @@
         .product-box button:hover { opacity: 0.9; }
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Echo Hub</h1>
-        <p>Marketplace Storefront</p>
+        <div class="header-left">
+            <h1>Echo Hub</h1>
+            <p>Marketplace Storefront</p>
+        </div>
+        <div>
+            <a href="portal.html" class="btn-portal">Sign In / Account Portal</a>
+        </div>
     </header>
 
     <div class="layout">
