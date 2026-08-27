@@ -116,26 +116,28 @@
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
-                // ID link resolution using the official Supabase Storage SDK method
+                // ID link resolution with visual path indicator for debugging
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
                 if (buyer.national_id_url) {
                     const rawVal = buyer.national_id_url.trim();
                     if (rawVal.startsWith('http')) {
-                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                        idCellContent = `
+                            <div><a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a></div>
+                            <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">${escapeHtml(rawVal)}</div>
+                        `;
                     } else if (rawVal.includes('/')) {
-                        // Clean up any leading bucket prefixes if duplicated
                         const cleanPath = rawVal.replace(/^national-ids\//, '');
-                        
-                        // Use Supabase SDK to generate the correct public URL natively
                         const { data: publicUrlData } = db.storage.from('national-ids').getPublicUrl(cleanPath);
                         
                         if (publicUrlData && publicUrlData.publicUrl) {
-                            idCellContent = `<a href="${publicUrlData.publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                            idCellContent = `
+                                <div><a href="${publicUrlData.publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a></div>
+                                <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">Path: ${escapeHtml(cleanPath)}</div>
+                            `;
                         } else {
-                            idCellContent = `<span class="text-gray-400 text-xs">Error loading link</span>`;
+                            idCellContent = `<span class="text-red-500 text-xs">URL Generation Error</span>`;
                         }
                     } else {
-                        // Fallback text for flags like 'legacy_import'
                         idCellContent = `<span class="text-gray-400 text-xs">${escapeHtml(rawVal)}</span>`;
                     }
                 }
