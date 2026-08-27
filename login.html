@@ -217,51 +217,50 @@
     </div>
 
     <script>
-        // Initialize Supabase Client with unique instance name
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        (function() {
+            const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+            const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const form = document.getElementById('loginForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const successAlert = document.getElementById('successAlert');
-        const errorAlert = document.getElementById('errorAlert');
-        const errorMessage = document.getElementById('errorMessage');
+            const form = document.getElementById('loginForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Reset UI states
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing In...';
-            successAlert.style.display = 'none';
-            errorAlert.style.display = 'none';
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Signing In...';
+                successAlert.style.display = 'none';
+                errorAlert.style.display = 'none';
 
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
 
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                try {
+                    const { data, error } = await sbClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                // Show success message and redirect to dashboard
-                successAlert.style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                    successAlert.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
 
-            } catch (err) {
-                console.error('Login error:', err);
-                errorMessage.textContent = err.message || 'An unexpected error occurred.';
-                errorAlert.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Sign In';
-            }
-        });
+                } catch (err) {
+                    console.error('Login error:', err);
+                    errorMessage.textContent = err.message || 'An unexpected error occurred.';
+                    errorAlert.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            });
+        })();
     </script>
 </body>
 </html>
