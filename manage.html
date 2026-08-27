@@ -505,7 +505,7 @@
 
             currentVendor = vendorData;
 
-            // 3. Populate Header / Profile Details & Real Vendor ID (e.g. India-Stronghold-00012)
+            // 3. Populate Header / Profile Details & Real Vendor ID
             welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
             profileEmail.textContent = vendorData.email || session.user.email;
             profileType.textContent = vendorData.vendor_type || 'STANDARD';
@@ -544,7 +544,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <img src="${prod.image_url || 'https://via.placeholder.com/42'}" class="product-img" alt="${prod.name || 'Product'}">
+                        <img src="${prod.image_url_1 || 'https://via.placeholder.com/42'}" class="product-img" alt="${prod.name || 'Product'}">
                     </td>
                     <td><strong>${prod.name || 'Untitled'}</strong></td>
                     <td>${prod.category || 'General'}</td>
@@ -569,16 +569,16 @@
             const name = document.getElementById('productName').value.trim();
             const category = document.getElementById('category').value;
             const price = parseFloat(document.getElementById('price').value);
-            const image_url = document.getElementById('primaryImage').value.trim();
-            const secondary_image_url = document.getElementById('secondaryImage').value.trim();
+            const image_url_1 = document.getElementById('primaryImage').value.trim();
+            const image_url_2 = document.getElementById('secondaryImage').value.trim();
 
             const newProduct = {
                 vendor_id: currentVendor.id,
                 name: name,
                 category: category,
                 price: price,
-                image_url: image_url,
-                secondary_image_url: secondary_image_url || null,
+                image_url_1: image_url_1,
+                image_url_2: image_url_2 || null,
                 created_at: new Date()
             };
 
