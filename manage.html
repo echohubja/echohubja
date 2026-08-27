@@ -1,161 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Product Manager</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
-            background-attachment: fixed !important;
-            min-height: 100vh;
-            color: #2c3e50; 
-        }
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
-            color: white !important;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 30px;
-        }
-        header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
-        header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
-        .hub-card {
-            background: #ffffff !important;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
-            color: #fff !important;
-            font-weight: 600;
-            transition: opacity 0.2s ease;
-        }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-edit-mode {
-            background: linear-gradient(135deg, #d97706 0%, #b45309) !important;
-            color: #fff !important;
-            font-weight: 600;
-            transition: opacity 0.2s ease;
-        }
-        .btn-edit-mode:hover { opacity: 0.9; }
-        .custom-input {
-            width: 100%;
-            border: 1px solid #cbd5e1;
-            padding: 10px;
-            border-radius: 6px;
-            background-color: #fff;
-            color: #2c3e50;
-            outline: none;
-        }
-        .custom-input:focus {
-            border-color: #1e5aa8;
-            box-shadow: 0 0 0 2px rgba(30, 90, 168, 0.15);
-        }
-    </style>
-</head>
-<body class="p-6">
+<script>
+        // Initialize Supabase safely after the window and CDN load
+        let db;
 
-    <header>
-        <h1>Echo Hub</h1>
-        <p>Vendor Product Management Portal</p>
-    </header>
-
-    <!-- Main Split Layout Container -->
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- Left Side: Active Inventory & Quick Edit Table (Cols 7) -->
-        <div class="lg:col-span-7 hub-card p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h2 class="text-xl font-bold text-[#1e5aa8]">Your Products Inventory</h2>
-                <span id="product-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 items</span>
-            </div>
-            
-            <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                            <th class="p-3">Image</th>
-                            <th class="p-3">Name</th>
-                            <th class="p-3">Category</th>
-                            <th class="p-3">Price</th>
-                            <th class="p-3 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventory-table-body" class="divide-y divide-gray-100 text-sm">
-                        <tr>
-                            <td colspan="5" class="p-4 text-center text-gray-500">Loading your inventory...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Right Side: Contextual Form (Cols 5) -->
-        <div class="lg:col-span-5 hub-card p-6">
-            <div id="form-header-banner" class="mb-6 pb-3 border-b flex justify-between items-center">
-                <h2 id="form-title" class="text-xl font-bold text-[#1e5aa8]">Create New Product Listing</h2>
-                <span id="mode-badge" class="text-xs bg-blue-100 text-[#1e5aa8] px-2.5 py-1 rounded font-semibold uppercase tracking-wide">Creating Mode</span>
-            </div>
-            
-            <form id="product-form" onsubmit="handleFormSubmit(event)">
-                <input type="hidden" id="product-id">
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Vendor ID</label>
-                    <input type="text" id="vendor-id" required placeholder="e.g. Roxroy-Brown-00001" class="custom-input">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Product Name</label>
-                    <input type="text" id="product-name" required placeholder="e.g. Wireless Earbuds" class="custom-input">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Category</label>
-                    <select id="product-category" required class="custom-input">
-                        <option value="">-- Select a category --</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Home and Kitchen">Home and Kitchen</option>
-                        <option value="Beauty and Personal Care">Beauty and Personal Care</option>
-                        <option value="Fitness and Outdoors">Fitness and Outdoors</option>
-                        <option value="Office and Productivity">Office and Productivity</option>
-                        <option value="Adult Novelties">Adult Novelties</option>
-                    </select>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Price ($)</label>
-                    <input type="number" step="0.01" id="product-price" required placeholder="29.99" class="custom-input">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Primary Image URL (.jpg, .png)</label>
-                    <input type="url" id="image-url-1" required placeholder="https://example.com/image1.jpg" class="custom-input">
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">Secondary Image URL (Optional)</label>
-                    <input type="url" id="image-url-2" placeholder="https://example.com/image2.jpg" class="custom-input">
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="submit" id="submit-btn" class="flex-1 btn-primary py-2.5 px-4 rounded transition">Publish Listing</button>
-                    <button type="button" id="cancel-btn" onclick="resetForm()" class="hidden bg-gray-200 text-gray-700 py-2.5 px-4 rounded hover:bg-gray-300 transition text-sm font-semibold">Cancel Edit</button>
-                </div>
-            </form>
-        </div>
-
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Ensure Supabase CDN is fully loaded
+            if (window.supabase) {
+                const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Now start the portal functions
+                initializePortal();
+            } else {
+                console.error("Supabase library failed to load.");
+                document.getElementById('inventory-table-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
+            }
+        });
 
         async function initializePortal() {
             const tableBody = document.getElementById('inventory-table-body');
@@ -296,8 +156,4 @@
         function escapeHtml(str) {
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
-
-        window.addEventListener('DOMContentLoaded', initializePortal);
     </script>
-</body>
-</html>
