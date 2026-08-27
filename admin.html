@@ -102,18 +102,18 @@
                 let statusBadge = '';
                 let actionButton = '';
 
-                // Map using your exact database column: ready_to_invite
-                const status = (buyer.ready_to_invite || '').toUpperCase();
+                // Normalize database value: trim spaces and convert to uppercase for safe comparison
+                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
 
-                if (status === 'READY' || status === 'APPROVED') {
+                if (rawStatus === 'READY' || rawStatus === 'READY TO INVITE' || rawStatus === 'APPROVED') {
                     statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Block Access</button>`;
-                } else if (status === 'BLOCKED') {
+                } else if (rawStatus === 'BLOCKED') {
                     statusBadge = '<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">BLOCKED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'READY')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
                 } else {
                     statusBadge = '<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'READY')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
                 return `
@@ -121,10 +121,10 @@
                         <td class="p-3">
                             <div class="font-medium text-gray-800">${escapeHtml(buyer.full_name || 'Unknown')}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(buyer.email)}</div>
-                            <div class="text-xs text-gray-400">${escapeHtml(buyer.phone || '')}</div>
+                            <div class="text-xs text-gray-400">${escapeHtml(buyer.whatsapp_number || buyer.phone || '')}</div>
                         </td>
                         <td class="p-3">
-                            ${buyer.national_id_url ? `<a href="${buyer.national_id_url}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>` : '<span class="text-gray-400 text-xs">No ID</span>'}
+                            ${buyer.national_id_url ? `<a href="${buyer.national_id_url.startsWith('http') ? buyer.national_id_url : '#'}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>` : '<span class="text-gray-400 text-xs">No ID</span>'}
                         </td>
                         <td class="p-3">${statusBadge}</td>
                         <td class="p-3 text-center">${actionButton}</td>
@@ -134,12 +134,11 @@
         }
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
-            const actionLabel = newStatus === 'READY' ? 'approve' : 'block';
+            const actionLabel = newStatus.includes('Ready') || newStatus === 'READY' ? 'approve' : 'block';
             if (!confirm(`Are you sure you want to ${actionLabel} access for ${buyerEmail}?`)) {
                 return;
             }
 
-            // Update the correct database field: ready_to_invite
             const { error } = await db.from('buyers')
                 .update({ ready_to_invite: newStatus })
                 .eq('id', buyerId);
@@ -149,10 +148,10 @@
                 return;
             }
 
-            if (newStatus === 'READY') {
-                console.log(`[Email Relay] Sending Welcome Back / Approval email to: ${buyerEmail}`);
+            if (newStatus.includes('Ready') || newStatus === 'READY') {
+                console.log(`[Email Relay] Sending Welcome / Approval email to: ${buyerEmail}`);
                 alert(`Buyer approved successfully! Welcome email triggered for ${buyerEmail}.`);
-            } else if (newStatus === 'BLOCKED') {
+            } else {
                 console.log(`[Email Relay] Sending Marketplace Suspension notice to: ${buyerEmail}`);
                 alert(`Buyer access blocked. Suspension notice triggered for ${buyerEmail}.`);
             }
