@@ -120,13 +120,11 @@
                     if (rawPath === 'legacy_import') {
                         idDisplayHtml = '<span style="color: #d97706; font-weight: 600;">Legacy Import</span>';
                     } else {
-                        let filePath = rawPath;
-                        if (filePath.startsWith('national-ids/')) {
-                            filePath = filePath.replace('national-ids/', '');
-                        } else if (filePath.startsWith('ids/')) {
-                            filePath = filePath.replace('ids/', '');
-                        }
+                        // Ensure any accidental 'national-ids/' prefix from earlier queries is cleaned up,
+                        // leaving the exact 'ids/filename.avif' path intact.
+                        let filePath = rawPath.replace('national-ids/', '');
 
+                        // Generate the correct public URL: bucket is 'national-ids', path includes the 'ids/' subfolder
                         const { data: publicUrlData } = db.storage
                             .from('national-ids')
                             .getPublicUrl(filePath);
