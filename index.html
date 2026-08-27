@@ -150,6 +150,7 @@
                 container.innerHTML = data.map(product => `
                     <div class="product-box">
                         <div>
+                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">` : ''}
                             <h5>${product.name}</h5>
                             <div class="cost">$${product.price}</div>
                         </div>
