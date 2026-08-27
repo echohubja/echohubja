@@ -192,7 +192,7 @@
             tableBody.innerHTML = data.map((product, index) => `
                 <tr class="hover:bg-blue-50/50 transition">
                     <td class="p-3">
-                        <img src="${product.image_url_1 || 'https://via.placeholder.com/40'}" alt="" class="w-10 h-10 object-cover rounded border bg-gray-100" onerror="this.src='https://via.placeholder.com/40'">
+                        <img src="${product.image_url_1 || ''}" alt="" class="w-10 h-10 object-cover rounded border bg-gray-100" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23cbd5e1\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>';">
                     </td>
                     <td class="p-3 font-medium text-gray-800">${escapeHtml(product.name)}</td>
                     <td class="p-3 text-gray-600">${escapeHtml(product.category || 'Uncategorized')}</td>
@@ -217,7 +217,6 @@
                 return;
             }
 
-            // Correctly parse ID as a number if it's numeric, keeping string compatibility for UUIDs
             const parsedId = isNaN(productId) ? productId : parseInt(productId, 10);
 
             console.log("Attempting to delete product ID:", parsedId);
