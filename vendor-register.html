@@ -90,6 +90,7 @@
 
         input[type="text"],
         input[type="email"],
+        textarea,
         select {
             width: 100%;
             padding: 12px 14px;
@@ -99,9 +100,10 @@
             background-color: var(--input-bg);
             color: var(--text-main);
             transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
 
-        input:focus {
+        input:focus, textarea:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
@@ -234,6 +236,11 @@
                     <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
                 </div>
 
+                <div class="form-group">
+                    <label for="businessDetails">Business Details / Store Link <span class="required">*</span></label>
+                    <textarea id="businessDetails" name="businessDetails" rows="3" required placeholder="Provide your store link or details about your products..."></textarea>
+                </div>
+
                 <button type="submit" id="submitBtn" class="btn-submit">REGISTER AS VENDOR</button>
             </form>
         </div>
@@ -263,8 +270,9 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
+            const businessDetails = document.getElementById('businessDetails').value.trim();
             
-            // Set status to APPROVED automatically if they are an UPFRONT vendor
+            // Automatic approval status for UPFRONT vendors
             const initialStatus = vendorType === 'UPFRONT' ? 'APPROVED' : 'PENDING';
 
             try {
@@ -292,7 +300,7 @@
                 const safeLastName = lastName.replace(/[^a-zA-Z0-9]/g, '');
                 const newVendorId = `${safeFirstName}-${safeLastName}-${formattedNumber}`;
 
-                // 3. Insert the complete record into your fully synced table using the dynamically set status
+                // 3. Insert the complete record into your 9-column table
                 const { data, error } = await supabase
                     .from('vendors')
                     .insert([
@@ -302,6 +310,7 @@
                             last_name: lastName,
                             email: email,
                             vendor_type: vendorType,
+                            business_details: businessDetails,
                             status: initialStatus
                         }
                     ]);
