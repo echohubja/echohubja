@@ -154,7 +154,7 @@
 
     <script>
         let db;
-        let productsCache = []; // Store products locally to avoid inline JSON parsing bugs
+        let productsCache = [];
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
@@ -186,7 +186,7 @@
                 return;
             }
 
-            productsCache = data; // Cache locally
+            productsCache = data;
             document.getElementById('product-count').textContent = `${data.length} item${data.length === 1 ? '' : 's'}`;
 
             tableBody.innerHTML = data.map((product, index) => `
@@ -217,8 +217,11 @@
                 return;
             }
 
-            console.log("Attempting to delete product ID:", productId);
-            const { data, error } = await db.from('products').delete().eq('id', productId);
+            // Correctly parse ID as a number if it's numeric, keeping string compatibility for UUIDs
+            const parsedId = isNaN(productId) ? productId : parseInt(productId, 10);
+
+            console.log("Attempting to delete product ID:", parsedId);
+            const { data, error } = await db.from('products').delete().eq('id', parsedId);
             console.log("Delete response - Error:", error, "Data:", data);
 
             if (error) {
@@ -226,7 +229,7 @@
             } else {
                 alert(`"${productName}" has been successfully deleted.`);
                 const currentEditingId = document.getElementById('product-id').value;
-                if (currentEditingId === productId) {
+                if (String(currentEditingId) === String(productId)) {
                     resetForm();
                 }
                 initializePortal();
@@ -286,9 +289,10 @@
             const image_url_2 = document.getElementById('image-url-2').value;
 
             if (productId && productId.trim() !== "") {
+                const parsedId = isNaN(productId) ? productId : parseInt(productId, 10);
                 const { error } = await db.from('products')
                     .update({ vendor_id, name, category, price, image_url_1, image_url_2 })
-                    .eq('id', productId);
+                    .eq('id', parsedId);
                 
                 if (error) {
                     alert('Error updating listing: ' + error.message);
