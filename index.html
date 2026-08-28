@@ -31,20 +31,6 @@
             opacity: 0.95;
             margin: 0;
         }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .buyer-pill {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            display: none;
-            align-items: center;
-        }
         .btn-portal {
             background: white;
             color: #1e5aa8;
@@ -143,12 +129,8 @@
             <h1>Echo Hub</h1>
             <p>Marketplace Storefront</p>
         </div>
-        <div class="header-right">
-            <div id="buyer-pill" class="buyer-pill">
-                Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
-                <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
-            </div>
-            <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
+        <div>
+            <a href="portal.html" class="btn-portal">Sign In / Account Portal</a>
         </div>
     </header>
 
@@ -157,6 +139,7 @@
             <div class="filter-group">
                 <h3>Catalog Sections</h3>
                 <div class="filter-links" id="category-filters">
+                    <!-- Dynamic categories will map here -->
                     <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
                 </div>
             </div>
@@ -173,43 +156,16 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function checkBuyerSession() {
-            const buyerPill = document.getElementById('buyer-pill');
-            const buyerNameSpan = document.getElementById('current-buyer-name');
-            const portalBtn = document.getElementById('portal-btn');
-
-            // Check Supabase Auth session first
-            const { data: { session } } = await db.auth.getSession();
-            
-            // Fallback check to common localStorage variations if Supabase session is null
-            const localEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
-
-            if (localEmail) {
-                buyerNameSpan.textContent = localEmail;
-                buyerPill.style.display = 'flex';
-                portalBtn.style.display = 'none';
-            } else {
-                buyerPill.style.display = 'none';
-                portalBtn.style.display = 'inline-block';
-            }
-        }
-
-        async function logoutBuyer() {
-            await db.auth.signOut();
-            localStorage.removeItem('echo_hub_buyer_email');
-            localStorage.removeItem('buyer_email');
-            localStorage.removeItem('user_email');
-            window.location.reload();
-        }
-
         async function loadCategories() {
             const { data, error } = await db.from('products').select('category');
             const filterContainer = document.getElementById('category-filters');
             
             if (error) {
+                console.error('Error loading categories:', error.message);
                 return;
             }
 
+            // Organize strings like "Adult Novelties > Adult Toys" into a hierarchy
             const taxonomy = {};
             if (data && data.length > 0) {
                 data.forEach(item => {
@@ -222,9 +178,10 @@
                             taxonomy[mainCat] = {};
                         }
                         
+                        // If there is a subcategory after the ">"
                         if (parts.length > 1) {
                             const subCat = parts[1];
-                            taxonomy[mainCat][subCat] = rawCat;
+                            taxonomy[mainCat][subCat] = rawCat; // Store exact database string
                         }
                     }
                 });
@@ -258,8 +215,10 @@
             
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
+                    // Fetch everything that starts with the Main Category name (e.g. "Adult Novelties%")
                     query = query.ilike('category', `${categoryQuery}%`);
                 } else {
+                    // Fetch the exact subcategory string (e.g. "Adult Novelties > Adult Toys")
                     query = query.eq('category', categoryQuery);
                 }
             }
@@ -268,6 +227,7 @@
             const container = document.getElementById('products-container');
             
             if (error) {
+                console.error('Error loading products:', error.message);
                 container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
                 return;
             }
@@ -296,7 +256,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
         });
