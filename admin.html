@@ -49,6 +49,7 @@
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
     </div>
 
+    <!-- TAB 1: BUYERS -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
             <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
@@ -72,6 +73,7 @@
         </div>
     </div>
 
+    <!-- TAB 2: INQUIRIES -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b pb-3 gap-3">
             <div>
@@ -89,6 +91,7 @@
         </div>
     </div>
 
+    <!-- TAB 3: COMMISSIONS -->
     <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
             <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
@@ -129,10 +132,23 @@
     </div>
 
     <!-- Floating Product Image Tooltip Box -->
-<div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
-    <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
-    <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
-</div>
+    <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
+        <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
+        <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
+    </div>
+
+    <!-- Full-Screen Image Lightbox Modal -->
+    <div id="image-lightbox-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center px-4 py-2.5 bg-gray-100 border-b">
+                <h3 id="lightbox-title" class="text-xs font-bold text-gray-800 truncate">Product Feedback Image</h3>
+                <button onclick="closeLightbox()" class="text-gray-500 hover:text-red-600 font-bold text-sm px-2 py-0.5 rounded transition">&times; Close</button>
+            </div>
+            <div class="p-2 flex items-center justify-center bg-black/5 overflow-auto">
+                <img id="lightbox-img" src="" alt="Full Size Feedback" class="max-w-full max-h-[75vh] object-contain rounded">
+            </div>
+        </div>
+    </div>
 
     <script>
         let db;
@@ -323,19 +339,37 @@
                 `;
 
                 for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
-                    const sampleProduct = inquiriesList[0]?.products;
+                    const sampleInquiry = inquiriesList[0];
+                    const sampleProduct = sampleInquiry?.products;
                     const prodImg = sampleProduct?.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
                     const prodName = escapeHtml(sampleProduct?.name || `Product ID: ${prodId}`);
+                    const feedbackImg = sampleInquiry?.feedback_image_url;
+
+                    let feedbackSection = '<span class="text-[10px] text-gray-400 italic">No feedback image</span>';
+                    if (feedbackImg) {
+                        feedbackSection = `
+                            <div class="flex items-center gap-1.5 cursor-pointer group" onclick="openLightbox('${feedbackImg}', 'Feedback for ${prodName}')">
+                                <img src="${feedbackImg}" alt="Feedback" class="w-7 h-7 object-cover rounded border border-blue-300 shadow-2xs group-hover:scale-105 transition">
+                                <span class="text-[11px] text-[#1e5aa8] font-semibold underline group-hover:text-blue-700">View Image</span>
+                            </div>
+                        `;
+                    }
 
                     html += `
                         <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-2.5">
-                            <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600 mb-2 pb-1 border-b border-gray-200">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center text-[11px] font-semibold text-gray-600 mb-2 pb-1.5 border-b border-gray-200 gap-2">
                                 <div class="flex items-center gap-2" onmouseenter="showProductPreview(event, '${prodImg}', '${prodName}')" onmouseleave="hideProductPreview()">
-                                    <img src="${prodImg}" alt="Product" class="w-6 h-6 object-cover rounded border border-gray-200 bg-white">
+                                    <img src="${prodImg}" alt="Product" class="w-6 h-6 object-cover rounded border border-gray-200 bg-white shrink-0">
                                     <span class="text-gray-800 font-bold truncate max-w-xs cursor-pointer underline decoration-dotted">${prodName}</span>
                                     <span class="text-[10px] text-gray-400 font-mono">(${escapeHtml(prodId)})</span>
                                 </div>
-                                <span class="text-gray-400">${inquiriesList.length} message(s)</span>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] text-gray-500 uppercase">Feedback:</span>
+                                        ${feedbackSection}
+                                    </div>
+                                    <span class="text-gray-400">${inquiriesList.length} message(s)</span>
+                                </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     `;
@@ -410,6 +444,31 @@
             const tooltip = document.getElementById('product-hover-tooltip');
             tooltip.classList.add('hidden');
         }
+
+        function openLightbox(imgUrl, titleText) {
+            const modal = document.getElementById('image-lightbox-modal');
+            const img = document.getElementById('lightbox-img');
+            const title = document.getElementById('lightbox-title');
+
+            if (!modal || !img) return;
+
+            img.src = imgUrl;
+            title.textContent = titleText || 'Product Feedback Image';
+            modal.classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('image-lightbox-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('image-lightbox-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'image-lightbox-modal') {
+                closeLightbox();
+            }
+        });
 
         async function verifyInquiry(inquiryId) {
             if (!confirm("Verify this inquiry and trigger the automated referral commission?")) return;
