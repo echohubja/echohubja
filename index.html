@@ -361,21 +361,20 @@
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                // Query all possible name variations from the buyers table
+                // Query updated to match valid columns (id, buyer_id, full_name, email)
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, buyer_id, name, full_name, username')
+                    .select('id, buyer_id, full_name, email')
                     .eq('email', currentActiveEmail)
                     .single();
 
-                // DEBUG LOG: Check your browser console (F12) to see what Supabase actually returned
                 console.log("Supabase Buyer Data Result:", buyerData, error);
 
                 if (buyerData) {
                     currentBuyerId = buyerData.id; 
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
                     
-                    const buyerName = buyerData.name || buyerData.full_name || buyerData.username;
+                    const buyerName = buyerData.full_name;
                     
                     buyerNameSpan.textContent = buyerName ? `${buyerName} (${currentActiveEmail})` : currentActiveEmail;
                 } else {
