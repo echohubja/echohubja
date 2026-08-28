@@ -16,13 +16,13 @@
         header {
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
             color: white !important;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
-        header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
-        header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
+        header h1 { font-size: 2em; margin-bottom: 3px; font-weight: 700; color: white !important; }
+        header p { font-size: 0.95em; opacity: 0.95; margin: 0; color: white !important; }
         .hub-card {
             background: #ffffff !important;
             border: 2px solid #e1e8ed;
@@ -36,33 +36,34 @@
         }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-6">
 
     <header>
         <h1>Echo Hub</h1>
         <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
-    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2">
-        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition">Buyer Access Requests</button>
-        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Inquiry & Feedback Verification</button>
-        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Referral Commissions & Payouts</button>
+    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
+        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
+        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
+        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
     </div>
 
-    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-6">
-        <div class="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 class="text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
-            <span id="buyer-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
+    <!-- TAB 1: BUYERS -->
+    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
+            <span id="buyer-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
         </div>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Buyer Details</th>
-                        <th class="p-3">ID Verification</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 text-center">Action Control</th>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Buyer Details</th>
+                        <th class="p-2.5">ID Verification</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action Control</th>
                     </tr>
                 </thead>
                 <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
@@ -72,21 +73,22 @@
         </div>
     </div>
 
-    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-6 hidden">
-        <div class="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 class="text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback Verification</h2>
-            <span id="inquiry-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
+    <!-- TAB 2: INQUIRIES (Compact & Cleaned Layout) -->
+    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
+            <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
         </div>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Buyer Name</th>
-                        <th class="p-3">Product ID / Vendor ID</th>
-                        <th class="p-3">Inquiry Message</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 text-center">Action Control</th>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Buyer</th>
+                        <th class="p-2.5">Product & Vendor</th>
+                        <th class="p-2.5">Message Content</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody id="inquiries-table-body" class="divide-y divide-gray-100 text-sm">
@@ -96,37 +98,37 @@
         </div>
     </div>
 
-    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-6 hidden">
-        <div class="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 class="text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payout Management</h2>
-            <span id="commission-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+    <!-- TAB 3: COMMISSIONS -->
+    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
+            <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="text-xs text-blue-600 font-semibold uppercase">Total Paid Out</div>
-                <div id="metric-total-paid" class="text-2xl font-bold text-gray-800 mt-1">$0.00 USD</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Paid Out</div>
+                <div id="metric-total-paid" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
             </div>
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <div class="text-xs text-amber-600 font-semibold uppercase">Total Payable Balance</div>
-                <div id="metric-total-payable" class="text-2xl font-bold text-gray-800 mt-1">$0.00 USD</div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div class="text-[11px] text-amber-600 font-semibold uppercase">Total Payable Balance</div>
+                <div id="metric-total-payable" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
             </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div class="text-xs text-gray-600 font-semibold uppercase">Total Processed Records</div>
-                <div id="metric-total-records" class="text-2xl font-bold text-gray-800 mt-1">0</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div class="text-[11px] text-gray-600 font-semibold uppercase">Total Processed Records</div>
+                <div id="metric-total-records" class="text-xl font-bold text-gray-800 mt-0.5">0</div>
             </div>
         </div>
 
-        <h3 class="text-md font-bold text-gray-700 mb-3">Individual Payout Ledger</h3>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Referrer ID</th>
-                        <th class="p-3">Referral Target (Buyer/Vendor)</th>
-                        <th class="p-3">Split Amount (20%)</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 text-center">Action Control</th>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Referrer ID</th>
+                        <th class="p-2.5">Referral Target</th>
+                        <th class="p-2.5">Split Amount (20%)</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
@@ -163,7 +165,7 @@
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
         }
 
-        // --- TAB 1: BUYERS LOGIC ---
+        // --- TAB 1: BUYERS ---
         async function loadBuyersPortal() {
             const tableBody = document.getElementById('buyers-table-body');
             if (!tableBody) return;
@@ -187,21 +189,21 @@
                 let actionButton = '';
 
                 if (rawStatus === 'READY' || rawStatus === 'APPROVED') {
-                    statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Block</button>`;
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">APPROVED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Block</button>`;
                 } else if (rawStatus === 'BLOCKED') {
-                    statusBadge = '<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">BLOCKED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">BLOCKED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Approve</button>`;
                 } else {
-                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-100 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-50 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
                 }
 
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
                 if (buyer.national_id_url) {
                     const rawVal = buyer.national_id_url.trim();
                     if (rawVal.startsWith('http')) {
-                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
+                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View File</a>`;
                     } else {
                         idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
                     }
@@ -209,13 +211,13 @@
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-3">
-                            <div class="font-medium text-gray-800">${escapeHtml(buyer.full_name || 'Unknown')}</div>
-                            <div class="text-xs text-gray-500">${escapeHtml(buyer.email)}</div>
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(buyer.email)}</div>
                         </td>
-                        <td class="p-3">${idCellContent}</td>
-                        <td class="p-3">${statusBadge}</td>
-                        <td class="p-3 text-center">${actionButton}</td>
+                        <td class="p-2.5">${idCellContent}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center">${actionButton}</td>
                     </tr>
                 `;
             }).join('');
@@ -228,12 +230,11 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC (Fixed Explicit Relational Join) ---
+        // --- TAB 2: INQUIRIES (Compact Padding & Truncated Message Preview) ---
         async function loadInquiriesPortal() {
             const tableBody = document.getElementById('inquiries-table-body');
             if (!tableBody) return;
 
-            // Explicitly map foreign key relationship using alias syntax
             const { data, error } = await db
                 .from('inquiries')
                 .select('*, buyers:buyer_id(full_name, email)')
@@ -253,31 +254,32 @@
 
             tableBody.innerHTML = data.map(inq => {
                 const status = (inq.status || 'pending_verification').toLowerCase();
-                let badge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>`;
-                let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-3 py-1 rounded text-xs font-semibold transition">Verify & Trigger Commission</button>`;
+                let badge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
+                let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-2.5 py-1 rounded text-xs font-semibold transition">Verify</button>`;
 
                 if (status === 'verified') {
-                    badge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">VERIFIED</span>`;
-                    actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">VERIFIED</span>`;
+                    actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Done</span>`;
                 }
 
-                // Extract buyer name via explicit relational alias
                 const buyerName = inq.buyers?.full_name || 'Unknown Buyer';
                 const buyerEmail = inq.buyers?.email || '';
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-3">
-                            <div class="font-medium text-gray-800">${escapeHtml(buyerName)}</div>
-                            <div class="text-[11px] text-gray-400 font-mono">${escapeHtml(buyerEmail)}</div>
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyerName)}</div>
+                            <div class="text-[10px] text-gray-400">${escapeHtml(buyerEmail)}</div>
                         </td>
-                        <td class="p-3 text-xs text-gray-600">
-                            <div>Prod: <span class="font-mono">${escapeHtml(inq.product_id)}</span></div>
-                            <div class="text-[11px] text-gray-400">Vendor: <span class="font-mono">${escapeHtml(inq.vendor_id)}</span></div>
+                        <td class="p-2.5 text-[11px] text-gray-600">
+                            <div>P: <span class="font-mono">${escapeHtml(inq.product_id)}</span></div>
+                            <div class="text-[10px] text-gray-400">V: <span class="font-mono">${escapeHtml(inq.vendor_id)}</span></div>
                         </td>
-                        <td class="p-3 text-xs text-gray-700 max-w-xs truncate" title="${escapeHtml(inq.message)}">${escapeHtml(inq.message || 'No message provided')}</td>
-                        <td class="p-3">${badge}</td>
-                        <td class="p-3 text-center">${actionBtn}</td>
+                        <td class="p-2.5 text-xs text-gray-700 max-w-xs truncate" title="${escapeHtml(inq.message)}">
+                            ${escapeHtml(inq.message || 'No message')}
+                        </td>
+                        <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-center">${actionBtn}</td>
                     </tr>
                 `;
             }).join('');
@@ -292,7 +294,7 @@
             loadCommissionsPortal();
         }
 
-        // --- TAB 3: COMMISSIONS & PAYOUTS LOGIC ---
+        // --- TAB 3: COMMISSIONS ---
         async function loadCommissionsPortal() {
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
@@ -330,26 +332,26 @@
 
             tableBody.innerHTML = data.map(comm => {
                 const status = (comm.status || 'payable').toLowerCase();
-                let badge = `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">PAYABLE</span>`;
-                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-3 py-1 rounded text-xs font-semibold transition">Mark as Paid</button>`;
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
+                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
 
                 if (status === 'paid') {
-                    badge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">PAID</span>`;
-                    actionBtn = `<span class="text-xs text-gray-400 font-medium">Disbursed</span>`;
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`;
+                    actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
                 }
 
                 let targetDisplay = comm.referred_id;
                 if (comm.referred_role) {
-                    targetDisplay += ` <span class="text-xs text-gray-400">(${comm.referred_role})</span>`;
+                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
                 }
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
-                        <td class="p-3 text-xs font-mono text-gray-600">${targetDisplay}</td>
-                        <td class="p-3 font-bold text-gray-800">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
-                        <td class="p-3">${badge}</td>
-                        <td class="p-3 text-center">${actionBtn}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
+                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-center">${actionBtn}</td>
                     </tr>
                 `;
             }).join('');
