@@ -31,6 +31,11 @@
             opacity: 0.95;
             margin: 0;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .btn-portal {
             background: white;
             color: #1e5aa8;
@@ -120,6 +125,7 @@
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
+            .header-right { flex-direction: column; width: 100%; }
         }
     </style>
 </head>
@@ -129,8 +135,8 @@
             <h1>Echo Hub</h1>
             <p>Marketplace Storefront</p>
         </div>
-        <div>
-            <a href="portal.html" class="btn-portal">Sign In / Account Portal</a>
+        <div class="header-right">
+            <span id="auth-status-nav"><a href="portal.html" class="btn-portal">Sign In / Account Portal</a></span>
         </div>
     </header>
 
@@ -144,7 +150,36 @@
                 </div>
             </div>
         </aside>
+        
         <main class="content-area">
+            <!-- Referral & Stats Widget (Dynamically shown for logged-in users) -->
+            <div id="referral-dashboard-section" style="display:none; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); border: 2px solid #e1e8ed;">
+                <h3 style="color: #1e5aa8; margin-bottom: 15px; font-size: 18px;">🤝 Your Referral Hub & Stats</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: 600; color: #2c3e50; display: block; margin-bottom: 5px; font-size: 14px;">Your Unique Referral Link:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="user-ref-link" readonly style="flex: 1; padding: 10px 14px; border: 2px solid #e1e8ed; border-radius: 8px; background: #f8fbff; font-size: 14px; color: #2c3e50;">
+                        <button onclick="copyRefLink()" style="background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Copy Link</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
+                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Total Referrals</span>
+                        <span id="stat-total-ref" style="font-size: 22px; font-weight: 700; color: #1e5aa8; margin-top: 5px; display: block;">0</span>
+                    </div>
+                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
+                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Pending Commissions</span>
+                        <span id="stat-pending-comm" style="font-size: 22px; font-weight: 700; color: #d69e2e; margin-top: 5px; display: block;">$0.00</span>
+                    </div>
+                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
+                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Payable / Paid</span>
+                        <span id="stat-paid-comm" style="font-size: 22px; font-weight: 700; color: #38a169; margin-top: 5px; display: block;">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="products-grid" id="products-container">
                 <!-- Dynamic products load here -->
             </div>
@@ -156,6 +191,17 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Check active session on load and load referral dashboard if authenticated
+        window.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (session && session.user) {
+                document.getElementById('auth-status-nav').innerHTML = `<a href="#" class="btn-portal" onclick="logoutUser()">Sign Out</a>`;
+                loadBuyerReferralStats(session.user);
+            }
+            await loadCategories();
+            await loadProducts('All');
+        });
+
         async function loadCategories() {
             const { data, error } = await db.from('products').select('category');
             const filterContainer = document.getElementById('category-filters');
@@ -165,7 +211,6 @@
                 return;
             }
 
-            // Organize strings like "Adult Novelties > Adult Toys" into a hierarchy
             const taxonomy = {};
             if (data && data.length > 0) {
                 data.forEach(item => {
@@ -178,10 +223,9 @@
                             taxonomy[mainCat] = {};
                         }
                         
-                        // If there is a subcategory after the ">"
                         if (parts.length > 1) {
                             const subCat = parts[1];
-                            taxonomy[mainCat][subCat] = rawCat; // Store exact database string
+                            taxonomy[mainCat][subCat] = rawCat;
                         }
                     }
                 });
@@ -215,10 +259,8 @@
             
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
-                    // Fetch everything that starts with the Main Category name (e.g. "Adult Novelties%")
                     query = query.ilike('category', `${categoryQuery}%`);
                 } else {
-                    // Fetch the exact subcategory string (e.g. "Adult Novelties > Adult Toys")
                     query = query.eq('category', categoryQuery);
                 }
             }
@@ -228,7 +270,7 @@
             
             if (error) {
                 console.error('Error loading products:', error.message);
-                container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
+                container.innerHTML = '<p style="color: #e74c3c; grid-column: 1 / -1;">Failed to load products.</p>';
                 return;
             }
 
@@ -255,10 +297,65 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            await loadCategories();
-            await loadProducts('All');
-        });
+        async function loadBuyerReferralStats(user) {
+            const { data: profile, error: profileErr } = await db
+                .from('user_profiles')
+                .select('referral_code')
+                .eq('id', user.id)
+                .single();
+
+            if (profileErr || !profile || !profile.referral_code) return;
+
+            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const refLink = `${baseURL}register.html?ref=${profile.referral_code}`;
+            document.getElementById('user-ref-link').value = refLink;
+            document.getElementById('referral-dashboard-section').style.display = 'block';
+
+            const { count: refCount } = await db
+                .from('referrals')
+                .select('*', { count: 'exact', head: true })
+                .eq('referrer_id', user.id);
+
+            document.getElementById('stat-total-ref').textContent = refCount || 0;
+
+            const { data: commissions } = await db
+                .from('commissions')
+                .select('split_amount, status')
+                .eq('referrer_id', user.id);
+
+            let pendingTotal = 0;
+            let unlockedTotal = 0;
+
+            if (commissions) {
+                commissions.forEach(c => {
+                    const amount = Number(c.split_amount) || 0;
+                    if (c.status === 'pending') {
+                        pendingTotal += amount;
+                    } else if (c.status === 'payable' || c.status === 'paid') {
+                        unlockedTotal += amount;
+                    }
+                });
+            }
+
+            document.getElementById('stat-pending-comm').textContent = `$${pendingTotal.toFixed(2)}`;
+            document.getElementById('stat-paid-comm').textContent = `$${unlockedTotal.toFixed(2)}`;
+        }
+
+        function copyRefLink() {
+            const linkInput = document.getElementById('user-ref-link');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                alert('Referral link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        async function logoutUser() {
+            await db.auth.signOut();
+            window.location.reload();
+        }
     </script>
 </body>
 </html>
