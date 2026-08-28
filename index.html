@@ -132,7 +132,6 @@
         }
         .product-box button:hover { opacity: 0.9; }
 
-        /* Drawer styling with structured width constraints */
         .drawer-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: none; z-index: 1100;
@@ -157,7 +156,6 @@
         }
         .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
 
-        /* Hover Tooltip Preview Styling (Fixed positioning downwards) */
         .product-hover-container {
             position: relative;
             display: inline-block;
@@ -239,8 +237,7 @@
             </div>
         </aside>
         <main class="content-area">
-            <div class="products-grid" id="products-container">
-                </div>
+            <div class="products-grid" id="products-container"></div>
         </main>
     </div>
 
@@ -352,6 +349,14 @@
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
+
+        function captureReferralCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refParam = urlParams.get('ref');
+            if (refParam) {
+                localStorage.setItem('echo_hub_referrer', refParam);
+            }
+        }
 
         async function checkBuyerSession() {
             const buyerPill = document.getElementById('buyer-pill');
@@ -655,7 +660,6 @@
                         vendorGroups[vKey].push(item);
                     });
 
-                    // Product Name with Hover Tooltip Image Preview
                     const productTitleHtml = group.productImage ? `
                         <div class="product-hover-container" style="display: inline-block;">
                             <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700; cursor: help; text-decoration: underline dotted;">${group.productName} 🖼️</h4>
@@ -687,10 +691,11 @@
                                 </div>
 
                                 <div style="background: #f0f4f8; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                    <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Upload Post-Receipt Feedback Image for this Product</label>
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Submit Post-Receipt Feedback & Amazon Link</label>
+                                    <input type="text" id="product-feedback-link-${pKey}" placeholder="Paste Amazon.com review/feedback link here..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; background: #fff;">
                                     <div style="display: flex; gap: 8px; align-items: center;">
                                         <input type="file" id="product-feedback-file-${pKey}" accept="image/*" style="font-size: 12px; flex: 1; padding: 6px; background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;">
-                                        <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Upload Image</button>
+                                        <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
                                     </div>
                                 </div>
 
@@ -736,7 +741,7 @@
                                         <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
 
-                                    <p style="font-size: 13px; color: #2d3748; margin: 0;">${item.message}</p>
+                                    <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
                                     
                                     ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
                                     
@@ -814,64 +819,75 @@
 
         async function uploadProductFeedbackImage(productId, pKey) {
             const fileInput = document.getElementById(`product-feedback-file-${pKey}`);
-            if (!fileInput.files || !fileInput.files[0]) {
-                alert('Please select an image file to upload as product feedback.');
+            const linkInput = document.getElementById(`product-feedback-link-${pKey}`);
+            const amazonLink = linkInput ? linkInput.value.trim() : '';
+
+            const hasFile = fileInput.files && fileInput.files[0];
+            if (!hasFile && !amazonLink) {
+                alert('Please provide either an Amazon feedback link or upload an image.');
                 return;
             }
 
-            const file = fileInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-            const filePath = `feedback/${fileName}`;
+            let imageUrl = null;
 
-            const { error: uploadError } = await db.storage
-                .from('product-images')
-                .upload(filePath, file);
+            if (hasFile) {
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+                const filePath = `feedback/${fileName}`;
 
-            if (uploadError) {
-                console.error('Error uploading feedback image:', uploadError.message);
-                alert('Failed to upload feedback image.');
-                return;
+                const { error: uploadError } = await db.storage
+                    .from('product-images')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('Error uploading feedback image:', uploadError.message);
+                    alert('Failed to upload feedback image.');
+                    return;
+                }
+
+                const { data: publicUrlData } = db.storage
+                    .from('product-images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrlData.publicUrl;
             }
 
-            const { data: publicUrlData } = db.storage
-                .from('product-images')
-                .getPublicUrl(filePath);
-
-            const imageUrl = publicUrlData.publicUrl;
-
-            // Check if an existing feedback record already exists for this product and buyer
             const { data: existingFeedback, error: fetchErr } = await db
                 .from('inquiries')
-                .select('id')
+                .select('id, image_url, message')
                 .eq('buyer_id', currentBuyerId)
                 .eq('product_id', productId)
-                .ilike('message', '%[Post-Receipt Product Feedback Image Attachment]%')
+                .ilike('message', '%[Post-Receipt Product Feedback%')
                 .maybeSingle();
 
             if (fetchErr) {
                 console.error('Error checking existing feedback:', fetchErr.message);
             }
 
+            const feedbackMessage = `[Post-Receipt Product Feedback]\nAmazon Link: ${amazonLink || 'None provided'}`;
             let dbError = null;
 
             if (existingFeedback && existingFeedback.id) {
-                // Update existing record to maintain 1-to-1 constraint per product
+                const updatePayload = {
+                    message: feedbackMessage,
+                    created_at: new Date().toISOString()
+                };
+                if (imageUrl) {
+                    updatePayload.image_url = imageUrl;
+                }
+
                 const { error: updateErr } = await db
                     .from('inquiries')
-                    .update({ 
-                        image_url: imageUrl,
-                        created_at: new Date().toISOString() 
-                    })
+                    .update(updatePayload)
                     .eq('id', existingFeedback.id);
                 dbError = updateErr;
             } else {
-                // Insert new feedback record if none exists yet
                 const { error: insertErr } = await db.from('inquiries').insert([
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
-                        message: '[Post-Receipt Product Feedback Image Attachment]',
+                        message: feedbackMessage,
                         image_url: imageUrl
                     }
                 ]);
@@ -879,12 +895,12 @@
             }
 
             if (dbError) {
-                console.error('Error saving feedback image record:', dbError.message);
-                alert('Failed to save feedback image record.');
+                console.error('Error saving feedback record:', dbError.message);
+                alert('Failed to save feedback record.');
                 return;
             }
 
-            alert('Feedback image successfully uploaded and updated for this product!');
+            alert('Product feedback (link & image) successfully submitted!');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
 
@@ -968,11 +984,12 @@
             const input = document.getElementById('referral-link-input');
             input.select();
             input.setSelectionRange(0, 99999);
-            navigator.clipboard.toClipboard ? navigator.clipboard.writeText(input.value) : navigator.clipboard.writeText(input.value);
+            navigator.clipboard.writeText(input.value);
             alert('Referral link copied to clipboard!');
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
+            captureReferralCode();
             await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
