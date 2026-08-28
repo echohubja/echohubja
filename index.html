@@ -136,7 +136,7 @@
             <p>Marketplace Storefront</p>
         </div>
         <div class="header-right">
-            <span id="auth-status-nav"><a href="portal.html" class="btn-portal">Sign In / Account Portal</a></span>
+            <span id="auth-status-nav"><a href="login.html" class="btn-portal">Sign In / Account Portal</a></span>
         </div>
     </header>
 
@@ -152,7 +152,7 @@
         </aside>
         
         <main class="content-area">
-            <!-- Referral & Stats Widget (Dynamically shown for logged-in users) -->
+            <!-- Referral & Stats Widget (Dynamically shown for logged-in buyers) -->
             <div id="referral-dashboard-section" style="display:none; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); border: 2px solid #e1e8ed;">
                 <h3 style="color: #1e5aa8; margin-bottom: 15px; font-size: 18px;">🤝 Your Referral Hub & Stats</h3>
                 
@@ -191,7 +191,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Check active session on load and load referral dashboard if authenticated
+        // Check active session on load and load referral dashboard if authenticated buyer
         window.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await db.auth.getSession();
             if (session && session.user) {
@@ -302,7 +302,7 @@
                 .from('user_profiles')
                 .select('referral_code')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
             if (profileErr || !profile || !profile.referral_code) return;
 
