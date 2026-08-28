@@ -71,8 +71,8 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let capturedRefCode = null;
@@ -126,19 +126,9 @@
                 return;
             }
 
-            // 2. Generate a referral code for this new user profile
-            const userGeneratedCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            // 2. Database trigger automatically creates user_profiles row on auth signup
 
-            // 3. Create user profile row
-            const { error: profileErr } = await db
-                .from('user_profiles')
-                .insert([{ id: user.id, email: user.email, referral_code: userGeneratedCode }]);
-
-            if (profileErr) {
-                console.warn('Could not auto-create user profile row immediately:', profileErr.message);
-            }
-
-            // 4. Handle Referral Tracking attribution if a valid ?ref=CODE parameter was captured
+            // 3. Handle Referral Tracking attribution if a valid ?ref=CODE parameter was captured
             if (capturedRefCode) {
                 console.log("Processing referral linkage for referrer code:", capturedRefCode);
 
