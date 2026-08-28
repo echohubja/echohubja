@@ -314,7 +314,7 @@
                 console.warn("Profile missing or error encountered. Attempting to generate a fallback referral code...");
                 const generatedCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
                 
-                const { data: newProfile,.error: createErr } = await db
+                const { data: newProfile, error: createErr } = await db
                     .from('user_profiles')
                     .insert([{ id: user.id, referral_code: generatedCode, email: user.email }])
                     .select('referral_code')
