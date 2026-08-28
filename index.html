@@ -300,7 +300,7 @@
         async function loadBuyerReferralStats(user) {
             console.log("Loading referral stats for user:", user.id);
 
-            // 1. Fetch user profile safely using .limit(1).maybeSingle() to prevent multiple row issues or failures
+            // 1. Fetch user profile safely using maybeSingle()
             let { data: profile, error: profileErr } = await db
                 .from('user_profiles')
                 .select('referral_code')
@@ -314,11 +314,14 @@
                 console.warn("Profile missing or error encountered. Attempting to generate a fallback referral code...");
                 const generatedCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
                 
-                const { data: newProfile, error: createErr } = await db
+                const insertResult = await db
                     .from('user_profiles')
                     .insert([{ id: user.id, referral_code: generatedCode, email: user.email }])
                     .select('referral_code')
                     .single();
+
+                const newProfile = insertResult.data;
+                const createErr = insertResult.error;
 
                 if (!createErr && newProfile) {
                     profile = newProfile;
