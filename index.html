@@ -221,7 +221,8 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentBuyerId = '';
+        let currentBuyerId = ''; // Will hold the UUID for database foreign key relation
+        let currentBuyerStringId = ''; // Will hold the 'BUYER-XXXXX' string for UI display
         let currentActiveEmail = '';
 
         async function checkBuyerSession() {
@@ -237,22 +238,25 @@
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                // Query the 'buyers' table checking the 'buyer_id' format column
+                // Fetch both the UUID `id` (for foreign key relation) and `buyer_id` (for UI display)
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('buyer_id')
+                    .select('id, buyer_id')
                     .eq('email', currentActiveEmail)
                     .single();
 
-                if (buyerData && buyerData.buyer_id) {
-                    currentBuyerId = buyerData.buyer_id;
+                if (buyerData) {
+                    currentBuyerId = buyerData.id; 
+                    currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
                 } else {
-                    currentBuyerId = 'BUYER-00000';
+                    currentBuyerId = '';
+                    currentBuyerStringId = 'BUYER-00000';
                 }
             } else {
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
                 currentBuyerId = '';
+                currentBuyerStringId = '';
             }
         }
 
@@ -369,8 +373,8 @@
             document.getElementById('modal-vendor-id').value = vendorId;
             document.getElementById('modal-product-title').textContent = productName;
             
-            // Populate visible routing identifiers with the exact BUYER-xxxxx ID and Vendor ID
-            document.getElementById('modal-buyer-id-display').textContent = currentBuyerId;
+            // Display the user-facing 'BUYER-XXXXX' string in the modal interface
+            document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
@@ -391,11 +395,12 @@
                 return;
             }
 
+            // Passes the buyer's UUID `id` to satisfy foreign key relations on the inquiries table
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
-                    buyer_id: currentBuyerId,
+                    buyer_id: currentBuyerId, 
                     message: message
                 }
             ]);
