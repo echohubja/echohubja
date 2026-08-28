@@ -49,7 +49,6 @@
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
     </div>
 
-    <!-- TAB 1: BUYERS -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
             <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
@@ -73,7 +72,6 @@
         </div>
     </div>
 
-    <!-- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree) -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b pb-3 gap-3">
             <div>
@@ -81,7 +79,7 @@
                 <p class="text-xs text-gray-500">Hierarchical master-detail view organized by buyer and product.</p>
             </div>
             <div class="flex items-center gap-2 w-full md:w-auto">
-                <input type="text" id="inquiry-search" oninput="filterInquiriesTree()" placeholder="Search buyer or product ID..." class="text-xs border border-gray-300 rounded px-3 py-1.5 w-full md:w-64 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                <input type="text" id="inquiry-search" oninput="filterInquiriesTree()" placeholder="Search buyer or product..." class="text-xs border border-gray-300 rounded px-3 py-1.5 w-full md:w-64 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
                 <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">0 inquiries</span>
             </div>
         </div>
@@ -91,7 +89,6 @@
         </div>
     </div>
 
-    <!-- TAB 3: COMMISSIONS -->
     <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
             <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
@@ -131,9 +128,14 @@
         </div>
     </div>
 
+    <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
+        <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-cover rounded mb-1.5 bg-gray-100">
+        <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
+    </div>
+
     <script>
         let db;
-        let globalInquiriesData = []; // Cached for fast client-side searching/filtering
+        let globalInquiriesData = []; 
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -224,14 +226,14 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree)[cite: 1] ---
+        // --- TAB 2: INQUIRIES ---
         async function loadInquiriesPortal() {
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
             const { data, error } = await db
                 .from('inquiries')
-                .select('*, buyers:buyer_id(full_name, email)')
+                .select('*, buyers:buyer_id(full_name, email), products:product_id(image_url_1, name)')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -258,9 +260,10 @@
             const filtered = globalInquiriesData.filter(inq => {
                 const buyerName = (inq.buyers?.full_name || '').toLowerCase();
                 const buyerEmail = (inq.buyers?.email || '').toLowerCase();
+                const prodName = (inq.products?.name || '').toLowerCase();
                 const prodId = String(inq.product_id || '').toLowerCase();
                 const msg = (inq.message || '').toLowerCase();
-                return buyerName.includes(query) || buyerEmail.includes(query) || prodId.includes(query) || msg.includes(query);
+                return buyerName.includes(query) || buyerEmail.includes(query) || prodName.includes(query) || prodId.includes(query) || msg.includes(query);
             });
 
             renderInquiriesTree(filtered);
@@ -277,7 +280,6 @@
                 return;
             }
 
-            // Group inquiries by Buyer ID, then by Product ID
             const grouped = {};
             data.forEach(inq => {
                 const buyerId = inq.buyer_id || 'unknown';
@@ -296,17 +298,13 @@
             });
 
             let html = '';
-            let buyerIndex = 0;
-
             for (const [buyerId, buyerData] of Object.entries(grouped)) {
-                buyerIndex++;
                 const totalBuyerInquiries = Object.values(buyerData.products).reduce((acc, list) => acc + list.length, 0);
                 const buyerAccordionId = `buyer-accordion-${buyerId}`;
                 const buyerIconId = `buyer-icon-${buyerId}`;
 
                 html += `
                     <div class="bg-white border border-gray-200 rounded-lg shadow-2xs overflow-hidden transition">
-                        <!-- LEVEL 1: Master Buyer Header (Accordion Toggle) -->
                         <div onclick="toggleAccordion('${buyerAccordionId}', '${buyerIconId}')" class="flex justify-between items-center p-3.5 bg-gray-50 hover:bg-gray-100/70 cursor-pointer select-none border-b border-gray-100">
                             <div class="flex items-center gap-3">
                                 <span id="${buyerIconId}" class="text-xs font-bold text-gray-400 transform transition-transform duration-200">&#9658;</span>
@@ -320,16 +318,22 @@
                             </div>
                         </div>
 
-                        <!-- LEVEL 1 Body: Products Container (Collapsed by default for scalability) -->
                         <div id="${buyerAccordionId}" class="hidden p-3 space-y-3 bg-white">
                 `;
 
                 for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
+                    const sampleProduct = inquiriesList[0]?.products;
+                    const prodImg = sampleProduct?.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
+                    const prodName = escapeHtml(sampleProduct?.name || `Product ID: ${prodId}`);
+
                     html += `
-                        <!-- LEVEL 2: Sub-group Product Card -->
                         <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-2.5">
                             <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600 mb-2 pb-1 border-b border-gray-200">
-                                <span class="bg-blue-50 text-[#1e5aa8] px-1.5 py-0.5 rounded font-mono">Product ID: ${escapeHtml(prodId)}</span>
+                                <div class="flex items-center gap-2" onmouseenter="showProductPreview(event, '${prodImg}', '${prodName}')" onmouseleave="hideProductPreview()">
+                                    <img src="${prodImg}" alt="Product" class="w-6 h-6 object-cover rounded border border-gray-200 bg-white">
+                                    <span class="text-gray-800 font-bold truncate max-w-xs cursor-pointer underline decoration-dotted">${prodName}</span>
+                                    <span class="text-[10px] text-gray-400 font-mono">(${escapeHtml(prodId)})</span>
+                                </div>
                                 <span class="text-gray-400">${inquiriesList.length} message(s)</span>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -350,12 +354,12 @@
                         const isLong = fullMsg.length > 80;
 
                         html += `
-                            <!-- LEVEL 3: Individual Message Detail Card -->
                             <div class="bg-white border border-gray-200 rounded p-2 text-xs flex items-center justify-between gap-3 shadow-2xs">
                                 <div class="flex-1 min-w-0">
+                                    <div class="text-[9px] text-gray-400 mb-0.5">Vendor: <span class="font-mono text-gray-600">${escapeHtml(inq.vendor_id)}</span></div>
                                     <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-1' : ''} text-gray-700 text-xs">${fullMsg}</div>
                                     ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-1'); this.textContent = this.textContent === 'More' ? 'Less' : 'More';" class="text-[9px] text-[#1e5aa8] font-semibold mt-0.5 hover:underline inline-block">More</button>` : ''}
-                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">V: ${escapeHtml(inq.vendor_id)} • ${new Date(inq.created_at).toLocaleDateString()}</div>
+                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
                                 </div>
                                 <div class="flex items-center gap-1.5 shrink-0">
                                     ${badge}
@@ -386,6 +390,24 @@
                 content.classList.add('hidden');
                 icon.style.transform = 'rotate(0deg)';
             }
+        }
+
+        function showProductPreview(event, imgUrl, title) {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            const img = document.getElementById('tooltip-img');
+            const titleEl = document.getElementById('tooltip-title');
+            
+            img.src = imgUrl ? imgUrl : 'https://via.placeholder.com/150?text=No+Image';
+            titleEl.textContent = title;
+
+            tooltip.style.left = `${event.clientX + 15}px`;
+            tooltip.style.top = `${event.clientY + 15}px`;
+            tooltip.classList.remove('hidden');
+        }
+
+        function hideProductPreview() {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            tooltip.classList.add('hidden');
         }
 
         async function verifyInquiry(inquiryId) {
