@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Admin & Vendor Portal</title>
+    <title>Echo Hub - Marketplace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
@@ -22,59 +22,270 @@
             align-items: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
         }
-        .header-left h1 { font-size: 2.2em; margin-bottom: 5px; }
-        .header-left p { font-size: 1.05em; opacity: 0.95; margin: 0; }
-        .layout { max-width: 1400px; margin: 40px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 25px; }
-        .card {
+        .header-left h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        .header-left p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin: 0;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .buyer-pill {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+        }
+        .btn-portal {
             background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-            border: 1px solid #e1e8ed;
-        }
-        .card h3 { color: #1e5aa8; margin-bottom: 20px; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; color: #4a5568; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
-        .btn-verify {
-            background: #2b6cb0;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
+            color: #1e5aa8;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s ease;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 10, 0.1);
+            transition: all 0.2s ease;
         }
-        .btn-verify:hover { background: #2c5282; }
+        .btn-portal:hover {
+            background: #f8fbff;
+            transform: translateY(-1px);
+        }
+        .layout { 
+            max-width: 1400px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            display: grid; 
+            grid-template-columns: 240px 1fr; 
+            gap: 40px; 
+        }
+        aside {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            height: fit-content;
+        }
+        .filter-group h3 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #1e5aa8; 
+            margin-bottom: 15px; 
+            font-weight: 700;
+        }
+        .filter-links { display: flex; flex-direction: column; gap: 8px; }
+        .filter-link { 
+            background: none; 
+            border: none; 
+            text-align: left; 
+            padding: 10px 12px; 
+            border-radius: 8px;
+            font-size: 15px; 
+            color: #4a5568; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .filter-link:hover, .filter-link.active { 
+            background: #f0f4f8;
+            color: #1e5aa8; 
+            font-weight: 600; 
+        }
+        .content-area { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-box { 
+            background: #fff; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 12px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(30, 90, 168, 0.1);
+        }
+        .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
+        .product-box button { 
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
+            color: #fff; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+        .product-box button:hover { opacity: 0.9; }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px;
+        }
+        .modal-content h3 { color: #1e5aa8; margin-bottom: 5px; }
+        .routing-info {
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;
+        }
+        .modal-content textarea {
+            width: 100%; height: 90px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;
+        }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
+        .modal-buttons button { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }
+        .btn-cancel { background: #e2e8f0; color: #4a5568; }
+        .btn-submit { background: #1e5aa8; color: white; }
+
+        /* Drawer styling */
+        .drawer-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: none; z-index: 1100;
+        }
+        .drawer-container {
+            position: fixed; top: 0; right: -450px; width: 100%; max-width: 450px; height: 100%;
+            background: white; box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15); z-index: 1200;
+            display: flex; flex-direction: column; transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1); overflow-y: auto;
+        }
+        .drawer-container.open { right: 0; }
+        .drawer-header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .drawer-body { padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+        .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
+
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="header-left">
             <h1>Echo Hub</h1>
-            <p>Admin & Vendor Verification Dashboard</p>
+            <p>Marketplace Storefront</p>
+        </div>
+        <div class="header-right">
+            <button id="btn-open-referrals" onclick="toggleReferralDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
+                🎁 My Referrals
+            </button>
+            <div id="buyer-pill" class="buyer-pill">
+                Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
+                <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
+            </div>
+            <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
     </header>
 
     <div class="layout">
-        <div class="card">
-            <h3>Pending Product Inquiries & Feedback</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Inquiry ID</th>
-                        <th>Buyer (e.g., Tria Sly)</th>
-                        <th>Product</th>
-                        <th>Vendor ID</th>
-                        <th>Message</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="inquiries-table-body">
-                    <!-- Dynamic rows load here -->
-                </tbody>
-            </table>
+        <aside>
+            <div class="filter-group">
+                <h3>Catalog Sections</h3>
+                <div class="filter-links" id="category-filters">
+                    <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
+                </div>
+            </div>
+        </aside>
+        <main class="content-area">
+            <div class="products-grid" id="products-container">
+                <!-- Dynamic products load here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Inquiry Modal -->
+    <div class="modal-overlay" id="inquiry-modal">
+        <div class="modal-content">
+            <h3>Product Inquiry</h3>
+            <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 15px;"></p>
+            
+            <div class="routing-info">
+                <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
+                <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
+            </div>
+
+            <input type="hidden" id="modal-product-id">
+            <input type="hidden" id="modal-vendor-id">
+            
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px;">Your Message / Question:</label>
+                <textarea id="inquiry-message" placeholder="Ask details about this product..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeInquiryModal()">Cancel</button>
+                <button class="btn-submit" onclick="submitInquiry()">Send Inquiry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Referral Drawer Overlay & Container -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
+    <div class="drawer-container" id="referral-drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">Referral Dashboard</h2>
+            <button class="btn-close-drawer" onclick="toggleReferralDrawer()">&times;</button>
+        </div>
+        
+        <div class="drawer-body">
+            <div>
+                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 5px;">Your Unique Referral Link</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="referral-link-input" readonly style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; background: #f8fafc; font-size: 13px;">
+                    <button onclick="copyReferralLink()" style="background: #2b6cb0; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Copy</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Referrals</span>
+                    <h3 id="stat-total-referrals" style="font-size: 18px; color: #2d3748; margin-top: 4px;">0</h3>
+                </div>
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Pending</span>
+                    <h3 id="stat-pending-balance" style="font-size: 18px; color: #d69e2e; margin-top: 4px;">$0.00</h3>
+                </div>
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Payable</span>
+                    <h3 id="stat-payable-balance" style="font-size: 18px; color: #38a169; margin-top: 4px;">$0.00</h3>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="color: #2d3748; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Commission History</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; color: #4a5568; font-size: 11px; text-transform: uppercase;">
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Date</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Net Comm.</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Your Split</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-ledger-body">
+                            <tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -83,120 +294,274 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function loadInquiries() {
-            const tbody = document.getElementById('inquiries-table-body');
-            
-            const { data, error } = await db
-                .from('inquiries')
-                .select(`
-                    id,
-                    message,
-                    status,
-                    vendor_id,
-                    product_id,
-                    buyer_id,
-                    buyers ( full_name, email ),
-                    products ( name, price )
-                `)
-                .eq('status', 'pending');
+        let currentBuyerId = '';
+        let currentBuyerStringId = '';
+        let currentActiveEmail = '';
 
+        async function checkBuyerSession() {
+            const buyerPill = document.getElementById('buyer-pill');
+            const buyerNameSpan = document.getElementById('current-buyer-name');
+            const portalBtn = document.getElementById('portal-btn');
+            const btnOpenReferrals = document.getElementById('btn-open-referrals');
+
+            const { data: { session } } = await db.auth.getSession();
+            currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
+
+            if (currentActiveEmail) {
+                buyerNameSpan.textContent = currentActiveEmail;
+                buyerPill.style.display = 'flex';
+                portalBtn.style.display = 'none';
+                btnOpenReferrals.style.display = 'flex';
+
+                const { data: buyerData, error } = await db
+                    .from('buyers')
+                    .select('id, buyer_id')
+                    .eq('email', currentActiveEmail)
+                    .single();
+
+                if (buyerData) {
+                    currentBuyerId = buyerData.id; 
+                    currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
+                } else {
+                    currentBuyerId = '';
+                    currentBuyerStringId = 'BUYER-00000';
+                }
+            } else {
+                buyerPill.style.display = 'none';
+                portalBtn.style.display = 'inline-block';
+                btnOpenReferrals.style.display = 'none';
+                currentBuyerId = '';
+                currentBuyerStringId = '';
+            }
+        }
+
+        async function logoutBuyer() {
+            await db.auth.signOut();
+            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('user_email');
+            window.location.reload();
+        }
+
+        async function loadCategories() {
+            const { data, error } = await db.from('products').select('category');
+            const filterContainer = document.getElementById('category-filters');
+            
             if (error) {
-                console.error('Error loading inquiries:', error.message);
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">Failed to load inquiries.</td></tr>`;
+                console.error('Error loading categories:', error.message);
+                return;
+            }
+
+            const taxonomy = {};
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    if (item.category) {
+                        const rawCat = item.category.trim();
+                        const parts = rawCat.split('>').map(p => p.trim());
+                        const mainCat = parts[0];
+                        
+                        if (!taxonomy[mainCat]) {
+                            taxonomy[mainCat] = {};
+                        }
+                        
+                        if (parts.length > 1) {
+                            const subCat = parts[1];
+                            taxonomy[mainCat][subCat] = rawCat;
+                        }
+                    }
+                });
+            }
+
+            let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
+            
+            for (const [mainCat, subs] of Object.entries(taxonomy)) {
+                html += `
+                    <div class="category-group" style="margin-top: 10px;">
+                        <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
+                `;
+                
+                const subKeys = Object.keys(subs);
+                if (subKeys.length > 0) {
+                    html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
+                    subKeys.forEach(subCat => {
+                        const exactDbString = subs[subCat];
+                        html += `<button class="filter-link" style="font-size: 13px; padding: 6px 10px;" onclick="filterCategory('${exactDbString}', this, false)">↳ ${subCat}</button>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            
+            filterContainer.innerHTML = html;
+        }
+
+        async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
+            let query = db.from('products').select('*');
+            
+            if (categoryQuery !== 'All') {
+                if (isMainGroup) {
+                    query = query.ilike('category', `${categoryQuery}%`);
+                } else {
+                    query = query.eq('category', categoryQuery);
+                }
+            }
+
+            const { data, error } = await query;
+            const container = document.getElementById('products-container');
+            
+            if (error) {
+                console.error('Error loading products:', error.message);
+                container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
                 return;
             }
 
             if (data && data.length > 0) {
-                tbody.innerHTML = data.map(item => `
-                    <tr>
-                        <td>#${item.id.slice(0, 8)}</td>
-                        <td><strong>${item.buyers?.full_name || item.buyers?.email || 'Unknown Buyer'}</strong></td>
-                        <td>${item.products?.name || 'Product'}</td>
-                        <td>${item.vendor_id || 'Echo Hub'}</td>
-                        <td>${item.message}</td>
-                        <td>
-                            <button class="btn-verify" onclick="verifyProductInquiry('${item.id}', '${item.buyer_id}', '${item.product_id}', '${item.vendor_id || 'Echo Hub'}')">Verify Product</button>
-                        </td>
-                    </tr>
+                container.innerHTML = data.map(product => `
+                    <div class="product-box">
+                        <div>
+                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
+                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
+                            <h5 style="margin-top: 4px;">${product.name}</h5>
+                            <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
+                        </div>
+                        <button onclick="openInquiryModal('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire</button>
+                    </div>
                 `).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #718096; padding: 20px;">No pending inquiries to verify.</td></tr>`;
+                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
             }
         }
 
-        async function verifyProductInquiry(inquiryId, buyerId, productId, vendorId) {
-            try {
-                const { data: vendor, error: vendorErr } = await db
-                    .from('vendors')
-                    .select('commission_amount')
-                    .eq('id', vendorId)
-                    .single();
-                    
-                if (vendorErr) throw vendorErr;
+        function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
+            document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            loadProducts(categoryQuery, isMainGroup);
+        }
 
-                const grossCommission = parseFloat(vendor?.commission_amount || 0);
-                
-                if (grossCommission < 5.00) {
-                    alert(`Warning: Vendor commission ($${grossCommission.toFixed(2)}) is below the mandatory $5.00 USD minimum policy threshold.`);
+        function openInquiryModal(productId, productName, vendorId) {
+            if (!currentActiveEmail) {
+                alert('Please sign in through the account portal before sending a product inquiry.');
+                window.location.href = 'portal.html';
+                return;
+            }
+            document.getElementById('modal-product-id').value = productId;
+            document.getElementById('modal-vendor-id').value = vendorId;
+            document.getElementById('modal-product-title').textContent = productName;
+            
+            document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
+            document.getElementById('modal-vendor-id-display').textContent = vendorId;
+
+            document.getElementById('inquiry-message').value = '';
+            document.getElementById('inquiry-modal').style.display = 'flex';
+        }
+
+        function closeInquiryModal() {
+            document.getElementById('inquiry-modal').style.display = 'none';
+        }
+
+        async function submitInquiry() {
+            const productId = document.getElementById('modal-product-id').value;
+            const vendorId = document.getElementById('modal-vendor-id').value;
+            const message = document.getElementById('inquiry-message').value.trim();
+
+            if (!message) {
+                alert('Please enter a message for your inquiry.');
+                return;
+            }
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId,
+                    vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
+                    buyer_id: currentBuyerId, 
+                    message: message
                 }
+            ]);
 
-                // Apply PayPal Goods and Services fee structure (3.49% + $0.49 USD)
-                const payPalPercentageFee = grossCommission * 0.0349;
-                const payPalFixedFee = 0.49;
-                const totalPayPalFee = payPalPercentageFee + payPalFixedFee;
+            if (error) {
+                console.error('Error submitting inquiry:', error.message);
+                alert('Failed to send inquiry. Please try again.');
+                return;
+            }
 
-                const netRealizedCommission = grossCommission - totalPayPalFee;
+            alert('Inquiry sent successfully!');
+            closeInquiryModal();
+        }
 
-                if (netRealizedCommission <= 0) {
-                    throw new Error('Net commission after PayPal Goods & Services fees is $0.00 or negative.');
-                }
-
-                const { data: buyer, error: buyerErr } = await db
-                    .from('buyers')
-                    .select('referred_by')
-                    .eq('id', buyerId)
-                    .single();
-                    
-                if (buyerErr) throw buyerErr;
-
-                if (buyer && buyer.referred_by) {
-                    const referrerSplit = netRealizedCommission * 0.20;
-
-                    const { error: ledgerErr } = await db
-                        .from('referral_ledger')
-                        .insert([{
-                            referrer_id: buyer.referred_by,
-                            buyer_id: buyerId,
-                            inquiry_id: inquiryId,
-                            gross_commission: grossCommission,
-                            paypal_fee: totalPayPalFee,
-                            net_commission: netRealizedCommission,
-                            commission_amount: referrerSplit,
-                            status: 'pending'
-                        }]);
-                        
-                    if (ledgerErr) throw ledgerErr;
-                    console.log(`Gross: $${grossCommission.toFixed(2)} | G&S Fee: -$${totalPayPalFee.toFixed(2)} | Net: $${netRealizedCommission.toFixed(2)} | 20% Referrer Split: $${referrerSplit.toFixed(2)} credited.`);
-                }
-
-                const { error: updateErr } = await db
-                    .from('inquiries')
-                    .update({ status: 'verified' })
-                    .eq('id', inquiryId);
-                    
-                if (updateErr) throw updateErr;
-
-                alert(`Product verified successfully! G&S fee deducted ($${totalPayPalFee.toFixed(2)}). Referrer split recorded from net balance.`);
-                loadInquiries();
-
-            } catch (error) {
-                console.error('Verification Error:', error.message);
-                alert('Failed to verify product. Check console details.');
+        function toggleReferralDrawer() {
+            const drawer = document.getElementById('referral-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                drawer.classList.add('open');
+                overlay.style.display = 'block';
+                loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadInquiries();
+        async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
+            if (!buyerId) return;
+
+            const refLink = `${window.location.origin}/index.html?ref=${buyerStringId || buyerId}`;
+            document.getElementById('referral-link-input').value = refLink;
+
+            const { data: ledgerRows, error } = await db
+                .from('referral_ledger')
+                .select('*')
+                .eq('referrer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading buyer ledger:', error.message);
+                return;
+            }
+
+            let totalReferrals = ledgerRows ? ledgerRows.length : 0;
+            let pendingBal = 0;
+            let payableBal = 0;
+
+            const tbody = document.getElementById('buyer-ledger-body');
+
+            if (ledgerRows && ledgerRows.length > 0) {
+                tbody.innerHTML = ledgerRows.map(row => {
+                    const amt = parseFloat(row.commission_amount || 0);
+                    if (row.status === 'pending') pendingBal += amt;
+                    if (row.status === 'payable' || row.status === 'paid') payableBal += amt;
+
+                    return `
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${parseFloat(row.net_commission || 0).toFixed(2)}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #2b6cb0;">$${amt.toFixed(2)}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${row.status === 'pending' ? '#feebc8; color: #c05621;' : '#c6f6d5; color: #22543d;'}">${row.status.toUpperCase()}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
+            }
+
+            document.getElementById('stat-total-referrals').innerText = totalReferrals;
+            document.getElementById('stat-pending-balance').innerText = `$${pendingBal.toFixed(2)}`;
+            document.getElementById('stat-payable-balance').innerText = `$${payableBal.toFixed(2)}`;
+        }
+
+        function copyReferralLink() {
+            const input = document.getElementById('referral-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            alert('Referral link copied to clipboard!');
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkBuyerSession();
+            await loadCategories();
+            await loadProducts('All');
         });
     </script>
 </body>
