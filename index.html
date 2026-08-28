@@ -132,27 +132,6 @@
         }
         .product-box button:hover { opacity: 0.9; }
 
-        /* Modal styling */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px;
-        }
-        .modal-content h3 { color: #1e5aa8; margin-bottom: 5px; }
-        .routing-info {
-            background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;
-        }
-        .modal-content textarea {
-            width: 100%; height: 90px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;
-        }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
-        .modal-buttons button { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }
-        .btn-cancel { background: #e2e8f0; color: #4a5568; }
-        .btn-submit { background: #1e5aa8; color: white; }
-
         /* Drawer styling */
         .drawer-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -184,6 +163,9 @@
             <p>Marketplace Storefront</p>
         </div>
         <div class="header-right">
+            <button id="btn-open-inquiries" onclick="toggleInquiriesDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
+                💬 My Inquiries
+            </button>
             <button id="btn-open-referrals" onclick="toggleReferralDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
                 🎁 My Referrals
             </button>
@@ -211,13 +193,18 @@
         </main>
     </div>
 
-    <!-- Inquiry Modal -->
-    <div class="modal-overlay" id="inquiry-modal">
-        <div class="modal-content">
-            <h3>Product Inquiry</h3>
-            <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 15px;"></p>
+    <!-- Inquiry Drawer (Converted from Modal) -->
+    <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
+    <div class="drawer-container" id="inquiry-drawer" style="right: -450px;">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">Product Inquiry & Feedback</h2>
+            <button class="btn-close-drawer" onclick="closeInquiryDrawer()">&times;</button>
+        </div>
+        
+        <div class="drawer-body">
+            <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 16px;"></p>
             
-            <div class="routing-info">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
                 <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
                 <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
             </div>
@@ -226,12 +213,18 @@
             <input type="hidden" id="modal-vendor-id">
             
             <div>
-                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px;">Your Message / Question:</label>
-                <textarea id="inquiry-message" placeholder="Ask details about this product..."></textarea>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
+                <textarea id="inquiry-message" placeholder="Ask details about this product or provide feedback..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
             </div>
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeInquiryModal()">Cancel</button>
-                <button class="btn-submit" onclick="submitInquiry()">Send Inquiry</button>
+
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Attach Feedback Image (Optional):</label>
+                <input type="file" id="feedback-image-file" accept="image/*" style="font-size: 13px; width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; background: #f8fafc;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button onclick="closeInquiryDrawer()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #e2e8f0; color: #4a5568;">Cancel</button>
+                <button id="btn-submit-inquiry" onclick="submitInquiry()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #1e5aa8; color: white;">Send Inquiry</button>
             </div>
         </div>
     </div>
@@ -289,6 +282,19 @@
         </div>
     </div>
 
+    <!-- Inquiries Drawer Overlay & Container -->
+    <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
+    <div class="drawer-container" id="inquiries-drawer" style="right: -450px;">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">My Inquiries & Feedback</h2>
+            <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
+        </div>
+        
+        <div class="drawer-body" id="buyer-inquiries-body">
+            <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
@@ -303,6 +309,7 @@
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
             const btnOpenReferrals = document.getElementById('btn-open-referrals');
+            const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             const { data: { session } } = await db.auth.getSession();
             currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
@@ -312,6 +319,7 @@
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
                 btnOpenReferrals.style.display = 'flex';
+                btnOpenInquiries.style.display = 'flex';
 
                 const { data: buyerData, error } = await db
                     .from('buyers')
@@ -330,6 +338,7 @@
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
                 btnOpenReferrals.style.display = 'none';
+                btnOpenInquiries.style.display = 'none';
                 currentBuyerId = '';
                 currentBuyerStringId = '';
             }
@@ -424,7 +433,7 @@
                             <h5 style="margin-top: 4px;">${product.name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
                         </div>
-                        <button onclick="openInquiryModal('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire</button>
+                        <button onclick="openInquiryDrawer('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire / Feedback</button>
                     </div>
                 `).join('');
             } else {
@@ -438,9 +447,9 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        function openInquiryModal(productId, productName, vendorId) {
+        function openInquiryDrawer(productId, productName, vendorId) {
             if (!currentActiveEmail) {
-                alert('Please sign in through the account portal before sending a product inquiry.');
+                alert('Please sign in through the account portal before sending an inquiry or feedback.');
                 window.location.href = 'portal.html';
                 return;
             }
@@ -452,31 +461,77 @@
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
-            document.getElementById('inquiry-modal').style.display = 'flex';
+            document.getElementById('feedback-image-file').value = '';
+            
+            const drawer = document.getElementById('inquiry-drawer');
+            const overlay = document.getElementById('inquiry-drawer-overlay');
+            drawer.classList.add('open');
+            overlay.style.display = 'block';
         }
 
-        function closeInquiryModal() {
-            document.getElementById('inquiry-modal').style.display = 'none';
+        function closeInquiryDrawer() {
+            const drawer = document.getElementById('inquiry-drawer');
+            const overlay = document.getElementById('inquiry-drawer-overlay');
+            drawer.classList.remove('open');
+            overlay.style.display = 'none';
         }
 
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
             const message = document.getElementById('inquiry-message').value.trim();
+            const fileInput = document.getElementById('feedback-image-file');
+            const submitBtn = document.getElementById('btn-submit-inquiry');
 
             if (!message) {
-                alert('Please enter a message for your inquiry.');
+                alert('Please enter a message or feedback.');
                 return;
             }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+
+            let imageUrl = null;
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+                const filePath = `feedback/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await db.storage
+                    .from('product-images')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('Error uploading image:', uploadError.message);
+                    alert('Failed to upload feedback image. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Inquiry';
+                    return;
+                }
+
+                const { data: publicUrlData } = db.storage
+                    .from('product-images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrlData.publicUrl;
+            }
+
+            submitBtn.textContent = 'Sending...';
 
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
                     buyer_id: currentBuyerId, 
-                    message: message
+                    message: message,
+                    image_url: imageUrl
                 }
             ]);
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Inquiry';
 
             if (error) {
                 console.error('Error submitting inquiry:', error.message);
@@ -484,8 +539,8 @@
                 return;
             }
 
-            alert('Inquiry sent successfully!');
-            closeInquiryModal();
+            alert('Inquiry and feedback submitted successfully!');
+            closeInquiryDrawer();
         }
 
         function toggleReferralDrawer() {
@@ -501,6 +556,123 @@
                 overlay.style.display = 'block';
                 loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
             }
+        }
+
+        function toggleInquiriesDrawer() {
+            const drawer = document.getElementById('inquiries-drawer');
+            const overlay = document.getElementById('inquiries-drawer-overlay');
+            
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                drawer.classList.add('open');
+                overlay.style.display = 'block';
+                loadBuyerInquiriesHistory(currentBuyerId);
+            }
+        }
+
+        async function loadBuyerInquiriesHistory(buyerId) {
+            if (!buyerId) return;
+
+            const container = document.getElementById('buyer-inquiries-body');
+
+            const { data: inquiries, error } = await db
+                .from('inquiries')
+                .select('*, products(name)')
+                .eq('buyer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading inquiry history:', error.message);
+                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your inquiries.</p>';
+                return;
+            }
+
+            if (inquiries && inquiries.length > 0) {
+                container.innerHTML = inquiries.map(item => {
+                    const productName = item.products?.name || 'Archived / Deleted Product';
+                    const dateStr = new Date(item.created_at).toLocaleDateString();
+                    
+                    return `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #718096;">
+                                <span>📅 ${dateStr}</span>
+                                <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Vendor: ${item.vendor_id || 'Echo Hub'}</span>
+                            </div>
+                            <h4 style="font-size: 15px; color: #2c3e50; margin: 0;">${productName}</h4>
+                            <p style="font-size: 13px; color: #4a5568; background: white; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; margin: 0;"><strong>Message:</strong> ${item.message}</p>
+                            
+                            ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
+                            
+                            <div style="border-top: 1px dashed #cbd5e0; padding-top: 10px; margin-top: 5px; display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 11px; font-weight: 600; color: #4a5568; text-transform: uppercase;">Add Follow-up Feedback / Image</label>
+                                <textarea id="followup-msg-${item.id}" placeholder="Write follow-up or additional feedback..." style="width: 100%; height: 50px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
+                                <input type="file" id="followup-file-${item.id}" accept="image/*" style="font-size: 11px;">
+                                <button onclick="submitFollowupFeedback('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Follow-up</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries or feedback yet.</p>';
+            }
+        }
+
+        async function submitFollowupFeedback(inquiryId, productId, vendorId) {
+            const msgInput = document.getElementById(`followup-msg-${inquiryId}`);
+            const fileInput = document.getElementById(`followup-file-${inquiryId}`);
+            const messageText = msgInput.value.trim();
+
+            if (!messageText && (!fileInput.files || !fileInput.files[0])) {
+                alert('Please enter a message or select an image to send.');
+                return;
+            }
+
+            let imageUrl = null;
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `followup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+                const filePath = `feedback/${fileName}`;
+
+                const { error: uploadError } = await db.storage
+                    .from('product-images')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('Error uploading follow-up image:', uploadError.message);
+                    alert('Failed to upload image.');
+                    return;
+                }
+
+                const { data: publicUrlData } = db.storage
+                    .from('product-images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrlData.publicUrl;
+            }
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId || null,
+                    vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
+                    buyer_id: currentBuyerId,
+                    message: `[Follow-up]: ${messageText}`,
+                    image_url: imageUrl
+                }
+            ]);
+
+            if (error) {
+                console.error('Error submitting follow-up:', error.message);
+                alert('Failed to submit follow-up feedback.');
+                return;
+            }
+
+            alert('Follow-up feedback submitted successfully!');
+            loadBuyerInquiriesHistory(currentBuyerId);
         }
 
         async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
