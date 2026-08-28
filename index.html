@@ -196,12 +196,10 @@
         </aside>
         <main class="content-area">
             <div class="products-grid" id="products-container">
-                <!-- Dynamic products load here -->
-            </div>
+                </div>
         </main>
     </div>
 
-    <!-- Inquiry Drawer -->
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
@@ -226,7 +224,7 @@
             </div>
 
             <div>
-                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Attach Feedback Image (Optional - Max 1):</label>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Attach Feedback Image (Required - Exactly 1):</label>
                 <input type="file" id="feedback-image-file" accept="image/*" style="font-size: 13px; width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; background: #f8fafc;">
             </div>
 
@@ -237,7 +235,6 @@
         </div>
     </div>
 
-    <!-- Referral Drawer Overlay & Container -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
@@ -290,7 +287,6 @@
         </div>
     </div>
 
-    <!-- Inquiries Drawer Overlay & Container with Hierarchical Expansion Grouping -->
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
@@ -496,35 +492,37 @@
                 return;
             }
 
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Each product inquiry must have exactly 1 feedback image attached.');
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = 'Uploading...';
 
             let imageUrl = null;
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            const filePath = `feedback/${fileName}`;
 
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-                const filePath = `feedback/${fileName}`;
+            const { data: uploadData, error: uploadError } = await db.storage
+                .from('product-images')
+                .upload(filePath, file);
 
-                const { data: uploadData, error: uploadError } = await db.storage
-                    .from('product-images')
-                    .upload(filePath, file);
-
-                if (uploadError) {
-                    console.error('Error uploading image:', uploadError.message);
-                    alert('Failed to upload feedback image. Please try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Send Inquiry';
-                    return;
-                }
-
-                const { data: publicUrlData } = db.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath);
-
-                imageUrl = publicUrlData.publicUrl;
+            if (uploadError) {
+                console.error('Error uploading image:', uploadError.message);
+                alert('Failed to upload feedback image. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Inquiry';
+                return;
             }
+
+            const { data: publicUrlData } = db.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+
+            imageUrl = publicUrlData.publicUrl;
 
             submitBtn.textContent = 'Sending...';
 
@@ -599,7 +597,6 @@
             }
 
             if (inquiries && inquiries.length > 0) {
-                // Group inquiries by product_id (or product name / fallback)
                 const grouped = {};
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
@@ -623,7 +620,6 @@
 
                     html += `
                         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <!-- Hierarchical Accordion Header -->
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 14px;">📦</span>
@@ -633,18 +629,27 @@
                                 <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                             </div>
 
-                            <!-- Expandable Body Container -->
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 12px; background: #fff;">
                     `;
 
                     group.items.forEach(item => {
-                        const dateStr = new Date(item.created_at).toLocaleDateString();
+                        // Formatted local timestamp with specific time of day in local time zone (adapts automatically to user location e.g., Jamaica or Texas town)
+                        const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true,
+                            timeZoneName: 'short'
+                        });
                         
                         html += `
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
                                     <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Vendor: ${item.vendor_id || 'Echo Hub'}</span>
-                                    <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${dateStr}</span>
+                                    <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                 </div>
 
                                 <p style="font-size: 13px; color: #2d3748; margin: 0;">${item.message}</p>
@@ -703,106 +708,4 @@
             if (fileInput.files && fileInput.files[0]) {
                 const file = fileInput.files[0];
                 const fileExt = file.name.split('.').pop();
-                const fileName = `followup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-                const filePath = `feedback/${fileName}`;
-
-                const { error: uploadError } = await db.storage
-                    .from('product-images')
-                    .upload(filePath, file);
-
-                if (uploadError) {
-                    console.error('Error uploading follow-up image:', uploadError.message);
-                    alert('Failed to upload image.');
-                    return;
-                }
-
-                const { data: publicUrlData } = db.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath);
-
-                imageUrl = publicUrlData.publicUrl;
-            }
-
-            const { error } = await db.from('inquiries').insert([
-                {
-                    product_id: productId === 'null' || !productId ? null : productId,
-                    vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
-                    buyer_id: currentBuyerId,
-                    message: `[Follow-up]: ${messageText}`,
-                    image_url: imageUrl
-                }
-            ]);
-
-            if (error) {
-                console.error('Error submitting follow-up:', error.message);
-                alert('Failed to submit follow-up feedback.');
-                return;
-            }
-
-            alert('Follow-up feedback submitted successfully!');
-            loadBuyerInquiriesHistory(currentBuyerId);
-        }
-
-        async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
-            if (!buyerId) return;
-
-            const refLink = `${window.location.origin}/index.html?ref=${buyerStringId || buyerId}`;
-            document.getElementById('referral-link-input').value = refLink;
-
-            const { data: ledgerRows, error } = await db
-                .from('referral_ledger')
-                .select('*')
-                .eq('referrer_id', buyerId)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error loading buyer ledger:', error.message);
-                return;
-            }
-
-            let totalReferrals = ledgerRows ? ledgerRows.length : 0;
-            let pendingBal = 0;
-            let payableBal = 0;
-
-            const tbody = document.getElementById('buyer-ledger-body');
-
-            if (ledgerRows && ledgerRows.length > 0) {
-                tbody.innerHTML = ledgerRows.map(row => {
-                    const amt = parseFloat(row.commission_amount || 0);
-                    if (row.status === 'pending') pendingBal += amt;
-                    if (row.status === 'payable' || row.status === 'paid') payableBal += amt;
-
-                    return `
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${parseFloat(row.net_commission || 0).toFixed(2)}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #2b6cb0;">$${amt.toFixed(2)}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${row.status === 'pending' ? '#feebc8; color: #c05621;' : '#c6f6d5; color: #22543d;'}">${row.status.toUpperCase()}</span></td>
-                        </tr>
-                    `;
-                }).join('');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
-            }
-
-            document.getElementById('stat-total-referrals').innerText = totalReferrals;
-            document.getElementById('stat-pending-balance').innerText = `$${pendingBal.toFixed(2)}`;
-            document.getElementById('stat-payable-balance').innerText = `$${payableBal.toFixed(2)}`;
-        }
-
-        function copyReferralLink() {
-            const input = document.getElementById('referral-link-input');
-            input.select();
-            input.setSelectionRange(0, 99999);
-            navigator.clipboard.toClipboard ? navigator.clipboard.writeText(input.value) : navigator.clipboard.writeText(input.value);
-            alert('Referral link copied to clipboard!');
-        }
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            await checkBuyerSession();
-            await loadCategories();
-            await loadProducts('All');
-        });
-    </script>
-</body>
-</html>
+                const fileName = `followup_${Date.now()}_${
