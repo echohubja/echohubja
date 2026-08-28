@@ -105,7 +105,24 @@
             <h2 class="text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payout Management</h2>
             <span id="commission-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
         </div>
-        
+
+        <!-- Summary Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="text-xs text-blue-600 font-semibold uppercase">Total Paid Out</div>
+                <div id="metric-total-paid" class="text-2xl font-bold text-gray-800 mt-1">$0.00 USD</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div class="text-xs text-amber-600 font-semibold uppercase">Total Payable Balance</div>
+                <div id="metric-total-payable" class="text-2xl font-bold text-gray-800 mt-1">$0.00 USD</div>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div class="text-xs text-gray-600 font-semibold uppercase">Total Processed Records</div>
+                <div id="metric-total-records" class="text-2xl font-bold text-gray-800 mt-1">0</div>
+            </div>
+        </div>
+
+        <h3 class="text-md font-bold text-gray-700 mb-3">Individual Payout Ledger</h3>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -283,10 +300,29 @@
             if (!data || data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
                 document.getElementById('commission-count').textContent = '0 records';
+                document.getElementById('metric-total-paid').textContent = '$0.00 USD';
+                document.getElementById('metric-total-payable').textContent = '$0.00 USD';
+                document.getElementById('metric-total-records').textContent = '0';
                 return;
             }
 
+            // Calculate aggregate summaries dynamically
+            let totalPaid = 0;
+            let totalPayable = 0;
+            data.forEach(comm => {
+                const amt = parseFloat(comm.split_amount || 0);
+                const status = (comm.status || 'payable').toLowerCase();
+                if (status === 'paid') {
+                    totalPaid += amt;
+                } else {
+                    totalPayable += amt;
+                }
+            });
+
             document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+            document.getElementById('metric-total-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
+            document.getElementById('metric-total-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
+            document.getElementById('metric-total-records').textContent = data.length;
 
             tableBody.innerHTML = data.map(comm => {
                 const status = (comm.status || 'payable').toLowerCase();
