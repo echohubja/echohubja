@@ -196,7 +196,7 @@
             const { data: { session } } = await db.auth.getSession();
             if (session && session.user) {
                 document.getElementById('auth-status-nav').innerHTML = `<a href="#" class="btn-portal" onclick="logoutUser()">Sign Out</a>`;
-                loadBuyerReferralStats(session.user);
+                await loadBuyerReferralStats(session.user);
             }
             await loadCategories();
             await loadProducts('All');
@@ -298,35 +298,73 @@
         }
 
         async function loadBuyerReferralStats(user) {
-            const { data: profile, error: profileErr } = await db
+            console.log("Loading referral stats for user:", user.id);
+
+            // 1. Fetch user profile safely using .limit(1).maybeSingle() to prevent multiple row issues or failures
+            let { data: profile, error: profileErr } = await db
                 .from('user_profiles')
                 .select('referral_code')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            if (profileErr || !profile || !profile.referral_code) return;
+            console.log("Profile fetch result:", { profile, profileErr });
 
+            // 2. Fallback auto-provisioning if a profile row does not exist for this auth user yet
+            if (!profile || profileErr) {
+                console.warn("Profile missing or error encountered. Attempting to generate a fallback referral code...");
+                const generatedCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                const { data: newProfile,.error: createErr } = await db
+                    .from('user_profiles')
+                    .insert([{ id: user.id, referral_code: generatedCode, email: user.email }])
+                    .select('referral_code')
+                    .single();
+
+                if (!createErr && newProfile) {
+                    profile = newProfile;
+                    console.log("Successfully auto-provisioned missing profile row:", profile);
+                } else {
+                    console.error("Failed to auto-create profile row (check table constraints/RLS insert policies):", createErr);
+                    return;
+                }
+            }
+
+            if (!profile || !profile.referral_code) {
+                console.warn("No referral code available for user.");
+                return;
+            }
+
+            // 3. Construct and display the unique referral link box
             const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             const refLink = `${baseURL}register.html?ref=${profile.referral_code}`;
             document.getElementById('user-ref-link').value = refLink;
             document.getElementById('referral-dashboard-section').style.display = 'block';
 
-            const { count: refCount } = await db
+            // 4. Fetch total referral count safely
+            const { count: refCount, error: refErr } = await db
                 .from('referrals')
                 .select('*', { count: 'exact', head: true })
                 .eq('referrer_id', user.id);
 
+            if (refErr) {
+                console.warn("Could not fetch referrals count (check RLS select policies on referrals table):", refErr.message);
+            }
             document.getElementById('stat-total-ref').textContent = refCount || 0;
 
-            const { data: commissions } = await db
+            // 5. Fetch and calculate commission totals safely
+            const { data: commissions, error: commErr } = await db
                 .from('commissions')
                 .select('split_amount, status')
                 .eq('referrer_id', user.id);
 
+            if (commErr) {
+                console.warn("Could not fetch commissions (check RLS select policies on commissions table):", commErr.message);
+            }
+
             let pendingTotal = 0;
             let unlockedTotal = 0;
 
-            if (commissions) {
+            if (commissions && Array.isArray(commissions)) {
                 commissions.forEach(c => {
                     const amount = Number(c.split_amount) || 0;
                     if (c.status === 'pending') {
