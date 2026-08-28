@@ -31,6 +31,20 @@
             opacity: 0.95;
             margin: 0;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .buyer-pill {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+        }
         .btn-portal {
             background: white;
             color: #1e5aa8;
@@ -117,6 +131,28 @@
             transition: opacity 0.2s ease;
         }
         .product-box button:hover { opacity: 0.9; }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px;
+        }
+        .modal-content h3 { color: #1e5aa8; margin-bottom: 5px; }
+        .routing-info {
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;
+        }
+        .modal-content textarea {
+            width: 100%; height: 90px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;
+        }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
+        .modal-buttons button { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }
+        .btn-cancel { background: #e2e8f0; color: #4a5568; }
+        .btn-submit { background: #1e5aa8; color: white; }
+
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
@@ -129,8 +165,12 @@
             <h1>Echo Hub</h1>
             <p>Marketplace Storefront</p>
         </div>
-        <div>
-            <a href="portal.html" class="btn-portal">Sign In / Account Portal</a>
+        <div class="header-right">
+            <div id="buyer-pill" class="buyer-pill">
+                Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
+                <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
+            </div>
+            <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
     </header>
 
@@ -139,7 +179,6 @@
             <div class="filter-group">
                 <h3>Catalog Sections</h3>
                 <div class="filter-links" id="category-filters">
-                    <!-- Dynamic categories will map here -->
                     <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
                 </div>
             </div>
@@ -151,10 +190,79 @@
         </main>
     </div>
 
+    <!-- Inquiry Modal -->
+    <div class="modal-overlay" id="inquiry-modal">
+        <div class="modal-content">
+            <h3>Product Inquiry</h3>
+            <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 15px;"></p>
+            
+            <!-- Routing Details Box -->
+            <div class="routing-info">
+                <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
+                <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
+            </div>
+
+            <input type="hidden" id="modal-product-id">
+            <input type="hidden" id="modal-vendor-id">
+            
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px;">Your Message / Question:</label>
+                <textarea id="inquiry-message" placeholder="Ask details about this product..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeInquiryModal()">Cancel</button>
+                <button class="btn-submit" onclick="submitInquiry()">Send Inquiry</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentBuyerId = '';
+        let currentActiveEmail = '';
+
+        async function checkBuyerSession() {
+            const buyerPill = document.getElementById('buyer-pill');
+            const buyerNameSpan = document.getElementById('current-buyer-name');
+            const portalBtn = document.getElementById('portal-btn');
+
+            const { data: { session } } = await db.auth.getSession();
+            currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
+
+            if (currentActiveEmail) {
+                buyerNameSpan.textContent = currentActiveEmail;
+                buyerPill.style.display = 'flex';
+                portalBtn.style.display = 'none';
+
+                // Query the 'buyers' table checking the 'buyer_id' format column
+                const { data: buyerData, error } = await db
+                    .from('buyers')
+                    .select('buyer_id')
+                    .eq('email', currentActiveEmail)
+                    .single();
+
+                if (buyerData && buyerData.buyer_id) {
+                    currentBuyerId = buyerData.buyer_id;
+                } else {
+                    currentBuyerId = 'BUYER-00000';
+                }
+            } else {
+                buyerPill.style.display = 'none';
+                portalBtn.style.display = 'inline-block';
+                currentBuyerId = '';
+            }
+        }
+
+        async function logoutBuyer() {
+            await db.auth.signOut();
+            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('user_email');
+            window.location.reload();
+        }
 
         async function loadCategories() {
             const { data, error } = await db.from('products').select('category');
@@ -165,7 +273,6 @@
                 return;
             }
 
-            // Organize strings like "Adult Novelties > Adult Toys" into a hierarchy
             const taxonomy = {};
             if (data && data.length > 0) {
                 data.forEach(item => {
@@ -178,10 +285,9 @@
                             taxonomy[mainCat] = {};
                         }
                         
-                        // If there is a subcategory after the ">"
                         if (parts.length > 1) {
                             const subCat = parts[1];
-                            taxonomy[mainCat][subCat] = rawCat; // Store exact database string
+                            taxonomy[mainCat][subCat] = rawCat;
                         }
                     }
                 });
@@ -215,10 +321,8 @@
             
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
-                    // Fetch everything that starts with the Main Category name (e.g. "Adult Novelties%")
                     query = query.ilike('category', `${categoryQuery}%`);
                 } else {
-                    // Fetch the exact subcategory string (e.g. "Adult Novelties > Adult Toys")
                     query = query.eq('category', categoryQuery);
                 }
             }
@@ -241,7 +345,7 @@
                             <h5 style="margin-top: 4px;">${product.name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
                         </div>
-                        <button onclick="alert('Inquiring about ${product.name}')">Inquire</button>
+                        <button onclick="openInquiryModal('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire</button>
                     </div>
                 `).join('');
             } else {
@@ -255,7 +359,59 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
+        function openInquiryModal(productId, productName, vendorId) {
+            if (!currentActiveEmail) {
+                alert('Please sign in through the account portal before sending a product inquiry.');
+                window.location.href = 'portal.html';
+                return;
+            }
+            document.getElementById('modal-product-id').value = productId;
+            document.getElementById('modal-vendor-id').value = vendorId;
+            document.getElementById('modal-product-title').textContent = productName;
+            
+            // Populate visible routing identifiers with the exact BUYER-xxxxx ID and Vendor ID
+            document.getElementById('modal-buyer-id-display').textContent = currentBuyerId;
+            document.getElementById('modal-vendor-id-display').textContent = vendorId;
+
+            document.getElementById('inquiry-message').value = '';
+            document.getElementById('inquiry-modal').style.display = 'flex';
+        }
+
+        function closeInquiryModal() {
+            document.getElementById('inquiry-modal').style.display = 'none';
+        }
+
+        async function submitInquiry() {
+            const productId = document.getElementById('modal-product-id').value;
+            const vendorId = document.getElementById('modal-vendor-id').value;
+            const message = document.getElementById('inquiry-message').value.trim();
+
+            if (!message) {
+                alert('Please enter a message for your inquiry.');
+                return;
+            }
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId,
+                    vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
+                    buyer_id: currentBuyerId,
+                    message: message
+                }
+            ]);
+
+            if (error) {
+                console.error('Error submitting inquiry:', error.message);
+                alert('Failed to send inquiry. Please try again.');
+                return;
+            }
+
+            alert('Inquiry sent successfully!');
+            closeInquiryModal();
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
+            await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
         });
