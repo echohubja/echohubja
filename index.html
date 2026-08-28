@@ -289,7 +289,7 @@
                     <div class="split-badge">20% Net Split Active</div>
                 </div>
                 <div class="referral-link-box">
-                    <input type="text" id="user-referral-link" readonly value="https://echohubja.github.io/echohubja/index.html?ref=LOADING...">
+                    <input type="text" id="user-referral-link" readonly value="Loading referral link...">
                     <button class="btn-copy" onclick="copyReferralLink()">Copy Link</button>
                 </div>
                 <div class="referral-stats-grid">
@@ -345,8 +345,8 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentBuyerId = ''; // Will hold the UUID for database foreign key relation
-        let currentBuyerStringId = ''; // Will hold the 'BUYER-XXXXX' string for UI display
+        let currentBuyerId = ''; // Holds the UUID for database foreign key relation
+        let currentBuyerStringId = ''; // Holds the 'BUYER-XXXXX' string for UI display
         let currentActiveEmail = '';
 
         async function checkBuyerSession() {
@@ -358,26 +358,30 @@
             currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
 
             if (currentActiveEmail) {
-                buyerNameSpan.textContent = currentActiveEmail;
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                // Fetch both the UUID `id` (for foreign key relation) and `buyer_id` (for UI display)
+                // Query all possible name variations from the buyers table to ensure a match
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, buyer_id')
+                    .select('id, buyer_id, name, full_name, username')
                     .eq('email', currentActiveEmail)
                     .single();
 
                 if (buyerData) {
                     currentBuyerId = buyerData.id; 
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
+                    
+                    // Check all alternative columns where the registered name might be stored
+                    const buyerName = buyerData.name || buyerData.full_name || buyerData.username;
+                    
+                    buyerNameSpan.textContent = buyerName ? `${buyerName} (${currentActiveEmail})` : currentActiveEmail;
                 } else {
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
+                    buyerNameSpan.textContent = currentActiveEmail;
                 }
 
-                // Populate dynamic referral link using current runtime path or fallback
                 updateReferralWidget(currentBuyerStringId);
             } else {
                 buyerPill.style.display = 'none';
@@ -391,7 +395,7 @@
         function updateReferralWidget(refCode) {
             const linkInput = document.getElementById('user-referral-link');
             if (linkInput) {
-                // Dynamically adapts to custom domains or fallback GitHub Pages path automatically
+                // Dynamically grabs the runtime origin and pathname to support GitHub Pages or custom domain paths
                 const baseUrl = window.location.origin + window.location.pathname;
                 linkInput.value = `${baseUrl}?ref=${refCode}`;
             }
