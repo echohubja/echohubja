@@ -173,14 +173,19 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function checkBuyerSession() {
-            const buyerEmail = localStorage.getItem('echo_hub_buyer_email');
+        async function checkBuyerSession() {
             const buyerPill = document.getElementById('buyer-pill');
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
 
-            if (buyerEmail) {
-                buyerNameSpan.textContent = buyerEmail;
+            // Check Supabase Auth session first
+            const { data: { session } } = await db.auth.getSession();
+            
+            // Fallback check to common localStorage variations if Supabase session is null
+            const localEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
+
+            if (localEmail) {
+                buyerNameSpan.textContent = localEmail;
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
             } else {
@@ -189,8 +194,11 @@
             }
         }
 
-        function logoutBuyer() {
+        async function logoutBuyer() {
+            await db.auth.signOut();
             localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('user_email');
             window.location.reload();
         }
 
@@ -288,7 +296,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            checkBuyerSession();
+            await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
         });
