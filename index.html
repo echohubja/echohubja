@@ -196,10 +196,12 @@
         </aside>
         <main class="content-area">
             <div class="products-grid" id="products-container">
-                </div>
+                <!-- Dynamic products load here -->
+            </div>
         </main>
     </div>
 
+    <!-- Inquiry Drawer (Text Only, No Image Attachment) -->
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
@@ -230,6 +232,7 @@
         </div>
     </div>
 
+    <!-- Referral Drawer Overlay & Container -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
@@ -282,6 +285,7 @@
         </div>
     </div>
 
+    <!-- Inquiries Drawer Overlay & Container with Search, Badges & Recent Activity Sorting -->
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
@@ -289,8 +293,15 @@
             <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
         </div>
         
-        <div class="drawer-body" id="buyer-inquiries-body">
-            <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
+        <div class="drawer-body">
+            <!-- Search & Filter Bar -->
+            <div>
+                <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
+            </div>
+
+            <div id="buyer-inquiries-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
+            </div>
         </div>
     </div>
 
@@ -537,6 +548,7 @@
             } else {
                 drawer.classList.add('open');
                 overlay.style.display = 'block';
+                document.getElementById('inquiry-search-input').value = '';
                 loadBuyerInquiriesHistory(currentBuyerId);
             }
         }
@@ -567,33 +579,69 @@
                         grouped[pKey] = {
                             productId: item.product_id,
                             productName: pName,
-                            items: []
+                            items: [],
+                            latestTimestamp: item.created_at
                         };
                     }
                     grouped[pKey].items.push(item);
+                    // Keep track of latest timestamp in group for sorting
+                    if (new Date(item.created_at) > new Date(grouped[pKey].latestTimestamp)) {
+                        grouped[pKey].latestTimestamp = item.created_at;
+                    }
                 });
+
+                // Sort product groups by most recent activity (latest timestamp first)
+                const sortedGroups = Object.entries(grouped).sort((a, b) => new Date(b[1].latestTimestamp) - new Date(a[1].latestTimestamp));
 
                 let html = '';
                 let index = 0;
 
-                for (const [pKey, group] of Object.entries(grouped)) {
+                for (const [pKey, group] of sortedGroups) {
                     index++;
                     const count = group.items.length;
                     const contentId = `inquiry-group-${pKey}-${index}`;
 
+                    // Determine overall status badge based on latest message
+                    const latestMsg = group.items[0]; // items are sorted desc by created_at from query
+                    const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
+                    const statusBadge = isPending 
+                        ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
+                        : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
+
+                    // Sub-group items by specific vendor ID
+                    const vendorGroups = {};
+                    group.items.forEach(item => {
+                        const vKey = item.vendor_id || 'Echo Hub';
+                        if (!vendorGroups[vKey]) {
+                            vendorGroups[vKey] = [];
+                        }
+                        vendorGroups[vKey].push(item);
+                    });
+
                     html += `
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                        <div class="inquiry-card-item" data-search="${group.productName.toLowerCase()} ${Object.keys(vendorGroups).join(' ').toLowerCase()}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <!-- Product-Level Accordion Header -->
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 14px;">📦</span>
                                     <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700;">${group.productName}</h4>
-                                    <span style="font-size: 11px; background: #e2e8f0; color: #4a5568; padding: 2px 8px; border-radius: 10px; font-weight: 600;">${count}</span>
+                                    ${statusBadge}
                                 </div>
-                                <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 11px; background: #e2e8f0; color: #4a5568; padding: 2px 8px; border-radius: 10px; font-weight: 600;">${count} msg</span>
+                                    <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
+                                </div>
                             </div>
 
+                            <!-- Expandable Product Container -->
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
                                 
+                                <!-- Helper Notice -->
+                                <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
+                                    💡 Your inquiry has been routed to the assigned vendor. Vendors typically respond within 24 hours.
+                                </div>
+
+                                <!-- Product-Level Feedback Image Section -->
                                 <div style="background: #f0f4f8; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Upload Post-Receipt Feedback Image for this Product</label>
                                     <div style="display: flex; gap: 8px; align-items: center;">
@@ -602,41 +650,68 @@
                                     </div>
                                 </div>
 
-                                <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #edf2f7; padding-top: 10px;">
-                                    <h5 style="font-size: 12px; color: #718096; text-transform: uppercase; font-weight: 700;">Conversation History</h5>
+                                <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #edf2f7; padding-top: 10px;">
+                                    <h5 style="font-size: 12px; color: #718096; text-transform: uppercase; font-weight: 700;">Messages by Vendor ID</h5>
                     `;
 
-                    group.items.forEach(item => {
-                        const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
-                            year: 'numeric',
-                            month: 'numeric',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: true,
-                            timeZoneName: 'short'
-                        });
-                        
+                    let vIndex = 0;
+                    for (const [vendorId, vItems] of Object.entries(vendorGroups)) {
+                        vIndex++;
+                        const vAccordionId = `vendor-group-${pKey}-${vIndex}`;
+
                         html += `
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
-                                    <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Vendor: ${item.vendor_id || 'Echo Hub'}</span>
-                                    <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
+                            <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <!-- Vendor Sub-Accordion Header -->
+                                <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 12px;">🏢</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>
+                                        <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
+                                    </div>
+                                    <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
 
-                                <p style="font-size: 13px; color: #2d3748; margin: 0;">${item.message}</p>
-                                
-                                ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
-                                
-                                <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
-                                    <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
-                                    <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
-                                    <button onclick="submitFollowupMessage('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Reply</button>
+                                <!-- Vendor Sub-Accordion Messages Body -->
+                                <div id="${vAccordionId}" style="display: none; padding: 12px; flex-direction: column; gap: 10px;">
+                        `;
+
+                        vItems.forEach(item => {
+                            const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
+                                year: 'numeric',
+                                month: 'numeric',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true,
+                                timeZoneName: 'short'
+                            });
+                            
+                            html += `
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
+                                        <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Message Record</span>
+                                        <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
+                                    </div>
+
+                                    <p style="font-size: 13px; color: #2d3748; margin: 0;">${item.message}</p>
+                                    
+                                    ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
+                                    
+                                    <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
+                                        <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
+                                        <button onclick="submitFollowupMessage('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Reply</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        html += `
                                 </div>
                             </div>
                         `;
-                    });
+                    }
 
                     html += `
                                 </div>
@@ -651,6 +726,20 @@
             }
         }
 
+        function filterInquiriesList() {
+            const query = document.getElementById('inquiry-search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.inquiry-card-item');
+
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                if (searchData.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
         function toggleInquiryGroup(contentId, headerElement) {
             const bodyDiv = document.getElementById(contentId);
             const iconSpan = document.getElementById(`icon-${contentId}`);
@@ -663,6 +752,21 @@
                 bodyDiv.style.display = 'none';
                 iconSpan.style.transform = 'rotate(0deg)';
                 headerElement.style.background = '#f8fafc';
+            }
+        }
+
+        function toggleVendorGroup(vendorAccordionId, headerElement) {
+            const bodyDiv = document.getElementById(vendorAccordionId);
+            const iconSpan = document.getElementById(`icon-${vendorAccordionId}`);
+            
+            if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
+                bodyDiv.style.display = 'flex';
+                iconSpan.style.transform = 'rotate(180deg)';
+                headerElement.style.background = '#e2e8f0';
+            } else {
+                bodyDiv.style.display = 'none';
+                iconSpan.style.transform = 'rotate(0deg)';
+                headerElement.style.background = '#edf2f7';
             }
         }
 
