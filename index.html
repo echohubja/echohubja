@@ -361,18 +361,20 @@
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                // Query all possible name variations from the buyers table to ensure a match
+                // Query all possible name variations from the buyers table
                 const { data: buyerData, error } = await db
                     .from('buyers')
                     .select('id, buyer_id, name, full_name, username')
                     .eq('email', currentActiveEmail)
                     .single();
 
+                // DEBUG LOG: Check your browser console (F12) to see what Supabase actually returned
+                console.log("Supabase Buyer Data Result:", buyerData, error);
+
                 if (buyerData) {
                     currentBuyerId = buyerData.id; 
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
                     
-                    // Check all alternative columns where the registered name might be stored
                     const buyerName = buyerData.name || buyerData.full_name || buyerData.username;
                     
                     buyerNameSpan.textContent = buyerName ? `${buyerName} (${currentActiveEmail})` : currentActiveEmail;
@@ -395,7 +397,6 @@
         function updateReferralWidget(refCode) {
             const linkInput = document.getElementById('user-referral-link');
             if (linkInput) {
-                // Dynamically grabs the runtime origin and pathname to support GitHub Pages or custom domain paths
                 const baseUrl = window.location.origin + window.location.pathname;
                 linkInput.value = `${baseUrl}?ref=${refCode}`;
             }
