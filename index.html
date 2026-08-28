@@ -1,9 +1,317 @@
-${productTitleHtml}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub Marketplace Storefront</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navigation Bar -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-extrabold text-blue-600 tracking-tight">Echo Hub</span>
+                <span class="text-xs bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded">Marketplace</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://ko-fi.com/echohub/shop" target="_blank" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition">Ko-Fi Shop</a>
+                <div id="buyer-auth-container" class="flex items-center gap-2">
+                    <!-- Dynamically populated via checkBuyerSession() -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Storefront Content Container -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Store Banner / Intro -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-10 text-white mb-8 shadow-md">
+            <h1 class="text-2xl sm:text-3xl font-bold mb-2">Welcome to Echo Hub Marketplace</h1>
+            <p class="text-blue-100 text-sm sm:text-base max-w-2xl mb-6">Explore verified vendor products, submit feedback securely, and manage your inquiries and referrals all in one unified portal.</p>
+            
+            <!-- Store Search & Filters -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="store-search-input" placeholder="Search products or vendors..." class="px-4 py-2 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:max-w-md bg-white">
+                <div id="categories-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <button onclick="loadProducts('All', true)" class="px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition whitespace-nowrap active-category">All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section: Inquiries & Referrals (Visible when logged in) -->
+        <div id="buyer-dashboard-section" class="mb-10 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Referral Ledger Card -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Referral Dashboard</h2>
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Your Unique Referral Link</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="referral-link-input" readonly class="w-full text-xs bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-gray-600 select-all">
+                                <button onclick="copyReferralLink()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition whitespace-nowrap">Copy</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center mb-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span class="block text-xs text-gray-500 font-medium">Total Refs</span>
+                                <span id="stat-total-referrals" class="text-base font-bold text-gray-800">0</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span class="block text-xs text-gray-500 font-medium">Pending</span>
+                                <span id="stat-pending-balance" class="text-base font-bold text-orange-600">$0.00</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span class="block text-xs text-gray-500 font-medium">Payable</span>
+                                <span id="stat-payable-balance" class="text-base font-bold text-green-600">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-40">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-50 text-gray-500 border-b border-gray-200">
+                                <tr>
+                                    <th class="p-2 font-semibold">Date</th>
+                                    <th class="p-2 font-semibold">Net</th>
+                                    <th class="p-2 font-semibold">Split</th>
+                                    <th class="p-2 font-semibold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buyer-ledger-body">
+                                <tr><td colspan="4" class="text-center text-gray-400 p-4">No commissions recorded yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Product Inquiries Card -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-gray-900">Your Product Inquiries & Feedback</h2>
+                        <input type="text" id="inquiry-search-input" onkeyup="filterInquiriesList()" placeholder="Filter inquiries..." class="px-3 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                    </div>
+                    <div id="inquiries-list-container" class="flex-grow overflow-y-auto max-h-80 pr-1 space-y-3">
+                        <p class="text-center text-gray-400 py-10">Please log in to view your product inquiries.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Product Catalog Section -->
+        <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Available Products</h2>
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Dynamically populated via loadProducts() -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500">
+            &copy; 2026 Echo Hub. All rights reserved. Managed store portal.
+        </div>
+    </footer>
+
+    <!-- Main JavaScript Application Logic -->
+    <script>
+        // Supabase Initialization Configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentBuyerId = null;
+        let currentBuyerStringId = null;
+
+        async function checkBuyerSession() {
+            const authContainer = document.getElementById('buyer-auth-container');
+            const dashboardSection = document.getElementById('buyer-dashboard-section');
+            
+            // Simulating session check or retrieving from local storage
+            const storedEmail = localStorage.getItem('echo_hub_buyer_email');
+            const storedId = localStorage.getItem('echo_hub_buyer_id');
+
+            if (storedEmail && storedId) {
+                currentBuyerId = storedId;
+                currentBuyerStringId = storedEmail;
+                authContainer.innerHTML = `
+                    <span class="text-xs font-semibold text-gray-600 hidden sm:inline">${storedEmail}</span>
+                    <button onclick="logoutBuyer()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded transition">Logout</button>
+                `;
+                dashboardSection.classList.remove('hidden');
+                await loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
+                await loadBuyerInquiries();
+            } else {
+                authContainer.innerHTML = `
+                    <button onclick="openLoginModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition">Login / Register</button>
+                `;
+                dashboardSection.classList.add('hidden');
+            }
+        }
+
+        function logoutBuyer() {
+            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('echo_hub_buyer_id');
+            currentBuyerId = null;
+            currentBuyerStringId = null;
+            checkBuyerSession();
+            window.location.reload();
+        }
+
+        function openLoginModal() {
+            const email = prompt("Enter your buyer email address to access your portal:");
+            if (email) {
+                localStorage.setItem('echo_hub_buyer_email', email);
+                localStorage.setItem('echo_hub_buyer_id', email); // Simplified mapping representation
+                checkBuyerSession();
+            }
+        }
+
+        async function loadCategories() {
+            // Mock category loader or fetch from Supabase
+            const container = document.getElementById('categories-filter-container');
+            // Additional categories can be appended here safely
+        }
+
+        async function loadProducts(category, resetScroll) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-10">Loading products...</p>';
+
+            const { data, error } = await db
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                grid.innerHTML = '<p class="col-span-full text-center text-red-500 py-10">Failed to load marketplace products.</p>';
+                return;
+            }
+
+            if (data && data.length > 0) {
+                let html = '';
+                data.forEach(product => {
+                    if (category !== 'All' && product.category !== category) return;
+                    html += `
+                        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
+                            <div class="p-4">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${product.category || 'General'}</span>
+                                <h3 class="font-bold text-gray-900 mt-2 text-base">${product.title}</h3>
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-2">${product.description || ''}</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                                <span class="font-extrabold text-gray-900">$${parseFloat(product.price || 0).toFixed(2)}</span>
+                                <button onclick="openInquiryModal('${product.id}', '${product.title}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition">Inquire / Feedback</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                grid.innerHTML = html || '<p class="col-span-full text-center text-gray-400 py-10">No products found in this category.</p>';
+            } else {
+                grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-10">No products available at the moment.</p>';
+            }
+        }
+
+        function openInquiryModal(productId, productTitle) {
+            if (!currentBuyerId) {
+                alert("Please log in first to submit product inquiries and feedback proof.");
+                openLoginModal();
+                return;
+            }
+            const message = prompt(`Submit inquiry/feedback for: ${productTitle}\n\nEnter your message or feedback notes:`);
+            if (!message) return;
+
+            const amazonUrl = prompt("Enter your Amazon.com hyperlink (required for verification):");
+            if (!amazonUrl) return;
+
+            // Simple submission simulation / insertion logic
+            alert("Inquiry and Amazon hyperlink captured successfully! Submitting to database...");
+        }
+
+        async function loadBuyerInquiries() {
+            const container = document.getElementById('inquiries-list-container');
+            if (!container) return;
+
+            if (!currentBuyerId) {
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 30px;">Please log in to view your product inquiries.</p>';
+                return;
+            }
+
+            const { data: messages, error } = await db
+                .from('inquiries')
+                .select('*, products(title)')
+                .eq('buyer_id', currentBuyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching inquiries:', error.message);
+                container.innerHTML = '<p style="text-align: center; color: #e53e3e; padding: 30px;">Error loading inquiries.</p>';
+                return;
+            }
+
+            if (messages && messages.length > 0) {
+                const groupedByProduct = {};
+                messages.forEach(msg => {
+                    const pId = msg.product_id || 'general';
+                    if (!groupedByProduct[pId]) {
+                        groupedByProduct[pId] = {
+                            productTitle: msg.products?.title || 'General Inquiry',
+                            status: msg.status || 'pending',
+                            messages: []
+                        };
+                    }
+                    groupedByProduct[pId].messages.push(msg);
+                });
+
+                let html = '';
+                let indexCounter = 0;
+
+                for (const [pId, group] of Object.entries(groupedByProduct)) {
+                    indexCounter++;
+                    const contentId = `inquiry-group-content-${indexCounter}`;
+                    const count = group.messages.length;
+                    const productTitle = group.productTitle;
+                    const searchMetaValue = `${productTitle}`.toLowerCase();
+
+                    const vendorGroups = {};
+                    group.messages.forEach(m => {
+                        const vKey = m.vendor_id || 'Admin';
+                        if (!vendorGroups[vKey]) vendorGroups[vKey] = [];
+                        vendorGroups[vKey].push(m);
+                    });
+
+                    let statusBg = '#feebc8';
+                    let statusColor = '#c05621';
+                    let statusText = group.status.toUpperCase();
+                    if (group.status === 'verified' || group.status === 'approved') {
+                        statusBg = '#c6f6d5';
+                        statusColor = '#22543d';
+                    } else if (group.status === 'rejected') {
+                        statusBg = '#fed7d7';
+                        statusColor = '#9b2c2c';
+                    }
+
+                    const productTitleHtml = `<span style="font-weight: 700; color: #2d3748; font-size: 14px;">${productTitle}</span>`;
+                    const statusBadge = `<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${statusBg}; color: ${statusColor};">${statusText}</span>`;
+
+                    html += `
+                        <div class="inquiry-card-item" data-search="${searchMetaValue}" style="border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: #fff;">
+                            <div onclick="toggleInquiryGroup('${contentId}', this)" style="padding: 12px 15px; background: #f7fafc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    ${productTitleHtml}
                                     ${statusBadge}
                                 </div>
                                 <span style="font-size: 12px; color: #718096; font-weight: 600;">${count} Message${count > 1 ? 's' : ''} ▼</span>
                             </div>
-                            <div id="${contentId}" style="display: none; padding: 15px; background: #fff; display: flex; flex-direction: column; gap: 15px;">
+                            <div id="${contentId}" style="display: none; padding: 15px; background: #fff; flex-direction: column; gap: 15px;">
                     `;
 
                     for (const [vKey, vItems] of Object.entries(vendorGroups)) {
@@ -21,6 +329,16 @@ ${productTitleHtml}
                             const senderLabel = isUser ? 'You (Buyer)' : `Vendor (${vKey})`;
                             const dateStr = new Date(msg.created_at).toLocaleString();
 
+                            let imageHtml = '';
+                            if (msg.image_url) {
+                                imageHtml = `<div style="margin-top: 6px;"><a href="${msg.image_url}" target="_blank" style="font-size: 11px; color: #1e5aa8; font-weight: 600; text-decoration: underline;">View Attached Feedback/Image</a></div>`;
+                            }
+
+                            let linkHtml = '';
+                            if (msg.amazon_url) {
+                                linkHtml = `<div style="margin-top: 4px;"><a href="${msg.amazon_url}" target="_blank" style="font-size: 11px; color: #2b6cb0; font-weight: 600; text-decoration: underline;">View Amazon Link</a></div>`;
+                            }
+
                             html += `
                                 <div style="background: ${bubbleBg}; border: 1px solid ${borderColor}; padding: 10px; border-radius: 8px; ${align} font-size: 13px;">
                                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: #718096; margin-bottom: 4px; font-weight: 600;">
@@ -28,7 +346,8 @@ ${productTitleHtml}
                                         <span>${dateStr}</span>
                                     </div>
                                     <div style="color: #2d3748; white-space: pre-wrap; line-height: 1.4;">${msg.message}</div>
-                                    ${msg.image_url ? `<div style="margin-top: 6px;"><a href="${msg.image_url}" target="_blank" style="font-size: 11px; color: #1e5aa8; font-weight: 600; text-decoration: underline;">View Attached Feedback/Image</a></div>` : ''}
+                                    ${imageHtml}
+                                    ${linkHtml}
                                 </div>
                             `;
                         });
