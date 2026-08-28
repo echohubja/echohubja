@@ -82,9 +82,9 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Buyer ID</th>
-                        <th class="p-3">Product ID</th>
-                        <th class="p-3">Feedback Image</th>
+                        <th class="p-3">Buyer Name</th>
+                        <th class="p-3">Product ID / Vendor ID</th>
+                        <th class="p-3">Inquiry Message</th>
                         <th class="p-3">Status</th>
                         <th class="p-3 text-center">Action Control</th>
                     </tr>
@@ -228,12 +228,17 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC ---
+        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC (Relational Join) ---
         async function loadInquiriesPortal() {
             const tableBody = document.getElementById('inquiries-table-body');
             if (!tableBody) return;
 
-            const { data, error } = await db.from('inquiries').select('*').order('created_at', { ascending: false });
+            // Fetch inquiries joined with the buyers table to get real names dynamically
+            const { data, error } = await db
+                .from('inquiries')
+                .select('*, buyers(full_name, email)')
+                .order('created_at', { ascending: false });
+
             if (error) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
@@ -256,16 +261,21 @@
                     actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
                 }
 
-                let imgLink = '<span class="text-gray-400 text-xs">No Image</span>';
-                if (inq.feedback_image_url) {
-                    imgLink = `<a href="${escapeHtml(inq.feedback_image_url)}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View Image</a>`;
-                }
+                // Extract buyer name via relational join
+                const buyerName = inq.buyers?.full_name || 'Unknown Buyer';
+                const buyerEmail = inq.buyers?.email || '';
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(inq.buyer_id)}</td>
-                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(inq.product_id)}</td>
-                        <td class="p-3">${imgLink}</td>
+                        <td class="p-3">
+                            <div class="font-medium text-gray-800">${escapeHtml(buyerName)}</div>
+                            <div class="text-[11px] text-gray-400 font-mono">${escapeHtml(buyerEmail)}</div>
+                        </td>
+                        <td class="p-3 text-xs text-gray-600">
+                            <div>Prod: <span class="font-mono">${escapeHtml(inq.product_id)}</span></div>
+                            <div class="text-[11px] text-gray-400">Vendor: <span class="font-mono">${escapeHtml(inq.vendor_id)}</span></div>
+                        </td>
+                        <td class="p-3 text-xs text-gray-700 max-w-xs truncate" title="${escapeHtml(inq.message)}">${escapeHtml(inq.message || 'No message provided')}</td>
                         <td class="p-3">${badge}</td>
                         <td class="p-3 text-center">${actionBtn}</td>
                     </tr>
@@ -328,7 +338,6 @@
                     actionBtn = `<span class="text-xs text-gray-400 font-medium">Disbursed</span>`;
                 }
 
-                // Supports fallback/mapping if referral target role is specified in DB schema
                 let targetDisplay = comm.referred_id;
                 if (comm.referred_role) {
                     targetDisplay += ` <span class="text-xs text-gray-400">(${comm.referred_role})</span>`;
