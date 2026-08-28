@@ -73,14 +73,20 @@
         </div>
     </div>
 
-    <!-- TAB 2: INQUIRIES (Grouped Card Layout) -->
+    <!-- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree) -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
-            <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b pb-3 gap-3">
+            <div>
+                <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
+                <p class="text-xs text-gray-500">Hierarchical master-detail view organized by buyer and product.</p>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <input type="text" id="inquiry-search" oninput="filterInquiriesTree()" placeholder="Search buyer or product ID..." class="text-xs border border-gray-300 rounded px-3 py-1.5 w-full md:w-64 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">0 inquiries</span>
+            </div>
         </div>
         
-        <div id="inquiries-container" class="space-y-4">
+        <div id="inquiries-container" class="space-y-3">
             <div class="p-4 text-center text-gray-500">Loading inquiries...</div>
         </div>
     </div>
@@ -127,6 +133,7 @@
 
     <script>
         let db;
+        let globalInquiriesData = []; // Cached for fast client-side searching/filtering
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -217,7 +224,7 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES (Grouped & Collapsible Cards)[cite: 1] ---
+        // --- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree)[cite: 1] ---
         async function loadInquiriesPortal() {
             const container = document.getElementById('inquiries-container');
             if (!container) return;
@@ -237,7 +244,38 @@
                 return;
             }
 
+            globalInquiriesData = data;
+            renderInquiriesTree(data);
+        }
+
+        function filterInquiriesTree() {
+            const query = document.getElementById('inquiry-search').value.toLowerCase().trim();
+            if (!query) {
+                renderInquiriesTree(globalInquiriesData);
+                return;
+            }
+
+            const filtered = globalInquiriesData.filter(inq => {
+                const buyerName = (inq.buyers?.full_name || '').toLowerCase();
+                const buyerEmail = (inq.buyers?.email || '').toLowerCase();
+                const prodId = String(inq.product_id || '').toLowerCase();
+                const msg = (inq.message || '').toLowerCase();
+                return buyerName.includes(query) || buyerEmail.includes(query) || prodId.includes(query) || msg.includes(query);
+            });
+
+            renderInquiriesTree(filtered);
+        }
+
+        function renderInquiriesTree(data) {
+            const container = document.getElementById('inquiries-container');
+            if (!container) return;
+
             document.getElementById('inquiry-count').textContent = `${data.length} inquiry${data.length === 1 ? '' : 's'}`;
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No matching inquiries found.</div>`;
+                return;
+            }
 
             // Group inquiries by Buyer ID, then by Product ID
             const grouped = {};
@@ -258,56 +296,71 @@
             });
 
             let html = '';
+            let buyerIndex = 0;
+
             for (const [buyerId, buyerData] of Object.entries(grouped)) {
+                buyerIndex++;
+                const totalBuyerInquiries = Object.values(buyerData.products).reduce((acc, list) => acc + list.length, 0);
+                const buyerAccordionId = `buyer-accordion-${buyerId}`;
+                const buyerIconId = `buyer-icon-${buyerId}`;
+
                 html += `
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3">
-                        <div class="flex justify-between items-center border-b pb-2 mb-3">
-                            <div>
-                                <span class="font-bold text-gray-800 text-sm">${escapeHtml(buyerData.buyerName)}</span>
-                                <span class="text-xs text-gray-400 ml-2">(${escapeHtml(buyerData.buyerEmail)})</span>
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-2xs overflow-hidden transition">
+                        <!-- LEVEL 1: Master Buyer Header (Accordion Toggle) -->
+                        <div onclick="toggleAccordion('${buyerAccordionId}', '${buyerIconId}')" class="flex justify-between items-center p-3.5 bg-gray-50 hover:bg-gray-100/70 cursor-pointer select-none border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <span id="${buyerIconId}" class="text-xs font-bold text-gray-400 transform transition-transform duration-200">&#9658;</span>
+                                <div>
+                                    <span class="font-bold text-gray-800 text-xs md:text-sm">${escapeHtml(buyerData.buyerName)}</span>
+                                    <span class="text-xs text-gray-400 ml-2">(${escapeHtml(buyerData.buyerEmail)})</span>
+                                </div>
                             </div>
-                            <span class="text-[11px] bg-blue-50 text-[#1e5aa8] px-2 py-0.5 rounded font-semibold">Buyer Group</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] bg-blue-50 text-[#1e5aa8] px-2.5 py-0.5 rounded-full font-semibold">${totalBuyerInquiries} inquiry(s)</span>
+                            </div>
                         </div>
-                        <div class="space-y-3 pl-1">
+
+                        <!-- LEVEL 1 Body: Products Container (Collapsed by default for scalability) -->
+                        <div id="${buyerAccordionId}" class="hidden p-3 space-y-3 bg-white">
                 `;
 
                 for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
                     html += `
-                        <div class="bg-gray-50 border border-gray-200 rounded-md p-3">
-                            <div class="flex justify-between items-center text-xs font-semibold text-gray-700 mb-2 border-b border-gray-200 pb-1.5">
-                                <span>Product ID: <span class="font-mono text-[#1e5aa8]">${escapeHtml(prodId)}</span></span>
-                                <span class="text-gray-500 text-[11px]">${inquiriesList.length} message(s)</span>
+                        <!-- LEVEL 2: Sub-group Product Card -->
+                        <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-2.5">
+                            <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600 mb-2 pb-1 border-b border-gray-200">
+                                <span class="bg-blue-50 text-[#1e5aa8] px-1.5 py-0.5 rounded font-mono">Product ID: ${escapeHtml(prodId)}</span>
+                                <span class="text-gray-400">${inquiriesList.length} message(s)</span>
                             </div>
-                            <div class="space-y-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     `;
 
                     inquiriesList.forEach(inq => {
                         const status = (inq.status || 'pending_verification').toLowerCase();
-                        let badge = `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">PENDING</span>`;
-                        let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold transition">Verify</button>`;
+                        let badge = `<span class="bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded text-[9px] font-bold">PENDING</span>`;
+                        let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition">Verify</button>`;
 
                         if (status === 'verified') {
-                            badge = `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">VERIFIED</span>`;
-                            actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Done</span>`;
+                            badge = `<span class="bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold">VERIFIED</span>`;
+                            actionBtn = `<span class="text-[10px] text-gray-400 font-medium">Done</span>`;
                         }
 
                         const uniqueId = `msg-${inq.id}`;
-                        const fullMsg = escapeHtml(inq.message || 'No message provided');
-                        const isLong = fullMsg.length > 100;
+                        const fullMsg = escapeHtml(inq.message || 'No message');
+                        const isLong = fullMsg.length > 80;
 
                         html += `
-                            <div class="bg-white border border-gray-200 rounded p-2.5 text-xs flex flex-col gap-1.5">
-                                <div class="flex justify-between items-start gap-3">
-                                    <div class="text-gray-700 flex-1">
-                                        <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-2' : ''} text-gray-600">${fullMsg}</div>
-                                        ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-2'); this.textContent = this.textContent === 'Show more' ? 'Show less' : 'Show more';" class="text-[10px] text-[#1e5aa8] underline mt-1 font-semibold block">Show more</button>` : ''}
-                                    </div>
-                                    <div class="flex items-center gap-2 shrink-0">
-                                        ${badge}
-                                        ${actionBtn}
-                                    </div>
+                            <!-- LEVEL 3: Individual Message Detail Card -->
+                            <div class="bg-white border border-gray-200 rounded p-2 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                                <div class="flex-1 min-w-0">
+                                    <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-1' : ''} text-gray-700 text-xs">${fullMsg}</div>
+                                    ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-1'); this.textContent = this.textContent === 'More' ? 'Less' : 'More';" class="text-[9px] text-[#1e5aa8] font-semibold mt-0.5 hover:underline inline-block">More</button>` : ''}
+                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">V: ${escapeHtml(inq.vendor_id)} • ${new Date(inq.created_at).toLocaleDateString()}</div>
                                 </div>
-                                <div class="text-[10px] text-gray-400 font-mono">Vendor: ${escapeHtml(inq.vendor_id)} | Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    ${badge}
+                                    ${actionBtn}
+                                </div>
                             </div>
                         `;
                     });
@@ -319,6 +372,20 @@
             }
 
             container.innerHTML = html;
+        }
+
+        function toggleAccordion(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            if (!content || !icon) return;
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(90deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
         }
 
         async function verifyInquiry(inquiryId) {
