@@ -305,10 +305,13 @@
                     };
                 }
                 const prodId = inq.product_id || 'general';
-                // Enforce 1 feedback record per product UUID per buyer (taking the latest or first entry)
                 if (!grouped[buyerId].products[prodId]) {
-                    grouped[buyerId].products[prodId] = inq;
+                    grouped[buyerId].products[prodId] = {
+                        productMeta: inq.products,
+                        inquiries: []
+                    };
                 }
+                grouped[buyerId].products[prodId].inquiries.push(inq);
             });
 
             let html = '';
@@ -335,42 +338,48 @@
                         <div id="${buyerAccordionId}" class="hidden p-3 space-y-3 bg-white">
                 `;
 
-                for (const [prodId, inq] of productEntries) {
-                    const sampleProduct = inq.products;
+                for (const [prodId, prodData] of productEntries) {
+                    const sampleProduct = prodData.productMeta;
                     const prodImg = sampleProduct?.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
                     const prodName = escapeHtml(sampleProduct?.name || `Product ID: ${prodId}`);
 
-                    const status = (inq.status || 'pending_verification').toLowerCase();
-                    let badge = `<span class="bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold">PENDING</span>`;
-                    let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition shadow-2xs">Verify Feedback</button>`;
-
-                    if (status === 'verified') {
-                        badge = `<span class="bg-green-50 text-green-600 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold">VERIFIED</span>`;
-                        actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
-                    }
-
-                    const uniqueId = `msg-${inq.id}`;
-                    const fullMsg = escapeHtml(inq.message || '[Post-Receipt Product Feedback Image Attachment]');
-                    const isLong = fullMsg.length > 100;
-
-                    const imageHtml = inq.image_url 
-                        ? `<button onclick="openLightbox('${inq.image_url}')" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-2.5 py-1 rounded border border-indigo-200 transition mt-2 inline-flex items-center gap-1.5">🖼️ View Proof Image</button>`
-                        : `<span class="text-xs text-gray-400 mt-2 block">No image proof attached</span>`;
-
                     html += `
-                        <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-3">
-                            <div class="flex justify-between items-center text-xs font-semibold text-gray-600 mb-2 pb-2 border-b border-gray-200">
+                        <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-3 space-y-2">
+                            <div class="flex justify-between items-center text-xs font-semibold text-gray-600 pb-2 border-b border-gray-200">
                                 <div class="flex items-center gap-2" onmouseenter="showProductPreview(event, '${prodImg}', '${prodName}')" onmouseleave="hideProductPreview()">
                                     <img src="${prodImg}" alt="Product" class="w-7 h-7 object-cover rounded border border-gray-200 bg-white">
                                     <span class="text-gray-800 font-bold truncate max-w-xs cursor-pointer underline decoration-dotted">${prodName}</span>
                                     <span class="text-[10px] text-gray-400 font-mono">(${escapeHtml(prodId)})</span>
                                 </div>
-                                <span class="text-[10px] text-gray-400 font-mono">Sent: ${new Date(inq.created_at).toLocaleDateString()}</span>
+                                <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-semibold">${prodData.inquiries.length} Message(s)</span>
                             </div>
+                    `;
 
+                    prodData.inquiries.forEach(inq => {
+                        const status = (inq.status || 'pending_verification').toLowerCase();
+                        let badge = `<span class="bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold">PENDING</span>`;
+                        let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition shadow-2xs">Verify Feedback</button>`;
+
+                        if (status === 'verified') {
+                            badge = `<span class="bg-green-50 text-green-600 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold">VERIFIED</span>`;
+                            actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
+                        }
+
+                        const uniqueId = `msg-${inq.id}`;
+                        const fullMsg = escapeHtml(inq.message || '[Post-Receipt Product Feedback Image Attachment]');
+                        const isLong = fullMsg.length > 100;
+
+                        const imageHtml = inq.image_url 
+                            ? `<button onclick="openLightbox('${inq.image_url}')" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-2.5 py-1 rounded border border-indigo-200 transition mt-2 inline-flex items-center gap-1.5">🖼️ View Proof Image</button>`
+                            : `<span class="text-xs text-gray-400 mt-2 block">No image proof attached</span>`;
+
+                        html += `
                             <div class="bg-white border border-gray-200 rounded p-3 text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-2xs">
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-[10px] text-gray-400 mb-1">Vendor: <span class="font-mono text-gray-600">${escapeHtml(inq.vendor_id)}</span></div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <div class="text-[10px] text-gray-400">Vendor: <span class="font-mono text-gray-600">${escapeHtml(inq.vendor_id)}</span></div>
+                                        <span class="text-[10px] text-gray-400 font-mono">Sent: ${new Date(inq.created_at).toLocaleDateString()}</span>
+                                    </div>
                                     <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-2' : ''} text-gray-700 text-xs">${fullMsg}</div>
                                     ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-2'); this.textContent = this.textContent === 'More' ? 'Less' : 'More';" class="text-[10px] text-[#1e5aa8] font-semibold mt-1 hover:underline inline-block">More</button>` : ''}
                                     <div>${imageHtml}</div>
@@ -380,8 +389,10 @@
                                     ${actionBtn}
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
+
+                    html += `</div>`;
                 }
 
                 html += `</div></div>`;
