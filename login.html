@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Portal & Authentication</title>
+    <title>Echo Hub - Account Portal & Authentication</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -59,7 +59,7 @@
             color: #475569;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
@@ -67,10 +67,11 @@
             font-family: inherit;
             font-size: 14px;
             color: #1e293b;
+            background: #fff;
             transition: border-color 0.2s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #1e5aa8;
             background: #f8fafc;
@@ -144,8 +145,8 @@
 
     <div class="auth-container">
         <div id="formHeader">
-            <h2 id="formTitle">Vendor Login</h2>
-            <p class="subtitle" id="formSubtitle">Access your Echo Hub marketplace dashboard</p>
+            <h2 id="formTitle">Account Login</h2>
+            <p class="subtitle" id="formSubtitle">Access your Echo Hub marketplace account or dashboard</p>
         </div>
 
         <div id="authAlert" class="alert-msg"></div>
@@ -153,6 +154,14 @@
         <form id="authForm">
             <!-- Extra Registration Fields (Hidden by default) -->
             <div id="registerFields" style="display: none;">
+                <div class="form-group">
+                    <label for="accountType">I want to register as a:</label>
+                    <select id="accountType">
+                        <option value="buyer">Buyer / Reviewer</option>
+                        <option value="vendor">Vendor Partner</option>
+                    </select>
+                </div>
+
                 <div class="row-fields">
                     <div class="form-group" style="flex: 1;">
                         <label for="firstName">First Name</label>
@@ -163,15 +172,18 @@
                         <input type="text" id="lastName" placeholder="Stronghold">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="vendorType">Vendor Classification</label>
-                    <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
+
+                <div id="vendorSpecificFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="vendorType">Vendor Classification</label>
+                        <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
+                    </div>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="vendor@example.com">
+                <input type="email" id="email" required placeholder="name@example.com">
             </div>
 
             <div class="form-group">
@@ -183,28 +195,15 @@
         </form>
 
         <div class="toggle-mode">
-            <span id="toggleText">New vendor?</span> 
+            <span id="toggleText">New to Echo Hub?</span> 
             <a href="#" id="toggleBtn">Create an account</a>
         </div>
     </div>
 
     <script>
-        console.log("Login script initializing...");
-
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        
-        let supabaseClient = null;
-        try {
-            if (window.supabase) {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log("Supabase client initialized successfully.");
-            } else {
-                console.error("window.supabase is not available. SDK failed to load.");
-            }
-        } catch (err) {
-            console.error("Error creating Supabase client:", err);
-        }
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         let isRegisterMode = false;
 
@@ -215,7 +214,18 @@
         const toggleBtn = document.getElementById('toggleBtn');
         const toggleText = document.getElementById('toggleText');
         const registerFields = document.getElementById('registerFields');
+        const accountTypeSelect = document.getElementById('accountType');
+        const vendorSpecificFields = document.getElementById('vendorSpecificFields');
         const authAlert = document.getElementById('authAlert');
+
+        // Toggle visibility of vendor-specific inputs based on role selection
+        accountTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'vendor') {
+                vendorSpecificFields.style.display = 'block';
+            } else {
+                vendorSpecificFields.style.display = 'none';
+            }
+        });
 
         // Toggle between Login and Registration views
         toggleBtn.addEventListener('click', (e) => {
@@ -224,18 +234,18 @@
             showAlert('', false);
 
             if (isRegisterMode) {
-                formTitle.textContent = 'Vendor Registration';
+                formTitle.textContent = 'Create Account';
                 formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
                 submitBtn.textContent = 'Complete Registration';
                 registerFields.style.display = 'block';
                 toggleText.textContent = 'Already have an account?';
                 toggleBtn.textContent = 'Sign in';
             } else {
-                formTitle.textContent = 'Vendor Login';
-                formSubtitle.textContent = 'Access your Echo Hub marketplace dashboard';
+                formTitle.textContent = 'Account Login';
+                formSubtitle.textContent = 'Access your Echo Hub marketplace account or dashboard';
                 submitBtn.textContent = 'Sign In';
                 registerFields.style.display = 'none';
-                toggleText.textContent = 'New vendor?';
+                toggleText.textContent = 'New to Echo Hub?';
                 toggleBtn.textContent = 'Create an account';
             }
         });
@@ -250,19 +260,21 @@
             const password = document.getElementById('password').value.trim();
 
             try {
-                if (!supabaseClient) throw new Error('Supabase client failed to initialize properly.');
+                if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
 
                 if (isRegisterMode) {
-                    const firstName = document.getElementById('firstName').value.trim() || 'Vendor';
+                    // --- REGISTRATION FLOW ---
+                    const accountType = accountTypeSelect.value;
+                    const firstName = document.getElementById('firstName').value.trim() || (accountType === 'vendor' ? 'Vendor' : 'Buyer');
                     const lastName = document.getElementById('lastName').value.trim() || 'Partner';
-                    const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
 
                     submitBtn.textContent = 'Creating account...';
 
+                    // 1. Create Supabase Auth User
                     const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                         email,
                         password,
-                        options: { data: { first_name: firstName, last_name: lastName } }
+                        options: { data: { first_name: firstName, last_name: lastName, role: accountType } }
                     });
 
                     if (authError) throw new Error(authError.message);
@@ -270,36 +282,62 @@
 
                     const authUuid = authData.user.id;
 
-                    const { count, error: countError } = await supabaseClient
-                        .from('vendors')
-                        .select('*', { count: 'exact', head: true });
+                    if (accountType === 'vendor') {
+                        // Vendor Registration Path
+                        const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
+                        const { count, error: countError } = await supabaseClient
+                            .from('vendors')
+                            .select('*', { count: 'exact', head: true });
 
-                    if (countError) throw new Error('Could not calculate vendor sequence.');
+                        if (countError) throw new Error('Could not calculate vendor sequence.');
 
-                    const nextNum = (count || 0) + 1;
-                    const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
+                        const nextNum = (count || 0) + 1;
+                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
 
-                    const { error: insertError } = await supabaseClient.from('vendors').insert([
-                        {
-                            id: formattedId,
-                            user_id: authUuid,
-                            email: email,
-                            first_name: firstName,
-                            last_name: lastName,
-                            vendor_type: vendorType,
-                            status: 'ACTIVE',
-                            created_at: new Date()
-                        }
-                    ]);
+                        const { error: insertError } = await supabaseClient.from('vendors').insert([
+                            {
+                                id: formattedId,
+                                user_id: authUuid,
+                                email: email,
+                                first_name: firstName,
+                                last_name: lastName,
+                                vendor_type: vendorType,
+                                status: 'ACTIVE',
+                                created_at: new Date()
+                            }
+                        ]);
 
-                    if (insertError) throw new Error('Profile creation error: ' + insertError.message);
+                        if (insertError) throw new Error('Vendor profile creation error: ' + insertError.message);
 
-                    showAlert('Registration successful! Redirecting to dashboard...', false);
-                    setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
+                        showAlert('Registration successful! Redirecting to dashboard...', false);
+                        setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
+
+                    } else {
+                        // Buyer Registration Path (creates referral code & profile)
+                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                        
+                        const { error: insertError } = await supabaseClient.from('user_profiles').insert([
+                            {
+                                id: authUuid,
+                                email: email,
+                                first_name: firstName,
+                                last_name: lastName,
+                                referral_code: refCode,
+                                created_at: new Date()
+                            }
+                        ]);
+
+                        if (insertError) throw new Error('Buyer profile creation error: ' + insertError.message);
+
+                        showAlert('Registration successful! Redirecting to storefront...', false);
+                        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                    }
 
                 } else {
+                    // --- LOGIN FLOW ---
                     submitBtn.textContent = 'Signing in...';
 
+                    // 1. Authenticate via Supabase Auth
                     const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
                         email,
                         password
@@ -308,21 +346,35 @@
                     if (authError) throw new Error(authError.message);
                     const authUser = authData.user;
 
-                    const { data: vendorData, error: vendorError } = await supabaseClient
+                    // 2. Check if user is a Vendor first
+                    const { data: vendorData } = await supabaseClient
                         .from('vendors')
                         .select('*')
                         .eq('user_id', authUser.id)
-                        .single();
+                        .maybeSingle();
 
-                    if (vendorError || !vendorData) {
-                        throw new Error('User profile record not found in vendors table.');
+                    if (vendorData) {
+                        window.location.href = 'manage.html';
+                        return;
                     }
 
-                    window.location.href = 'manage.html';
+                    // 3. Check if user is a Buyer profile
+                    const { data: buyerData } = await supabaseClient
+                        .from('user_profiles')
+                        .select('*')
+                        .eq('id', authUser.id)
+                        .maybeSingle();
+
+                    if (buyerData) {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    // Fallback to index if no profile table matches
+                    window.location.href = 'index.html';
                 }
 
             } catch (err) {
-                console.error("Authentication error caught:", err);
                 showAlert(err.message, true);
                 submitBtn.disabled = false;
                 submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
