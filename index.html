@@ -196,16 +196,14 @@
         </aside>
         <main class="content-area">
             <div class="products-grid" id="products-container">
-                <!-- Dynamic products load here -->
-            </div>
+                </div>
         </main>
     </div>
 
-    <!-- Inquiry Drawer -->
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
-            <h2 style="font-size: 20px; margin: 0;">Product Inquiry & Feedback</h2>
+            <h2 style="font-size: 20px; margin: 0;">Product Inquiry</h2>
             <button class="btn-close-drawer" onclick="closeInquiryDrawer()">&times;</button>
         </div>
         
@@ -222,12 +220,7 @@
             
             <div>
                 <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
-                <textarea id="inquiry-message" placeholder="Ask details about this product or provide feedback..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
-            </div>
-
-            <div>
-                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Attach Feedback Image (Optional - Max 1):</label>
-                <input type="file" id="feedback-image-file" accept="image/*" style="font-size: 13px; width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; background: #f8fafc;">
+                <textarea id="inquiry-message" placeholder="Ask details about this product..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
@@ -237,7 +230,6 @@
         </div>
     </div>
 
-    <!-- Referral Drawer Overlay & Container -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
@@ -290,11 +282,10 @@
         </div>
     </div>
 
-    <!-- Inquiries Drawer Overlay & Container with Hierarchical Expansion Grouping -->
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
-            <h2 style="font-size: 20px; margin: 0;">My Inquiries & Feedback</h2>
+            <h2 style="font-size: 20px; margin: 0;">My Inquiries & Product Feedback</h2>
             <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
         </div>
         
@@ -441,7 +432,7 @@
                             <h5 style="margin-top: 4px;">${product.name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
                         </div>
-                        <button onclick="openInquiryDrawer('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire / Feedback</button>
+                        <button onclick="openInquiryDrawer('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire Product</button>
                     </div>
                 `).join('');
             } else {
@@ -457,7 +448,7 @@
 
         function openInquiryDrawer(productId, productName, vendorId) {
             if (!currentActiveEmail) {
-                alert('Please sign in through the account portal before sending an inquiry or feedback.');
+                alert('Please sign in through the account portal before sending an inquiry.');
                 window.location.href = 'portal.html';
                 return;
             }
@@ -469,7 +460,6 @@
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
-            document.getElementById('feedback-image-file').value = '';
             
             const drawer = document.getElementById('inquiry-drawer');
             const overlay = document.getElementById('inquiry-drawer-overlay');
@@ -488,44 +478,14 @@
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
             const message = document.getElementById('inquiry-message').value.trim();
-            const fileInput = document.getElementById('feedback-image-file');
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
             if (!message) {
-                alert('Please enter a message or feedback.');
+                alert('Please enter a message or question.');
                 return;
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
-
-            let imageUrl = null;
-
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-                const filePath = `feedback/${fileName}`;
-
-                const { data: uploadData, error: uploadError } = await db.storage
-                    .from('product-images')
-                    .upload(filePath, file);
-
-                if (uploadError) {
-                    console.error('Error uploading image:', uploadError.message);
-                    alert('Failed to upload feedback image. Please try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Send Inquiry';
-                    return;
-                }
-
-                const { data: publicUrlData } = db.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath);
-
-                imageUrl = publicUrlData.publicUrl;
-            }
-
             submitBtn.textContent = 'Sending...';
 
             const { error } = await db.from('inquiries').insert([
@@ -534,7 +494,7 @@
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
                     buyer_id: currentBuyerId, 
                     message: message,
-                    image_url: imageUrl
+                    image_url: null
                 }
             ]);
 
@@ -547,7 +507,7 @@
                 return;
             }
 
-            alert('Inquiry and feedback submitted successfully!');
+            alert('Inquiry submitted successfully!');
             closeInquiryDrawer();
         }
 
@@ -599,13 +559,13 @@
             }
 
             if (inquiries && inquiries.length > 0) {
-                // Group inquiries by product_id (or product name / fallback)
                 const grouped = {};
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
                     const pName = item.products?.name || 'General Inquiries';
                     if (!grouped[pKey]) {
                         grouped[pKey] = {
+                            productId: item.product_id,
                             productName: pName,
                             items: []
                         };
@@ -623,7 +583,6 @@
 
                     html += `
                         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <!-- Hierarchical Accordion Header -->
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 14px;">📦</span>
@@ -633,18 +592,37 @@
                                 <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                             </div>
 
-                            <!-- Expandable Body Container -->
-                            <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 12px; background: #fff;">
+                            <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
+                                
+                                <div style="background: #f0f4f8; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Upload Post-Receipt Feedback Image for this Product</label>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="file" id="product-feedback-file-${pKey}" accept="image/*" style="font-size: 12px; flex: 1; padding: 6px; background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;">
+                                        <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Upload Image</button>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #edf2f7; padding-top: 10px;">
+                                    <h5 style="font-size: 12px; color: #718096; text-transform: uppercase; font-weight: 700;">Conversation History</h5>
                     `;
 
                     group.items.forEach(item => {
-                        const dateStr = new Date(item.created_at).toLocaleDateString();
+                        const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true,
+                            timeZoneName: 'short'
+                        });
                         
                         html += `
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
                                     <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Vendor: ${item.vendor_id || 'Echo Hub'}</span>
-                                    <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${dateStr}</span>
+                                    <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                 </div>
 
                                 <p style="font-size: 13px; color: #2d3748; margin: 0;">${item.message}</p>
@@ -652,16 +630,16 @@
                                 ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
                                 
                                 <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
-                                    <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up / Reply</label>
-                                    <textarea id="followup-msg-${item.id}" placeholder="Write follow-up or additional feedback..." style="width: 100%; height: 45px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
-                                    <input type="file" id="followup-file-${item.id}" accept="image/*" style="font-size: 11px;">
-                                    <button onclick="submitFollowupFeedback('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Reply</button>
+                                    <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
+                                    <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
+                                    <button onclick="submitFollowupMessage('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Reply</button>
                                 </div>
                             </div>
                         `;
                     });
 
                     html += `
+                                </div>
                             </div>
                         </div>
                     `;
@@ -669,7 +647,7 @@
 
                 container.innerHTML = html;
             } else {
-                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries or feedback yet.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries yet.</p>';
             }
         }
 
@@ -688,39 +666,60 @@
             }
         }
 
-        async function submitFollowupFeedback(inquiryId, productId, vendorId) {
-            const msgInput = document.getElementById(`followup-msg-${inquiryId}`);
-            const fileInput = document.getElementById(`followup-file-${inquiryId}`);
-            const messageText = msgInput.value.trim();
-
-            if (!messageText && (!fileInput.files || !fileInput.files[0])) {
-                alert('Please enter a message or select an image to send.');
+        async function uploadProductFeedbackImage(productId, pKey) {
+            const fileInput = document.getElementById(`product-feedback-file-${pKey}`);
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select an image file to upload as product feedback.');
                 return;
             }
 
-            let imageUrl = null;
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            const filePath = `feedback/${fileName}`;
 
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `followup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-                const filePath = `feedback/${fileName}`;
+            const { error: uploadError } = await db.storage
+                .from('product-images')
+                .upload(filePath, file);
 
-                const { error: uploadError } = await db.storage
-                    .from('product-images')
-                    .upload(filePath, file);
+            if (uploadError) {
+                console.error('Error uploading feedback image:', uploadError.message);
+                alert('Failed to upload feedback image.');
+                return;
+            }
 
-                if (uploadError) {
-                    console.error('Error uploading follow-up image:', uploadError.message);
-                    alert('Failed to upload image.');
-                    return;
+            const { data: publicUrlData } = db.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+
+            const imageUrl = publicUrlData.publicUrl;
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId === 'null' || !productId ? null : productId,
+                    buyer_id: currentBuyerId,
+                    message: '[Post-Receipt Product Feedback Image Attachment]',
+                    image_url: imageUrl
                 }
+            ]);
 
-                const { data: publicUrlData } = db.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath);
+            if (error) {
+                console.error('Error saving feedback image record:', error.message);
+                alert('Failed to save feedback image record.');
+                return;
+            }
 
-                imageUrl = publicUrlData.publicUrl;
+            alert('Feedback image successfully uploaded and linked to this product!');
+            loadBuyerInquiriesHistory(currentBuyerId);
+        }
+
+        async function submitFollowupMessage(inquiryId, productId, vendorId) {
+            const msgInput = document.getElementById(`followup-msg-${inquiryId}`);
+            const messageText = msgInput.value.trim();
+
+            if (!messageText) {
+                alert('Please enter a reply message.');
+                return;
             }
 
             const { error } = await db.from('inquiries').insert([
@@ -729,17 +728,17 @@
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: `[Follow-up]: ${messageText}`,
-                    image_url: imageUrl
+                    image_url: null
                 }
             ]);
 
             if (error) {
                 console.error('Error submitting follow-up:', error.message);
-                alert('Failed to submit follow-up feedback.');
+                alert('Failed to submit follow-up message.');
                 return;
             }
 
-            alert('Follow-up feedback submitted successfully!');
+            alert('Follow-up message sent successfully!');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
 
