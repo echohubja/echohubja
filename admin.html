@@ -43,14 +43,12 @@
         <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
-    <!-- Navigation Tabs -->
     <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2">
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Referral Commissions & Payouts</button>
     </div>
 
-    <!-- TAB 1: BUYERS PORTAL -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-6">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
             <h2 class="text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
@@ -74,7 +72,6 @@
         </div>
     </div>
 
-    <!-- TAB 2: INQUIRIES & FEEDBACK VERIFICATION -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-6 hidden">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
             <h2 class="text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback Verification</h2>
@@ -99,14 +96,12 @@
         </div>
     </div>
 
-    <!-- TAB 3: COMMISSIONS & PAYOUTS -->
     <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-6 hidden">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
             <h2 class="text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payout Management</h2>
             <span id="commission-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
         </div>
 
-        <!-- Summary Metrics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="text-xs text-blue-600 font-semibold uppercase">Total Paid Out</div>
@@ -128,7 +123,7 @@
                 <thead>
                     <tr class="bg-gray-50 text-gray-600 text-sm border-b">
                         <th class="p-3">Referrer ID</th>
-                        <th class="p-3">Referred Buyer ID</th>
+                        <th class="p-3">Referral Target (Buyer/Vendor)</th>
                         <th class="p-3">Split Amount (20%)</th>
                         <th class="p-3">Status</th>
                         <th class="p-3 text-center">Action Control</th>
@@ -306,7 +301,6 @@
                 return;
             }
 
-            // Calculate aggregate summaries dynamically
             let totalPaid = 0;
             let totalPayable = 0;
             data.forEach(comm => {
@@ -334,10 +328,16 @@
                     actionBtn = `<span class="text-xs text-gray-400 font-medium">Disbursed</span>`;
                 }
 
+                // Supports fallback/mapping if referral target role is specified in DB schema
+                let targetDisplay = comm.referred_id;
+                if (comm.referred_role) {
+                    targetDisplay += ` <span class="text-xs text-gray-400">(${comm.referred_role})</span>`;
+                }
+
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
                         <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
-                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(comm.referred_id)}</td>
+                        <td class="p-3 text-xs font-mono text-gray-600">${targetDisplay}</td>
                         <td class="p-3 font-bold text-gray-800">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
                         <td class="p-3">${badge}</td>
                         <td class="p-3 text-center">${actionBtn}</td>
