@@ -131,9 +131,15 @@
         </div>
     </div>
 
+    <!-- Floating Product Image Tooltip Box -->
+    <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
+        <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-cover rounded mb-1.5 bg-gray-100">
+        <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
+    </div>
+
     <script>
         let db;
-        let globalInquiriesData = []; // Cached for fast client-side searching/filtering
+        let globalInquiriesData = []; 
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -224,14 +230,14 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree)[cite: 1] ---
+        // --- TAB 2: INQUIRIES (Scalable Collapsible Accordion Tree + Product Hover Previews)[cite: 1] ---
         async function loadInquiriesPortal() {
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
             const { data, error } = await db
                 .from('inquiries')
-                .select('*, buyers:buyer_id(full_name, email)')
+                .select('*, buyers:buyer_id(full_name, email), products:product_id(image_url_1, title)')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -296,10 +302,7 @@
             });
 
             let html = '';
-            let buyerIndex = 0;
-
             for (const [buyerId, buyerData] of Object.entries(grouped)) {
-                buyerIndex++;
                 const totalBuyerInquiries = Object.values(buyerData.products).reduce((acc, list) => acc + list.length, 0);
                 const buyerAccordionId = `buyer-accordion-${buyerId}`;
                 const buyerIconId = `buyer-icon-${buyerId}`;
@@ -320,7 +323,7 @@
                             </div>
                         </div>
 
-                        <!-- LEVEL 1 Body: Products Container (Collapsed by default for scalability) -->
+                        <!-- LEVEL 1 Body: Products Container (Collapsed by default) -->
                         <div id="${buyerAccordionId}" class="hidden p-3 space-y-3 bg-white">
                 `;
 
@@ -348,14 +351,23 @@
                         const uniqueId = `msg-${inq.id}`;
                         const fullMsg = escapeHtml(inq.message || 'No message');
                         const isLong = fullMsg.length > 80;
+                        
+                        const prodImg = inq.products?.image_url_1 || '';
+                        const prodTitle = escapeHtml(inq.products?.title || `Product ID: ${prodId}`);
 
                         html += `
                             <!-- LEVEL 3: Individual Message Detail Card -->
                             <div class="bg-white border border-gray-200 rounded p-2 text-xs flex items-center justify-between gap-3 shadow-2xs">
                                 <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <div class="relative inline-block" onmouseenter="showProductPreview(event, '${prodImg}', '${prodTitle}')" onmouseleave="hideProductPreview()">
+                                            <span class="bg-blue-50 text-[#1e5aa8] px-1.5 py-0.5 rounded font-mono text-[10px] cursor-pointer underline decoration-dotted">P: ${escapeHtml(prodId)}</span>
+                                        </div>
+                                        <span class="text-[9px] text-gray-400">V: ${escapeHtml(inq.vendor_id)}</span>
+                                    </div>
                                     <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-1' : ''} text-gray-700 text-xs">${fullMsg}</div>
                                     ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-1'); this.textContent = this.textContent === 'More' ? 'Less' : 'More';" class="text-[9px] text-[#1e5aa8] font-semibold mt-0.5 hover:underline inline-block">More</button>` : ''}
-                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">V: ${escapeHtml(inq.vendor_id)} • ${new Date(inq.created_at).toLocaleDateString()}</div>
+                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
                                 </div>
                                 <div class="flex items-center gap-1.5 shrink-0">
                                     ${badge}
@@ -386,6 +398,24 @@
                 content.classList.add('hidden');
                 icon.style.transform = 'rotate(0deg)';
             }
+        }
+
+        function showProductPreview(event, imgUrl, title) {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            const img = document.getElementById('tooltip-img');
+            const titleEl = document.getElementById('tooltip-title');
+            
+            img.src = imgUrl ? imgUrl : 'https://via.placeholder.com/150?text=No+Image';
+            titleEl.textContent = title;
+
+            tooltip.style.left = `${event.clientX + 15}px`;
+            tooltip.style.top = `${event.clientY + 15}px`;
+            tooltip.classList.remove('hidden');
+        }
+
+        function hideProductPreview() {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            tooltip.classList.add('hidden');
         }
 
         async function verifyInquiry(inquiryId) {
