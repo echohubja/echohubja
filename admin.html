@@ -3,156 +3,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Admin Dashboard</title>
+    <title>Echo Hub - Unified Admin Management Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-        body { background: #f5f7fa; color: #2c3e50; min-height: 100vh; display: flex; flex-direction: column; }
-        header { background: #1e5aa8; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .main-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; width: 100%; display: flex; flex-direction: column; gap: 25px; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-top: 15px; }
-        th { background: #f8fafc; color: #4a5568; padding: 12px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #2d3748; vertical-align: middle; }
-        .btn { padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-primary { background: #1e5aa8; color: white; }
-        .btn-primary:hover { background: #15437f; }
-        .btn-success { background: #38a169; color: white; }
-        .btn-success:hover { background: #2f855a; }
-        .input-text { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; width: 100%; max-width: 240px; }
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
+            background-attachment: fixed !important;
+            min-height: 100vh;
+            color: #2c3e50; 
+        }
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
+            color: white !important;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 2em; margin-bottom: 3px; font-weight: 700; color: white !important; }
+        header p { font-size: 0.95em; opacity: 0.95; margin: 0; color: white !important; }
+        .hub-card {
+            background: #ffffff !important;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #1e5aa8;
+            color: #1e5aa8;
+            font-weight: 700;
+        }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-6">
+
     <header>
-        <div>
-            <h1>Echo Hub Admin</h1>
-            <p style="font-size: 13px; opacity: 0.9;">Marketplace Management & Verification Control</p>
-        </div>
-        <div>
-            <span id="admin-email-display" style="font-size: 14px; font-weight: 500; margin-right: 15px;"></span>
-            <button onclick="adminLogout()" class="btn" style="background: rgba(255,255,255,0.2); color: white;">Sign Out</button>
-        </div>
+        <h1>Echo Hub</h1>
+        <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
-    <div class="main-container">
-        <!-- Inquiries & Feedback Verification Section -->
-        <div class="card">
-            <h2 style="font-size: 18px; color: #1e5aa8; margin-bottom: 5px;">Buyer Inquiries & Feedback Review</h2>
-            <p style="font-size: 13px; color: #718096; margin-bottom: 15px;">Review product inquiries, access attached feedback images, and link live Amazon posts.</p>
-            
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Buyer ID</th>
-                            <th>Product</th>
-                            <th>Message / Type</th>
-                            <th>Feedback Image</th>
-                            <th>Amazon Review Link</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-inquiries-body">
-                        <tr><td colspan="7" style="text-align: center; color: #718096; padding: 20px;">Loading inquiries...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
+        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
+        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
+        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
+    </div>
+
+    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
+            <span id="buyer-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Buyer Details</th>
+                        <th class="p-2.5">ID Verification</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action Control</th>
+                    </tr>
+                </thead>
+                <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b pb-3 gap-3">
+            <div>
+                <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
+                <p class="text-xs text-gray-500">Hierarchical master-detail view organized by buyer and product.</p>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <input type="text" id="inquiry-search" oninput="filterInquiriesTree()" placeholder="Search buyer or product..." class="text-xs border border-gray-300 rounded px-3 py-1.5 w-full md:w-64 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">0 inquiries</span>
+            </div>
+        </div>
+        
+        <div id="inquiries-container" class="space-y-3">
+            <div class="p-4 text-center text-gray-500">Loading inquiries...</div>
+        </div>
+    </div>
 
-        async function checkAdminSession() {
-            const { data: { session } } = await db.auth.getSession();
-            const email = session?.user?.email || localStorage.getItem('admin_email');
-            if (!email) {
-                alert('Admin access required. Please sign in.');
-                window.location.href = 'portal.html';
-                return;
+    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
+            <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Paid Out</div>
+                <div id="metric-total-paid" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div class="text-[11px] text-amber-600 font-semibold uppercase">Total Payable Balance</div>
+                <div id="metric-total-payable" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div class="text-[11px] text-gray-600 font-semibold uppercase">Total Processed Records</div>
+                <div id="metric-total-records" class="text-xl font-bold text-gray-800 mt-0.5">0</div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Referrer ID</th>
+                        <th class="p-2.5">Referral Target</th>
+                        <th class="p-2.5">Split Amount (20%)</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Floating Product Image Tooltip Box -->
+<div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
+    <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
+    <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
+</div>
+
+    <script>
+        let db;
+        let globalInquiriesData = []; 
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (window.supabase) {
+                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                loadBuyersPortal();
+                loadInquiriesPortal();
+                loadCommissionsPortal();
+            } else {
+                console.error("Supabase library failed to load.");
             }
-            document.getElementById('admin-email-display').textContent = email;
-            loadAdminInquiries();
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+
+            document.getElementById('section-buyers').classList.add('hidden');
+            document.getElementById('section-inquiries').classList.add('hidden');
+            document.getElementById('section-commissions').classList.add('hidden');
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
         }
 
-        async function loadAdminInquiries() {
-            const tbody = document.getElementById('admin-inquiries-body');
+        // --- TAB 1: BUYERS ---
+        async function loadBuyersPortal() {
+            const tableBody = document.getElementById('buyers-table-body');
+            if (!tableBody) return;
             
-            const { data: inquiries, error } = await db
+            const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
+                document.getElementById('buyer-count').textContent = '0 buyers';
+                return;
+            }
+
+            document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
+
+            tableBody.innerHTML = data.map(buyer => {
+                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
+                let statusBadge = '';
+                let actionButton = '';
+
+                if (rawStatus === 'READY' || rawStatus === 'APPROVED') {
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">APPROVED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Block</button>`;
+                } else if (rawStatus === 'BLOCKED') {
+                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">BLOCKED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                } else {
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-50 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
+                }
+
+                let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
+                if (buyer.national_id_url) {
+                    const rawVal = buyer.national_id_url.trim();
+                    if (rawVal.startsWith('http')) {
+                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View File</a>`;
+                    } else {
+                        idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
+                    }
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(buyer.email)}</div>
+                        </td>
+                        <td class="p-2.5">${idCellContent}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
+            if (!confirm(`Update access status for ${buyerEmail}?`)) return;
+            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
+            if (error) { alert('Error: ' + error.message); return; }
+            loadBuyersPortal();
+        }
+
+        // --- TAB 2: INQUIRIES ---
+        async function loadInquiriesPortal() {
+            const container = document.getElementById('inquiries-container');
+            if (!container) return;
+
+            const { data, error } = await db
                 .from('inquiries')
-                .select('*, products(name), buyers(buyer_id, email)')
+                .select('*, buyers:buyer_id(full_name, email), products:product_id(image_url_1, name)')
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error loading inquiries:', error.message);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c; padding: 20px;">Failed to load inquiries: ${error.message}</td></tr>`;
+                container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</div>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No product inquiries found.</div>`;
+                document.getElementById('inquiry-count').textContent = '0 inquiries';
                 return;
             }
 
-            if (inquiries && inquiries.length > 0) {
-                tbody.innerHTML = inquiries.map(item => {
-                    const dateStr = new Date(item.created_at).toLocaleString();
-                    const buyerDisplay = item.buyers?.buyer_id || item.buyer_id || 'Unknown';
-                    const productName = item.products?.name || 'General Inquiry';
-                    const isFeedback = item.message && item.message.includes('[Post-Receipt Product Feedback Image Attachment]');
-                    
-                    const imageHtml = item.image_url 
-                        ? `<a href="${item.image_url}" target="_blank" style="color: #1e5aa8; font-weight: 600; text-decoration: underline;">View Image ↗</a>` 
-                        : `<span style="color: #a0aec0;">No image</span>`;
+            globalInquiriesData = data;
+            renderInquiriesTree(data);
+        }
 
-                    const feedbackUrlVal = item.feedback_url || '';
+        function filterInquiriesTree() {
+            const query = document.getElementById('inquiry-search').value.toLowerCase().trim();
+            if (!query) {
+                renderInquiriesTree(globalInquiriesData);
+                return;
+            }
 
-                    return `
-                        <tr>
-                            <td>${dateStr}</td>
-                            <td><span style="font-weight: 600; color: #4a5568;">${buyerDisplay}</span></td>
-                            <td>${productName}</td>
-                            <td><span style="color: ${isFeedback ? '#d69e2e' : '#2d3748'}; font-weight: ${isFeedback ? '700' : '400'};">${item.message}</span></td>
-                            <td>${imageHtml}</td>
-                            <td>
-                                <input type="text" id="feedback-url-${item.id}" class="input-text" value="${feedbackUrlVal}" placeholder="https://amazon.com/review/...">
-                            </td>
-                            <td>
-                                <button onclick="saveAdminFeedbackLink('${item.id}')" class="btn btn-primary">Save Link</button>
-                            </td>
-                        </tr>
+            const filtered = globalInquiriesData.filter(inq => {
+                const buyerName = (inq.buyers?.full_name || '').toLowerCase();
+                const buyerEmail = (inq.buyers?.email || '').toLowerCase();
+                const prodName = (inq.products?.name || '').toLowerCase();
+                const prodId = String(inq.product_id || '').toLowerCase();
+                const msg = (inq.message || '').toLowerCase();
+                return buyerName.includes(query) || buyerEmail.includes(query) || prodName.includes(query) || prodId.includes(query) || msg.includes(query);
+            });
+
+            renderInquiriesTree(filtered);
+        }
+
+        function renderInquiriesTree(data) {
+            const container = document.getElementById('inquiries-container');
+            if (!container) return;
+
+            document.getElementById('inquiry-count').textContent = `${data.length} inquiry${data.length === 1 ? '' : 's'}`;
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No matching inquiries found.</div>`;
+                return;
+            }
+
+            const grouped = {};
+            data.forEach(inq => {
+                const buyerId = inq.buyer_id || 'unknown';
+                if (!grouped[buyerId]) {
+                    grouped[buyerId] = {
+                        buyerName: inq.buyers?.full_name || 'Unknown Buyer',
+                        buyerEmail: inq.buyers?.email || 'No email',
+                        products: {}
+                    };
+                }
+                const prodId = inq.product_id || 'general';
+                if (!grouped[buyerId].products[prodId]) {
+                    grouped[buyerId].products[prodId] = [];
+                }
+                grouped[buyerId].products[prodId].push(inq);
+            });
+
+            let html = '';
+            for (const [buyerId, buyerData] of Object.entries(grouped)) {
+                const totalBuyerInquiries = Object.values(buyerData.products).reduce((acc, list) => acc + list.length, 0);
+                const buyerAccordionId = `buyer-accordion-${buyerId}`;
+                const buyerIconId = `buyer-icon-${buyerId}`;
+
+                html += `
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-2xs overflow-hidden transition">
+                        <div onclick="toggleAccordion('${buyerAccordionId}', '${buyerIconId}')" class="flex justify-between items-center p-3.5 bg-gray-50 hover:bg-gray-100/70 cursor-pointer select-none border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <span id="${buyerIconId}" class="text-xs font-bold text-gray-400 transform transition-transform duration-200">&#9658;</span>
+                                <div>
+                                    <span class="font-bold text-gray-800 text-xs md:text-sm">${escapeHtml(buyerData.buyerName)}</span>
+                                    <span class="text-xs text-gray-400 ml-2">(${escapeHtml(buyerData.buyerEmail)})</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] bg-blue-50 text-[#1e5aa8] px-2.5 py-0.5 rounded-full font-semibold">${totalBuyerInquiries} inquiry(s)</span>
+                            </div>
+                        </div>
+
+                        <div id="${buyerAccordionId}" class="hidden p-3 space-y-3 bg-white">
+                `;
+
+                for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
+                    const sampleProduct = inquiriesList[0]?.products;
+                    const prodImg = sampleProduct?.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
+                    const prodName = escapeHtml(sampleProduct?.name || `Product ID: ${prodId}`);
+
+                    html += `
+                        <div class="bg-slate-50/70 border border-slate-200/80 rounded-md p-2.5">
+                            <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600 mb-2 pb-1 border-b border-gray-200">
+                                <div class="flex items-center gap-2" onmouseenter="showProductPreview(event, '${prodImg}', '${prodName}')" onmouseleave="hideProductPreview()">
+                                    <img src="${prodImg}" alt="Product" class="w-6 h-6 object-cover rounded border border-gray-200 bg-white">
+                                    <span class="text-gray-800 font-bold truncate max-w-xs cursor-pointer underline decoration-dotted">${prodName}</span>
+                                    <span class="text-[10px] text-gray-400 font-mono">(${escapeHtml(prodId)})</span>
+                                </div>
+                                <span class="text-gray-400">${inquiriesList.length} message(s)</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     `;
-                }).join('');
+
+                    inquiriesList.forEach(inq => {
+                        const status = (inq.status || 'pending_verification').toLowerCase();
+                        let badge = `<span class="bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded text-[9px] font-bold">PENDING</span>`;
+                        let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition">Verify</button>`;
+
+                        if (status === 'verified') {
+                            badge = `<span class="bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold">VERIFIED</span>`;
+                            actionBtn = `<span class="text-[10px] text-gray-400 font-medium">Done</span>`;
+                        }
+
+                        const uniqueId = `msg-${inq.id}`;
+                        const fullMsg = escapeHtml(inq.message || 'No message');
+                        const isLong = fullMsg.length > 80;
+
+                        html += `
+                            <div class="bg-white border border-gray-200 rounded p-2 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-[9px] text-gray-400 mb-0.5">Vendor: <span class="font-mono text-gray-600">${escapeHtml(inq.vendor_id)}</span></div>
+                                    <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-1' : ''} text-gray-700 text-xs">${fullMsg}</div>
+                                    ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-1'); this.textContent = this.textContent === 'More' ? 'Less' : 'More';" class="text-[9px] text-[#1e5aa8] font-semibold mt-0.5 hover:underline inline-block">More</button>` : ''}
+                                    <div class="text-[9px] text-gray-400 font-mono mt-0.5">Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    ${badge}
+                                    ${actionBtn}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                html += `</div></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleAccordion(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            if (!content || !icon) return;
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(90deg)';
             } else {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #718096; padding: 20px;">No inquiries found.</td></tr>`;
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
             }
         }
 
-        async function saveAdminFeedbackLink(inquiryId) {
-            const inputVal = document.getElementById(`feedback-url-${inquiryId}`).value.trim();
+        function showProductPreview(event, imgUrl, title) {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            const img = document.getElementById('tooltip-img');
+            const titleEl = document.getElementById('tooltip-title');
+            
+            img.src = imgUrl ? imgUrl : 'https://via.placeholder.com/150?text=No+Image';
+            titleEl.textContent = title;
 
-            const { error } = await db
-                .from('inquiries')
-                .update({ feedback_url: inputVal })
-                .eq('id', inquiryId);
+            tooltip.style.left = `${event.clientX + 15}px`;
+            tooltip.style.top = `${event.clientY + 15}px`;
+            tooltip.classList.remove('hidden');
+        }
 
+        function hideProductPreview() {
+            const tooltip = document.getElementById('product-hover-tooltip');
+            tooltip.classList.add('hidden');
+        }
+
+        async function verifyInquiry(inquiryId) {
+            if (!confirm("Verify this inquiry and trigger the automated referral commission?")) return;
+            const { error } = await db.from('inquiries').update({ status: 'verified' }).eq('id', inquiryId);
+            if (error) { alert('Error verifying inquiry: ' + error.message); return; }
+            alert('Inquiry verified successfully! Commission generated.');
+            loadInquiriesPortal();
+            loadCommissionsPortal();
+        }
+
+        // --- TAB 3: COMMISSIONS ---
+        async function loadCommissionsPortal() {
+            const tableBody = document.getElementById('commissions-table-body');
+            if (!tableBody) return;
+
+            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
             if (error) {
-                console.error('Error saving feedback link:', error.message);
-                alert('Failed to save Amazon review link.');
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
+                document.getElementById('commission-count').textContent = '0 records';
+                document.getElementById('metric-total-paid').textContent = '$0.00 USD';
+                document.getElementById('metric-total-payable').textContent = '$0.00 USD';
+                document.getElementById('metric-total-records').textContent = '0';
                 return;
             }
 
-            alert('Amazon review link successfully updated!');
-            loadAdminInquiries();
+            let totalPaid = 0;
+            let totalPayable = 0;
+            data.forEach(comm => {
+                const amt = parseFloat(comm.split_amount || 0);
+                const status = (comm.status || 'payable').toLowerCase();
+                if (status === 'paid') {
+                    totalPaid += amt;
+                } else {
+                    totalPayable += amt;
+                }
+            });
+
+            document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+            document.getElementById('metric-total-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
+            document.getElementById('metric-total-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
+            document.getElementById('metric-total-records').textContent = data.length;
+
+            tableBody.innerHTML = data.map(comm => {
+                const status = (comm.status || 'payable').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
+                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
+
+                if (status === 'paid') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`;
+                    actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
+                }
+
+                let targetDisplay = comm.referred_id;
+                if (comm.referred_role) {
+                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
+                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-center">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        async function adminLogout() {
-            await db.auth.signOut();
-            localStorage.removeItem('admin_email');
-            window.location.href = 'portal.html';
+        async function markCommissionPaid(commissionId) {
+            if (!confirm("Mark this referral commission payout as PAID?")) return;
+            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
+            if (error) { alert('Error updating payout status: ' + error.message); return; }
+            alert('Commission marked as paid!');
+            loadCommissionsPortal();
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            checkAdminSession();
-        });
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>
