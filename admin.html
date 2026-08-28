@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Unified Admin Portal</title>
+    <title>Echo Hub - Unified Admin Management Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,7 +19,7 @@
             padding: 25px;
             text-align: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
         header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
         header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
@@ -30,9 +30,9 @@
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
         }
         .tab-btn.active {
-            background-color: #1e5aa8;
-            color: white;
-            border-color: #1e5aa8;
+            border-bottom: 3px solid #1e5aa8;
+            color: #1e5aa8;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -40,20 +40,17 @@
 
     <header>
         <h1>Echo Hub</h1>
-        <p>Unified Marketplace Admin & Access Management Portal</p>
+        <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
     <!-- Navigation Tabs -->
-    <div class="max-w-6xl mx-auto mb-6 flex gap-3">
-        <button id="nav-buyers" onclick="switchTab('buyers')" class="tab-btn active px-5 py-2.5 rounded-lg font-semibold border border-gray-300 bg-white text-gray-700 transition shadow-sm">
-            Buyer Registrations
-        </button>
-        <button id="nav-vendors" onclick="switchTab('vendors')" class="tab-btn px-5 py-2.5 rounded-lg font-semibold border border-gray-300 bg-white text-gray-700 transition shadow-sm">
-            Vendor Portal
-        </button>
+    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2">
+        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition">Buyer Access Requests</button>
+        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Inquiry & Feedback Verification</button>
+        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition">Referral Commissions & Payouts</button>
     </div>
 
-    <!-- Buyers Container -->
+    <!-- TAB 1: BUYERS PORTAL -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-6">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
             <h2 class="text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
@@ -71,36 +68,57 @@
                     </tr>
                 </thead>
                 <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr>
-                        <td colspan="4" class="p-4 text-center text-gray-500">Loading buyer registrations...</td>
-                    </tr>
+                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Vendors Container -->
-    <div id="section-vendors" class="max-w-6xl mx-auto hub-card p-6 hidden">
+    <!-- TAB 2: INQUIRIES & FEEDBACK VERIFICATION -->
+    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-6 hidden">
         <div class="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 class="text-xl font-bold text-[#1e5aa8]">Vendor Management Portal</h2>
-            <span id="vendor-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 vendors</span>
+            <h2 class="text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback Verification</h2>
+            <span id="inquiry-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
         </div>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600 text-sm border-b">
-                        <th class="p-3">Vendor ID & Name</th>
-                        <th class="p-3">PayPal Email / Details</th>
-                        <th class="p-3">Type</th>
+                        <th class="p-3">Buyer ID</th>
+                        <th class="p-3">Product ID</th>
+                        <th class="p-3">Feedback Image</th>
                         <th class="p-3">Status</th>
                         <th class="p-3 text-center">Action Control</th>
                     </tr>
                 </thead>
-                <tbody id="vendors-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr>
-                        <td colspan="5" class="p-4 text-center text-gray-500">Loading vendor records...</td>
+                <tbody id="inquiries-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading inquiries...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: COMMISSIONS & PAYOUTS -->
+    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-6 hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-3">
+            <h2 class="text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payout Management</h2>
+            <span id="commission-count" class="text-sm bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-sm border-b">
+                        <th class="p-3">Referrer ID</th>
+                        <th class="p-3">Referred Buyer ID</th>
+                        <th class="p-3">Split Amount (20%)</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3 text-center">Action Control</th>
                     </tr>
+                </thead>
+                <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -115,45 +133,34 @@
                 const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
-                loadVendorsPortal();
+                loadInquiriesPortal();
+                loadCommissionsPortal();
             } else {
                 console.error("Supabase library failed to load.");
-                document.getElementById('buyers-table-body').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
-                document.getElementById('vendors-table-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: Supabase library failed to load.</td></tr>`;
             }
         });
 
-        function switchTab(tab) {
-            const buyersSection = document.getElementById('section-buyers');
-            const vendorsSection = document.getElementById('section-vendors');
-            const buyersBtn = document.getElementById('nav-buyers');
-            const vendorsBtn = document.getElementById('nav-vendors');
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
-            if (tab === 'buyers') {
-                buyersSection.classList.remove('hidden');
-                vendorsSection.classList.add('hidden');
-                buyersBtn.classList.add('active');
-                vendorsBtn.classList.remove('active');
-            } else {
-                vendorsSection.classList.remove('hidden');
-                buyersSection.classList.add('hidden');
-                vendorsBtn.classList.add('active');
-                buyersBtn.classList.remove('active');
-            }
+            document.getElementById('section-buyers').classList.add('hidden');
+            document.getElementById('section-inquiries').classList.add('hidden');
+            document.getElementById('section-commissions').classList.add('hidden');
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
         }
 
-        // --- BUYERS LOGIC ---
+        // --- TAB 1: BUYERS LOGIC ---
         async function loadBuyersPortal() {
             const tableBody = document.getElementById('buyers-table-body');
             if (!tableBody) return;
             
             const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
-
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading buyers: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
             }
-
             if (!data || data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
                 document.getElementById('buyer-count').textContent = '0 buyers';
@@ -163,14 +170,13 @@
             document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
 
             tableBody.innerHTML = data.map(buyer => {
+                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
                 let statusBadge = '';
                 let actionButton = '';
 
-                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
-
-                if (rawStatus === 'READY' || rawStatus === 'READY TO INVITE' || rawStatus === 'APPROVED') {
+                if (rawStatus === 'READY' || rawStatus === 'APPROVED') {
                     statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Block Access</button>`;
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Block</button>`;
                 } else if (rawStatus === 'BLOCKED') {
                     statusBadge = '<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">BLOCKED</span>';
                     actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
@@ -183,22 +189,9 @@
                 if (buyer.national_id_url) {
                     const rawVal = buyer.national_id_url.trim();
                     if (rawVal.startsWith('http')) {
-                        idCellContent = `
-                            <div><a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a></div>
-                            <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">${escapeHtml(rawVal)}</div>
-                        `;
-                    } else if (rawVal.includes('/')) {
-                        let cleanPath = rawVal.replace(/^national-ids\//, '');
-                        if (!cleanPath.startsWith('ids/')) {
-                            cleanPath = 'ids/' + cleanPath;
-                        }
-                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/national-ids/${cleanPath}`;
-                        idCellContent = `
-                            <div><a href="${publicUrl}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a></div>
-                            <div class="text-[10px] text-gray-400 truncate max-w-xs mt-0.5">Path: ${escapeHtml(cleanPath)}</div>
-                        `;
+                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View ID File</a>`;
                     } else {
-                        idCellContent = `<span class="text-gray-400 text-xs">${escapeHtml(rawVal)}</span>`;
+                        idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
                     }
                 }
 
@@ -207,7 +200,6 @@
                         <td class="p-3">
                             <div class="font-medium text-gray-800">${escapeHtml(buyer.full_name || 'Unknown')}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(buyer.email)}</div>
-                            <div class="text-xs text-gray-400">${escapeHtml(buyer.whatsapp_number || buyer.phone || '')}</div>
                         </td>
                         <td class="p-3">${idCellContent}</td>
                         <td class="p-3">${statusBadge}</td>
@@ -218,82 +210,112 @@
         }
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
-            const actionLabel = newStatus.includes('Ready') || newStatus === 'READY' ? 'approve' : 'block';
-            if (!confirm(`Are you sure you want to ${actionLabel} access for ${buyerEmail}?`)) return;
-
+            if (!confirm(`Update access status for ${buyerEmail}?`)) return;
             const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
-            if (error) {
-                alert('Error updating buyer status: ' + error.message);
-                return;
-            }
+            if (error) { alert('Error: ' + error.message); return; }
             loadBuyersPortal();
         }
 
-        // --- VENDORS LOGIC ---
-        async function loadVendorsPortal() {
-            const tableBody = document.getElementById('vendors-table-body');
+        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC ---
+        async function loadInquiriesPortal() {
+            const tableBody = document.getElementById('inquiries-table-body');
             if (!tableBody) return;
-            
-            const { data, error } = await db.from('vendors').select('*').order('created_at', { ascending: false });
 
+            const { data, error } = await db.from('inquiries').select('*').order('created_at', { ascending: false });
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading vendors: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
             }
-
             if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vendor registrations found.</td></tr>`;
-                document.getElementById('vendor-count').textContent = '0 vendors';
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No product inquiries found.</td></tr>`;
+                document.getElementById('inquiry-count').textContent = '0 inquiries';
                 return;
             }
 
-            document.getElementById('vendor-count').textContent = `${data.length} vendor${data.length === 1 ? '' : 's'}`;
+            document.getElementById('inquiry-count').textContent = `${data.length} inquiry${data.length === 1 ? '' : 's'}`;
 
-            tableBody.innerHTML = data.map(vendor => {
-                let statusBadge = '';
-                let actionButton = '';
-                const rawStatus = (vendor.status || '').trim().toUpperCase();
+            tableBody.innerHTML = data.map(inq => {
+                const status = (inq.status || 'pending_verification').toLowerCase();
+                let badge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>`;
+                let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-3 py-1 rounded text-xs font-semibold transition">Verify & Trigger Commission</button>`;
 
-                if (rawStatus === 'APPROVED') {
-                    statusBadge = '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>';
-                    actionButton = `<button onclick="updateVendorStatus('${vendor.id}', '${escapeHtml(vendor.email)}', 'PENDING')" class="bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Set Pending</button>`;
-                } else {
-                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>';
-                    actionButton = `<button onclick="updateVendorStatus('${vendor.id}', '${escapeHtml(vendor.email)}', 'APPROVED')" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                if (status === 'verified') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">VERIFIED</span>`;
+                    actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
                 }
 
-                const fullName = `${vendor.first_name || ''} ${vendor.last_name || ''}`.trim() || 'Unknown';
-                const typeBadge = vendor.vendor_type === 'UPFRONT' 
-                    ? '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-medium">UPFRONT</span>'
-                    : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">REFUND AFTER REVIEW</span>';
+                let imgLink = '<span class="text-gray-400 text-xs">No Image</span>';
+                if (inq.feedback_image_url) {
+                    imgLink = `<a href="${escapeHtml(inq.feedback_image_url)}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View Image</a>`;
+                }
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-3">
-                            <div class="font-medium text-gray-800">${escapeHtml(fullName)}</div>
-                            <div class="text-xs text-gray-400 font-mono">ID: ${escapeHtml(vendor.id)}</div>
-                        </td>
-                        <td class="p-3">
-                            <div class="text-xs text-gray-700 font-medium">${escapeHtml(vendor.email)}</div>
-                            <div class="text-[11px] text-gray-400 truncate max-w-xs">${escapeHtml(vendor.business_details || 'No details provided')}</div>
-                        </td>
-                        <td class="p-3">${typeBadge}</td>
-                        <td class="p-3">${statusBadge}</td>
-                        <td class="p-3 text-center">${actionButton}</td>
+                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(inq.buyer_id)}</td>
+                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(inq.product_id)}</td>
+                        <td class="p-3">${imgLink}</td>
+                        <td class="p-3">${badge}</td>
+                        <td class="p-3 text-center">${actionBtn}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        async function updateVendorStatus(vendorId, vendorEmail, newStatus) {
-            if (!confirm(`Are you sure you want to change status to ${newStatus} for ${vendorEmail}?`)) return;
+        async function verifyInquiry(inquiryId) {
+            if (!confirm("Verify this inquiry and trigger the automated referral commission?")) return;
+            const { error } = await db.from('inquiries').update({ status: 'verified' }).eq('id', inquiryId);
+            if (error) { alert('Error verifying inquiry: ' + error.message); return; }
+            alert('Inquiry verified successfully! Commission generated.');
+            loadInquiriesPortal();
+            loadCommissionsPortal();
+        }
 
-            const { error } = await db.from('vendors').update({ status: newStatus }).eq('id', vendorId);
+        // --- TAB 3: COMMISSIONS & PAYOUTS LOGIC ---
+        async function loadCommissionsPortal() {
+            const tableBody = document.getElementById('commissions-table-body');
+            if (!tableBody) return;
+
+            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
             if (error) {
-                alert('Error updating vendor status: ' + error.message);
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
             }
-            loadVendorsPortal();
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
+                document.getElementById('commission-count').textContent = '0 records';
+                return;
+            }
+
+            document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+
+            tableBody.innerHTML = data.map(comm => {
+                const status = (comm.status || 'payable').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">PAYABLE</span>`;
+                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-3 py-1 rounded text-xs font-semibold transition">Mark as Paid</button>`;
+
+                if (status === 'paid') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">PAID</span>`;
+                    actionBtn = `<span class="text-xs text-gray-400 font-medium">Disbursed</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
+                        <td class="p-3 text-xs font-mono text-gray-600">${escapeHtml(comm.referred_id)}</td>
+                        <td class="p-3 font-bold text-gray-800">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-3">${badge}</td>
+                        <td class="p-3 text-center">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function markCommissionPaid(commissionId) {
+            if (!confirm("Mark this referral commission payout as PAID?")) return;
+            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
+            if (error) { alert('Error updating payout status: ' + error.message); return; }
+            alert('Commission marked as paid!');
+            loadCommissionsPortal();
         }
 
         function escapeHtml(str) {
