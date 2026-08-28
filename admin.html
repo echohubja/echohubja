@@ -1,118 +1,410 @@
-<!-- TAB 2: INQUIRIES (Grouped & Collapsible Cards) -->
-<div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-    <div class="flex justify-between items-center mb-4 border-b pb-3">
-        <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
-        <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
-    </div>
-    
-    <div id="inquiries-container" class="space-y-4">
-        <div class="p-4 text-center text-gray-500">Loading inquiries...</div>
-    </div>
-</div>
-
-<script>
-    // --- TAB 2: INQUIRIES (Grouped by Buyer -> Product, Collapsible Card Layout) ---
-    async function loadInquiriesPortal() {
-        const container = document.getElementById('inquiries-container');
-        if (!container) return;
-
-        const { data, error } = await db
-            .from('inquiries')
-            .select('*, buyers:buyer_id(full_name, email)')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</div>`;
-            return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Unified Admin Management Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
+            background-attachment: fixed !important;
+            min-height: 100vh;
+            color: #2c3e50; 
         }
-        if (!data || data.length === 0) {
-            container.innerHTML = `<div class="p-4 text-center text-gray-500">No product inquiries found.</div>`;
-            document.getElementById('inquiry-count').textContent = '0 inquiries';
-            return;
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
+            color: white !important;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+            margin-bottom: 20px;
         }
+        header h1 { font-size: 2em; margin-bottom: 3px; font-weight: 700; color: white !important; }
+        header p { font-size: 0.95em; opacity: 0.95; margin: 0; color: white !important; }
+        .hub-card {
+            background: #ffffff !important;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #1e5aa8;
+            color: #1e5aa8;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6">
 
-        document.getElementById('inquiry-count').textContent = `${data.length} inquiry${data.length === 1 ? '' : 's'}`;
+    <header>
+        <h1>Echo Hub</h1>
+        <p>Unified Marketplace & Referral Control Center</p>
+    </header>
 
-        // Group inquiries by Buyer ID, then by Product ID
-        const grouped = {};
-        data.forEach(inq => {
-            const buyerId = inq.buyer_id || 'unknown';
-            if (!grouped[buyerId]) {
-                grouped[buyerId] = {
-                    buyerName: inq.buyers?.full_name || 'Unknown Buyer',
-                    buyerEmail: inq.buyers?.email || 'No email',
-                    products: {}
-                };
+    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
+        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
+        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
+        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
+    </div>
+
+    <!-- TAB 1: BUYERS -->
+    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
+            <span id="buyer-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Buyer Details</th>
+                        <th class="p-2.5">ID Verification</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action Control</th>
+                    </tr>
+                </thead>
+                <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: INQUIRIES (Grouped Card Layout) -->
+    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Product Inquiries & Feedback</h2>
+            <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 inquiries</span>
+        </div>
+        
+        <div id="inquiries-container" class="space-y-4">
+            <div class="p-4 text-center text-gray-500">Loading inquiries...</div>
+        </div>
+    </div>
+
+    <!-- TAB 3: COMMISSIONS -->
+    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
+            <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Paid Out</div>
+                <div id="metric-total-paid" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div class="text-[11px] text-amber-600 font-semibold uppercase">Total Payable Balance</div>
+                <div id="metric-total-payable" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div class="text-[11px] text-gray-600 font-semibold uppercase">Total Processed Records</div>
+                <div id="metric-total-records" class="text-xl font-bold text-gray-800 mt-0.5">0</div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Referrer ID</th>
+                        <th class="p-2.5">Referral Target</th>
+                        <th class="p-2.5">Split Amount (20%)</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (window.supabase) {
+                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                loadBuyersPortal();
+                loadInquiriesPortal();
+                loadCommissionsPortal();
+            } else {
+                console.error("Supabase library failed to load.");
             }
-            const prodId = inq.product_id || 'general';
-            if (!grouped[buyerId].products[prodId]) {
-                grouped[buyerId].products[prodId] = [];
-            }
-            grouped[buyerId].products[prodId].push(inq);
         });
 
-        // Render compact, collapsible cards
-        let html = '';
-        for (const [buyerId, buyerData] of Object.entries(grouped)) {
-            html += `
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3">
-                    <div class="flex justify-between items-center border-b pb-2 mb-3">
-                        <div>
-                            <span class="font-bold text-gray-800 text-sm">${escapeHtml(buyerData.buyerName)}</span>
-                            <span class="text-xs text-gray-400 ml-2">(${escapeHtml(buyerData.buyerEmail)})</span>
-                        </div>
-                        <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">Buyer Inquiries</span>
-                    </div>
-                    <div class="space-y-3 pl-2">
-            `;
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
-            for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
+            document.getElementById('section-buyers').classList.add('hidden');
+            document.getElementById('section-inquiries').classList.add('hidden');
+            document.getElementById('section-commissions').classList.add('hidden');
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+        }
+
+        // --- TAB 1: BUYERS ---
+        async function loadBuyersPortal() {
+            const tableBody = document.getElementById('buyers-table-body');
+            if (!tableBody) return;
+            
+            const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
+                document.getElementById('buyer-count').textContent = '0 buyers';
+                return;
+            }
+
+            document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
+
+            tableBody.innerHTML = data.map(buyer => {
+                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
+                let statusBadge = '';
+                let actionButton = '';
+
+                if (rawStatus === 'READY' || rawStatus === 'APPROVED') {
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">APPROVED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Block</button>`;
+                } else if (rawStatus === 'BLOCKED') {
+                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">BLOCKED</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+                } else {
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>';
+                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-50 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
+                }
+
+                let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
+                if (buyer.national_id_url) {
+                    const rawVal = buyer.national_id_url.trim();
+                    if (rawVal.startsWith('http')) {
+                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View File</a>`;
+                    } else {
+                        idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
+                    }
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(buyer.email)}</div>
+                        </td>
+                        <td class="p-2.5">${idCellContent}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
+            if (!confirm(`Update access status for ${buyerEmail}?`)) return;
+            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
+            if (error) { alert('Error: ' + error.message); return; }
+            loadBuyersPortal();
+        }
+
+        // --- TAB 2: INQUIRIES (Grouped & Collapsible Cards)[cite: 1] ---
+        async function loadInquiriesPortal() {
+            const container = document.getElementById('inquiries-container');
+            if (!container) return;
+
+            const { data, error } = await db
+                .from('inquiries')
+                .select('*, buyers:buyer_id(full_name, email)')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</div>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No product inquiries found.</div>`;
+                document.getElementById('inquiry-count').textContent = '0 inquiries';
+                return;
+            }
+
+            document.getElementById('inquiry-count').textContent = `${data.length} inquiry${data.length === 1 ? '' : 's'}`;
+
+            // Group inquiries by Buyer ID, then by Product ID
+            const grouped = {};
+            data.forEach(inq => {
+                const buyerId = inq.buyer_id || 'unknown';
+                if (!grouped[buyerId]) {
+                    grouped[buyerId] = {
+                        buyerName: inq.buyers?.full_name || 'Unknown Buyer',
+                        buyerEmail: inq.buyers?.email || 'No email',
+                        products: {}
+                    };
+                }
+                const prodId = inq.product_id || 'general';
+                if (!grouped[buyerId].products[prodId]) {
+                    grouped[buyerId].products[prodId] = [];
+                }
+                grouped[buyerId].products[prodId].push(inq);
+            });
+
+            let html = '';
+            for (const [buyerId, buyerData] of Object.entries(grouped)) {
                 html += `
-                    <div class="bg-gray-50 border border-gray-100 rounded p-3">
-                        <div class="flex justify-between items-center text-xs font-semibold text-gray-700 mb-2">
-                            <span>Product ID: <span class="font-mono text-[#1e5aa8]">${escapeHtml(prodId)}</span></span>
-                            <span class="text-gray-400 text-[11px]">${inquiriesList.length} message(s)</span>
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3">
+                        <div class="flex justify-between items-center border-b pb-2 mb-3">
+                            <div>
+                                <span class="font-bold text-gray-800 text-sm">${escapeHtml(buyerData.buyerName)}</span>
+                                <span class="text-xs text-gray-400 ml-2">(${escapeHtml(buyerData.buyerEmail)})</span>
+                            </div>
+                            <span class="text-[11px] bg-blue-50 text-[#1e5aa8] px-2 py-0.5 rounded font-semibold">Buyer Group</span>
                         </div>
-                        <div class="space-y-2">
+                        <div class="space-y-3 pl-1">
                 `;
 
-                inquiriesList.forEach((inq, idx) => {
-                    const status = (inq.status || 'pending_verification').toLowerCase();
-                    let badge = `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">PENDING</span>`;
-                    let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold transition">Verify & Commission</button>`;
-
-                    if (status === 'verified') {
-                        badge = `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">VERIFIED</span>`;
-                        actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Done</span>`;
-                    }
-
-                    const uniqueId = `msg-${inq.id}`;
-                    const fullMsg = escapeHtml(inq.message || 'No message provided');
-                    const isLong = fullMsg.length > 100;
-
+                for (const [prodId, inquiriesList] of Object.entries(buyerData.products)) {
                     html += `
-                        <div class="bg-white border border-gray-200 rounded p-2 text-xs flex flex-col gap-1.5">
-                            <div class="flex justify-between items-start gap-2">
-                                <div class="text-gray-700 flex-1">
-                                    <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-2' : ''} text-gray-600">${fullMsg}</div>
-                                    ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-2'); this.textContent = this.textContent === 'Show more' ? 'Show less' : 'Show more';" class="text-[10px] text-[#1e5aa8] underline mt-0.5 font-semibold">Show more</button>` : ''}
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    ${badge}
-                                    ${actionBtn}
-                                </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md p-3">
+                            <div class="flex justify-between items-center text-xs font-semibold text-gray-700 mb-2 border-b border-gray-200 pb-1.5">
+                                <span>Product ID: <span class="font-mono text-[#1e5aa8]">${escapeHtml(prodId)}</span></span>
+                                <span class="text-gray-500 text-[11px]">${inquiriesList.length} message(s)</span>
                             </div>
-                            <div class="text-[10px] text-gray-400 font-mono">Vendor: ${escapeHtml(inq.vendor_id)} | Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
-                        </div>
+                            <div class="space-y-2">
                     `;
-                });
+
+                    inquiriesList.forEach(inq => {
+                        const status = (inq.status || 'pending_verification').toLowerCase();
+                        let badge = `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">PENDING</span>`;
+                        let actionBtn = `<button onclick="verifyInquiry('${inq.id}')" class="bg-blue-600 text-white hover:bg-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold transition">Verify</button>`;
+
+                        if (status === 'verified') {
+                            badge = `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">VERIFIED</span>`;
+                            actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Done</span>`;
+                        }
+
+                        const uniqueId = `msg-${inq.id}`;
+                        const fullMsg = escapeHtml(inq.message || 'No message provided');
+                        const isLong = fullMsg.length > 100;
+
+                        html += `
+                            <div class="bg-white border border-gray-200 rounded p-2.5 text-xs flex flex-col gap-1.5">
+                                <div class="flex justify-between items-start gap-3">
+                                    <div class="text-gray-700 flex-1">
+                                        <div id="${uniqueId}-preview" class="${isLong ? 'line-clamp-2' : ''} text-gray-600">${fullMsg}</div>
+                                        ${isLong ? `<button onclick="document.getElementById('${uniqueId}-preview').classList.toggle('line-clamp-2'); this.textContent = this.textContent === 'Show more' ? 'Show less' : 'Show more';" class="text-[10px] text-[#1e5aa8] underline mt-1 font-semibold block">Show more</button>` : ''}
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        ${badge}
+                                        ${actionBtn}
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-gray-400 font-mono">Vendor: ${escapeHtml(inq.vendor_id)} | Sent: ${new Date(inq.created_at).toLocaleDateString()}</div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                }
 
                 html += `</div></div>`;
             }
 
-            html += `</div></div>`;
+            container.innerHTML = html;
         }
 
-        container.innerHTML = html;
-    }
-</script>
+        async function verifyInquiry(inquiryId) {
+            if (!confirm("Verify this inquiry and trigger the automated referral commission?")) return;
+            const { error } = await db.from('inquiries').update({ status: 'verified' }).eq('id', inquiryId);
+            if (error) { alert('Error verifying inquiry: ' + error.message); return; }
+            alert('Inquiry verified successfully! Commission generated.');
+            loadInquiriesPortal();
+            loadCommissionsPortal();
+        }
+
+        // --- TAB 3: COMMISSIONS ---
+        async function loadCommissionsPortal() {
+            const tableBody = document.getElementById('commissions-table-body');
+            if (!tableBody) return;
+
+            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
+                document.getElementById('commission-count').textContent = '0 records';
+                document.getElementById('metric-total-paid').textContent = '$0.00 USD';
+                document.getElementById('metric-total-payable').textContent = '$0.00 USD';
+                document.getElementById('metric-total-records').textContent = '0';
+                return;
+            }
+
+            let totalPaid = 0;
+            let totalPayable = 0;
+            data.forEach(comm => {
+                const amt = parseFloat(comm.split_amount || 0);
+                const status = (comm.status || 'payable').toLowerCase();
+                if (status === 'paid') {
+                    totalPaid += amt;
+                } else {
+                    totalPayable += amt;
+                }
+            });
+
+            document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+            document.getElementById('metric-total-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
+            document.getElementById('metric-total-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
+            document.getElementById('metric-total-records').textContent = data.length;
+
+            tableBody.innerHTML = data.map(comm => {
+                const status = (comm.status || 'payable').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
+                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
+
+                if (status === 'paid') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`;
+                    actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
+                }
+
+                let targetDisplay = comm.referred_id;
+                if (comm.referred_role) {
+                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
+                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-center">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function markCommissionPaid(commissionId) {
+            if (!confirm("Mark this referral commission payout as PAID?")) return;
+            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
+            if (error) { alert('Error updating payout status: ' + error.message); return; }
+            alert('Commission marked as paid!');
+            loadCommissionsPortal();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
