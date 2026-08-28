@@ -157,7 +157,7 @@
         }
         .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
 
-        /* Hover Tooltip Preview Styling (Fixed positioning to prevent cropping) */
+        /* Hover Tooltip Preview Styling (Fixed positioning downwards) */
         .product-hover-container {
             position: relative;
             display: inline-block;
@@ -240,12 +240,10 @@
         </aside>
         <main class="content-area">
             <div class="products-grid" id="products-container">
-                <!-- Dynamic products load here -->
-            </div>
+                </div>
         </main>
     </div>
 
-    <!-- Inquiry Drawer -->
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
@@ -276,7 +274,6 @@
         </div>
     </div>
 
-    <!-- Referral Drawer Overlay & Container -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
@@ -329,7 +326,6 @@
         </div>
     </div>
 
-    <!-- Inquiries Drawer Overlay & Container -->
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
@@ -338,7 +334,6 @@
         </div>
         
         <div class="drawer-body">
-            <!-- Search & Filter Bar -->
             <div>
                 <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
             </div>
@@ -660,7 +655,7 @@
                         vendorGroups[vKey].push(item);
                     });
 
-                    // Product Name with Hover Tooltip Image Preview (Tooltip positioned downwards using top: 125%)
+                    // Product Name with Hover Tooltip Image Preview
                     const productTitleHtml = group.productImage ? `
                         <div class="product-hover-container" style="display: inline-block;">
                             <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700; cursor: help; text-decoration: underline dotted;">${group.productName} 🖼️</h4>
@@ -673,7 +668,6 @@
 
                     html += `
                         <div class="inquiry-card-item" data-search="${group.productName.toLowerCase()} ${Object.keys(vendorGroups).join(' ').toLowerCase()}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <!-- Product-Level Accordion Header -->
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 14px;">📦</span>
@@ -686,7 +680,6 @@
                                 </div>
                             </div>
 
-                            <!-- Expandable Product Container -->
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
                                 
                                 <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
@@ -847,22 +840,51 @@
 
             const imageUrl = publicUrlData.publicUrl;
 
-            const { error } = await db.from('inquiries').insert([
-                {
-                    product_id: productId === 'null' || !productId ? null : productId,
-                    buyer_id: currentBuyerId,
-                    message: '[Post-Receipt Product Feedback Image Attachment]',
-                    image_url: imageUrl
-                }
-            ]);
+            // Check if an existing feedback record already exists for this product and buyer
+            const { data: existingFeedback, error: fetchErr } = await db
+                .from('inquiries')
+                .select('id')
+                .eq('buyer_id', currentBuyerId)
+                .eq('product_id', productId)
+                .ilike('message', '%[Post-Receipt Product Feedback Image Attachment]%')
+                .maybeSingle();
 
-            if (error) {
-                console.error('Error saving feedback image record:', error.message);
+            if (fetchErr) {
+                console.error('Error checking existing feedback:', fetchErr.message);
+            }
+
+            let dbError = null;
+
+            if (existingFeedback && existingFeedback.id) {
+                // Update existing record to maintain 1-to-1 constraint per product
+                const { error: updateErr } = await db
+                    .from('inquiries')
+                    .update({ 
+                        image_url: imageUrl,
+                        created_at: new Date().toISOString() 
+                    })
+                    .eq('id', existingFeedback.id);
+                dbError = updateErr;
+            } else {
+                // Insert new feedback record if none exists yet
+                const { error: insertErr } = await db.from('inquiries').insert([
+                    {
+                        product_id: productId === 'null' || !productId ? null : productId,
+                        buyer_id: currentBuyerId,
+                        message: '[Post-Receipt Product Feedback Image Attachment]',
+                        image_url: imageUrl
+                    }
+                ]);
+                dbError = insertErr;
+            }
+
+            if (dbError) {
+                console.error('Error saving feedback image record:', dbError.message);
                 alert('Failed to save feedback image record.');
                 return;
             }
 
-            alert('Feedback image successfully uploaded and linked to this product!');
+            alert('Feedback image successfully uploaded and updated for this product!');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
 
