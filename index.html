@@ -157,7 +157,7 @@
         }
         .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
 
-        /* Hover Tooltip Preview Styling */
+        /* Hover Tooltip Preview Styling (Fixed positioning to prevent cropping) */
         .product-hover-container {
             position: relative;
             display: inline-block;
@@ -172,7 +172,7 @@
             padding: 6px;
             position: absolute;
             z-index: 1300;
-            bottom: 125%;
+            top: 125%;
             left: 50%;
             transform: translateX(-50%);
             opacity: 0;
@@ -240,10 +240,12 @@
         </aside>
         <main class="content-area">
             <div class="products-grid" id="products-container">
-                </div>
+                <!-- Dynamic products load here -->
+            </div>
         </main>
     </div>
 
+    <!-- Inquiry Drawer -->
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
@@ -274,6 +276,7 @@
         </div>
     </div>
 
+    <!-- Referral Drawer Overlay & Container -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
@@ -326,6 +329,7 @@
         </div>
     </div>
 
+    <!-- Inquiries Drawer Overlay & Container -->
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
@@ -334,6 +338,7 @@
         </div>
         
         <div class="drawer-body">
+            <!-- Search & Filter Bar -->
             <div>
                 <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
             </div>
@@ -655,7 +660,7 @@
                         vendorGroups[vKey].push(item);
                     });
 
-                    // Product Name with Hover Tooltip Image Preview
+                    // Product Name with Hover Tooltip Image Preview (Tooltip positioned downwards using top: 125%)
                     const productTitleHtml = group.productImage ? `
                         <div class="product-hover-container" style="display: inline-block;">
                             <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700; cursor: help; text-decoration: underline dotted;">${group.productName} 🖼️</h4>
@@ -668,6 +673,7 @@
 
                     html += `
                         <div class="inquiry-card-item" data-search="${group.productName.toLowerCase()} ${Object.keys(vendorGroups).join(' ').toLowerCase()}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <!-- Product-Level Accordion Header -->
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 14px;">📦</span>
@@ -680,6 +686,7 @@
                                 </div>
                             </div>
 
+                            <!-- Expandable Product Container -->
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
                                 
                                 <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
