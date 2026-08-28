@@ -1,167 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Buyer Product Inquiry & Feedback Portal</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
-            background-attachment: fixed !important;
-            min-height: 100vh;
-            color: #2c3e50; 
-        }
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
-            color: white !important;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 20px;
-        }
-        header h1 { font-size: 2em; margin-bottom: 3px; font-weight: 700; color: white !important; }
-        header p { font-size: 0.95em; opacity: 0.95; margin: 0; color: white !important; }
-        .hub-card {
-            background: #ffffff !important;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-        }
-    </style>
-</head>
-<body class="p-4 md:p-6">
+${productTitleHtml}
+                                    ${statusBadge}
+                                </div>
+                                <span style="font-size: 12px; color: #718096; font-weight: 600;">${count} Message${count > 1 ? 's' : ''} ▼</span>
+                            </div>
+                            <div id="${contentId}" style="display: none; padding: 15px; background: #fff; display: flex; flex-direction: column; gap: 15px;">
+                    `;
 
-    <header>
-        <h1>Echo Hub</h1>
-        <p>Buyer Product Inquiry & Feedback Submission Portal</p>
-    </header>
+                    for (const [vKey, vItems] of Object.entries(vendorGroups)) {
+                        html += `
+                            <div style="border-left: 3px solid #1e5aa8; padding-left: 10px; margin-bottom: 5px;">
+                                <div style="font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 8px;">Vendor ID: ${vKey}</div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                        `;
 
-    <div class="max-w-4xl mx-auto hub-card p-6">
-        <h2 class="text-xl font-bold text-[#1e5aa8] mb-1">Submit Product Inquiry & Feedback Proof</h2>
-        <p class="text-xs text-gray-500 mb-6">You may send multiple inquiries, but each unique product UUID requires exactly 1 feedback proof image and associated Amazon review hyperlink.</p>
+                        vItems.forEach(msg => {
+                            const isUser = msg.buyer_id === currentBuyerId;
+                            const bubbleBg = isUser ? '#ebf8ff' : '#f7fafc';
+                            const borderColor = isUser ? '#bee3f8' : '#e2e8f0';
+                            const align = isUser ? 'margin-left: 20px;' : 'margin-right: 20px;';
+                            const senderLabel = isUser ? 'You (Buyer)' : `Vendor (${vKey})`;
+                            const dateStr = new Date(msg.created_at).toLocaleString();
 
-        <form id="feedback-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select Product UUID / Item</label>
-                <select id="product-select" required class="w-full text-xs border border-gray-300 rounded p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                    <option value="">-- Load Available Products --</option>
-                </select>
-            </div>
+                            html += `
+                                <div style="background: ${bubbleBg}; border: 1px solid ${borderColor}; padding: 10px; border-radius: 8px; ${align} font-size: 13px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #718096; margin-bottom: 4px; font-weight: 600;">
+                                        <span>${senderLabel}</span>
+                                        <span>${dateStr}</span>
+                                    </div>
+                                    <div style="color: #2d3748; white-space: pre-wrap; line-height: 1.4;">${msg.message}</div>
+                                    ${msg.image_url ? `<div style="margin-top: 6px;"><a href="${msg.image_url}" target="_blank" style="font-size: 11px; color: #1e5aa8; font-weight: 600; text-decoration: underline;">View Attached Feedback/Image</a></div>` : ''}
+                                </div>
+                            `;
+                        });
 
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Inquiry Message / Notes</label>
-                <textarea id="inquiry-message" rows="3" placeholder="Type your product question or feedback note here..." class="w-full text-xs border border-gray-300 rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]"></textarea>
-            </div>
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                <div>
-                    <label class="block text-xs font-bold text-[#1e5aa8] uppercase mb-1">Feedback Proof Image (Required)</label>
-                    <input type="file" id="proof-image-file" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-[#1e5aa8] hover:file:bg-blue-200 cursor-pointer">
-                    <p class="text-[10px] text-gray-400 mt-1">Upload screenshot of your delivered product or review confirmation.</p>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-[#1e5aa8] uppercase mb-1">Amazon Feedback Hyperlink (Required)</label>
-                    <input type="url" id="amazon-feedback-url" placeholder="https://www.amazon.com/review/..." required class="w-full text-xs border border-gray-300 rounded p-2.5 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8] bg-white">
-                    <p class="text-[10px] text-gray-400 mt-1">Must be a valid Amazon review URL pointing to your published feedback.</p>
-                </div>
-            </div>
-
-            <div class="pt-2 flex justify-end">
-                <button type="submit" id="submit-btn" class="bg-[#1e5aa8] hover:bg-blue-700 text-white font-bold text-xs px-6 py-2.5 rounded shadow transition">
-                    Submit Inquiry & Feedback Proof
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <script>
-        let db;
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (window.supabase) {
-                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                loadProductsDropdown();
-            } else {
-                console.error("Supabase library failed to load.");
-            }
-        });
-
-        async function loadProductsDropdown() {
-            const selectEl = document.getElementById('product-select');
-            const { data, error } = await db.from('products').select('id, name').order('name');
-            if (error) {
-                console.error("Error loading products:", error.message);
-                return;
-            }
-            if (data && data.length > 0) {
-                selectEl.innerHTML = '<option value="">-- Select Product --</option>' + data.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (ID: ${p.id})</option>`).join('');
-            } else {
-                selectEl.innerHTML = '<option value="">No products available</option>';
-            }
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const submitBtn = document.getElementById('submit-btn');
-            const productId = document.getElementById('product-select').value;
-            const message = document.getElementById('inquiry-message').value.trim();
-            const imageFile = document.getElementById('proof-image-file').files[0];
-            const amazonUrl = document.getElementById('amazon-feedback-url').value.trim();
-
-            if (!productId) { alert('Please select a product.'); return; }
-            if (!amazonUrl.toLowerCase().includes('amazon.com')) {
-                alert('Invalid URL. The feedback hyperlink must point to a valid Amazon.com domain.');
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading & Submitting...';
-
-            try {
-                let imageUrl = '';
-                if (imageFile) {
-                    const fileExt = imageFile.name.split('.').pop();
-                    const fileName = `${Date.now()}-${Math.random().toString(36.substring(2, 9))}.${fileExt}`;
-                    const filePath = `feedback-proofs/${fileName}`;
-
-                    const { error: uploadError } = await db.storage.from('inquiry-images').upload(filePath, imageFile);
-                    if (uploadError) throw uploadError;
-
-                    const { data: publicUrlData } = db.storage.from('inquiry-images').getPublicUrl(filePath);
-                    imageUrl = publicUrlData.publicUrl;
+                    html += `
+                            </div>
+                        </div>
+                    `;
                 }
 
-                // Insert into inquiries table capturing both the image proof and the required amazon hyperlink
-                const { error: insertError } = await db.from('inquiries').insert([{
-                    product_id: productId,
-                    message: message || '[Post-Receipt Product Feedback Image Attachment]',
-                    image_url: imageUrl,
-                    feedback_url: amazonUrl, // Stored in the dedicated feedback URL column
-                    status: 'pending_verification'
-                }]);
-
-                if (insertError) throw insertError;
-
-                alert('Inquiry and feedback proof submitted successfully!');
-                document.getElementById('feedback-form').reset();
-                loadProductsDropdown();
-            } catch (err) {
-                alert('Submission failed: ' + err.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Inquiry & Feedback Proof';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 30px;">No product inquiries found yet.</p>';
             }
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        function toggleInquiryGroup(contentId, headerEl) {
+            const contentDiv = document.getElementById(contentId);
+            const arrowSpan = headerEl.querySelector('span:last-child');
+            if (contentDiv.style.display === 'none') {
+                contentDiv.style.display = 'flex';
+                arrowSpan.textContent = arrowSpan.textContent.replace('▼', '▲');
+            } else {
+                contentDiv.style.display = 'none';
+                arrowSpan.textContent = arrowSpan.textContent.replace('▲', '▼');
+            }
         }
+
+        function filterInquiriesList() {
+            const query = document.getElementById('inquiry-search-input').value.toLowerCase();
+            const cards = document.querySelectorAll('.inquiry-card-item');
+            cards.forEach(card => {
+                const searchMeta = card.getAttribute('data-search') || '';
+                if (searchMeta.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function copyReferralLink() {
+            const input = document.getElementById('referral-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            alert('Referral link copied to clipboard!');
+        }
+
+        async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
+            const linkInput = document.getElementById('referral-link-input');
+            const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+            linkInput.value = `${baseUrl}portal.html?ref=${buyerStringId}`;
+
+            if (!buyerId) return;
+
+            const { data, error } = await db
+                .from('referral_ledger')
+                .select('*')
+                .eq('referrer_buyer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading referral history:', error.message);
+                return;
+            }
+
+            let totalCount = 0;
+            let pendingBal = 0;
+            let payableBal = 0;
+            let tbodyHtml = '';
+
+            if (data && data.length > 0) {
+                totalCount = data.length;
+                data.forEach(row => {
+                    const netComm = parseFloat(row.net_commission || 0);
+                    const split = parseFloat(row.referrer_split || 0);
+                    if (row.status === 'payable' || row.status === 'paid') {
+                        payableBal += split;
+                    } else {
+                        pendingBal += split;
+                    }
+
+                    tbodyHtml += `
+                        <tr style="border-bottom: 1px solid #edf2f7;">
+                            <td style="padding: 10px 8px; color: #4a5568;">${new Date(row.created_at).toLocaleDateString()}</td>
+                            <td style="padding: 10px 8px; color: #2d3748;">$${netComm.toFixed(2)}</td>
+                            <td style="padding: 10px 8px; font-weight: 600; color: #38a169;">$${split.toFixed(2)}</td>
+                            <td style="padding: 10px 8px;"><span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${row.status === 'payable' ? '#c6f6d5' : '#feebc8'}; color: ${row.status === 'payable' ? '#22543d' : '#c05621'};">${row.status.toUpperCase()}</span></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbodyHtml = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 20px;">No referral commissions recorded yet.</td></tr>`;
+            }
+
+            document.getElementById('stat-total-referrals').textContent = totalCount;
+            document.getElementById('stat-pending-balance').textContent = `$${pendingBal.toFixed(2)}`;
+            document.getElementById('stat-payable-balance').textContent = `$${payableBal.toFixed(2)}`;
+            document.getElementById('buyer-ledger-body').innerHTML = tbodyHtml;
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkBuyerSession();
+            await loadCategories();
+            await loadProducts('All', false);
+        });
     </script>
 </body>
 </html>
