@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Marketplace</title>
+    <title>Echo Hub - Marketplace & Referral Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
@@ -102,6 +102,100 @@
             font-weight: 600; 
         }
         .content-area { display: flex; flex-direction: column; gap: 20px; }
+
+        /* Compact Aesthetic Referral Hub & Stats Widget Styling */
+        .referral-hub-widget {
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .referral-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .referral-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e5aa8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .split-badge {
+            background: #e6fffa;
+            color: #234e52;
+            border: 1px solid #b2f5ea;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .referral-link-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .referral-link-box input {
+            flex-grow: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-family: monospace;
+            color: #4a5568;
+        }
+        .btn-copy {
+            background: #1e5aa8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+        .btn-copy:hover { background: #164685; }
+        .referral-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .stat-card .value {
+            font-size: 18px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        .stat-referrals .label { color: #3182ce; }
+        .stat-pending .label { color: #d69e2e; }
+        .stat-paid .label { color: #38a169; }
+
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
         .product-box { 
             background: #fff; 
@@ -156,6 +250,7 @@
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
+            .referral-stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -183,7 +278,36 @@
                 </div>
             </div>
         </aside>
+        
         <main class="content-area">
+            <!-- Compact Aesthetic Referral Hub & Stats Widget -->
+            <div class="referral-hub-widget" id="referral-widget-container">
+                <div class="referral-top">
+                    <div class="referral-title">
+                        <span>🤝</span> Your Referral Hub & Stats
+                    </div>
+                    <div class="split-badge">20% Net Split Active</div>
+                </div>
+                <div class="referral-link-box">
+                    <input type="text" id="user-referral-link" readonly value="https://echohub.com/register?ref=LOADING...">
+                    <button class="btn-copy" onclick="copyReferralLink()">Copy Link</button>
+                </div>
+                <div class="referral-stats-grid">
+                    <div class="stat-card stat-referrals">
+                        <div class="label">Total Referrals</div>
+                        <div class="value" id="stat-total-referrals">0</div>
+                    </div>
+                    <div class="stat-card stat-pending">
+                        <div class="label">Pending Balance</div>
+                        <div class="value" id="stat-pending-balance">$0.00</div>
+                    </div>
+                    <div class="stat-card stat-paid">
+                        <div class="label">Total Paid Out</div>
+                        <div class="value" id="stat-total-paid">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="products-grid" id="products-container">
                 <!-- Dynamic products load here -->
             </div>
@@ -252,12 +376,31 @@
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
                 }
+
+                // Populate referral link and fetch real stats if available
+                updateReferralWidget(currentBuyerStringId);
             } else {
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
                 currentBuyerId = '';
                 currentBuyerStringId = '';
+                updateReferralWidget('GUEST');
             }
+        }
+
+        function updateReferralWidget(refCode) {
+            const linkInput = document.getElementById('user-referral-link');
+            if (linkInput) {
+                linkInput.value = `https://echohub.com/register?ref=${refCode}`;
+            }
+        }
+
+        function copyReferralLink() {
+            const linkInput = document.getElementById('user-referral-link');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(linkInput.value);
+            alert('Referral link copied to clipboard!');
         }
 
         async function logoutBuyer() {
@@ -373,7 +516,6 @@
             document.getElementById('modal-vendor-id').value = vendorId;
             document.getElementById('modal-product-title').textContent = productName;
             
-            // Display the user-facing 'BUYER-XXXXX' string in the modal interface
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
@@ -395,7 +537,6 @@
                 return;
             }
 
-            // Passes the buyer's UUID `id` to satisfy foreign key relations on the inquiries table
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
