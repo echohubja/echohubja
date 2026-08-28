@@ -3,399 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Marketplace</title>
+    <title>Echo Hub - Marketplace & Product Inquiries</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
         body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
-            background-attachment: fixed;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
+            background-attachment: fixed !important;
             min-height: 100vh;
             color: #2c3e50; 
         }
         header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 30px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
+            color: white !important;
+            padding: 25px;
+            text-align: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+            margin-bottom: 30px;
         }
-        .header-left h1 {
-            font-size: 2.5em;
-            margin-bottom: 5px;
-        }
-        .header-left p {
-            font-size: 1.1em;
-            opacity: 0.95;
-            margin: 0;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .btn-portal {
-            background: white;
-            color: #1e5aa8;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 10, 0.1);
-            transition: all 0.2s ease;
-        }
-        .btn-portal:hover {
-            background: #f8fbff;
-            transform: translateY(-1px);
-        }
-        .layout { 
-            max-width: 1400px; 
-            margin: 40px auto; 
-            padding: 0 20px; 
-            display: grid; 
-            grid-template-columns: 240px 1fr; 
-            gap: 40px; 
-        }
-        aside {
-            background: white;
-            padding: 20px;
+        header h1 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; color: white !important; }
+        header p { font-size: 1.05em; opacity: 0.95; margin: 0; color: white !important; }
+        .hub-card {
+            background: #ffffff !important;
+            border: 2px solid #e1e8ed;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-            height: fit-content;
-        }
-        .filter-group h3 { 
-            font-size: 14px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            color: #1e5aa8; 
-            margin-bottom: 15px; 
-            font-weight: 700;
-        }
-        .filter-links { display: flex; flex-direction: column; gap: 8px; }
-        .filter-link { 
-            background: none; 
-            border: none; 
-            text-align: left; 
-            padding: 10px 12px; 
-            border-radius: 8px;
-            font-size: 15px; 
-            color: #4a5568; 
-            cursor: pointer; 
-            transition: all 0.2s ease;
-            width: 100%;
-        }
-        .filter-link:hover, .filter-link.active { 
-            background: #f0f4f8;
-            color: #1e5aa8; 
-            font-weight: 600; 
-        }
-        .content-area { display: flex; flex-direction: column; gap: 20px; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
-        .product-box { 
-            background: #fff; 
-            border: 2px solid #e1e8ed; 
-            border-radius: 12px; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .product-box:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(30, 90, 168, 0.1);
-        }
-        .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
-        .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
-        .product-box button { 
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
-            color: #fff; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: opacity 0.2s ease;
-        }
-        .product-box button:hover { opacity: 0.9; }
-        @media (max-width: 768px) {
-            .layout { grid-template-columns: 1fr; }
-            header { flex-direction: column; gap: 15px; text-align: center; }
-            .header-right { flex-direction: column; width: 100%; }
         }
     </style>
 </head>
-<body>
+<body class="p-6">
+
     <header>
-        <div class="header-left">
-            <h1>Echo Hub</h1>
-            <p>Marketplace Storefront</p>
-        </div>
-        <div class="header-right">
-            <span id="auth-status-nav"><a href="login.html" class="btn-portal">Sign In / Account Portal</a></span>
-        </div>
+        <h1>Echo Hub Marketplace</h1>
+        <p>Explore Products & Submit Inquiries</p>
     </header>
 
-    <div class="layout">
-        <aside>
-            <div class="filter-group">
-                <h3>Catalog Sections</h3>
-                <div class="filter-links" id="category-filters">
-                    <!-- Dynamic categories will map here -->
-                    <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
-                </div>
+    <div class="max-w-4xl mx-auto hub-card p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-[#1e5aa8]">Featured Products</h2>
+            <div id="buyer-session-badge" class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
+                Active Buyer: <span id="current-buyer-name" class="font-bold text-[#1e5aa8]">Loading...</span>
             </div>
-        </aside>
-        
-        <main class="content-area">
-            <!-- Referral & Stats Widget (Dynamically shown for logged-in buyers) -->
-            <div id="referral-dashboard-section" style="display:none; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); border: 2px solid #e1e8ed;">
-                <h3 style="color: #1e5aa8; margin-bottom: 15px; font-size: 18px;">🤝 Your Referral Hub & Stats</h3>
+        </div>
+
+        <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamically populated from Supabase products table -->
+            <div class="p-4 border border-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+                Loading products from database...
+            </div>
+        </div>
+    </div>
+
+    <!-- Inquiry Modal -->
+    <div id="inquiry-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl relative">
+            <h3 id="modal-product-title" class="text-lg font-bold text-[#1e5aa8] mb-1">Inquire About Product</h3>
+            <p class="text-xs text-gray-500 mb-4">Send a message to the vendor regarding this item.</p>
+            
+            <form id="inquiry-form" onsubmit="submitInquiry(event)">
+                <input type="hidden" id="modal-product-id">
                 
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; color: #2c3e50; display: block; margin-bottom: 5px; font-size: 14px;">Your Unique Referral Link:</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="user-ref-link" readonly style="flex: 1; padding: 10px 14px; border: 2px solid #e1e8ed; border-radius: 8px; background: #f8fbff; font-size: 14px; color: #2c3e50;">
-                        <button onclick="copyRefLink()" style="background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Copy Link</button>
+                <!-- Grid layout for Buyer ID & Vendor ID UI cards -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Buyer ID</label>
+                        <div id="modal-buyer-display" class="text-xs font-semibold text-gray-800 truncate">Loading...</div>
+                    </div>
+                    <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Vendor ID</label>
+                        <div id="modal-vendor-display" class="text-xs font-semibold text-gray-800 truncate">Loading...</div>
+                        <input type="hidden" id="modal-vendor-id">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px;">
-                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
-                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Total Referrals</span>
-                        <span id="stat-total-ref" style="font-size: 22px; font-weight: 700; color: #1e5aa8; margin-top: 5px; display: block;">0</span>
-                    </div>
-                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
-                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Pending Commissions</span>
-                        <span id="stat-pending-comm" style="font-size: 22px; font-weight: 700; color: #d69e2e; margin-top: 5px; display: block;">$0.00</span>
-                    </div>
-                    <div style="background: #f8fbff; padding: 15px; border-radius: 10px; border: 1px solid #e1e8ed;">
-                        <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; display: block; font-weight: 600;">Payable / Paid</span>
-                        <span id="stat-paid-comm" style="font-size: 22px; font-weight: 700; color: #38a169; margin-top: 5px; display: block;">$0.00</span>
-                    </div>
+                <!-- Message Box for Custom Inquiry Text -->
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Your Message / Inquiry Details</label>
+                    <textarea id="modal-message" rows="3" required placeholder="Type your inquiry or question about this product here..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-[#1e5aa8] focus:outline-none"></textarea>
                 </div>
-            </div>
 
-            <div class="products-grid" id="products-container">
-                <!-- Dynamic products load here -->
-            </div>
-        </main>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeInquiryModal()" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-semibold transition">Cancel</button>
+                    <button type="submit" id="submit-btn" class="bg-[#1e5aa8] text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition">Send Inquiry</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
+        let db;
+        let activeBuyer = null;
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Check active session on load and load referral dashboard if authenticated buyer
         window.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await db.auth.getSession();
-            if (session && session.user) {
-                document.getElementById('auth-status-nav').innerHTML = `<a href="#" class="btn-portal" onclick="logoutUser()">Sign Out</a>`;
-                await loadBuyerReferralStats(session.user);
+            if (window.supabase) {
+                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                await identifyBuyerSession();
+                await loadProducts();
+            } else {
+                console.error("Supabase library failed to load.");
             }
-            await loadCategories();
-            await loadProducts('All');
         });
 
-        async function loadCategories() {
-            const { data, error } = await db.from('products').select('category');
-            const filterContainer = document.getElementById('category-filters');
-            
-            if (error) {
-                console.error('Error loading categories:', error.message);
-                return;
-            }
-
-            const taxonomy = {};
-            if (data && data.length > 0) {
-                data.forEach(item => {
-                    if (item.category) {
-                        const rawCat = item.category.trim();
-                        const parts = rawCat.split('>').map(p => p.trim());
-                        const mainCat = parts[0];
-                        
-                        if (!taxonomy[mainCat]) {
-                            taxonomy[mainCat] = {};
-                        }
-                        
-                        if (parts.length > 1) {
-                            const subCat = parts[1];
-                            taxonomy[mainCat][subCat] = rawCat;
-                        }
-                    }
-                });
-            }
-
-            let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
-            
-            for (const [mainCat, subs] of Object.entries(taxonomy)) {
-                html += `
-                    <div class="category-group" style="margin-top: 10px;">
-                        <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
-                `;
-                
-                const subKeys = Object.keys(subs);
-                if (subKeys.length > 0) {
-                    html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
-                    subKeys.forEach(subCat => {
-                        const exactDbString = subs[subCat];
-                        html += `<button class="filter-link" style="font-size: 13px; padding: 6px 10px;" onclick="filterCategory('${exactDbString}', this, false)">↳ ${subCat}</button>`;
-                    });
-                    html += `</div>`;
-                }
-                html += `</div>`;
-            }
-            
-            filterContainer.innerHTML = html;
-        }
-
-        async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
-            let query = db.from('products').select('*');
-            
-            if (categoryQuery !== 'All') {
-                if (isMainGroup) {
-                    query = query.ilike('category', `${categoryQuery}%`);
-                } else {
-                    query = query.eq('category', categoryQuery);
-                }
-            }
-
-            const { data, error } = await query;
-            const container = document.getElementById('products-container');
-            
-            if (error) {
-                console.error('Error loading products:', error.message);
-                container.innerHTML = '<p style="color: #e74c3c; grid-column: 1 / -1;">Failed to load products.</p>';
-                return;
-            }
-
-            if (data && data.length > 0) {
-                container.innerHTML = data.map(product => `
-                    <div class="product-box">
-                        <div>
-                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
-                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
-                            <h5 style="margin-top: 4px;">${product.name}</h5>
-                            <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
-                        </div>
-                        <button onclick="alert('Inquiring about ${product.name}')">Inquire</button>
-                    </div>
-                `).join('');
-            } else {
-                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
-            }
-        }
-
-        function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
-            document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
-            buttonElement.classList.add('active');
-            loadProducts(categoryQuery, isMainGroup);
-        }
-
-        async function loadBuyerReferralStats(user) {
-            console.log("Loading referral stats for user:", user.id);
-
-            // 1. Fetch user profile safely using maybeSingle()
-            let { data: profile, error: profileErr } = await db
-                .from('user_profiles')
-                .select('referral_code')
-                .eq('id', user.id)
-                .maybeSingle();
-
-            console.log("Profile fetch result:", { profile, profileErr });
-
-            // 2. Fallback auto-provisioning if a profile row does not exist for this auth user yet
-            if (!profile || profileErr) {
-                console.warn("Profile missing or error encountered. Attempting to generate a fallback referral code...");
-                const generatedCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                
-                const insertResult = await db
-                    .from('user_profiles')
-                    .insert([{ id: user.id, referral_code: generatedCode, email: user.email }])
-                    .select('referral_code')
-                    .single();
-
-                const newProfile = insertResult.data;
-                const createErr = insertResult.error;
-
-                if (!createErr && newProfile) {
-                    profile = newProfile;
-                    console.log("Successfully auto-provisioned missing profile row:", profile);
-                } else {
-                    console.error("Failed to auto-create profile row (check table constraints/RLS insert policies):", createErr);
+        async function identifyBuyerSession() {
+            try {
+                const { data, error } = await db.from('buyers').select('*').limit(1).single();
+                if (error || !data) {
+                    document.getElementById('current-buyer-name').textContent = 'Guest User';
                     return;
                 }
+                activeBuyer = data;
+                document.getElementById('current-buyer-name').textContent = data.full_name;
+            } catch (err) {
+                console.error("Error identifying buyer session:", err);
+                document.getElementById('current-buyer-name').textContent = 'Session Error';
             }
+        }
 
-            if (!profile || !profile.referral_code) {
-                console.warn("No referral code available for user.");
+        async function loadProducts() {
+            try {
+                const { data: products, error } = await db.from('products').select('*');
+                const productListContainer = document.getElementById('product-list');
+                
+                if (error || !products || products.length === 0) {
+                    productListContainer.innerHTML = '<div class="col-span-2 p-4 text-center text-gray-500">No products found in database.</div>';
+                    return;
+                }
+
+                productListContainer.innerHTML = '';
+                products.forEach(product => {
+                    // Safely extract properties accommodating variable column naming
+                    const pId = product.id;
+                    const pTitle = product.title || product.name || 'Unnamed Product';
+                    const pDesc = product.description || 'High-quality marketplace product.';
+                    const pPrice = product.price ? parseFloat(product.price).toFixed(2) : '0.00';
+                    const pVendorId = product.vendor_id || product.vendorId || 'Unassigned';
+
+                    const card = document.createElement('div');
+                    card.className = 'p-4 border border-gray-200 rounded-lg flex flex-col justify-between';
+                    card.innerHTML = `
+                        <div>
+                            <span class="text-xs bg-blue-100 text-[#1e5aa8] px-2.5 py-1 rounded-full font-semibold">Verified Item</span>
+                            <h3 class="text-lg font-bold text-gray-800 mt-2">${escapeHtml(pTitle)}</h3>
+                            <p class="text-gray-600 text-sm mt-1">${escapeHtml(pDesc)}</p>
+                            <div class="text-xl font-extrabold text-[#1e5aa8] mt-3">$${pPrice} USD</div>
+                        </div>
+                        <button onclick="openInquiryModal('${pId}', '${escapeHtml(pTitle).replace(/'/g, "\\'")}', ${pPrice}, '${pVendorId}')" class="mt-4 bg-[#1e5aa8] text-white hover:bg-blue-700 py-2 px-4 rounded-lg text-sm font-semibold transition">
+                            Inquire Now
+                        </button>
+                    `;
+                    productListContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading products:", err);
+                document.getElementById('product-list').innerHTML = '<div class="col-span-2 p-4 text-center text-red-500">Error loading product catalog.</div>';
+            }
+        }
+
+        function openInquiryModal(productId, productTitle, price, vendorId) {
+            if (!activeBuyer) {
+                alert('Unable to proceed: No active buyer profile detected.');
                 return;
             }
 
-            // 3. Construct and display the unique referral link box
-            const baseURL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-            const refLink = `${baseURL}register.html?ref=${profile.referral_code}`;
-            document.getElementById('user-ref-link').value = refLink;
-            document.getElementById('referral-dashboard-section').style.display = 'block';
-
-            // 4. Fetch total referral count safely
-            const { count: refCount, error: refErr } = await db
-                .from('referrals')
-                .select('*', { count: 'exact', head: true })
-                .eq('referrer_id', user.id);
-
-            if (refErr) {
-                console.warn("Could not fetch referrals count (check RLS select policies on referrals table):", refErr.message);
-            }
-            document.getElementById('stat-total-ref').textContent = refCount || 0;
-
-            // 5. Fetch and calculate commission totals safely
-            const { data: commissions, error: commErr } = await db
-                .from('commissions')
-                .select('split_amount, status')
-                .eq('referrer_id', user.id);
-
-            if (commErr) {
-                console.warn("Could not fetch commissions (check RLS select policies on commissions table):", commErr.message);
-            }
-
-            let pendingTotal = 0;
-            let unlockedTotal = 0;
-
-            if (commissions && Array.isArray(commissions)) {
-                commissions.forEach(c => {
-                    const amount = Number(c.split_amount) || 0;
-                    if (c.status === 'pending') {
-                        pendingTotal += amount;
-                    } else if (c.status === 'payable' || c.status === 'paid') {
-                        unlockedTotal += amount;
-                    }
-                });
-            }
-
-            document.getElementById('stat-pending-comm').textContent = `$${pendingTotal.toFixed(2)}`;
-            document.getElementById('stat-paid-comm').textContent = `$${unlockedTotal.toFixed(2)}`;
+            document.getElementById('modal-product-id').value = productId;
+            document.getElementById('modal-vendor-id').value = vendorId;
+            document.getElementById('modal-product-title').textContent = `Inquire: ${productTitle} ($${price})`;
+            
+            // Clean display values showing user name and dynamic vendor ID from database
+            document.getElementById('modal-buyer-display').textContent = activeBuyer.full_name;
+            document.getElementById('modal-vendor-display').textContent = vendorId;
+            
+            document.getElementById('inquiry-modal').classList.remove('hidden');
         }
 
-        function copyRefLink() {
-            const linkInput = document.getElementById('user-ref-link');
-            linkInput.select();
-            linkInput.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(linkInput.value).then(() => {
-                alert('Referral link copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+        function closeInquiryModal() {
+            document.getElementById('inquiry-modal').classList.add('hidden');
+            document.getElementById('inquiry-form').reset();
         }
 
-        async function logoutUser() {
-            await db.auth.signOut();
-            window.location.reload();
+        async function submitInquiry(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            const productId = document.getElementById('modal-product-id').value;
+            const vendorId = document.getElementById('modal-vendor-id').value;
+            const buyerId = activeBuyer.id;
+            const messageText = document.getElementById('modal-message').value.trim();
+
+            try {
+                const { error } = await db
+                    .from('inquiries')
+                    .insert([
+                        {
+                            product_id: isNaN(productId) ? productId : parseInt(productId, 10),
+                            vendor_id: vendorId,
+                            buyer_id: buyerId,
+                            message: messageText,
+                            status: 'pending_verification'
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                alert('Inquiry sent successfully!');
+                closeInquiryModal();
+            } catch (err) {
+                alert('Error submitting inquiry: ' + err.message);
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Inquiry';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
     </script>
 </body>
