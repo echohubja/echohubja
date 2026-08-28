@@ -228,15 +228,15 @@
             loadBuyersPortal();
         }
 
-        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC (Relational Join) ---
+        // --- TAB 2: INQUIRIES & FEEDBACK VERIFICATION LOGIC (Fixed Explicit Relational Join) ---
         async function loadInquiriesPortal() {
             const tableBody = document.getElementById('inquiries-table-body');
             if (!tableBody) return;
 
-            // Fetch inquiries joined with the buyers table to get real names dynamically
+            // Explicitly map foreign key relationship using alias syntax
             const { data, error } = await db
                 .from('inquiries')
-                .select('*, buyers(full_name, email)')
+                .select('*, buyers:buyer_id(full_name, email)')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -261,7 +261,7 @@
                     actionBtn = `<span class="text-xs text-gray-400 font-medium">Completed</span>`;
                 }
 
-                // Extract buyer name via relational join
+                // Extract buyer name via explicit relational alias
                 const buyerName = inq.buyers?.full_name || 'Unknown Buyer';
                 const buyerEmail = inq.buyers?.email || '';
 
