@@ -261,7 +261,7 @@ button[type="submit"]:disabled {
         // Using anon key - public inserts allowed since RLS is disabled on buyers table
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUzODk1MjksImV4cCI6MTk0MDk2OTUyOX0.BYmZwH3Xl0QaVL4L1-5_rKX85pXLyTe_g0Q6L88Fz0s';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Safely capture optional referral query parameter
         let referredBy = null;
@@ -330,7 +330,7 @@ button[type="submit"]:disabled {
                 // Insert buyer record directly to database
                 console.log('[DB] Inserting buyer record');
 
-                const { data, error } = await supabase.from('buyers').insert([{
+                const { data, error } = await supabaseClient.from('buyers').insert([{
                     full_name: fullName,
                     email: email,
                     password: password,
