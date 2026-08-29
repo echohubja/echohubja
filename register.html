@@ -316,11 +316,19 @@ button[type="submit"]:disabled {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
 
-                // Convert file to Base64
+                // Convert file to Base64 using safe chunked approach
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
-                const binary = String.fromCharCode.apply(null, Array.from(uint8Array));
-                const base64Data = btoa(binary);
+
+                // Use safe chunked Base64 encoding to avoid stack overflow on large files
+                let base64Data = '';
+                const chunkSize = 8192; // Process 8KB chunks
+                for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                    const chunk = uint8Array.subarray(i, i + chunkSize);
+                    base64Data += String.fromCharCode.apply(null, Array.from(chunk));
+                }
+                base64Data = btoa(base64Data);
+
                 const fileExt = fileInput.name.split('.').pop() || 'bin';
                 const mimeType = fileInput.type || 'application/octet-stream';
 
