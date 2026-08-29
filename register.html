@@ -109,6 +109,21 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
   transform: translateY(-2px);
 }
+.password-wrapper {
+  position: relative;
+}
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1e5aa8;
+  font-size: 18px;
+  padding: 5px;
+}
 .checkbox-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -152,6 +167,11 @@ button[type="submit"]:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
 }
+button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
 .error {
   color: #c0392b;
   background: #fadbd8;
@@ -190,37 +210,31 @@ button[type="submit"]:hover {
             <h1>Echo Hub</h1>
             <p>Anonymous Buyer-Vendor Marketplace</p>
         </header>
-
         <div class="content">
             <div class="section">
-                <h2>ð Buyer Registration</h2>
+                <h2>Buyer Registration</h2>
                 <div class="error" id="buyerError"></div>
                 <div class="success" id="buyerSuccess"></div>
-
                 <form id="buyerForm">
                     <div class="form-group">
                         <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" placeholder="Enter your full name" required[cite: 3]>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required>
                     </div>
-
                     <div class="form-group">
                         <label for="email">Contact Email *</label>
-                        <input type="email" id="email" placeholder="Enter your email address" required[cite: 3]>
+                        <input type="email" id="email" placeholder="Enter your email address" required>
                     </div>
-
                     <div class="form-group">
                         <label for="password">Create Password *</label>
-                        <div style="position: relative;">
+                        <div class="password-wrapper">
                             <input type="password" id="password" placeholder="At least 6 characters" required>
-                            <button type="button" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #1e5aa8; font-size: 18px; padding: 5px;">ðï¸</button>
+                            <button type="button" class="password-toggle" id="togglePassword">Show</button>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="whatsapp">WhatsApp Number (Optional)</label>
-                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555"[cite: 3]>
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
                     </div>
-
                     <div class="form-group">
                         <label>Categories of Interest *</label>
                         <div class="checkbox-group">
@@ -232,18 +246,15 @@ button[type="submit"]:hover {
                             <label class="checkbox-label"><input type="checkbox" name="category" value="All"> All (including future products)</label>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
-                        <input type="file" id="nationalIdFile" required[cite: 3]>
+                        <input type="file" id="nationalIdFile" required>
                     </div>
-
                     <button type="submit">Register Account</button>
                 </form>
             </div>
         </div>
     </div>
-
     <script>
         // Initialize Supabase client
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
@@ -268,7 +279,7 @@ button[type="submit"]:hover {
             e.preventDefault();
             const type = passwordInput.type === 'password' ? 'text' : 'password';
             passwordInput.type = type;
-            toggleButton.textContent = type === 'password' ? 'ðï¸' : 'ð';
+            toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
         });
 
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
@@ -310,6 +321,7 @@ button[type="submit"]:hover {
                 const uint8Array = new Uint8Array(arrayBuffer);
                 const binary = String.fromCharCode.apply(null, Array.from(uint8Array));
                 const base64Data = btoa(binary);
+                const fileExt = fileInput.name.split('.').pop() || 'bin';
                 const mimeType = fileInput.type || 'application/octet-stream';
 
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
