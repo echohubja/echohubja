@@ -145,21 +145,61 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                        <th class="p-2.5">Referrer ID</th>
-                        <th class="p-2.5">Referral Target</th>
-                        <th class="p-2.5">Split Amount (20%)</th>
-                        <th class="p-2.5">Status</th>
-                        <th class="p-2.5 text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
-                </tbody>
-            </table>
+        <!-- VENDOR COMMISSION SETTINGS SECTION -->
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
+                <span>⚙️ Vendor Commission Settings</span>
+                <span id="alert-count" class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">0 alerts</span>
+            </h3>
+            <p class="text-xs text-gray-500 mb-3">Manage vendor commission amounts and payout thresholds. Alert count shows vendors at 80%+ threshold.</p>
+
+            <!-- Threshold Alert Monitor -->
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4" id="alert-monitor">
+                <p class="text-xs text-orange-700 font-semibold mb-2">🚨 Vendors Reaching Threshold:</p>
+                <div id="alert-list" class="text-xs text-gray-600">No alerts at this time</div>
+            </div>
+
+            <!-- Vendor Settings Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-blue-50 text-blue-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Commission/Fee</th>
+                            <th class="p-2.5">Threshold</th>
+                            <th class="p-2.5">Accumulated Balance</th>
+                            <th class="p-2.5 text-center">Progress</th>
+                            <th class="p-2.5 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-settings-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor settings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- REFERRAL COMMISSIONS TABLE SECTION -->
+        <div>
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Transaction History</h3>
+            <p class="text-xs text-gray-500 mb-3">Historical referral commission records and payout status.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Referrer ID</th>
+                            <th class="p-2.5">Referral Target</th>
+                            <th class="p-2.5">Split Amount (20%)</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -182,8 +222,50 @@
         </div>
     </div>
 
+    <!-- Threshold Management Modal -->
+    <div id="threshold-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <h3 class="text-lg font-bold text-[#1e5aa8]">Edit Commission Threshold</h3>
+                <button onclick="closeThresholdModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor Name</label>
+                    <div id="modal-vendor-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Current Commission (Per Feedback)</label>
+                    <div id="modal-commission-amount" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">$0.00</div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Current Threshold</label>
+                    <div id="modal-current-threshold" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">$0.00</div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">New Threshold (USD) *</label>
+                    <input type="number" id="modal-new-threshold" step="0.01" min="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new threshold">
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
+                    ℹ️ This threshold applies immediately for new commissions. Existing balance remains unaffected.
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-5 pt-4 border-t">
+                <button onclick="closeThresholdModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
+                <button onclick="saveThresholdChange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition">Save Threshold</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let db;
+        let activeThresholdVendorId = null;
         let globalInquiriesData = [];
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
@@ -758,6 +840,9 @@
 
         // --- TAB 3: COMMISSIONS ---
         async function loadCommissionsPortal() {
+            // Load vendor commission settings first
+            await loadVendorCommissionSettings();
+
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
 
@@ -853,6 +938,142 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // --- VENDOR COMMISSION MANAGEMENT ---
+        async function loadVendorCommissionSettings() {
+            const tableBody = document.getElementById('vendor-settings-body');
+            if (!tableBody) return;
+
+            try {
+                // Fetch vendors with commission info
+                const { data: vendors, error: vendorError } = await db.from('vendors').select('id, business_name, commission, commission_threshold, accumulated_balance, referred_by_buyer_id').order('business_name');
+
+                if (vendorError) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading vendors: ${escapeHtml(vendorError.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!vendors || vendors.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No vendors registered yet.</td></tr>`;
+                    document.getElementById('alert-count').textContent = '0 alerts';
+                    return;
+                }
+
+                let alertCount = 0;
+                let alertList = [];
+
+                const rows = vendors.map(vendor => {
+                    const commission = parseFloat(vendor.commission || 0);
+                    const threshold = parseFloat(vendor.commission_threshold || commission); // Default threshold = commission
+                    const accumulated = parseFloat(vendor.accumulated_balance || 0);
+
+                    const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
+                    const isAlert = progressPercent >= 80;
+
+                    if (isAlert) {
+                        alertCount++;
+                        alertList.push({
+                            name: vendor.business_name,
+                            percent: progressPercent,
+                            vendor_id: vendor.id
+                        });
+                    }
+
+                    let progressColor = 'bg-green-500';
+                    let progressBg = 'bg-green-100';
+                    if (progressPercent >= 100) {
+                        progressColor = 'bg-red-500';
+                        progressBg = 'bg-red-100';
+                    } else if (progressPercent >= 80) {
+                        progressColor = 'bg-orange-500';
+                        progressBg = 'bg-orange-100';
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50/50 transition ${isAlert ? 'bg-orange-50' : ''}">
+                            <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendor.business_name)}</td>
+                            <td class="p-2.5 text-sm font-bold text-gray-800">$${commission.toFixed(2)}</td>
+                            <td class="p-2.5 text-sm font-bold text-gray-800">$${threshold.toFixed(2)}</td>
+                            <td class="p-2.5 text-sm font-bold text-gray-800">$${accumulated.toFixed(2)}</td>
+                            <td class="p-2.5">
+                                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                    <div class="${progressColor} h-full rounded-full transition-all" style="width: ${Math.min(progressPercent, 100)}%"></div>
+                                </div>
+                                <div class="text-[10px] text-gray-600 mt-0.5 font-semibold">${progressPercent}%</div>
+                            </td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="openThresholdModal('${vendor.id}', '${escapeHtml(vendor.business_name)}', ${commission}, ${threshold})"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">
+                                    Edit Threshold
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tableBody.innerHTML = rows;
+
+                // Update alert monitor
+                document.getElementById('alert-count').textContent = `${alertCount} alert${alertCount !== 1 ? 's' : ''}`;
+
+                if (alertList.length > 0) {
+                    const alertHtml = alertList.map(alert =>
+                        `<div class="mb-1">⚠️ <strong>${escapeHtml(alert.name)}</strong>: ${alert.percent}% of threshold</div>`
+                    ).join('');
+                    document.getElementById('alert-list').innerHTML = alertHtml;
+                } else {
+                    document.getElementById('alert-list').innerHTML = 'No vendors reaching threshold';
+                }
+
+            } catch (err) {
+                console.error('Error in loadVendorCommissionSettings:', err);
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Unexpected error loading vendor settings</td></tr>`;
+            }
+        }
+
+        function openThresholdModal(vendorId, vendorName, commissionAmount, currentThreshold) {
+            activeThresholdVendorId = vendorId;
+            document.getElementById('modal-vendor-name').textContent = vendorName;
+            document.getElementById('modal-commission-amount').textContent = `$${parseFloat(commissionAmount).toFixed(2)}`;
+            document.getElementById('modal-current-threshold').textContent = `$${parseFloat(currentThreshold).toFixed(2)}`;
+            document.getElementById('modal-new-threshold').value = parseFloat(currentThreshold).toFixed(2);
+            document.getElementById('threshold-modal').classList.remove('hidden');
+        }
+
+        function closeThresholdModal() {
+            document.getElementById('threshold-modal').classList.add('hidden');
+            activeThresholdVendorId = null;
+            document.getElementById('modal-new-threshold').value = '';
+        }
+
+        async function saveThresholdChange() {
+            if (!activeThresholdVendorId) {
+                alert('Error: Vendor ID not set');
+                return;
+            }
+
+            const newThreshold = parseFloat(document.getElementById('modal-new-threshold').value);
+
+            if (isNaN(newThreshold) || newThreshold < 0) {
+                alert('Please enter a valid threshold amount (must be 0 or greater)');
+                return;
+            }
+
+            try {
+                const { error } = await db.from('vendors').update({ commission_threshold: newThreshold }).eq('id', activeThresholdVendorId);
+
+                if (error) {
+                    alert('Error saving threshold: ' + error.message);
+                    return;
+                }
+
+                alert(`Threshold updated to $${newThreshold.toFixed(2)}!`);
+                closeThresholdModal();
+                loadVendorCommissionSettings(); // Refresh the table
+            } catch (err) {
+                alert('Unexpected error: ' + err.message);
+            }
         }
     </script>
 </body>
