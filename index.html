@@ -913,8 +913,8 @@
             const amazonLink = linkInput ? linkInput.value.trim() : '';
 
             const hasFile = fileInput.files && fileInput.files[0];
-            if (!hasFile && !amazonLink) {
-                alert('Please provide either an Amazon feedback link or upload an image.');
+            if (!amazonLink) {
+                alert('Amazon feedback link is required.');
                 return;
             }
 
