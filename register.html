@@ -1,10 +1,11 @@
-h<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Echo Hub - Buyer Registration</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
 <style>
 * {
   margin: 0;
@@ -194,6 +195,20 @@ button[type="submit"]:disabled {
   font-weight: 500;
   font-size: 14px;
 }
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #64748b;
+}
+.login-link a {
+  color: #1e5aa8;
+  text-decoration: none;
+  font-weight: 600;
+}
+.login-link a:hover {
+  text-decoration: underline;
+}
 @media (max-width: 600px) {
   .checkbox-group {
     grid-template-columns: 1fr;
@@ -208,26 +223,26 @@ button[type="submit"]:disabled {
     <div class="container">
         <header>
             <h1>Echo Hub</h1>
-            <p>Anonymous Buyer-Vendor Marketplace</p>
+            <p>Buyer Registration Portal</p>
         </header>
         <div class="content">
             <div class="section">
-                <h2>Buyer Registration</h2>
+                <h2>Create Your Buyer Account</h2>
                 <div class="error" id="buyerError"></div>
                 <div class="success" id="buyerSuccess"></div>
                 <form id="buyerForm">
                     <div class="form-group">
-                        <label for="fullName">Full Name *</label>
+                        <label for="fullName">Full Name <span style="color: #c0392b;">*</span></label>
                         <input type="text" id="fullName" placeholder="Enter your full name" required>
                     </div>
                     <div class="form-group">
-                        <label for="email">Contact Email *</label>
-                        <input type="email" id="email" placeholder="Enter your email address" required>
+                        <label for="email">Email Address <span style="color: #c0392b;">*</span></label>
+                        <input type="email" id="email" placeholder="your@email.com" required>
                     </div>
                     <div class="form-group">
-                        <label for="password">Create Password *</label>
+                        <label for="password">Create Password <span style="color: #c0392b;">*</span></label>
                         <div class="password-wrapper">
-                            <input type="password" id="password" placeholder="At least 6 characters" required>
+                            <input type="password" id="password" placeholder="At least 6 characters" required minlength="6">
                             <button type="button" class="password-toggle" id="togglePassword">Show</button>
                         </div>
                     </div>
@@ -236,7 +251,7 @@ button[type="submit"]:disabled {
                         <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
                     </div>
                     <div class="form-group">
-                        <label>Categories of Interest *</label>
+                        <label>Categories of Interest <span style="color: #c0392b;">*</span></label>
                         <div class="checkbox-group">
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Toys"> Toys</label>
@@ -247,22 +262,23 @@ button[type="submit"]:disabled {
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
+                        <label for="nationalIdFile">Upload Your National ID <span style="color: #c0392b;">*</span> (Mandatory)</label>
                         <input type="file" id="nationalIdFile" required>
                     </div>
                     <button type="submit">Register Account</button>
                 </form>
+                <div class="login-link">
+                    Already have an account? <a href="login.html">Sign in here</a>
+                </div>
             </div>
         </div>
     </div>
     <script>
-        // Initialize Supabase client
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
-        // Using anon key - public inserts allowed since RLS is disabled on buyers table
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Safely capture optional referral query parameter
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
         let referredBy = null;
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -312,16 +328,21 @@ button[type="submit"]:disabled {
             }
 
             try {
+                if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
+
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
 
-                // Convert file to Base64 using safe chunked approach
+                // Hash password with bcryptjs
+                console.log('[SECURITY] Hashing password with bcryptjs');
+                const hashedPassword = await bcryptjs.hash(password, 10);
+
+                // Convert file to Base64
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
 
-                // Use safe chunked Base64 encoding to avoid stack overflow on large files
                 let base64Data = '';
-                const chunkSize = 8192; // Process 8KB chunks
+                const chunkSize = 8192;
                 for (let i = 0; i < uint8Array.length; i += chunkSize) {
                     const chunk = uint8Array.subarray(i, i + chunkSize);
                     base64Data += String.fromCharCode.apply(null, Array.from(chunk));
@@ -332,23 +353,26 @@ button[type="submit"]:disabled {
                 const mimeType = fileInput.type || 'application/octet-stream';
 
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
-                console.log('[BASE64] File size:', uint8Array.length, 'bytes, Base64 size:', base64Data.length, 'bytes');
-
-                // Insert buyer record directly to database
                 console.log('[DB] Inserting buyer record');
 
-                const { data, error } = await supabaseClient.from('buyers').insert([{
+                // Generate referral code
+                const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+                // Insert buyer record to user_profiles table
+                const { data, error } = await supabaseClient.from('user_profiles').insert([{
                     full_name: fullName,
                     email: email,
-                    password: password,
+                    password: hashedPassword,
                     whatsapp_number: whatsapp || null,
                     categories_interest: selectedCategories,
                     referred_by: referredBy || null,
+                    referral_code: refCode,
                     national_id_data: base64Data,
                     national_id_file_name: fileInput.name,
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
-                    approval_status: null
+                    approval_status: 'PENDING',
+                    created_at: new Date()
                 }]).select();
 
                 if (error) {
@@ -356,12 +380,18 @@ button[type="submit"]:disabled {
                     throw new Error(`Database insert failed: ${error.message}`);
                 }
 
-                console.log('[SUCCESS] Registration complete');
+                console.log('[SUCCESS] Buyer registration complete');
+                console.log('[INFO] Referral Code:', refCode);
 
-                successDiv.textContent = 'Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified.';
+                successDiv.textContent = '✅ Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified. You can sign in once approved.';
                 successDiv.style.display = 'block';
                 document.getElementById('buyerForm').reset();
                 submitBtn.textContent = 'Register Account';
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+
             } catch (err) {
                 console.error('[ERROR]', err);
                 errorDiv.textContent = 'Error during registration: ' + err.message;
