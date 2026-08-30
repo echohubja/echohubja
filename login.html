@@ -287,10 +287,10 @@
 
                 } else {
                     // BUYER LOGIN
-                    console.log('[BUYER_LOGIN] Querying user_profiles for email:', email);
+                    console.log('[BUYER_LOGIN] Querying buyers for email:', email);
 
                     const { data: buyerData, error: queryError } = await supabaseClient
-                        .from('user_profiles')
+                        .from('buyers')
                         .select('*')
                         .eq('email', email)
                         .single();
