@@ -6,6 +6,8 @@
     <title>Echo Hub - Vendor Onboarding Portal</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Bcrypt for password hashing -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -106,6 +108,7 @@
         input[type="text"],
         input[type="email"],
         input[type="password"],
+        input[type="number"],
         textarea,
         select {
             width: 100%;
@@ -221,6 +224,18 @@
             font-size: 14px;
         }
 
+        .warning {
+            color: #d68910;
+            background: #fef5e7;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #d68910;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
         .password-wrapper {
             position: relative;
         }
@@ -258,7 +273,11 @@
                 <h2>🤝 Vendor Registration</h2>
 
                 <div id="successAlert" class="success">
-                    <strong>Registration Successful!</strong> Your vendor account has been created. Our team will review your information shortly.
+                    <strong id="successTitle">Registration Successful!</strong> <span id="successMessage"></span>
+                </div>
+
+                <div id="warningAlert" class="warning">
+                    <strong>Account Created But Blocked:</strong> Your account requires a $5.00 USD commission to be activated. Please contact support to update your commission.
                 </div>
 
                 <div id="errorAlert" class="error">
@@ -304,6 +323,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="commission">Commission Amount (USD) <span class="required">*</span></label>
+                        <input type="number" id="commission" name="commission" step="0.01" required placeholder="e.g., 5.00">
+                    </div>
+
+                    <div class="form-group">
                         <label for="businessDetails">List the product types that you will offer <span class="required">*</span></label>
                         <textarea id="businessDetails" name="businessDetails" rows="3" required placeholder="e.g., Electronics, Clothing, Home Goods, Services, etc."></textarea>
                     </div>
@@ -333,13 +357,16 @@
         const form = document.getElementById('vendorForm');
         const submitBtn = document.getElementById('submitBtn');
         const successAlert = document.getElementById('successAlert');
+        const warningAlert = document.getElementById('warningAlert');
         const errorAlert = document.getElementById('errorAlert');
         const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             successAlert.style.display = 'none';
+            warningAlert.style.display = 'none';
             errorAlert.style.display = 'none';
 
             if (!supabaseClient) {
@@ -356,17 +383,26 @@
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const commission = parseFloat(document.getElementById('commission').value);
             const businessDetails = document.getElementById('businessDetails').value.trim();
 
             try {
-                // Insert vendor record directly to database
+                // Hash password using bcrypt
+                console.log('[SECURITY] Hashing password with bcrypt');
+                const hashedPassword = await bcryptjs.hash(password, 10);
+
+                // Determine if vendor should be blocked based on commission
+                const isBlocked = commission < 5.00;
+
                 console.log('[DB] Inserting vendor record');
                 console.log('[DB] Full data collected:', {
                     vendor_type: vendorType,
                     first_name: firstName,
                     last_name: lastName,
                     email: email,
-                    password: password ? '(provided)' : '(empty)',
+                    password: '(hashed)',
+                    commission: commission,
+                    is_blocked: isBlocked,
                     business_details: businessDetails
                 });
 
@@ -375,7 +411,9 @@
                     first_name: firstName,
                     last_name: lastName,
                     email: email,
-                    password: password,
+                    password: hashedPassword,
+                    commission: commission,
+                    is_blocked: isBlocked,
                     business_details: businessDetails
                 };
 
@@ -388,8 +426,16 @@
 
                 console.log('[SUCCESS] Vendor registration complete');
                 console.log('[SUCCESS] Vendor ID:', data?.[0]?.id);
+                console.log('[SUCCESS] Vendor Blocked Status:', data?.[0]?.is_blocked);
 
-                successAlert.style.display = 'block';
+                // Show appropriate message based on commission amount
+                if (isBlocked) {
+                    warningAlert.style.display = 'block';
+                } else {
+                    successMessage.textContent = 'Your vendor account is ready to use. You can now login to the marketplace.';
+                    successAlert.style.display = 'block';
+                }
+
                 form.reset();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
 
