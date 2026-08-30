@@ -281,11 +281,10 @@
             if (!container) return;
 
             try {
-                // Fetch inquiries with feedback (image_url not null)
+                // Fetch all inquiries (includes pending conversations and feedback submissions)
                 const { data: inquiries, error: inqError } = await db
                     .from('inquiries')
                     .select('*')
-                    .not('image_url', 'is', null)
                     .order('created_at', { ascending: false });
 
                 if (inqError) {
@@ -452,126 +451,162 @@
             document.getElementById('inquiry-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
 
             if (data.length === 0) {
-                container.innerHTML = `<div class="p-4 text-center text-gray-500">No matching feedback records found.</div>`;
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No inquiries found.</div>`;
                 return;
             }
 
-            // Group by feedback submission (each with image_url is one complete feedback)
-            const feedbackSubmissions = data.filter(inq => inq.image_url);
+            // Group inquiries by product
+            const groupedByProduct = {};
+            data.forEach(inq => {
+                const prodId = inq.product_id || 'general';
+                if (!groupedByProduct[prodId]) {
+                    groupedByProduct[prodId] = {
+                        product: inq.products || { id: prodId, product_name: `Product ${prodId}` },
+                        messages: []
+                    };
+                }
+                groupedByProduct[prodId].messages.push(inq);
+            });
 
             let html = '';
-            feedbackSubmissions.forEach(submission => {
-                const buyerId = submission.buyer_id || 'unknown';
-                const buyerName = submission.buyers?.full_name || 'Unknown Buyer';
-                const buyerEmail = submission.buyers?.email || 'No email';
-                const prodName = submission.products?.product_name || `Product ID: ${submission.product_id}`;
-                const prodImage = submission.product_images?.[0] || 'https://via.placeholder.com/200?text=No+Image';
-                const status = (submission.status || 'pending').toLowerCase();
-                const timestamp = new Date(submission.created_at).toLocaleString();
-                const amazonUrl = submission.message && submission.message.includes('http')
-                    ? submission.message.match(/https?:\/\/[^\s]+/)[0]
-                    : null;
 
-                let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
-                if (status === 'verified') {
-                    statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
-                } else if (status === 'rejected') {
-                    statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">REJECTED</span>`;
-                } else if (status === 'flagged') {
-                    statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded text-[11px] font-bold">FLAGGED</span>`;
-                }
+            // Render each product and its conversation thread
+            for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
+                const prodName = prodData.product?.product_name || `Product ${prodId}`;
+                const prodImage = prodData.product?.product_images?.[0] || 'https://via.placeholder.com/200?text=No+Image';
+                const messages = prodData.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-                const checklistId = `checklist-${submission.id}`;
-                const isVerified = status === 'verified';
+                // Find if there's any feedback pending verification in this product's messages
+                const hasPendingFeedback = messages.some(msg => msg.image_url && (msg.status || 'pending').toLowerCase() === 'pending');
+                const feedbackStatus = hasPendingFeedback ? '⚠️ PENDING VERIFICATION' : '✓ No pending feedback';
+                const feedbackBadgeColor = hasPendingFeedback ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
+                const feedbackTextColor = hasPendingFeedback ? 'text-red-700' : 'text-green-700';
 
                 html += `
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-4 hover:shadow-md transition">
-                        <!-- Header: Buyer Info & Status -->
-                        <div class="flex justify-between items-start gap-4">
-                            <div class="space-y-1">
-                                <div class="text-sm font-bold text-gray-800">${escapeHtml(buyerName)}</div>
-                                <div class="text-[11px] text-gray-500">${escapeHtml(buyerEmail)} • ID: ${escapeHtml(buyerId)}</div>
-                                <div class="text-[11px] text-gray-400 italic">Submitted: ${timestamp}</div>
-                            </div>
-                            <div class="flex items-center gap-2">${statusBadge}</div>
-                        </div>
-
-                        <!-- Product Section -->
-                        <div class="border-t border-gray-100 pt-3">
-                            <div class="text-xs font-semibold text-gray-500 uppercase mb-2">Product Details</div>
-                            <div class="flex gap-3">
-                                <img src="${prodImage}" alt="Product" class="w-20 h-20 object-cover rounded border border-gray-200 bg-gray-50">
-                                <div class="flex-1 space-y-1">
-                                    <div class="text-sm font-semibold text-gray-800">${escapeHtml(prodName)}</div>
-                                    <div class="text-[11px] text-gray-500">Product ID: ${escapeHtml(submission.product_id)}</div>
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-4 hover:shadow-md transition">
+                        <!-- Product Header -->
+                        <div class="bg-gray-50 border-b border-gray-200 p-4">
+                            <div class="flex gap-3 items-start justify-between">
+                                <div class="flex gap-3">
+                                    <img src="${prodImage}" alt="Product" class="w-16 h-16 object-cover rounded border border-gray-200 bg-white">
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-800">${escapeHtml(prodName)}</div>
+                                        <div class="text-[11px] text-gray-500">Product ID: ${escapeHtml(prodId)}</div>
+                                        <div class="text-[11px] text-gray-400 mt-1">${messages.length} message${messages.length === 1 ? '' : 's'}</div>
+                                    </div>
+                                </div>
+                                <div class="${feedbackBadgeColor} border rounded-lg px-3 py-2 text-center">
+                                    <div class="text-[11px] font-bold ${feedbackTextColor}">${feedbackStatus}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Amazon Feedback URL -->
-                        <div class="border-t border-gray-100 pt-3">
-                            <div class="text-xs font-semibold text-gray-500 uppercase mb-2">Feedback Reference</div>
-                            ${amazonUrl
-                                ? `<a href="${amazonUrl}" target="_blank" class="text-xs text-[#1e5aa8] hover:underline font-medium break-all">🔗 ${amazonUrl}</a>`
-                                : `<div class="text-xs text-gray-400 italic">No Amazon URL provided</div>`
-                            }
-                        </div>
-
-                        <!-- Feedback Image Preview -->
-                        <div class="border-t border-gray-100 pt-3">
-                            <div class="text-xs font-semibold text-gray-500 uppercase mb-2">Proof of Feedback</div>
-                            <div class="flex gap-2">
-                                <button onclick="openLightbox('${submission.image_url}')" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-3 py-1.5 rounded border border-indigo-200 transition inline-flex items-center gap-1.5">
-                                    🖼️ View Image (${submission.product_images?.length || 0} of ${submission.product_images?.length || 0})
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Verification Checklist -->
-                        <div class="border-t border-gray-100 pt-3 bg-blue-50/50 rounded-lg p-3">
-                            <div class="text-xs font-semibold text-gray-600 uppercase mb-2">Verification Checklist</div>
-                            <div class="space-y-2">
-                                <label class="flex items-center gap-2 text-xs text-gray-700">
-                                    <input type="checkbox" class="w-4 h-4 rounded" ${isVerified ? 'disabled' : ''} ${isVerified ? 'checked' : ''}>
-                                    <span>Buyer identity confirmed (email/ID validated)</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-xs text-gray-700">
-                                    <input type="checkbox" class="w-4 h-4 rounded" ${isVerified ? 'disabled' : ''} ${isVerified ? 'checked' : ''}>
-                                    <span>Product matches marketplace listing</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-xs text-gray-700">
-                                    <input type="checkbox" class="w-4 h-4 rounded" ${isVerified ? 'disabled' : ''} ${isVerified ? 'checked' : ''}>
-                                    <span>Proof image shows feedback submission (Amazon or similar)</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-xs text-gray-700">
-                                    <input type="checkbox" class="w-4 h-4 rounded" ${isVerified ? 'disabled' : ''} ${isVerified ? 'checked' : ''}>
-                                    <span>Amazon URL or proof clearly visible in feedback image</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-xs text-gray-700">
-                                    <input type="checkbox" class="w-4 h-4 rounded" ${isVerified ? 'disabled' : ''} ${isVerified ? 'checked' : ''}>
-                                    <span>No fraudulent or suspicious activity detected</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="border-t border-gray-100 pt-3 flex gap-2 justify-end">
-                            ${(status === 'pending' || status === 'flagged')
-                                ? `
-                                    <button onclick="rejectInquiry('${submission.id}')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded text-xs font-semibold transition">
-                                        ✕ Reject
-                                    </button>
-                                    ${status === 'pending' ? `<button onclick="flagInquiry('${submission.id}')" class="bg-yellow-50 text-yellow-600 hover:bg-yellow-600 hover:text-white px-3 py-1.5 rounded text-xs font-semibold transition">⚠ Flag for Review</button>` : `<button onclick="unflagInquiry('${submission.id}')" class="bg-yellow-50 text-yellow-600 hover:bg-yellow-600 hover:text-white px-3 py-1.5 rounded text-xs font-semibold transition">↩ Remove Flag</button>`}
-                                    <button onclick="verifyInquiry('${submission.id}')" class="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded text-xs font-semibold transition">
-                                        ✓ Approve & Verify
-                                    </button>
-                                `
-                                : `<span class="text-xs text-gray-400 font-medium py-1.5">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`
-                            }
-                        </div>
-                    </div>
+                        <!-- Conversation Thread -->
+                        <div class="p-4 space-y-3">
                 `;
-            });
+
+                // Render each message in the thread
+                messages.forEach((msg, idx) => {
+                    const msgType = msg.message_type || 'inquiry';
+                    const senderType = msg.sender_type || 'buyer';
+                    const senderId = msg.sender_id || (senderType === 'buyer' ? msg.buyer_id : null);
+
+                    let senderName, senderEmail, senderLabel, msgColor, msgIcon;
+
+                    if (senderType === 'buyer') {
+                        senderName = msg.buyers?.full_name || 'Unknown Buyer';
+                        senderEmail = msg.buyers?.email || 'No email';
+                        senderLabel = `Buyer: ${senderName}`;
+                        msgColor = 'bg-blue-50 border-blue-200';
+                        msgIcon = '👤';
+                    } else {
+                        senderName = msg.products?.vendor_name || 'Vendor';
+                        senderEmail = msg.products?.vendor_email || 'No email';
+                        senderLabel = `Vendor: ${senderName}`;
+                        msgColor = 'bg-green-50 border-green-200';
+                        msgIcon = '🏪';
+                    }
+
+                    const timestamp = new Date(msg.created_at).toLocaleString();
+                    let msgTypeLabel = 'Inquiry';
+                    let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
+
+                    if (msgType === 'vendor_response') {
+                        msgTypeLabel = 'Vendor Response';
+                        msgTypeBadgeColor = 'bg-green-100 text-green-700';
+                    } else if (msgType === 'buyer_followup') {
+                        msgTypeLabel = 'Buyer Follow-up';
+                        msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
+                    } else if (msgType === 'feedback') {
+                        msgTypeLabel = 'Feedback Submission';
+                        msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
+                    }
+
+                    html += `
+                        <div class="border ${msgColor} rounded-lg p-3 space-y-2">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex-1">
+                                    <div class="text-xs font-bold text-gray-700">${msgIcon} ${escapeHtml(senderLabel)} (ID: ${escapeHtml(senderId)})</div>
+                                    <div class="text-[11px] text-gray-500">${escapeHtml(senderEmail)}</div>
+                                    <div class="text-[11px] text-gray-400 mt-0.5">${timestamp}</div>
+                                </div>
+                                <span class="${msgTypeBadgeColor} px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">${msgTypeLabel}</span>
+                            </div>
+
+                            <div class="text-xs text-gray-700 bg-white rounded p-2 max-h-24 overflow-y-auto">
+                                ${escapeHtml(msg.message || '[No message]')}
+                            </div>
+                    `;
+
+                    // If feedback submission, show image and verification UI
+                    if (msgType === 'feedback' && msg.image_url) {
+                        const status = (msg.status || 'pending').toLowerCase();
+                        let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
+                        if (status === 'verified') {
+                            statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
+                        } else if (status === 'rejected') {
+                            statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">REJECTED</span>`;
+                        }
+
+                        const amazonUrl = msg.message && msg.message.includes('http')
+                            ? msg.message.match(/https?:\/\/[^\s]+/)[0]
+                            : null;
+
+                        html += `
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 mt-2">
+                                <div class="text-[11px] font-bold text-blue-700 uppercase">Feedback Proof</div>
+                                ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] text-blue-600 hover:underline break-all">🔗 ${amazonUrl}</a>` : ''}
+                                <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 rounded font-semibold inline-block">View Image</button>
+                                <div class="flex gap-2 justify-between items-center mt-2">
+                                    ${statusBadge}
+                                    ${(status === 'pending' || status === 'flagged') ? `
+                                        <div class="flex gap-1">
+                                            <button onclick="rejectInquiry('${msg.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Reject</button>
+                                            <button onclick="flagInquiry('${msg.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Flag</button>
+                                            <button onclick="verifyInquiry('${msg.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-[10px] font-bold">Verify</button>
+                                        </div>
+                                    ` : '<span class="text-[11px] text-gray-400">Completed</span>'}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // If no vendor response yet and this is an initial inquiry, show waiting status
+                    if (msgType === 'inquiry' && idx === 0) {
+                        const hasVendorResponse = messages.some(m => m.message_type === 'vendor_response' || m.sender_type === 'vendor');
+                        if (!hasVendorResponse) {
+                            html += `<div class="text-[11px] text-yellow-700 bg-yellow-50 rounded p-2 mt-1">⏳ Awaiting vendor response</div>`;
+                        }
+                    }
+
+                    html += `</div>`;
+                });
+
+                html += `</div></div>`;
+            }
+
+            container.innerHTML = html;
+        }
 
             container.innerHTML = html;
         }
