@@ -739,8 +739,8 @@
                                 </div>
                         `;
 
-                        // If feedback submission, show image thumbnail and verification UI inline
-                        if (msgType === 'feedback' && msg.image_url) {
+                        // If feedback submission (has image_url), show image thumbnail and verification UI inline
+                        if (msg.image_url) {
                             const status = (msg.status || 'pending_verification').toLowerCase();
                             let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
                             if (status === 'verified') {
@@ -837,19 +837,124 @@
 
         async function verifyInquiry(inquiryId) {
             if (!confirm("Verify this feedback submission and trigger the automated referral commission?")) return;
-            const { error } = await db.from('inquiries').update({ status: 'verified' }).eq('id', inquiryId);
-            if (error) { alert('Error verifying feedback: ' + error.message); return; }
-            alert('Feedback verified successfully! Commission generated.');
-            loadInquiriesPortal();
-            loadCommissionsPortal();
+
+            try {
+                // Fetch inquiry details
+                const { data: inquiry, error: inqError } = await db
+                    .from('inquiries')
+                    .select('id, buyer_id, product_id')
+                    .eq('id', inquiryId)
+                    .single();
+
+                if (inqError || !inquiry) {
+                    alert('Error fetching inquiry details');
+                    return;
+                }
+
+                // Fetch product to get vendor_id
+                const { data: product, error: prodError } = await db
+                    .from('products')
+                    .select('vendor_id')
+                    .eq('id', inquiry.product_id)
+                    .single();
+
+                if (prodError || !product) {
+                    alert('Error fetching product details');
+                    return;
+                }
+
+                // Update inquiry status to verified
+                const { error: updateError } = await db
+                    .from('inquiries')
+                    .update({ status: 'verified' })
+                    .eq('id', inquiryId);
+
+                if (updateError) {
+                    alert('Error verifying feedback: ' + updateError.message);
+                    return;
+                }
+
+                // Create alert for buyer (feedback approved)
+                const buyerAlertData = {
+                    recipient_id: inquiry.buyer_id,
+                    recipient_type: 'buyer',
+                    alert_type: 'feedback_approved',
+                    title: 'Feedback Approved',
+                    message: 'Your product feedback has been verified and approved by the admin.',
+                    related_inquiry_id: inquiryId,
+                    is_read: false
+                };
+
+                await db.from('alerts').insert([buyerAlertData]);
+
+                // Create alert for vendor (commission triggered)
+                const vendorAlertData = {
+                    recipient_id: product.vendor_id,
+                    recipient_type: 'vendor',
+                    alert_type: 'commission_triggered',
+                    title: 'Commission Generated',
+                    message: 'A new commission has been added to your account balance from verified feedback.',
+                    related_inquiry_id: inquiryId,
+                    is_read: false
+                };
+
+                await db.from('alerts').insert([vendorAlertData]);
+
+                alert('✓ Feedback verified! Buyer and vendor notified.');
+                loadInquiriesPortal();
+                loadCommissionsPortal();
+            } catch (err) {
+                console.error('Error in verifyInquiry:', err);
+                alert('Unexpected error: ' + err.message);
+            }
         }
 
         async function rejectInquiry(inquiryId) {
             if (!confirm("Reject this feedback submission? The buyer will need to resubmit.")) return;
-            const { error } = await db.from('inquiries').update({ status: 'rejected' }).eq('id', inquiryId);
-            if (error) { alert('Error rejecting feedback: ' + error.message); return; }
-            alert('Feedback rejected. Buyer has been notified.');
-            loadInquiriesPortal();
+
+            try {
+                // Fetch inquiry details to get buyer_id
+                const { data: inquiry, error: inqError } = await db
+                    .from('inquiries')
+                    .select('id, buyer_id')
+                    .eq('id', inquiryId)
+                    .single();
+
+                if (inqError || !inquiry) {
+                    alert('Error fetching inquiry details');
+                    return;
+                }
+
+                // Update inquiry status to rejected
+                const { error: updateError } = await db
+                    .from('inquiries')
+                    .update({ status: 'rejected' })
+                    .eq('id', inquiryId);
+
+                if (updateError) {
+                    alert('Error rejecting feedback: ' + updateError.message);
+                    return;
+                }
+
+                // Create alert for buyer (feedback rejected)
+                const buyerAlertData = {
+                    recipient_id: inquiry.buyer_id,
+                    recipient_type: 'buyer',
+                    alert_type: 'feedback_rejected',
+                    title: 'Feedback Rejected',
+                    message: 'Your product feedback was rejected. Please review and resubmit with better quality proof.',
+                    related_inquiry_id: inquiryId,
+                    is_read: false
+                };
+
+                await db.from('alerts').insert([buyerAlertData]);
+
+                alert('✓ Feedback rejected. Buyer notified.');
+                loadInquiriesPortal();
+            } catch (err) {
+                console.error('Error in rejectInquiry:', err);
+                alert('Unexpected error: ' + err.message);
+            }
         }
 
         async function flagInquiry(inquiryId) {
