@@ -426,9 +426,12 @@
             // Apply status filter
             if (statusFilterValue === 'actionable') {
                 // Default: only show pending and flagged
+                console.log('Actionable filter - checking statuses:', filtered.map(inq => ({ id: inq.id, status: inq.status })));
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    return status === 'pending' || status === 'flagged';
+                    const passes = status === 'pending' || status === 'flagged';
+                    console.log(`  Inquiry ${inq.id}: status="${inq.status}" → normalized="${status}" → passes=${passes}`);
+                    return passes;
                 });
             } else if (statusFilterValue) {
                 // Show specific status
