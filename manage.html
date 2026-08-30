@@ -509,37 +509,42 @@
                 return;
             }
 
-            const { data: { session }, error: sessionError } = await sbClient.auth.getSession();
+            // Get vendor ID from localStorage (custom session)
+            const vendorId = localStorage.getItem('vendor_id');
+            const vendorEmail = localStorage.getItem('vendor_email');
 
-            if (sessionError || !session) {
+            if (!vendorId || !vendorEmail) {
                 showError();
                 return;
             }
 
-            const userId = session.user.id;
+            try {
+                const { data: vendorData, error: vendorError } = await sbClient
+                    .from('vendors')
+                    .select('*')
+                    .eq('id', vendorId)
+                    .single();
 
-            const { data: vendorData, error: vendorError } = await sbClient
-                .from('vendors')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
+                if (vendorError || !vendorData) {
+                    showError();
+                    return;
+                }
 
-            if (vendorError || !vendorData) {
+                currentVendor = vendorData;
+
+                welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
+                profileEmail.textContent = vendorEmail;
+                profileType.textContent = vendorData.vendor_type || 'STANDARD';
+                vendorIdInput.value = vendorData.id;
+
+                await loadVendorProducts();
+
+                loadingState.style.display = 'none';
+                portalContent.style.display = 'block';
+            } catch (err) {
+                console.error('Portal initialization error:', err);
                 showError();
-                return;
             }
-
-            currentVendor = vendorData;
-
-            welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
-            profileEmail.textContent = vendorData.email || session.user.email;
-            profileType.textContent = vendorData.vendor_type || 'STANDARD';
-            vendorIdInput.value = vendorData.id;
-
-            await loadVendorProducts();
-
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'block';
         }
 
         async function loadVendorProducts() {
