@@ -279,12 +279,12 @@
 
                 log(output, '✓ [4] Account is approved');
                 log(output, '[5] Setting localStorage...');
-                localStorage.setItem('echo_hub_buyer_email', buyerData.email);
+                localStorage.setItem('buyer_id', buyerData.id);
                 localStorage.setItem('buyer_email', buyerData.email);
                 log(output, '✓ [5] localStorage keys set');
 
                 log(output, '[6] Verifying localStorage...');
-                const stored = localStorage.getItem('echo_hub_buyer_email');
+                const stored = localStorage.getItem('buyer_id');
                 if (stored === buyerData.email) {
                     log(output, '✓ [6] localStorage verified: ' + stored);
                     log(output, '✓ ALL CHECKS PASSED - Ready to redirect');
