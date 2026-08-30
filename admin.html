@@ -184,12 +184,12 @@
 
     <script>
         let db;
-        let globalInquiriesData = []; 
+        let globalInquiriesData = [];
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
-                const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+                const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
                 loadInquiriesPortal();
