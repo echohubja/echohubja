@@ -669,10 +669,10 @@
 
             const container = document.getElementById('buyer-inquiries-body');
 
-            // Fetch inquiries with product details
+            // Fetch inquiries with product details (including vendor_id from products)
             const { data: inquiries, error } = await db
                 .from('inquiries')
-                .select('*, products(id, product_name)')
+                .select('*, products(id, product_name, vendor_id)')
                 .eq('buyer_id', buyerId)
                 .order('created_at', { ascending: false });
 
@@ -743,7 +743,7 @@
 
                     const vendorGroups = {};
                     group.items.forEach(item => {
-                        const vKey = item.vendor_id || 'Echo Hub';
+                        const vKey = item.products?.vendor_id || 'Echo Hub';
                         if (!vendorGroups[vKey]) {
                             vendorGroups[vKey] = [];
                         }
