@@ -7,7 +7,7 @@
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Bcrypt for password verification -->
-    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/bcryptjs.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -220,6 +220,21 @@
         const submitBtn = document.getElementById('submitBtn');
         const authAlert = document.getElementById('authAlert');
 
+        // Wait for bcryptjs to load
+        let bcryptReady = false;
+        const waitForBcrypt = async () => {
+            let attempts = 0;
+            while (typeof window.bcryptjs === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof window.bcryptjs !== 'undefined') {
+                bcryptReady = true;
+                console.log('[INIT] bcryptjs loaded successfully');
+            }
+        };
+        waitForBcrypt();
+
         // Account Type Selection
         document.querySelectorAll('.account-type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -243,7 +258,20 @@
 
             try {
                 if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
-                if (typeof bcryptjs === 'undefined') throw new Error('Security library failed to load. Please refresh the page and try again.');
+
+                // Wait for bcryptjs to load if not ready
+                if (!bcryptReady && typeof window.bcryptjs === 'undefined') {
+                    submitBtn.textContent = 'Loading security...';
+                    let attempts = 0;
+                    while (typeof window.bcryptjs === 'undefined' && attempts < 30) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+                    if (typeof window.bcryptjs === 'undefined') {
+                        throw new Error('Security library failed to load. Please check your internet connection and refresh the page.');
+                    }
+                    bcryptReady = true;
+                }
 
                 if (selectedAccountType === 'vendor') {
                     // VENDOR LOGIN
