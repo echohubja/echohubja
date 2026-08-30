@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-        body { 
+        body {
             background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
             background-attachment: fixed;
             min-height: 100vh;
-            color: #2c3e50; 
+            color: #2c3e50;
         }
         header {
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
@@ -60,13 +60,13 @@
             background: #f8fbff;
             transform: translateY(-1px);
         }
-        .layout { 
-            max-width: 1400px; 
-            margin: 40px auto; 
-            padding: 0 20px; 
-            display: grid; 
-            grid-template-columns: 240px 1fr; 
-            gap: 40px; 
+        .layout {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 40px;
         }
         aside {
             background: white;
@@ -75,42 +75,42 @@
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
             height: fit-content;
         }
-        .filter-group h3 { 
-            font-size: 14px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            color: #1e5aa8; 
-            margin-bottom: 15px; 
+        .filter-group h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1e5aa8;
+            margin-bottom: 15px;
             font-weight: 700;
         }
         .filter-links { display: flex; flex-direction: column; gap: 8px; }
-        .filter-link { 
-            background: none; 
-            border: none; 
-            text-align: left; 
-            padding: 10px 12px; 
+        .filter-link {
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 10px 12px;
             border-radius: 8px;
-            font-size: 15px; 
-            color: #4a5568; 
-            cursor: pointer; 
+            font-size: 15px;
+            color: #4a5568;
+            cursor: pointer;
             transition: all 0.2s ease;
             width: 100%;
         }
-        .filter-link:hover, .filter-link.active { 
+        .filter-link:hover, .filter-link.active {
             background: #f0f4f8;
-            color: #1e5aa8; 
-            font-weight: 600; 
+            color: #1e5aa8;
+            font-weight: 600;
         }
         .content-area { display: flex; flex-direction: column; gap: 20px; }
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
-        .product-box { 
-            background: #fff; 
-            border: 2px solid #e1e8ed; 
-            border-radius: 12px; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
+        .product-box {
+            background: #fff;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
@@ -120,13 +120,13 @@
         }
         .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
         .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
-        .product-box button { 
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
-            color: #fff; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 8px; 
-            cursor: pointer; 
+        .product-box button {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
             font-weight: 600;
             transition: opacity 0.2s ease;
         }
@@ -146,13 +146,13 @@
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
             color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
         }
-        .drawer-body { 
-            padding: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            overflow-y: auto; 
-            flex: 1; 
+        .drawer-body {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex: 1;
         }
         .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
 
@@ -247,10 +247,10 @@
             <h2 style="font-size: 20px; margin: 0;">Product Inquiry</h2>
             <button class="btn-close-drawer" onclick="closeInquiryDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 16px;"></p>
-            
+
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
                 <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
                 <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
@@ -258,7 +258,7 @@
 
             <input type="hidden" id="modal-product-id">
             <input type="hidden" id="modal-vendor-id">
-            
+
             <div>
                 <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
                 <textarea id="inquiry-message" placeholder="Ask details about this product..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
@@ -277,7 +277,7 @@
             <h2 style="font-size: 20px; margin: 0;">Referral Dashboard</h2>
             <button class="btn-close-drawer" onclick="toggleReferralDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <div>
                 <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 5px;">Your Unique Referral Link</label>
@@ -329,7 +329,7 @@
             <h2 style="font-size: 20px; margin: 0;">My Inquiries & Product Feedback</h2>
             <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <div>
                 <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
@@ -342,8 +342,8 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentBuyerId = '';
@@ -365,8 +365,7 @@
             const btnOpenReferrals = document.getElementById('btn-open-referrals');
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
-            const { data: { session } } = await db.auth.getSession();
-            currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
+            currentActiveEmail = localStorage.getItem('buyer_email') || localStorage.getItem('buyer_id') || '';
 
             if (currentActiveEmail) {
                 buyerNameSpan.textContent = currentActiveEmail;
@@ -377,13 +376,13 @@
 
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, buyer_id')
+                    .select('id, referral_code')
                     .eq('email', currentActiveEmail)
                     .single();
 
                 if (buyerData) {
-                    currentBuyerId = buyerData.id; 
-                    currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
+                    currentBuyerId = buyerData.id;
+                    currentBuyerStringId = buyerData.referral_code || 'BUYER-00000';
                 } else {
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
@@ -399,17 +398,14 @@
         }
 
         async function logoutBuyer() {
-            await db.auth.signOut();
-            localStorage.removeItem('echo_hub_buyer_email');
-            localStorage.removeItem('buyer_email');
-            localStorage.removeItem('user_email');
+            localStorage.clear();
             window.location.reload();
         }
 
         async function loadCategories() {
             const { data, error } = await db.from('products').select('category');
             const filterContainer = document.getElementById('category-filters');
-            
+
             if (error) {
                 console.error('Error loading categories:', error.message);
                 return;
@@ -422,11 +418,11 @@
                         const rawCat = item.category.trim();
                         const parts = rawCat.split('>').map(p => p.trim());
                         const mainCat = parts[0];
-                        
+
                         if (!taxonomy[mainCat]) {
                             taxonomy[mainCat] = {};
                         }
-                        
+
                         if (parts.length > 1) {
                             const subCat = parts[1];
                             taxonomy[mainCat][subCat] = rawCat;
@@ -436,13 +432,13 @@
             }
 
             let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
-            
+
             for (const [mainCat, subs] of Object.entries(taxonomy)) {
                 html += `
                     <div class="category-group" style="margin-top: 10px;">
                         <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
                 `;
-                
+
                 const subKeys = Object.keys(subs);
                 if (subKeys.length > 0) {
                     html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
@@ -454,13 +450,13 @@
                 }
                 html += `</div>`;
             }
-            
+
             filterContainer.innerHTML = html;
         }
 
         async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
             let query = db.from('products').select('*');
-            
+
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
                     query = query.ilike('category', `${categoryQuery}%`);
@@ -471,7 +467,7 @@
 
             const { data, error } = await query;
             const container = document.getElementById('products-container');
-            
+
             if (error) {
                 console.error('Error loading products:', error.message);
                 container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
@@ -510,12 +506,12 @@
             document.getElementById('modal-product-id').value = productId;
             document.getElementById('modal-vendor-id').value = vendorId;
             document.getElementById('modal-product-title').textContent = productName;
-            
+
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
-            
+
             const drawer = document.getElementById('inquiry-drawer');
             const overlay = document.getElementById('inquiry-drawer-overlay');
             drawer.classList.add('open');
@@ -547,7 +543,7 @@
                 {
                     product_id: productId,
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
-                    buyer_id: currentBuyerId, 
+                    buyer_id: currentBuyerId,
                     message: message,
                     image_url: null
                 }
@@ -569,7 +565,7 @@
         function toggleReferralDrawer() {
             const drawer = document.getElementById('referral-drawer');
             const overlay = document.getElementById('drawer-overlay');
-            
+
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
@@ -584,7 +580,7 @@
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
             const overlay = document.getElementById('inquiries-drawer-overlay');
-            
+
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
@@ -647,7 +643,7 @@
 
                     const latestMsg = group.items[0];
                     const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
-                    const statusBadge = isPending 
+                    const statusBadge = isPending
                         ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
                         : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
 
@@ -685,7 +681,7 @@
                             </div>
 
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
-                                
+
                                 <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
                                     💡 Your inquiry has been routed to the assigned vendor. Vendors typically respond within 24 hours.
                                 </div>
@@ -733,7 +729,7 @@
                                 hour12: true,
                                 timeZoneName: 'short'
                             });
-                            
+
                             html += `
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
@@ -742,9 +738,9 @@
                                     </div>
 
                                     <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
-                                    
+
                                     ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
-                                    
+
                                     <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
                                         <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
                                         <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
@@ -790,7 +786,7 @@
         function toggleInquiryGroup(contentId, headerElement) {
             const bodyDiv = document.getElementById(contentId);
             const iconSpan = document.getElementById(`icon-${contentId}`);
-            
+
             if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
                 bodyDiv.style.display = 'flex';
                 iconSpan.style.transform = 'rotate(180deg)';
@@ -805,7 +801,7 @@
         function toggleVendorGroup(vendorAccordionId, headerElement) {
             const bodyDiv = document.getElementById(vendorAccordionId);
             const iconSpan = document.getElementById(`icon-${vendorAccordionId}`);
-            
+
             if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
                 bodyDiv.style.display = 'flex';
                 iconSpan.style.transform = 'rotate(180deg)';
