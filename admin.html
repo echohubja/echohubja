@@ -208,6 +208,11 @@
             document.getElementById('section-commissions').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
+
+            // Reload data for active tab
+            if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'inquiries') loadInquiriesPortal();
+            else if (tabName === 'commissions') loadCommissionsPortal();
         }
 
         // --- TAB 1: BUYERS ---
@@ -370,6 +375,7 @@
                 });
 
                 globalInquiriesData = inquiries;
+                console.log('✓ Inquiries loaded:', inquiries.length, inquiries);
                 // Reset filters to default (actionable only)
                 document.getElementById('inquiry-search').value = '';
                 document.getElementById('status-filter').value = 'actionable';
@@ -387,6 +393,8 @@
             const statusFilterValue = document.getElementById('status-filter').value;
             const dateFrom = document.getElementById('date-from').value;
             const dateTo = document.getElementById('date-to').value;
+
+            console.log('Filter called. Global data:', globalInquiriesData.length, 'Status filter:', statusFilterValue);
 
             let filtered = globalInquiriesData;
 
@@ -441,6 +449,7 @@
                 filtered = filtered.filter(inq => new Date(inq.created_at).getTime() <= toDate);
             }
 
+            console.log('After filters. Remaining:', filtered.length, filtered);
             renderInquiriesTree(filtered);
         }
 
@@ -448,6 +457,7 @@
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
+            console.log('renderInquiriesTree called with', data.length, 'items:', data);
             document.getElementById('inquiry-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
 
             if (data.length === 0) {
