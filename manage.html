@@ -469,6 +469,72 @@
                 </div>
 
             </div>
+
+            <!-- Pending Inquiries Section -->
+            <div class="panel" style="margin-top: 24px;">
+                <div class="panel-header">
+                    <h2>Pending Customer Inquiries</h2>
+                    <span class="badge" id="inquiryCountBadge">0 inquiries</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="inquiriesTable">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inquiriesBody">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+
+                    <div id="emptyInquiries" class="empty-inventory" style="display: none;">
+                        <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <p>No pending inquiries.</p>
+                        <p style="font-size: 0.8em; color: #cbd5e1;">Customers will contact you here when they have questions!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Modal -->
+            <div id="responseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; flex-items: center; justify-content: center; padding: 20px;">
+                <div style="background: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto;">
+                    <h3 style="color: #1e5aa8; font-size: 1.3em; margin-bottom: 16px;">Respond to Customer Inquiry</h3>
+
+                    <div id="inqDetails" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #475569;">Customer:</strong>
+                            <span id="inqCustomer" style="color: #64748b;">-</span>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #475569;">Product:</strong>
+                            <span id="inqProduct" style="color: #64748b;">-</span>
+                        </div>
+                        <div>
+                            <strong style="color: #475569;">Their Message:</strong>
+                            <div id="inqMessage" style="color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 6px; max-height: 100px; overflow-y: auto;">-</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="responseText">Your Response</label>
+                        <textarea id="responseText" required placeholder="Type your response to the customer..." style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; min-height: 120px; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn-cancel" id="closeResponseBtn" style="display: block; width: auto; margin: 0;">Cancel</button>
+                        <button type="button" id="submitResponseBtn" class="btn-submit" style="width: auto; margin: 0;">Send Response</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -561,6 +627,7 @@
                 vendorIdInput.value = vendorData.id;
 
                 await loadVendorProducts();
+                await loadPendingInquiries();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -717,6 +784,195 @@
                 alert('Could not delete product: ' + error.message);
             }
         };
+
+        let currentInquiry = null;
+
+        async function loadPendingInquiries() {
+            if (!currentVendor) return;
+
+            try {
+                // Fetch all inquiries for vendor's products (where sender_type is 'buyer')
+                const { data: vendorProducts } = await sbClient
+                    .from('products')
+                    .select('id')
+                    .eq('vendor_id', currentVendor.id);
+
+                if (!vendorProducts || vendorProducts.length === 0) {
+                    document.getElementById('inquiriesTable').style.display = 'none';
+                    document.getElementById('emptyInquiries').style.display = 'block';
+                    document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
+                    return;
+                }
+
+                const productIds = vendorProducts.map(p => p.id);
+
+                // Fetch inquiries (buyer inquiries that haven't received a vendor response yet)
+                const { data: inquiries } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .in('product_id', productIds)
+                    .eq('message_type', 'inquiry')
+                    .eq('sender_type', 'buyer')
+                    .order('created_at', { ascending: false });
+
+                // Fetch buyer details
+                let buyerMap = {};
+                if (inquiries && inquiries.length > 0) {
+                    const buyerIds = [...new Set(inquiries.map(inq => inq.buyer_id).filter(Boolean))];
+                    if (buyerIds.length > 0) {
+                        const { data: buyers } = await sbClient
+                            .from('buyers')
+                            .select('id, full_name, email')
+                            .in('id', buyerIds);
+
+                        if (buyers) {
+                            buyers.forEach(buyer => {
+                                buyerMap[buyer.id] = buyer;
+                            });
+                        }
+                    }
+                }
+
+                // Fetch product details
+                let productMap = {};
+                if (inquiries && inquiries.length > 0) {
+                    const { data: products } = await sbClient
+                        .from('products')
+                        .select('id, product_name')
+                        .in('id', productIds);
+
+                    if (products) {
+                        products.forEach(prod => {
+                            productMap[prod.id] = prod;
+                        });
+                    }
+                }
+
+                // Check for vendor responses to filter out responded inquiries
+                let respondedInquiries = new Set();
+                if (inquiries && inquiries.length > 0) {
+                    const { data: responses } = await sbClient
+                        .from('inquiries')
+                        .select('id')
+                        .in('product_id', productIds)
+                        .eq('message_type', 'vendor_response')
+                        .eq('sender_type', 'vendor');
+
+                    // For now, we'll mark all vendor responses as "responded"
+                    // In a real system, we'd track which inquiry each response is for
+                    if (responses) {
+                        responses.forEach(resp => {
+                            respondedInquiries.add(resp.product_id);
+                        });
+                    }
+                }
+
+                if (!inquiries || inquiries.length === 0) {
+                    document.getElementById('inquiriesTable').style.display = 'none';
+                    document.getElementById('emptyInquiries').style.display = 'block';
+                    document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
+                    return;
+                }
+
+                document.getElementById('inquiriesTable').style.display = 'table';
+                document.getElementById('emptyInquiries').style.display = 'none';
+                document.getElementById('inquiryCountBadge').textContent = `${inquiries.length} inquir${inquiries.length === 1 ? 'y' : 'ies'}`;
+
+                const inquiriesBody = document.getElementById('inquiriesBody');
+                inquiriesBody.innerHTML = '';
+
+                inquiries.forEach(inq => {
+                    const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A' };
+                    const product = productMap[inq.product_id] || { product_name: 'Unknown' };
+                    const timestamp = new Date(inq.created_at).toLocaleDateString();
+                    const hasResponse = respondedInquiries.has(inq.product_id);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(buyer.full_name)}</strong><br><small style="color: #64748b;">${escapeHtml(buyer.email)}</small></td>
+                        <td>${escapeHtml(product.product_name)}</td>
+                        <td><small style="max-height: 40px; overflow: hidden; display: block;">${escapeHtml(inq.message || '[No message]')}</small></td>
+                        <td><small>${timestamp}</small></td>
+                        <td>
+                            ${hasResponse
+                                ? '<span style="color: #15803d; font-weight: 600;">✓ Responded</span>'
+                                : `<button class="btn-action btn-edit" onclick="openResponseModal('${inq.id}', '${escapeHtml(buyer.full_name)}', '${escapeHtml(product.product_name)}', '${escapeHtml(inq.message)}')">Respond</button>`
+                            }
+                        </td>
+                    `;
+                    inquiriesBody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Error loading inquiries:', err);
+                document.getElementById('inquiriesTable').style.display = 'none';
+                document.getElementById('emptyInquiries').style.display = 'block';
+            }
+        }
+
+        window.openResponseModal = function(inquiryId, buyerName, productName, message) {
+            currentInquiry = { id: inquiryId, buyerName, productName, message };
+            document.getElementById('inqCustomer').textContent = buyerName;
+            document.getElementById('inqProduct').textContent = productName;
+            document.getElementById('inqMessage').textContent = message;
+            document.getElementById('responseText').value = '';
+            document.getElementById('responseModal').style.display = 'flex';
+        };
+
+        window.closeResponseModal = function() {
+            document.getElementById('responseModal').style.display = 'none';
+            currentInquiry = null;
+        };
+
+        document.getElementById('closeResponseBtn').addEventListener('click', closeResponseModal);
+
+        document.getElementById('submitResponseBtn').addEventListener('click', async function() {
+            if (!currentInquiry) return;
+
+            const responseText = document.getElementById('responseText').value.trim();
+            if (!responseText) {
+                alert('Please enter a response.');
+                return;
+            }
+
+            this.disabled = true;
+            this.textContent = 'Sending...';
+
+            try {
+                const { error } = await sbClient.from('inquiries').insert([{
+                    product_id: parseInt(currentInquiry.id.split('-')[0]),
+                    buyer_id: null,
+                    message: responseText,
+                    message_type: 'vendor_response',
+                    sender_type: 'vendor',
+                    sender_id: currentVendor.id,
+                    created_at: new Date().toISOString()
+                }]);
+
+                if (error) throw error;
+
+                alert('Response sent successfully!');
+                closeResponseModal();
+                await loadPendingInquiries();
+            } catch (err) {
+                console.error('Error sending response:', err);
+                alert('Failed to send response: ' + err.message);
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Send Response';
+            }
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
 
         async function uploadImageFile(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
