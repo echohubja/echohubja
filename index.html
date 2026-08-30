@@ -823,12 +823,30 @@
                                 hour12: true,
                                 timeZoneName: 'short'
                             });
-                            
+
+                            // Determine message type and color
+                            let messageType = 'Initial Inquiry';
+                            let badgeColor = '#2563eb';
+                            let badgeBg = '#dbeafe';
+                            let messageBorderColor = '#93c5fd';
+
+                            if (item.message.includes('[Post-Receipt Product Feedback]')) {
+                                messageType = 'Feedback Submitted';
+                                badgeColor = '#ea580c';
+                                badgeBg = '#fed7aa';
+                                messageBorderColor = '#fdba74';
+                            } else if (item.message.includes('[Follow-up]:')) {
+                                messageType = 'Buyer Follow-up';
+                                badgeColor = '#7c3aed';
+                                badgeBg = '#ede9fe';
+                                messageBorderColor = '#d8b4fe';
+                            }
+
                             html += `
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
-                                        <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Message Record</span>
-                                        <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
+                                <div style="background: #f8fafc; border-left: 4px solid ${messageBorderColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7;">
+                                        <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
+                                        <span style="font-size: 10px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
 
                                     <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
