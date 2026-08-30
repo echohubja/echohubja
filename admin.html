@@ -432,9 +432,14 @@
                 });
             } else if (statusFilterValue) {
                 // Show specific status (treat null as pending)
+                console.log('Single status filter:', statusFilterValue);
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    return status === statusFilterValue;
+                    const passes = status === statusFilterValue;
+                    if (!passes) {
+                        console.log(`  Inquiry status="${inq.status}" → normalized="${status}" does not match filter="${statusFilterValue}"`);
+                    }
+                    return passes;
                 });
             }
             // If statusFilterValue is empty string, show all (no filter)
