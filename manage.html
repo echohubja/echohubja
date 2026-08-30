@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Dashboard</title>
+    <title>Echo Hub - Vendor Product Management Portal</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -67,8 +67,8 @@
             padding: 0 20px;
         }
 
-        /* Loading State */
-        .loading-state {
+        /* States */
+        .loading-state, .error-state {
             text-align: center;
             padding: 60px 20px;
             font-size: 1.1em;
@@ -76,6 +76,10 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .error-state {
+            color: #c0392b;
         }
 
         /* Profile Banner Bar */
@@ -301,11 +305,6 @@
             background: #174887;
         }
 
-        .btn-submit:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-
         .btn-cancel {
             width: 100%;
             background: #e2e8f0;
@@ -341,13 +340,6 @@
             background: #fee2e2;
             color: #b91c1c;
         }
-
-        small {
-            color: #64748b;
-            font-size: 0.75em;
-            display: block;
-            margin-top: 4px;
-        }
     </style>
 </head>
 <body>
@@ -355,25 +347,29 @@
     <header>
         <div>
             <h1>Echo Hub</h1>
-            <p>Vendor Product Management Dashboard</p>
+            <p>Vendor Product Management Portal</p>
         </div>
         <button id="logoutBtn" class="btn-logout">Sign Out</button>
     </header>
 
     <div class="container">
-        <!-- Loading State -->
+        <!-- Loading & Error States -->
         <div id="loadingState" class="loading-state">
-            Authenticating vendor session...
+            Authenticating vendor portal session...
+        </div>
+
+        <div id="errorState" class="error-state" style="display: none;">
+            Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
         </div>
 
         <!-- Main Portal Workspace -->
         <div id="portalContent" style="display: none;">
-
+            
             <!-- Vendor Info Bar -->
             <div class="profile-bar">
                 <div class="welcome-text">
                     <h2 id="welcomeHeading">Welcome back!</h2>
-                    <p>Manage your product listings.</p>
+                    <p>Manage your product listings and marketplace store sync.</p>
                 </div>
                 <div class="profile-tags">
                     <div class="tag">Email: <strong id="profileEmail">-</strong></div>
@@ -382,7 +378,7 @@
             </div>
 
             <div class="portal-grid">
-
+                
                 <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
@@ -391,7 +387,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table id="inventoryTable" style="display: none;">
+                        <table id="inventoryTable">
                             <thead>
                                 <tr>
                                     <th>Image</th>
@@ -406,7 +402,7 @@
                             </tbody>
                         </table>
 
-                        <div id="emptyInventory" class="empty-inventory" style="display: block;">
+                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
                             <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                             </svg>
@@ -427,6 +423,11 @@
 
                     <form id="productForm">
                         <div class="form-group">
+                            <label for="vendorId">Vendor ID</label>
+                            <input type="text" id="vendorId" readonly placeholder="Loading ID..." style="background: #f1f5f9; cursor: not-allowed;">
+                        </div>
+
+                        <div class="form-group">
                             <label for="productName">Product Name</label>
                             <input type="text" id="productName" required placeholder="e.g. Wireless Earbuds">
                         </div>
@@ -435,11 +436,11 @@
                             <label for="category">Category</label>
                             <select id="category" required>
                                 <option value="">-- Select a category --</option>
-                                <option value="Wigs">Wigs</option>
-                                <option value="Toys">Toys</option>
-                                <option value="Gadgets">Gadgets</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Office Furniture">Office Furniture</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Smart Home">Smart Home</option>
+                                <option value="Hair & Beauty">Hair & Beauty</option>
+                                <option value="Fashion">Fashion</option>
+                                <option value="Adult Novelties">Adult Novelties</option>
                                 <option value="General">General</option>
                             </select>
                         </div>
@@ -450,10 +451,16 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="imageFile1">Primary Product Image</label>
+                            <label for="imageFile1">Primary Product Image File</label>
                             <input type="file" id="imageFile1" accept="image/*">
                             <input type="hidden" id="primaryImage">
-                            <small>Select a file from your device. If editing, existing image will be kept if no new file is selected.</small>
+                            <small style="color: #64748b; font-size: 0.75em;">Select a file from your device, or the existing URL will be kept if editing.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="imageFile2">Secondary Product Image File (Optional)</label>
+                            <input type="file" id="imageFile2" accept="image/*">
+                            <input type="hidden" id="secondaryImage">
                         </div>
 
                         <button type="submit" id="submitProductBtn" class="btn-submit">Publish Listing</button>
@@ -466,16 +473,17 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         let currentVendor = null;
-        let editingProductId = null;
-        let cachedProducts = [];
+        let editingProductId = null; 
+        let cachedProducts = []; 
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
         const portalContent = document.getElementById('portalContent');
 
         const welcomeHeading = document.getElementById('welcomeHeading');
@@ -490,46 +498,43 @@
         const productForm = document.getElementById('productForm');
         const formTitle = document.getElementById('formTitle');
         const formModeBadge = document.getElementById('formModeBadge');
+        const vendorIdInput = document.getElementById('vendorId');
         const submitProductBtn = document.getElementById('submitProductBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const formAlert = document.getElementById('formAlert');
 
-        function validateSession() {
-            const vendorId = localStorage.getItem('vendor_id');
-            const vendorSession = localStorage.getItem('vendor_session');
-
-            if (!vendorId || !vendorSession) {
-                console.log('[MANAGE] No valid session found, redirecting to login');
-                window.location.href = 'login.html';
-                return null;
-            }
-
-            try {
-                const vendorData = JSON.parse(vendorSession);
-                return vendorData;
-            } catch (err) {
-                console.error('[MANAGE] Failed to parse vendor session:', err);
-                localStorage.clear();
-                window.location.href = 'login.html';
-                return null;
-            }
-        }
-
         async function initPortal() {
-            const vendorData = validateSession();
-            if (!vendorData) return;
+            if (!sbClient) {
+                showError();
+                return;
+            }
 
-            if (!supabaseClient) {
-                console.error('[MANAGE] Supabase client failed to initialize');
-                loadingState.textContent = 'Error: Database connection failed. Please refresh.';
+            const { data: { session }, error: sessionError } = await sbClient.auth.getSession();
+
+            if (sessionError || !session) {
+                showError();
+                return;
+            }
+
+            const userId = session.user.id;
+
+            const { data: vendorData, error: vendorError } = await sbClient
+                .from('vendors')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (vendorError || !vendorData) {
+                showError();
                 return;
             }
 
             currentVendor = vendorData;
 
             welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
-            profileEmail.textContent = vendorData.email || '-';
+            profileEmail.textContent = vendorData.email || session.user.email;
             profileType.textContent = vendorData.vendor_type || 'STANDARD';
+            vendorIdInput.value = vendorData.id;
 
             await loadVendorProducts();
 
@@ -540,54 +545,68 @@
         async function loadVendorProducts() {
             if (!currentVendor) return;
 
-            try {
-                const { data: products, error } = await supabaseClient
-                    .from('products')
-                    .select('*')
-                    .eq('vendor_id', currentVendor.id);
+            const { data: products, error } = await sbClient
+                .from('products')
+                .select('*')
+                .eq('vendor_id', currentVendor.id);
 
-                inventoryBody.innerHTML = '';
+            inventoryBody.innerHTML = '';
 
-                if (error || !products || products.length === 0) {
-                    cachedProducts = [];
-                    inventoryTable.style.display = 'none';
-                    emptyInventory.style.display = 'block';
-                    itemCountBadge.textContent = '0 items';
-                    return;
-                }
-
-                cachedProducts = products;
-                inventoryTable.style.display = 'table';
-                emptyInventory.style.display = 'none';
-                itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
-
-                products.forEach(prod => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>
-                            <img src="${prod.image_url_1 || 'https://via.placeholder.com/42'}" class="product-img" alt="${prod.name || 'Product'}">
-                        </td>
-                        <td><strong>${prod.name || 'Untitled'}</strong></td>
-                        <td>${prod.category || 'General'}</td>
-                        <td><strong>$${parseFloat(prod.price || 0).toFixed(2)}</strong></td>
-                        <td>
-                            <button class="btn-action btn-edit" onclick="editProduct('${prod.id}')">Edit</button>
-                            <button class="btn-action btn-delete" onclick="deleteProduct('${prod.id}')">Delete</button>
-                        </td>
-                    `;
-                    inventoryBody.appendChild(tr);
-                });
-            } catch (err) {
-                console.error('[PRODUCTS_ERROR]', err);
-                showAlert('Error loading products: ' + err.message, true);
+            if (error || !products || products.length === 0) {
+                cachedProducts = [];
+                inventoryTable.style.display = 'none';
+                emptyInventory.style.display = 'block';
+                itemCountBadge.textContent = '0 items';
+                return;
             }
+
+            // Fetch images for all products
+            const { data: allImages } = await sbClient
+                .from('product-images')
+                .select('product_id, image_url')
+                .in('product_id', products.map(p => p.id));
+
+            const imageMap = {};
+            if (allImages) {
+                allImages.forEach(img => {
+                    if (!imageMap[img.product_id]) {
+                        imageMap[img.product_id] = [];
+                    }
+                    imageMap[img.product_id].push(img.image_url);
+                });
+            }
+
+            cachedProducts = products;
+            inventoryTable.style.display = 'table';
+            emptyInventory.style.display = 'none';
+            itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
+
+            products.forEach(prod => {
+                const images = imageMap[prod.id] || [];
+                const firstImage = images.length > 0 ? images[0] : 'https://via.placeholder.com/42';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <img src="${firstImage}" class="product-img" alt="${prod.product_name || 'Product'}">
+                    </td>
+                    <td><strong>${prod.product_name || 'Untitled'}</strong></td>
+                    <td>${prod.category || 'General'}</td>
+                    <td><strong>$${parseFloat(prod.price || 0).toFixed(2)}</strong></td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="editProduct('${prod.id}')">Edit</button>
+                        <button class="btn-action btn-delete" onclick="deleteProduct('${prod.id}')">Delete</button>
+                    </td>
+                `;
+                inventoryBody.appendChild(tr);
+            });
         }
 
         window.editProduct = async function(productId) {
             let product = cachedProducts.find(p => String(p.id) === String(productId));
 
             if (!product) {
-                const { data, error } = await supabaseClient
+                const { data, error } = await sbClient
                     .from('products')
                     .select('*')
                     .eq('id', productId)
@@ -600,13 +619,33 @@
                 product = data;
             }
 
+            // Fetch images for this product
+            const { data: images } = await sbClient
+                .from('product-images')
+                .select('image_url')
+                .eq('product_id', productId);
+
             editingProductId = product.id;
 
-            document.getElementById('productName').value = product.name || '';
+            document.getElementById('productName').value = product.product_name || '';
             document.getElementById('category').value = product.category || '';
             document.getElementById('price').value = product.price || '';
-            document.getElementById('primaryImage').value = product.image_url_1 || '';
+
+            // Display fetched images as previews
+            if (images && images.length > 0) {
+                document.getElementById('primaryImage').value = images[0].image_url || '';
+            } else {
+                document.getElementById('primaryImage').value = '';
+            }
+
+            if (images && images.length > 1) {
+                document.getElementById('secondaryImage').value = images[1].image_url || '';
+            } else {
+                document.getElementById('secondaryImage').value = '';
+            }
+
             document.getElementById('imageFile1').value = '';
+            document.getElementById('imageFile2').value = '';
 
             formTitle.textContent = 'Edit Product Listing';
             formModeBadge.textContent = 'EDITING MODE';
@@ -621,6 +660,8 @@
             editingProductId = null;
             productForm.reset();
             document.getElementById('primaryImage').value = '';
+            document.getElementById('secondaryImage').value = '';
+            vendorIdInput.value = currentVendor.id;
             formTitle.textContent = 'Create New Product Listing';
             formModeBadge.textContent = 'CREATING MODE';
             formModeBadge.className = 'badge';
@@ -634,23 +675,18 @@
         window.deleteProduct = async function(productId) {
             if (!confirm('Are you sure you want to delete this listing?')) return;
 
-            try {
-                const { error } = await supabaseClient
-                    .from('products')
-                    .delete()
-                    .eq('id', productId);
+            const { error } = await sbClient
+                .from('products')
+                .delete()
+                .eq('id', productId);
 
-                if (!error) {
-                    if (String(editingProductId) === String(productId)) {
-                        resetFormMode();
-                    }
-                    await loadVendorProducts();
-                    showAlert('Product deleted successfully!', false);
-                } else {
-                    showAlert('Could not delete product: ' + error.message, true);
+            if (!error) {
+                if (String(editingProductId) === String(productId)) {
+                    resetFormMode();
                 }
-            } catch (err) {
-                showAlert('Error: ' + err.message, true);
+                await loadVendorProducts();
+            } else {
+                alert('Could not delete product: ' + error.message);
             }
         };
 
@@ -661,28 +697,16 @@
             }
 
             const file = fileInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-            const filePath = `${currentVendor.id}/${fileName}`;
-
-            try {
-                const { data, error } = await supabaseClient.storage
-                    .from('product-images')
-                    .upload(filePath, file);
-
-                if (error) {
-                    throw new Error('Image upload failed: ' + error.message);
-                }
-
-                const { data: publicUrlData } = supabaseClient.storage
-                    .from('product-images')
-                    .getPublicUrl(filePath);
-
-                return publicUrlData.publicUrl;
-            } catch (err) {
-                console.error('[IMAGE_UPLOAD_ERROR]', err);
-                throw err;
-            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve(e.target.result);
+                };
+                reader.onerror = () => {
+                    reject(new Error('Failed to read image file'));
+                };
+                reader.readAsDataURL(file);
+            });
         }
 
         productForm.addEventListener('submit', async (e) => {
@@ -694,52 +718,80 @@
 
             try {
                 const uploadedPrimary = await uploadImageFile('imageFile1');
-                const primaryImageFinal = uploadedPrimary || document.getElementById('primaryImage').value.trim();
+                const uploadedSecondary = await uploadImageFile('imageFile2');
 
-                if (!primaryImageFinal) {
-                    throw new Error('A product image is required.');
+                if (!uploadedPrimary) {
+                    throw new Error('A primary image file is required.');
                 }
 
-                const name = document.getElementById('productName').value.trim();
+                const product_name = document.getElementById('productName').value.trim();
                 const category = document.getElementById('category').value;
                 const price = parseFloat(document.getElementById('price').value);
 
                 if (editingProductId) {
-                    const { error } = await supabaseClient
+                    const updatedFields = {
+                        product_name: product_name,
+                        category: category,
+                        price: price
+                    };
+
+                    const { error: updateError } = await sbClient
                         .from('products')
-                        .update({
-                            name: name,
-                            category: category,
-                            price: price,
-                            image_url_1: primaryImageFinal
-                        })
+                        .update(updatedFields)
                         .eq('id', editingProductId);
 
-                    if (error) throw error;
+                    if (updateError) throw updateError;
+
+                    // Delete old images and insert new ones
+                    await sbClient.from('product-images').delete().eq('product_id', editingProductId);
+
+                    const imagesToInsert = [];
+                    if (uploadedPrimary) imagesToInsert.push({ product_id: editingProductId, image_url: uploadedPrimary });
+                    if (uploadedSecondary) imagesToInsert.push({ product_id: editingProductId, image_url: uploadedSecondary });
+
+                    if (imagesToInsert.length > 0) {
+                        const { error: imageError } = await sbClient.from('product-images').insert(imagesToInsert);
+                        if (imageError) throw imageError;
+                    }
 
                     showAlert('Product updated successfully!', false);
                     resetFormMode();
                     await loadVendorProducts();
                 } else {
-                    const { error } = await supabaseClient
-                        .from('products')
-                        .insert([{
-                            vendor_id: currentVendor.id,
-                            name: name,
-                            category: category,
-                            price: price,
-                            image_url_1: primaryImageFinal,
-                            created_at: new Date().toISOString()
-                        }]);
+                    const newProduct = {
+                        vendor_id: currentVendor.id,
+                        product_name: product_name,
+                        category: category,
+                        price: price
+                    };
 
-                    if (error) throw error;
+                    const { data: insertedProduct, error: insertError } = await sbClient
+                        .from('products')
+                        .insert([newProduct])
+                        .select();
+
+                    if (insertError) throw insertError;
+                    if (!insertedProduct || insertedProduct.length === 0) throw new Error('Failed to create product');
+
+                    const productId = insertedProduct[0].id;
+
+                    // Insert images
+                    const imagesToInsert = [];
+                    if (uploadedPrimary) imagesToInsert.push({ product_id: productId, image_url: uploadedPrimary });
+                    if (uploadedSecondary) imagesToInsert.push({ product_id: productId, image_url: uploadedSecondary });
+
+                    if (imagesToInsert.length > 0) {
+                        const { error: imageError } = await sbClient.from('product-images').insert(imagesToInsert);
+                        if (imageError) throw imageError;
+                    }
 
                     showAlert('Product published successfully!', false);
                     productForm.reset();
+                    vendorIdInput.value = currentVendor.id;
                     await loadVendorProducts();
                 }
             } catch (err) {
-                console.error('[SUBMISSION_ERROR]', err);
+                console.error('Submission error:', err);
                 showAlert(err.message || 'Operation failed.', true);
             } finally {
                 submitProductBtn.disabled = false;
@@ -757,19 +809,31 @@
             formAlert.style.display = 'block';
         }
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            console.log('[MANAGE] Logout clicked');
-            localStorage.removeItem('vendor_id');
-            localStorage.removeItem('vendor_email');
-            localStorage.removeItem('vendor_is_blocked');
-            localStorage.removeItem('vendor_session');
-            window.location.href = 'login.html';
+        function showError() {
+            loadingState.style.display = 'none';
+            portalContent.style.display = 'none';
+            errorState.style.display = 'block';
+        }
+
+        // Guaranteed DOM-safe event listener for logout
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        if (sbClient) {
+                            await sbClient.auth.signOut();
+                        }
+                    } catch (err) {
+                        console.error("Sign out error:", err);
+                    } finally {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
         });
 
-        // Initialize on page load
-        window.addEventListener('load', initPortal);
+        initPortal();
     </script>
-
 </body>
 </html>
