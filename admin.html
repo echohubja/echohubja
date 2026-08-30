@@ -978,7 +978,7 @@
 
             try {
                 // Fetch vendors with commission info
-                const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name, commission, commission_threshold, accumulated_balance, referred_by_buyer_id').order('first_name');
+                const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name, email, commission, commission_threshold, accumulated_balance, referred_by_buyer_id').order('first_name');
 
                 if (vendorError) {
                     tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading vendors: ${escapeHtml(vendorError.message)}</td></tr>`;
