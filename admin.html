@@ -612,7 +612,7 @@
                         const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
 
                         html += `
-                            <div class="border-l-4 ${msgColor} rounded-lg p-4 space-y-2 bg-white shadow-sm hover:shadow-md transition">
+                            <div class="border-l-4 ${msgType === 'feedback' ? 'border-l-orange-500 bg-orange-50' : msgColor} rounded-lg p-4 space-y-2 shadow-sm hover:shadow-md transition">
                                 <div class="flex justify-between items-start gap-3">
                                     <div class="flex-1">
                                         <div class="text-xs font-bold text-gray-800">${senderIcon} ${msgTypeLabel}</div>
@@ -626,14 +626,14 @@
                                 </div>
                         `;
 
-                        // If feedback submission, show image and verification UI
+                        // If feedback submission, show image thumbnail and verification UI inline
                         if (msgType === 'feedback' && msg.image_url) {
                             const status = (msg.status || 'pending_verification').toLowerCase();
                             let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
                             if (status === 'verified') {
-                                statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
+                                statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">✓ VERIFIED</span>`;
                             } else if (status === 'rejected') {
-                                statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">REJECTED</span>`;
+                                statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">✗ REJECTED</span>`;
                             }
 
                             const amazonUrl = msg.message && msg.message.includes('http')
@@ -641,18 +641,23 @@
                                 : null;
 
                             html += `
-                                <div class="bg-orange-100 border-2 border-orange-400 rounded-lg p-3 space-y-2 mt-2">
-                                    <div class="text-[11px] font-bold text-orange-800 uppercase">📸 Feedback Proof Submitted</div>
-                                    <div class="flex gap-2 items-center flex-wrap">
-                                        <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1.5 rounded font-semibold transition">📷 View Feedback Image</button>
-                                        ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded font-semibold transition">🔗 Amazon Link</a>` : ''}
+                                <div class="bg-gradient-to-r from-orange-100 to-amber-50 border-2 border-orange-400 rounded-lg p-3 space-y-3 mt-2">
+                                    <div class="flex gap-3 items-start">
+                                        <img src="${msg.image_url}" alt="Feedback" class="w-16 h-16 object-cover rounded-lg border-2 border-orange-300 shadow-md cursor-pointer hover:shadow-lg transition" onclick="openLightbox('${msg.image_url}')" title="Click to view full size">
+                                        <div class="flex-1">
+                                            <div class="text-[11px] font-bold text-orange-800 uppercase mb-1.5">📸 Feedback Proof Submitted</div>
+                                            <div class="flex gap-1.5 items-center flex-wrap">
+                                                ${statusBadge}
+                                                ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
+                                                    <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded font-bold transition">✓ Verify & Approve</button>
+                                                    <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded font-bold transition">✗ Reject</button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="flex gap-2 items-center flex-wrap pt-1 border-t border-orange-300">
-                                        ${statusBadge}
-                                        ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
-                                            <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold transition">✓ Verify</button>
-                                            <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold transition">✗ Reject</button>
-                                        ` : '<span class="text-[11px] text-gray-600">Action Complete</span>'}
+                                    <div class="flex gap-2 pt-2 border-t border-orange-300">
+                                        <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1 rounded font-semibold transition flex-1">📷 View Full Image</button>
+                                        ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1 rounded font-semibold transition flex-1 text-center">🔗 Amazon</a>` : '<button disabled class="text-[11px] bg-gray-300 text-gray-500 px-3 py-1 rounded font-semibold flex-1">No Amazon Link</button>'}
                                     </div>
                                 </div>
                             `;
