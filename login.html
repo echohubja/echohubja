@@ -6,8 +6,8 @@
     <title>Echo Hub - Login</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Bcrypt for password verification -->
-    <script async src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
+    <!-- Bcrypt for password verification - cloudflare CDN (most reliable) -->
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcryptjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -231,9 +231,16 @@
             if (typeof window.bcryptjs !== 'undefined') {
                 bcryptReady = true;
                 console.log('[INIT] bcryptjs loaded successfully');
+            } else {
+                console.warn('[INIT] bcryptjs failed to load after 5 seconds');
             }
         };
         waitForBcrypt();
+
+        // Debug: Log script load attempts
+        window.addEventListener('load', () => {
+            console.log('[DEBUG] Page fully loaded, bcryptjs status:', typeof window.bcryptjs);
+        });
 
         // Account Type Selection
         document.querySelectorAll('.account-type-btn').forEach(btn => {
