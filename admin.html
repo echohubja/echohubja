@@ -556,15 +556,21 @@
                     }
 
                     const productName = msg.products?.product_name || `Product ${msg.product_id}`;
+                    const productImage = msg.product_images?.[0] || msg.products?.product_images?.[0] || null;
+                    const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
+                    const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
 
                     html += `
-                        <div class="border ${msgColor} rounded-lg p-3 space-y-2 bg-white">
-                            <div class="flex justify-between items-start gap-2">
-                                <div class="flex-1">
-                                    <div class="text-xs font-bold text-gray-700">${senderIcon} ${msgTypeLabel} - ${escapeHtml(productName)}</div>
-                                    <div class="text-[11px] text-gray-500">${timestamp}</div>
+                        <div class="border ${msgColor} rounded-lg p-3 space-y-2 bg-white ${feedbackHighlight}">
+                            <div class="flex justify-between items-start gap-3">
+                                <div class="flex gap-2 flex-1">
+                                    ${productImage ? `<img src="${productImage}" alt="Product" class="w-12 h-12 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-md transition" onclick="openLightbox('${productImage}')" title="Click to view product image">` : '<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500 flex-shrink-0">No Image</div>'}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs font-bold text-gray-700">${senderIcon} ${msgTypeLabel} - ${escapeHtml(productName)}</div>
+                                        <div class="text-[11px] text-gray-500">${timestamp}</div>
+                                    </div>
                                 </div>
-                                <span class="${msgTypeBadgeColor} px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">${msgTypeLabel}</span>
+                                <span class="${msgTypeBadgeColor} px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
                             </div>
 
                             <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
@@ -574,7 +580,7 @@
 
                     // If feedback submission, show image and verification UI
                     if (msgType === 'feedback' && msg.image_url) {
-                        const status = (msg.status || 'pending').toLowerCase();
+                        const status = (msg.status || 'pending_verification').toLowerCase();
                         let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
                         if (status === 'verified') {
                             statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
@@ -587,16 +593,18 @@
                             : null;
 
                         html += `
-                            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-2 space-y-2 mt-2">
-                                <div class="text-[11px] font-bold text-indigo-700 uppercase">📸 Feedback Image</div>
-                                ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] text-indigo-600 hover:underline break-all">🔗 Amazon URL</a>` : ''}
-                                <div class="flex gap-2 items-center">
-                                    <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 rounded font-semibold">View</button>
-                                    ${(status === 'pending' || status === 'flagged') ? `
-                                        <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold">Verify</button>
-                                        <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold">Reject</button>
-                                    ` : ''}
+                            <div class="bg-orange-100 border-2 border-orange-400 rounded-lg p-3 space-y-2 mt-2">
+                                <div class="text-[11px] font-bold text-orange-800 uppercase">📸 Feedback Proof Submitted</div>
+                                <div class="flex gap-2 items-center flex-wrap">
+                                    <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1.5 rounded font-semibold transition">📷 View Feedback Image</button>
+                                    ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded font-semibold transition">🔗 Amazon Link</a>` : ''}
+                                </div>
+                                <div class="flex gap-2 items-center flex-wrap pt-1 border-t border-orange-300">
                                     ${statusBadge}
+                                    ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
+                                        <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold transition">✓ Verify</button>
+                                        <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold transition">✗ Reject</button>
+                                    ` : '<span class="text-[11px] text-gray-600">Action Complete</span>'}
                                 </div>
                             </div>
                         `;
