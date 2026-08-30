@@ -240,6 +240,19 @@
         </div>
     </div>
 
+    <!-- ID Verification Image Lightbox Modal -->
+    <div id="image-lightbox" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="closeLightbox()">
+        <div class="bg-white rounded-lg p-4 max-w-2xl max-h-[90vh] flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b">
+                <h3 class="text-sm font-bold text-[#1e5aa8]">ID Verification</h3>
+                <button onclick="closeLightbox()" class="text-gray-500 hover:text-gray-800 text-sm font-bold px-2 py-0.5 rounded bg-gray-100">&times; Close</button>
+            </div>
+            <div class="overflow-auto flex-1 flex items-center justify-center bg-gray-50 rounded p-2">
+                <img id="lightbox-img-element" src="" alt="ID Image" class="max-h-[70vh] object-contain rounded">
+            </div>
+        </div>
+    </div>
+
     <script>
         let db;
         let globalInquiriesData = [];
