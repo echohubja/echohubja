@@ -276,9 +276,7 @@ button[type="submit"]:disabled {
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
-
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
         let referredBy = null;
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -286,7 +284,6 @@ button[type="submit"]:disabled {
         } catch (err) {
             console.log('Query param parse note:', err);
         }
-
         // Password toggle functionality
         const passwordInput = document.getElementById('password');
         const toggleButton = document.getElementById('togglePassword');
@@ -296,51 +293,40 @@ button[type="submit"]:disabled {
             passwordInput.type = type;
             toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
         });
-
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const errorDiv = document.getElementById('buyerError');
             const successDiv = document.getElementById('buyerSuccess');
             const submitBtn = e.target.querySelector('button[type="submit"]');
-
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
-
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const whatsapp = document.getElementById('whatsapp').value.trim();
             const fileInput = document.getElementById('nationalIdFile').files[0];
-
             const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
                 .map(cb => cb.value);
-
             if (selectedCategories.length === 0) {
                 errorDiv.textContent = 'Please select at least one category of interest.';
                 errorDiv.style.display = 'block';
                 return;
             }
-
             if (!fileInput) {
                 errorDiv.textContent = 'Please upload your National ID document.';
                 errorDiv.style.display = 'block';
                 return;
             }
-
             try {
                 if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
-
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
-
                 // Hash password with bcryptjs
                 console.log('[SECURITY] Hashing password with bcryptjs');
                 const hashedPassword = await bcryptjs.hash(password, 10);
-
                 // Convert file to Base64
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
-
                 let base64Data = '';
                 const chunkSize = 8192;
                 for (let i = 0; i < uint8Array.length; i += chunkSize) {
@@ -348,18 +334,14 @@ button[type="submit"]:disabled {
                     base64Data += String.fromCharCode.apply(null, Array.from(chunk));
                 }
                 base64Data = btoa(base64Data);
-
                 const fileExt = fileInput.name.split('.').pop() || 'bin';
                 const mimeType = fileInput.type || 'application/octet-stream';
-
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
                 console.log('[DB] Inserting buyer record');
-
                 // Generate referral code
                 const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-                // Insert buyer record to user_profiles table
-                const { data, error } = await supabaseClient.from('user_profiles').insert([{
+                // Insert buyer record to buyers table
+                const { data, error } = await supabaseClient.from('buyers').insert([{
                     full_name: fullName,
                     email: email,
                     password: hashedPassword,
@@ -371,27 +353,21 @@ button[type="submit"]:disabled {
                     national_id_file_name: fileInput.name,
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
-                    approval_status: 'PENDING',
-                    created_at: new Date()
+                    approval_status: 'PENDING'
                 }]).select();
-
                 if (error) {
                     console.error('[DB_ERROR]', error);
                     throw new Error(`Database insert failed: ${error.message}`);
                 }
-
                 console.log('[SUCCESS] Buyer registration complete');
                 console.log('[INFO] Referral Code:', refCode);
-
                 successDiv.textContent = '✅ Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified. You can sign in once approved.';
                 successDiv.style.display = 'block';
                 document.getElementById('buyerForm').reset();
                 submitBtn.textContent = 'Register Account';
-
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 3000);
-
             } catch (err) {
                 console.error('[ERROR]', err);
                 errorDiv.textContent = 'Error during registration: ' + err.message;
