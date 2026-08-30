@@ -443,13 +443,9 @@
                 }
 
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
-                if (buyer.national_id_url) {
-                    const rawVal = buyer.national_id_url.trim();
-                    if (rawVal.startsWith('http')) {
-                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View File</a>`;
-                    } else {
-                        idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
-                    }
+                if (buyer.national_id_data) {
+                    const dataUrl = `data:${buyer.national_id_file_type || 'image/png'};base64,${buyer.national_id_data}`;
+                    idCellContent = `<button onclick="window.open('${dataUrl}', '_blank')" class="text-[#1e5aa8] underline text-xs font-medium hover:text-blue-700">View ID (${escapeHtml(buyer.national_id_file_name || 'Image')})</button>`;
                 }
 
                 return `
