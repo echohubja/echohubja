@@ -380,7 +380,7 @@
                 // Query buyers table to verify approval status
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, buyer_id, approval_status')
+                    .select('id, approval_status')
                     .eq('email', currentActiveEmail)
                     .maybeSingle();
 
@@ -397,7 +397,7 @@
                     btnOpenReferrals.style.display = 'flex';
                     btnOpenInquiries.style.display = 'flex';
                     currentBuyerId = buyerData.id;
-                    currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
+                    currentBuyerStringId = buyerData.id || 'BUYER-00000';
                     console.log('  ✓ Buyer pill visible, email set to:', currentActiveEmail);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
