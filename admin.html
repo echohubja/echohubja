@@ -189,7 +189,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
-                const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+                const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
                 loadInquiriesPortal();
