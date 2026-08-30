@@ -109,21 +109,6 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
   transform: translateY(-2px);
 }
-.password-wrapper {
-  position: relative;
-}
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #1e5aa8;
-  font-size: 18px;
-  padding: 5px;
-}
 .checkbox-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -167,11 +152,6 @@ button[type="submit"]:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
 }
-button[type="submit"]:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
 .error {
   color: #c0392b;
   background: #fadbd8;
@@ -194,20 +174,6 @@ button[type="submit"]:disabled {
   font-weight: 500;
   font-size: 14px;
 }
-.login-link {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 0.9em;
-  color: #64748b;
-}
-.login-link a {
-  color: #1e5aa8;
-  text-decoration: none;
-  font-weight: 600;
-}
-.login-link a:hover {
-  text-decoration: underline;
-}
 @media (max-width: 600px) {
   .checkbox-group {
     grid-template-columns: 1fr;
@@ -222,35 +188,41 @@ button[type="submit"]:disabled {
     <div class="container">
         <header>
             <h1>Echo Hub</h1>
-            <p>Buyer Registration Portal</p>
+            <p>Anonymous Buyer-Vendor Marketplace</p>
         </header>
+
         <div class="content">
             <div class="section">
-                <h2>Create Your Buyer Account</h2>
+                <h2>📋 Buyer Registration</h2>
                 <div class="error" id="buyerError"></div>
                 <div class="success" id="buyerSuccess"></div>
+
                 <form id="buyerForm">
                     <div class="form-group">
-                        <label for="fullName">Full Name <span style="color: #c0392b;">*</span></label>
-                        <input type="text" id="fullName" placeholder="Enter your full name" required>
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required[cite: 3]>
                     </div>
+
                     <div class="form-group">
-                        <label for="email">Email Address <span style="color: #c0392b;">*</span></label>
-                        <input type="email" id="email" placeholder="your@email.com" required>
+                        <label for="email">Contact Email *</label>
+                        <input type="email" id="email" placeholder="Enter your email address" required[cite: 3]>
                     </div>
+
                     <div class="form-group">
-                        <label for="password">Create Password <span style="color: #c0392b;">*</span></label>
-                        <div class="password-wrapper">
-                            <input type="password" id="password" placeholder="At least 6 characters" required minlength="6">
-                            <button type="button" class="password-toggle" id="togglePassword">Show</button>
+                        <label for="password">Create Password *</label>
+                        <div style="position: relative;">
+                            <input type="password" id="password" placeholder="At least 6 characters" required>
+                            <button type="button" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #1e5aa8; font-size: 18px; padding: 5px;">👁️</button>
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label for="whatsapp">WhatsApp Number (Optional)</label>
-                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555"[cite: 3]>
                     </div>
+
                     <div class="form-group">
-                        <label>Categories of Interest <span style="color: #c0392b;">*</span></label>
+                        <label>Categories of Interest *</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Toys"> Toys</label>
@@ -260,74 +232,33 @@ button[type="submit"]:disabled {
                             <label class="checkbox-label"><input type="checkbox" name="category" value="All"> All (including future products)</label>
                         </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="nationalIdFile">Upload Your National ID <span style="color: #c0392b;">*</span> (Mandatory)</label>
-                        <input type="file" id="nationalIdFile" required>
+                        <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
+                        <input type="file" id="nationalIdFile" required[cite: 3]>
                     </div>
+
                     <button type="submit">Register Account</button>
                 </form>
-                <div class="login-link">
-                    Already have an account? <a href="login.html">Sign in here</a>
-                </div>
             </div>
         </div>
     </div>
-    <script>
-        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        // Using anon key - public inserts allowed since RLS is disabled on buyers table
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUzODk1MjksImV4cCI6MTk0MDk2OTUyOX0.BYmZwH3Xl0QaVL4L1-5_rKX85pXLyTe_g0Q6L88Fz0s';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Safely capture optional referral query parameter
         let referredBy = null;
         try {
             const urlParams = new URLSearchParams(window.location.search);
             referredBy = urlParams.get('ref');
         } catch (err) {
             console.log('Query param parse note:', err);
-        }
-
-        // Web Crypto API password hashing using PBKDF2
-        async function hashPassword(password) {
-            try {
-                // Generate random salt
-                const salt = crypto.getRandomValues(new Uint8Array(16));
-
-                // Encode password
-                const encoder = new TextEncoder();
-                const data = encoder.encode(password);
-
-                // Import key
-                const key = await crypto.subtle.importKey(
-                    'raw',
-                    data,
-                    'PBKDF2',
-                    false,
-                    ['deriveBits']
-                );
-
-                // Derive bits
-                const bits = await crypto.subtle.deriveBits(
-                    {
-                        name: 'PBKDF2',
-                        salt: salt,
-                        iterations: 100000,
-                        hash: 'SHA-256'
-                    },
-                    key,
-                    256
-                );
-
-                // Combine salt and hash
-                const hashArray = new Uint8Array(bits);
-                const combined = new Uint8Array(salt.length + hashArray.length);
-                combined.set(salt, 0);
-                combined.set(hashArray, salt.length);
-
-                // Return as base64
-                return btoa(String.fromCharCode(...combined));
-            } catch (err) {
-                console.error('[PASSWORD_HASH_ERROR]', err);
-                throw new Error('Password hashing failed');
-            }
         }
 
         // Password toggle functionality
@@ -337,7 +268,7 @@ button[type="submit"]:disabled {
             e.preventDefault();
             const type = passwordInput.type === 'password' ? 'text' : 'password';
             passwordInput.type = type;
-            toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
+            toggleButton.textContent = type === 'password' ? '👁️' : '🙈';
         });
 
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
@@ -345,6 +276,7 @@ button[type="submit"]:disabled {
             const errorDiv = document.getElementById('buyerError');
             const successDiv = document.getElementById('buyerSuccess');
             const submitBtn = e.target.querySelector('button[type="submit"]');
+
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
 
@@ -370,47 +302,34 @@ button[type="submit"]:disabled {
             }
 
             try {
-                if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
-
-                // Hash password with Web Crypto API
-                console.log('[SECURITY] Hashing password with Web Crypto API');
-                const hashedPassword = await hashPassword(password);
 
                 // Convert file to Base64
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
-                let base64Data = '';
-                const chunkSize = 8192;
-                for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                    const chunk = uint8Array.subarray(i, i + chunkSize);
-                    base64Data += String.fromCharCode.apply(null, Array.from(chunk));
-                }
-                base64Data = btoa(base64Data);
-
-                const fileExt = fileInput.name.split('.').pop() || 'bin';
+                const binary = String.fromCharCode.apply(null, Array.from(uint8Array));
+                const base64Data = btoa(binary);
                 const mimeType = fileInput.type || 'application/octet-stream';
+
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
+                console.log('[BASE64] File size:', uint8Array.length, 'bytes, Base64 size:', base64Data.length, 'bytes');
 
-                // Generate referral code
-                const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-                // Insert buyer record to buyers table
+                // Insert buyer record directly to database
                 console.log('[DB] Inserting buyer record');
-                const { data, error } = await supabaseClient.from('buyers').insert([{
+
+                const { data, error } = await supabase.from('buyers').insert([{
                     full_name: fullName,
                     email: email,
-                    password: hashedPassword,
-                    whatsapp_number: whatsapp || null,
+                    password: password,
+                    phone_number: whatsapp || null,
                     categories_interest: selectedCategories,
                     referred_by: referredBy || null,
-                    referral_code: refCode,
                     national_id_data: base64Data,
                     national_id_file_name: fileInput.name,
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
-                    approval_status: 'PENDING'
+                    approval_status: null
                 }]).select();
 
                 if (error) {
@@ -418,15 +337,12 @@ button[type="submit"]:disabled {
                     throw new Error(`Database insert failed: ${error.message}`);
                 }
 
-                console.log('[SUCCESS] Buyer registration complete');
-                console.log('[INFO] Referral Code:', refCode);
-                successDiv.textContent = '✅ Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified. You can sign in once approved.';
+                console.log('[SUCCESS] Registration complete');
+
+                successDiv.textContent = 'Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified.';
                 successDiv.style.display = 'block';
                 document.getElementById('buyerForm').reset();
                 submitBtn.textContent = 'Register Account';
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 3000);
             } catch (err) {
                 console.error('[ERROR]', err);
                 errorDiv.textContent = 'Error during registration: ' + err.message;
