@@ -394,7 +394,10 @@
             const dateFrom = document.getElementById('date-from').value;
             const dateTo = document.getElementById('date-to').value;
 
-            console.log('Filter called. Global data:', globalInquiriesData.length, 'Status filter:', statusFilterValue);
+            console.log('=== FILTER CALLED ===');
+            console.log('Global data count:', globalInquiriesData.length);
+            console.log('Status filter dropdown value:', statusFilterValue);
+            console.log('All statuses in data:', globalInquiriesData.map(inq => inq.status));
 
             let filtered = globalInquiriesData;
 
@@ -424,25 +427,25 @@
             }
 
             // Apply status filter
+            console.log('Before status filter - filtered count:', filtered.length);
+
             if (statusFilterValue === 'actionable') {
-                // Default: only show pending and flagged (treat null as pending)
+                console.log('→ Applying ACTIONABLE filter (pending OR flagged)');
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
                     return status === 'pending' || status === 'flagged';
                 });
             } else if (statusFilterValue) {
-                // Show specific status (treat null as pending)
-                console.log('Single status filter:', statusFilterValue);
+                console.log('→ Applying specific status filter:', statusFilterValue);
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    const passes = status === statusFilterValue;
-                    if (!passes) {
-                        console.log(`  Inquiry status="${inq.status}" → normalized="${status}" does not match filter="${statusFilterValue}"`);
-                    }
-                    return passes;
+                    console.log(`  Inquiry: status="${inq.status}" → normalized="${status}" vs filter="${statusFilterValue}" → passes=${status === statusFilterValue}`);
+                    return status === statusFilterValue;
                 });
+            } else {
+                console.log('→ No status filter (show all)');
             }
-            // If statusFilterValue is empty string, show all (no filter)
+            console.log('After status filter - filtered count:', filtered.length);
 
             // Apply date range filter
             if (dateFrom) {
