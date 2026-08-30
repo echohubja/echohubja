@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Product Management Portal</title>
+    <title>Echo Hub - Vendor Dashboard</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -15,319 +15,86 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #eef3f8;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
             min-height: 100vh;
+            padding: 20px;
             color: #2c3e50;
         }
 
-        /* Top Header */
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 25px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        .dashboard-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        header h1 {
-            font-size: 2.2em;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        header p {
-            font-size: 0.95em;
-            opacity: 0.9;
-            margin-top: 2px;
-        }
-
-        .btn-logout {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 8px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-logout:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: white;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1280px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        /* States */
-        .loading-state, .error-state {
-            text-align: center;
-            padding: 60px 20px;
-            font-size: 1.1em;
-            color: #718096;
+        .header {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .error-state {
-            color: #c0392b;
-        }
-
-        /* Profile Banner Bar */
-        .profile-bar {
-            background: white;
-            border-radius: 12px;
-            padding: 18px 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
+            padding: 30px;
             margin-bottom: 24px;
-            border: 1px solid #e1e8ed;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
 
-        .profile-bar .welcome-text h2 {
-            font-size: 1.2em;
+        .header h1 {
             color: #1e5aa8;
+            font-size: 2em;
+            margin: 0;
         }
 
-        .profile-bar .welcome-text p {
-            font-size: 0.88em;
+        .header-email {
             color: #64748b;
-        }
-
-        .profile-tags {
-            display: flex;
-            gap: 15px;
-        }
-
-        .tag {
-            background: #f1f5f9;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: #475569;
-            font-weight: 500;
-        }
-
-        .tag strong {
-            color: #1e293b;
-        }
-
-        /* Management Grid (Two Columns) */
-        .portal-grid {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 24px;
-            align-items: start;
-        }
-
-        @media (max-width: 992px) {
-            .portal-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Cards */
-        .panel {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e1e8ed;
-            padding: 24px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f0f4f8;
-        }
-
-        .panel-header h2 {
-            font-size: 1.25em;
-            color: #1e5aa8;
-            font-weight: 700;
-        }
-
-        .badge {
-            background: #e8f0fe;
-            color: #1e5aa8;
-            font-size: 0.8em;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 12px;
-            text-transform: uppercase;
-        }
-
-        .badge-edit {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        /* Inventory Table */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        th {
-            background: #f8fafc;
-            color: #64748b;
-            text-align: left;
-            padding: 10px 12px;
-            font-weight: 600;
-            font-size: 0.85em;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .product-img {
-            width: 42px;
-            height: 42px;
-            object-fit: contain;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-        }
-
-        .btn-action {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            margin-right: 4px;
-        }
-
-        .btn-edit {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .btn-edit:hover {
-            background: #bae6fd;
-        }
-
-        .btn-delete {
-            background: #ffe4e6;
-            color: #be123c;
-        }
-
-        .btn-delete:hover {
-            background: #fecdd3;
-        }
-
-        .empty-inventory {
-            text-align: center;
-            padding: 40px 20px;
-            color: #94a3b8;
-        }
-
-        .empty-inventory p {
-            margin-top: 8px;
-            font-size: 0.9em;
-        }
-
-        /* Form Controls */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        input[type="file"],
-        select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-            color: #1e293b;
-            transition: border-color 0.2s;
-            background: white;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            background: #f8fafc;
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: #1e5aa8;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
             font-size: 0.95em;
+            margin-top: 8px;
+        }
+
+        .logout-btn {
+            background: #dc2626;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
-            margin-top: 8px;
         }
 
-        .btn-submit:hover {
-            background: #174887;
+        .logout-btn:hover {
+            background: #991b1b;
         }
 
-        .btn-cancel {
-            width: 100%;
-            background: #e2e8f0;
-            color: #475569;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9em;
-            cursor: pointer;
-            margin-top: 8px;
+        .status-banner {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
             display: none;
         }
 
-        .btn-cancel:hover {
-            background: #cbd5e1;
+        .status-banner.show {
+            display: block;
+        }
+
+        .status-banner-content {
+            color: #d97706;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .status-banner-text {
+            color: #b45309;
+            font-size: 0.9em;
+            line-height: 1.6;
         }
 
         .alert-msg {
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 6px;
             font-size: 0.85em;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             display: none;
         }
 
@@ -340,451 +107,426 @@
             background: #fee2e2;
             color: #b91c1c;
         }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
+            padding: 30px;
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            color: #1e5aa8;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .profile-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .profile-label {
+            color: #64748b;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .profile-value {
+            color: #1e293b;
+            font-size: 1.1em;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-badge.blocked {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #1e293b;
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1e5aa8;
+            background: #f8fafc;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .help-text {
+            color: #64748b;
+            font-size: 0.8em;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: #1e5aa8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #174887;
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <div>
-            <h1>Echo Hub</h1>
-            <p>Vendor Product Management Portal</p>
-        </div>
-        <button id="logoutBtn" class="btn-logout">Sign Out</button>
-    </header>
-
-    <div class="container">
-        <!-- Loading & Error States -->
-        <div id="loadingState" class="loading-state">
-            Authenticating vendor portal session...
+    <div class="dashboard-container">
+        <div class="header">
+            <div>
+                <h1>Vendor Dashboard</h1>
+                <div class="header-email" id="headerEmail"></div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
         </div>
 
-        <div id="errorState" class="error-state" style="display: none;">
-            Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
+        <div id="statusBanner" class="status-banner">
+            <div class="status-banner-content">⚠️ Account Currently Blocked</div>
+            <div class="status-banner-text">
+                Your vendor account is currently blocked. This happens when your commission is below $5 USD.
+                Update your commission to $5 USD or higher to reactivate your account and access the marketplace.
+            </div>
         </div>
 
-        <!-- Main Portal Workspace -->
-        <div id="portalContent" style="display: none;">
-            
-            <!-- Vendor Info Bar -->
-            <div class="profile-bar">
-                <div class="welcome-text">
-                    <h2 id="welcomeHeading">Welcome back!</h2>
-                    <p>Manage your product listings and marketplace store sync.</p>
+        <div id="alertMsg" class="alert-msg"></div>
+
+        <!-- Profile Section -->
+        <div class="card">
+            <h2>Your Profile</h2>
+            <div class="profile-grid">
+                <div class="profile-item">
+                    <div class="profile-label">First Name</div>
+                    <div class="profile-value" id="firstName">—</div>
                 </div>
-                <div class="profile-tags">
-                    <div class="tag">Email: <strong id="profileEmail">-</strong></div>
-                    <div class="tag">Type: <strong id="profileType">-</strong></div>
+                <div class="profile-item">
+                    <div class="profile-label">Last Name</div>
+                    <div class="profile-value" id="lastName">—</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Email</div>
+                    <div class="profile-value" id="emailDisplay">—</div>
+                </div>
+                <div class="profile-item">
+                    <div class="profile-label">Vendor Type</div>
+                    <div class="profile-value" id="vendorType">—</div>
                 </div>
             </div>
-
-            <div class="portal-grid">
-                
-                <!-- Left Column: Products Inventory Table -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>Your Products Inventory</h2>
-                        <span class="badge" id="itemCountBadge">0 items</span>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="inventoryTable">
-                            <thead>
-                                <tr>
-                                    <th>Image</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inventoryBody">
-                                <!-- Dynamic rows inserted here -->
-                            </tbody>
-                        </table>
-
-                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
-                            <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                            <p>You haven't listed any products yet.</p>
-                            <p style="font-size: 0.8em; color: #cbd5e1;">Use the form on the right to add your first item!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Create / Edit Listing Form -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2 id="formTitle">Create New Product Listing</h2>
-                        <span class="badge" id="formModeBadge">CREATING MODE</span>
-                    </div>
-
-                    <div id="formAlert" class="alert-msg"></div>
-
-                    <form id="productForm">
-                        <div class="form-group">
-                            <label for="vendorId">Vendor ID</label>
-                            <input type="text" id="vendorId" readonly placeholder="Loading ID..." style="background: #f1f5f9; cursor: not-allowed;">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="productName">Product Name</label>
-                            <input type="text" id="productName" required placeholder="e.g. Wireless Earbuds">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="category">Category</label>
-                            <select id="category" required>
-                                <option value="">-- Select a category --</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Smart Home">Smart Home</option>
-                                <option value="Hair & Beauty">Hair & Beauty</option>
-                                <option value="Fashion">Fashion</option>
-                                <option value="Adult Novelties">Adult Novelties</option>
-                                <option value="General">General</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="price">Price ($)</label>
-                            <input type="number" id="price" step="0.01" min="0" required placeholder="29.99">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="imageFile1">Primary Product Image File</label>
-                            <input type="file" id="imageFile1" accept="image/*">
-                            <input type="hidden" id="primaryImage">
-                            <small style="color: #64748b; font-size: 0.75em;">Select a file from your device, or the existing URL will be kept if editing.</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="imageFile2">Secondary Product Image File (Optional)</label>
-                            <input type="file" id="imageFile2" accept="image/*">
-                            <input type="hidden" id="secondaryImage">
-                        </div>
-
-                        <button type="submit" id="submitProductBtn" class="btn-submit">Publish Listing</button>
-                        <button type="button" id="cancelEditBtn" class="btn-cancel">Cancel Edit</button>
-                    </form>
-                </div>
-
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px;">
+                <div class="profile-label">Account Status</div>
+                <div id="statusBadge" class="status-badge active">🟢 Active</div>
             </div>
+        </div>
+
+        <!-- Commission & Details Section -->
+        <div class="card">
+            <h2>Account Management</h2>
+
+            <form id="managementForm">
+                <div class="form-group">
+                    <label for="commission">Commission Amount (USD)</label>
+                    <input type="number" id="commission" min="0" step="0.01" required>
+                    <div class="help-text">ℹ️ Minimum $5 USD required for account activation</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessDetails">Business Details</label>
+                    <textarea id="businessDetails" placeholder="List the product types that you will offer"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="updateBtn">Update Commission</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        let currentVendor = null;
-        let editingProductId = null; 
-        let cachedProducts = []; 
+        let vendorData = null;
+        let vendorId = null;
 
-        // DOM Elements
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const portalContent = document.getElementById('portalContent');
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            console.log('[MANAGE] Page loaded, validating session...');
+            validateSession();
+        });
 
-        const welcomeHeading = document.getElementById('welcomeHeading');
-        const profileEmail = document.getElementById('profileEmail');
-        const profileType = document.getElementById('profileType');
+        function validateSession() {
+            vendorId = localStorage.getItem('vendor_id');
+            const vendorEmail = localStorage.getItem('vendor_email');
+            const vendorSession = localStorage.getItem('vendor_session');
 
-        const inventoryTable = document.getElementById('inventoryTable');
-        const inventoryBody = document.getElementById('inventoryBody');
-        const emptyInventory = document.getElementById('emptyInventory');
-        const itemCountBadge = document.getElementById('itemCountBadge');
+            console.log('[MANAGE] Session check - vendor_id:', vendorId);
 
-        const productForm = document.getElementById('productForm');
-        const formTitle = document.getElementById('formTitle');
-        const formModeBadge = document.getElementById('formModeBadge');
-        const vendorIdInput = document.getElementById('vendorId');
-        const submitProductBtn = document.getElementById('submitProductBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const formAlert = document.getElementById('formAlert');
-
-        async function initPortal() {
-            if (!sbClient) {
-                showError();
+            if (!vendorId || !vendorEmail || !vendorSession) {
+                console.log('[MANAGE] No valid session found, redirecting to login');
+                window.location.href = 'login.html';
                 return;
             }
-
-            const { data: { session }, error: sessionError } = await sbClient.auth.getSession();
-
-            if (sessionError || !session) {
-                showError();
-                return;
-            }
-
-            const userId = session.user.id;
-
-            const { data: vendorData, error: vendorError } = await sbClient
-                .from('vendors')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
-
-            if (vendorError || !vendorData) {
-                showError();
-                return;
-            }
-
-            currentVendor = vendorData;
-
-            welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
-            profileEmail.textContent = vendorData.email || session.user.email;
-            profileType.textContent = vendorData.vendor_type || 'STANDARD';
-            vendorIdInput.value = vendorData.id;
-
-            await loadVendorProducts();
-
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'block';
-        }
-
-        async function loadVendorProducts() {
-            if (!currentVendor) return;
-
-            const { data: products, error } = await sbClient
-                .from('products')
-                .select('*')
-                .eq('vendor_id', currentVendor.id);
-
-            inventoryBody.innerHTML = '';
-
-            if (error || !products || products.length === 0) {
-                cachedProducts = [];
-                inventoryTable.style.display = 'none';
-                emptyInventory.style.display = 'block';
-                itemCountBadge.textContent = '0 items';
-                return;
-            }
-
-            cachedProducts = products;
-            inventoryTable.style.display = 'table';
-            emptyInventory.style.display = 'none';
-            itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
-
-            products.forEach(prod => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <img src="${prod.image_url_1 || 'https://via.placeholder.com/42'}" class="product-img" alt="${prod.name || 'Product'}">
-                    </td>
-                    <td><strong>${prod.name || 'Untitled'}</strong></td>
-                    <td>${prod.category || 'General'}</td>
-                    <td><strong>$${parseFloat(prod.price || 0).toFixed(2)}</strong></td>
-                    <td>
-                        <button class="btn-action btn-edit" onclick="editProduct('${prod.id}')">Edit</button>
-                        <button class="btn-action btn-delete" onclick="deleteProduct('${prod.id}')">Delete</button>
-                    </td>
-                `;
-                inventoryBody.appendChild(tr);
-            });
-        }
-
-        window.editProduct = async function(productId) {
-            let product = cachedProducts.find(p => String(p.id) === String(productId));
-
-            if (!product) {
-                const { data, error } = await sbClient
-                    .from('products')
-                    .select('*')
-                    .eq('id', productId)
-                    .single();
-                
-                if (error || !data) {
-                    alert('Could not load product details for editing.');
-                    return;
-                }
-                product = data;
-            }
-
-            editingProductId = product.id;
-
-            document.getElementById('productName').value = product.name || '';
-            document.getElementById('category').value = product.category || '';
-            document.getElementById('price').value = product.price || '';
-            document.getElementById('primaryImage').value = product.image_url_1 || '';
-            document.getElementById('secondaryImage').value = product.image_url_2 || '';
-            
-            document.getElementById('imageFile1').value = '';
-            document.getElementById('imageFile2').value = '';
-
-            formTitle.textContent = 'Edit Product Listing';
-            formModeBadge.textContent = 'EDITING MODE';
-            formModeBadge.className = 'badge badge-edit';
-            submitProductBtn.textContent = 'Save Changes';
-            cancelEditBtn.style.display = 'block';
-
-            productForm.scrollIntoView({ behavior: 'smooth' });
-        };
-
-        function resetFormMode() {
-            editingProductId = null;
-            productForm.reset();
-            document.getElementById('primaryImage').value = '';
-            document.getElementById('secondaryImage').value = '';
-            vendorIdInput.value = currentVendor.id;
-            formTitle.textContent = 'Create New Product Listing';
-            formModeBadge.textContent = 'CREATING MODE';
-            formModeBadge.className = 'badge';
-            submitProductBtn.textContent = 'Publish Listing';
-            cancelEditBtn.style.display = 'none';
-            showAlert('', false);
-        }
-
-        cancelEditBtn.addEventListener('click', resetFormMode);
-
-        window.deleteProduct = async function(productId) {
-            if (!confirm('Are you sure you want to delete this listing?')) return;
-
-            const { error } = await sbClient
-                .from('products')
-                .delete()
-                .eq('id', productId);
-
-            if (!error) {
-                if (String(editingProductId) === String(productId)) {
-                    resetFormMode();
-                }
-                await loadVendorProducts();
-            } else {
-                alert('Could not delete product: ' + error.message);
-            }
-        };
-
-        async function uploadImageFile(fileInputId) {
-            const fileInput = document.getElementById(fileInputId);
-            if (!fileInput.files || fileInput.files.length === 0) {
-                return null;
-            }
-
-            const file = fileInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-            const filePath = `${currentVendor.id}/${fileName}`;
-
-            const { data, error } = await sbClient.storage
-                .from('product-images')
-                .upload(filePath, file);
-
-            if (error) {
-                throw new Error('Image upload failed: ' + error.message);
-            }
-
-            const { data: publicUrlData } = sbClient.storage
-                .from('product-images')
-                .getPublicUrl(filePath);
-
-            return publicUrlData.publicUrl;
-        }
-
-        productForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            showAlert('', false);
-
-            submitProductBtn.disabled = true;
-            submitProductBtn.textContent = editingProductId ? 'Saving...' : 'Publishing...';
 
             try {
-                const uploadedPrimary = await uploadImageFile('imageFile1');
-                const uploadedSecondary = await uploadImageFile('imageFile2');
-
-                const primaryImageFinal = uploadedPrimary || document.getElementById('primaryImage').value.trim();
-                const secondaryImageFinal = uploadedSecondary || document.getElementById('secondaryImage').value.trim();
-
-                if (!primaryImageFinal) {
-                    throw new Error('A primary image file or URL is required.');
-                }
-
-                const name = document.getElementById('productName').value.trim();
-                const category = document.getElementById('category').value;
-                const price = parseFloat(document.getElementById('price').value);
-
-                if (editingProductId) {
-                    const updatedFields = {
-                        name: name,
-                        category: category,
-                        price: price,
-                        image_url_1: primaryImageFinal,
-                        image_url_2: secondaryImageFinal || null
-                    };
-
-                    const { error } = await sbClient
-                        .from('products')
-                        .update(updatedFields)
-                        .eq('id', editingProductId);
-
-                    if (error) throw error;
-
-                    showAlert('Product updated successfully!', false);
-                    resetFormMode();
-                    await loadVendorProducts();
-                } else {
-                    const newProduct = {
-                        vendor_id: currentVendor.id,
-                        name: name,
-                        category: category,
-                        price: price,
-                        image_url_1: primaryImageFinal,
-                        image_url_2: secondaryImageFinal || null,
-                        created_at: new Date()
-                    };
-
-                    const { error } = await sbClient.from('products').insert([newProduct]);
-
-                    if (error) throw error;
-
-                    showAlert('Product published successfully!', false);
-                    productForm.reset();
-                    vendorIdInput.value = currentVendor.id;
-                    await loadVendorProducts();
-                }
+                vendorData = JSON.parse(vendorSession);
+                console.log('[MANAGE] Session validated, loading profile');
+                loadProfile();
             } catch (err) {
-                console.error('Submission error:', err);
-                showAlert(err.message || 'Operation failed.', true);
-            } finally {
-                submitProductBtn.disabled = false;
-                submitProductBtn.textContent = editingProductId ? 'Save Changes' : 'Publish Listing';
+                console.error('[MANAGE] Failed to parse vendor session:', err);
+                localStorage.clear();
+                window.location.href = 'login.html';
             }
+        }
+
+        function loadProfile() {
+            // Display profile information
+            document.getElementById('firstName').textContent = vendorData.first_name || '—';
+            document.getElementById('lastName').textContent = vendorData.last_name || '—';
+            document.getElementById('emailDisplay').textContent = vendorData.email || '—';
+            document.getElementById('headerEmail').textContent = vendorData.email || '—';
+            document.getElementById('vendorType').textContent = vendorData.vendor_type || '—';
+
+            // Populate form fields
+            document.getElementById('commission').value = vendorData.commission || '';
+            document.getElementById('businessDetails').value = vendorData.business_details || '';
+
+            // Update status badge
+            updateStatusBadge();
+        }
+
+        function updateStatusBadge() {
+            const statusBadge = document.getElementById('statusBadge');
+            const statusBanner = document.getElementById('statusBanner');
+            const isBlocked = vendorData.is_blocked;
+
+            if (isBlocked) {
+                statusBadge.textContent = '🔴 Blocked';
+                statusBadge.className = 'status-badge blocked';
+                statusBanner.classList.add('show');
+            } else {
+                statusBadge.textContent = '🟢 Active';
+                statusBadge.className = 'status-badge active';
+                statusBanner.classList.remove('show');
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('managementForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+
+            const commission = parseFloat(document.getElementById('commission').value);
+            const businessDetails = document.getElementById('businessDetails').value.trim();
+
+            if (isNaN(commission) || commission < 0) {
+                showAlert('Commission must be a valid number greater than or equal to 0.', true);
+                return;
+            }
+
+            const updateBtn = document.getElementById('updateBtn');
+            updateBtn.disabled = true;
+            updateBtn.textContent = 'Updating...';
+
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Supabase client failed to initialize.');
+                }
+
+                // Calculate blocking status
+                const shouldBeBlocked = commission < 5.00;
+
+                console.log('[MANAGE] Updating vendor - commission:', commission, 'blocked:', shouldBeBlocked);
+
+                // Update database
+                const { data, error } = await supabaseClient
+                    .from('vendors')
+                    .update({
+                        commission: commission,
+                        business_details: businessDetails,
+                        is_blocked: shouldBeBlocked,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', vendorId)
+                    .select();
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                if (!data || data.length === 0) {
+                    throw new Error('Failed to update vendor information.');
+                }
+
+                // Update local vendor data
+                vendorData = data[0];
+                localStorage.setItem('vendor_session', JSON.stringify(vendorData));
+                localStorage.setItem('vendor_is_blocked', shouldBeBlocked.toString());
+
+                console.log('[MANAGE] Update successful, new status - blocked:', shouldBeBlocked);
+
+                // Show appropriate alert
+                if (shouldBeBlocked) {
+                    showAlert('⚠️ Your account is now blocked. Commission must be at least $5 USD to activate.', 'warning');
+                } else {
+                    showAlert('✅ Commission updated successfully! Your account is now active.', false);
+                }
+
+                // Update UI
+                updateStatusBadge();
+
+                // Auto-reload after success
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+
+            } catch (err) {
+                console.error('[MANAGE_ERROR]', err);
+                showAlert('Error: ' + err.message, true);
+                updateBtn.disabled = false;
+                updateBtn.textContent = 'Update Commission';
+            }
+        });
+
+        // Handle cancel button
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            console.log('[MANAGE] Cancel clicked, resetting form');
+            document.getElementById('commission').value = vendorData.commission || '';
+            document.getElementById('businessDetails').value = vendorData.business_details || '';
+            hideAlert();
+        });
+
+        // Handle logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            console.log('[MANAGE] Logout clicked, clearing session');
+            localStorage.removeItem('vendor_id');
+            localStorage.removeItem('vendor_email');
+            localStorage.removeItem('vendor_is_blocked');
+            localStorage.removeItem('vendor_session');
+            window.location.href = 'login.html';
         });
 
         function showAlert(msg, isError) {
-            if (!msg) {
-                formAlert.style.display = 'none';
-                return;
+            const alertMsg = document.getElementById('alertMsg');
+            alertMsg.textContent = msg;
+
+            if (isError === true) {
+                alertMsg.className = 'alert-msg alert-error';
+            } else if (isError === 'warning') {
+                alertMsg.className = 'alert-msg alert-warning';
+            } else {
+                alertMsg.className = 'alert-msg alert-success';
             }
-            formAlert.textContent = msg;
-            formAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
-            formAlert.style.display = 'block';
+
+            alertMsg.style.display = 'block';
         }
 
-        function showError() {
-            loadingState.style.display = 'none';
-            portalContent.style.display = 'none';
-            errorState.style.display = 'block';
+        function hideAlert() {
+            document.getElementById('alertMsg').style.display = 'none';
         }
-
-        // Guaranteed DOM-safe event listener for logout
-        document.addEventListener('DOMContentLoaded', () => {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', async () => {
-                    try {
-                        if (sbClient) {
-                            await sbClient.auth.signOut();
-                        }
-                    } catch (err) {
-                        console.error("Sign out error:", err);
-                    } finally {
-                        window.location.href = 'login.html';
-                    }
-                });
-            }
-        });
-
-        initPortal();
     </script>
+
 </body>
 </html>
