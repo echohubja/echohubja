@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Login Diagnostic Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        .diagnostic { background: #252526; border: 1px solid #3e3e42; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
+        .title { color: #4ec9b0; font-weight: bold; font-size: 1.1em; margin-bottom: 10px; }
+        .status-ok { color: #4ec9b0; }
+        .status-err { color: #f48771; }
+        .status-warn { color: #dcdcaa; }
+        pre { background: #1e1e1e; padding: 10px; overflow-x: auto; margin: 10px 0; border-left: 3px solid #007acc; }
+        button { background: #007acc; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin: 5px 0; }
+        button:hover { background: #005a9e; }
+        input { background: #3c3c3c; color: #d4d4d4; border: 1px solid #555; padding: 8px; width: 300px; margin: 5px 0; border-radius: 4px; }
+        .output { max-height: 300px; overflow-y: auto; background: #1e1e1e; border: 1px solid #3e3e42; padding: 10px; margin-top: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1 style="color: #1e5aa8; margin-bottom: 20px;">Echo Hub - Login Diagnostic Tool</h1>
+
+    <div class="diagnostic">
+        <div class="title">1. Environment Check</div>
+        <button onclick="checkEnvironment()">Run Check</button>
+        <div class="output" id="env-output"></div>
+    </div>
+
+    <div class="diagnostic">
+        <div class="title">2. Supabase Connection</div>
+        <button onclick="checkSupabase()">Test Connection</button>
+        <div class="output" id="supabase-output"></div>
+    </div>
+
+    <div class="diagnostic">
+        <div class="title">3. Buyer Lookup</div>
+        <input type="email" id="test-email" placeholder="Enter buyer email" style="width: 100%; margin-bottom: 5px;">
+        <button onclick="lookupBuyer()">Search Buyer</button>
+        <div class="output" id="lookup-output"></div>
+    </div>
+
+    <div class="diagnostic">
+        <div class="title">4. Password Verification</div>
+        <input type="password" id="test-password" placeholder="Enter buyer password">
+        <button onclick="testPasswordVerify()">Verify Password</button>
+        <div class="output" id="password-output"></div>
+    </div>
+
+    <div class="diagnostic">
+        <div class="title">5. Full Login Simulation</div>
+        <input type="email" id="login-email" placeholder="Email" style="width: 100%; margin-bottom: 5px;">
+        <input type="password" id="login-password" placeholder="Password" style="width: 100%; margin-bottom: 5px;">
+        <button onclick="simulateLogin()">Run Full Login</button>
+        <div class="output" id="login-output"></div>
+    </div>
+
+    <div class="diagnostic">
+        <div class="title">6. localStorage Inspection</div>
+        <button onclick="inspectStorage()">Inspect Storage</button>
+        <div class="output" id="storage-output"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        let db = null;
+
+        function log(elementId, msg, isError = false) {
+            const el = document.getElementById(elementId);
+            const span = document.createElement('div');
+            span.className = isError ? 'status-err' : 'status-ok';
+            span.textContent = msg;
+            el.appendChild(span);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function checkEnvironment() {
+            const output = 'env-output';
+            document.getElementById(output).innerHTML = '';
+
+            log(output, '✓ Browser: ' + navigator.userAgent.substring(0, 50));
+            log(output, '✓ localStorage available: ' + (!!window.localStorage));
+            log(output, '✓ sessionStorage available: ' + (!!window.sessionStorage));
+            log(output, '✓ crypto.subtle available: ' + (!!crypto.subtle));
+            log(output, '✓ TextEncoder available: ' + (!!TextEncoder));
+        }
+
+        function checkSupabase() {
+            const output = 'supabase-output';
+            document.getElementById(output).innerHTML = '';
+
+            try {
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                log(output, '✓ Supabase client created');
+                log(output, '✓ Project URL: ' + SUPABASE_URL);
+                log(output, '✓ API Key valid (starts with sb_)');
+            } catch (err) {
+                log(output, '✗ Failed to create client: ' + err.message, true);
+            }
+        }
+
+        async function lookupBuyer() {
+            const output = 'lookup-output';
+            const email = document.getElementById('test-email').value;
+            document.getElementById(output).innerHTML = '';
+
+            if (!email) {
+                log(output, '✗ Enter an email first', true);
+                return;
+            }
+
+            if (!db) checkSupabase();
+
+            try {
+                log(output, 'Querying buyers table for: ' + email);
+                const { data, error } = await db
+                    .from('buyers')
+                    .select('id, email, approval_status, password')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (error) {
+                    log(output, '✗ Query error: ' + error.message, true);
+                    return;
+                }
+
+                if (!data) {
+                    log(output, '✗ Buyer not found in database', true);
+                    return;
+                }
+
+                log(output, '✓ Buyer found!');
+                log(output, '  ID: ' + data.id);
+                log(output, '  Email: ' + data.email);
+                log(output, '  Approval Status: ' + (data.approval_status || 'NULL'));
+                log(output, '  Password Hash Exists: ' + (!!data.password));
+                log(output, '  Case-insensitive Check: approval_status?.toLowerCase() = ' + (data.approval_status?.toLowerCase() || 'NULL'));
+
+                if (data.approval_status?.toLowerCase() !== 'approved') {
+                    log(output, '⚠ This buyer is NOT APPROVED - login will be blocked', false);
+                }
+            } catch (err) {
+                log(output, '✗ Exception: ' + err.message, true);
+            }
+        }
+
+        async function testPasswordVerify() {
+            const output = 'password-output';
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            document.getElementById(output).innerHTML = '';
+
+            if (!email || !password) {
+                log(output, '✗ Enter email and password first', true);
+                return;
+            }
+
+            if (!db) checkSupabase();
+
+            try {
+                // Get buyer
+                const { data: buyerData } = await db
+                    .from('buyers')
+                    .select('password')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (!buyerData) {
+                    log(output, '✗ Buyer not found', true);
+                    return;
+                }
+
+                if (!buyerData.password) {
+                    log(output, '✗ No password hash in database (buyer registered without password?)', true);
+                    return;
+                }
+
+                log(output, '✓ Password hash found in database');
+                log(output, 'Verifying with PBKDF2...');
+
+                const isValid = await verifyPBKDF2Password(password, buyerData.password);
+                if (isValid) {
+                    log(output, '✓ Password verification PASSED');
+                } else {
+                    log(output, '✗ Password verification FAILED - wrong password or corrupted hash', true);
+                }
+            } catch (err) {
+                log(output, '✗ Exception: ' + err.message, true);
+            }
+        }
+
+        async function verifyPBKDF2Password(inputPassword, storedHashBase64) {
+            if (!storedHashBase64 || typeof storedHashBase64 !== 'string') return false;
+
+            try {
+                const binaryData = atob(storedHashBase64);
+                const dataArray = new Uint8Array(binaryData.length);
+                for (let i = 0; i < binaryData.length; i++) {
+                    dataArray[i] = binaryData.charCodeAt(i);
+                }
+
+                const saltBuffer = dataArray.slice(0, 16);
+                const expectedHash = dataArray.slice(16, 48);
+
+                const encoder = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    encoder.encode(inputPassword),
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveBits']
+                );
+
+                const derivedBits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBuffer,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial,
+                    256
+                );
+
+                const computedHash = new Uint8Array(derivedBits);
+                return computedHash.every((byte, index) => byte === expectedHash[index]);
+            } catch (err) {
+                console.error('PBKDF2 error:', err);
+                return false;
+            }
+        }
+
+        async function simulateLogin() {
+            const output = 'login-output';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            document.getElementById(output).innerHTML = '';
+
+            if (!email || !password) {
+                log(output, '✗ Enter email and password', true);
+                return;
+            }
+
+            if (!db) checkSupabase();
+
+            try {
+                log(output, '[1] Querying buyers table...');
+                const { data: buyerData } = await db
+                    .from('buyers')
+                    .select('*')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (!buyerData) {
+                    log(output, '✗ [2] Buyer not found', true);
+                    return;
+                }
+
+                log(output, '✓ [2] Buyer found: ' + buyerData.id);
+
+                log(output, '[3] Verifying password...');
+                const passwordMatch = await verifyPBKDF2Password(password, buyerData.password);
+                if (!passwordMatch) {
+                    log(output, '✗ [3] Password verification failed', true);
+                    return;
+                }
+
+                log(output, '✓ [3] Password verified');
+
+                log(output, '[4] Checking approval status: ' + buyerData.approval_status);
+                if (buyerData.approval_status?.toLowerCase() !== 'approved') {
+                    log(output, '✗ [4] Account NOT approved (status: ' + buyerData.approval_status + ')', true);
+                    log(output, '  This is correct - login should be blocked');
+                    return;
+                }
+
+                log(output, '✓ [4] Account is approved');
+                log(output, '[5] Setting localStorage...');
+                localStorage.setItem('echo_hub_buyer_email', buyerData.email);
+                localStorage.setItem('buyer_email', buyerData.email);
+                log(output, '✓ [5] localStorage keys set');
+
+                log(output, '[6] Verifying localStorage...');
+                const stored = localStorage.getItem('echo_hub_buyer_email');
+                if (stored === buyerData.email) {
+                    log(output, '✓ [6] localStorage verified: ' + stored);
+                    log(output, '✓ ALL CHECKS PASSED - Ready to redirect');
+                } else {
+                    log(output, '✗ [6] localStorage verification failed', true);
+                }
+            } catch (err) {
+                log(output, '✗ Exception: ' + err.message, true);
+            }
+        }
+
+        function inspectStorage() {
+            const output = 'storage-output';
+            document.getElementById(output).innerHTML = '';
+
+            log(output, 'LocalStorage Keys: ' + Object.keys(localStorage).length);
+            Object.keys(localStorage).forEach(key => {
+                log(output, '  ' + key + ': ' + localStorage.getItem(key).substring(0, 50));
+            });
+
+            if (Object.keys(localStorage).length === 0) {
+                log(output, 'ℹ localStorage is empty', false);
+            }
+        }
+
+        // Auto-run environment check
+        window.addEventListener('load', checkEnvironment);
+    </script>
+</body>
+</html>
