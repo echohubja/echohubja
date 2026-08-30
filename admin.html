@@ -425,16 +425,13 @@
 
             // Apply status filter
             if (statusFilterValue === 'actionable') {
-                // Default: only show pending and flagged
-                console.log('Actionable filter - checking statuses:', filtered.map(inq => ({ id: inq.id, status: inq.status })));
+                // Default: only show pending and flagged (treat null as pending)
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    const passes = status === 'pending' || status === 'flagged';
-                    console.log(`  Inquiry ${inq.id}: status="${inq.status}" → normalized="${status}" → passes=${passes}`);
-                    return passes;
+                    return status === 'pending' || status === 'flagged';
                 });
             } else if (statusFilterValue) {
-                // Show specific status
+                // Show specific status (treat null as pending)
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
                     return status === statusFilterValue;
@@ -460,7 +457,6 @@
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
-            console.log('renderInquiriesTree called with', data.length, 'items:', data);
             document.getElementById('inquiry-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
 
             if (data.length === 0) {
@@ -468,54 +464,61 @@
                 return;
             }
 
-            // Group inquiries by product
-            const groupedByProduct = {};
+            // Group inquiries by buyer_id
+            const groupedByBuyer = {};
             data.forEach(inq => {
-                const prodId = inq.product_id || 'general';
-                if (!groupedByProduct[prodId]) {
-                    groupedByProduct[prodId] = {
-                        product: inq.products || { id: prodId, product_name: `Product ${prodId}` },
+                const buyerId = inq.buyer_id || 'unknown';
+                if (!groupedByBuyer[buyerId]) {
+                    groupedByBuyer[buyerId] = {
+                        buyer: inq.buyers || { id: buyerId, full_name: 'Unknown Buyer', email: 'No email' },
                         messages: []
                     };
                 }
-                groupedByProduct[prodId].messages.push(inq);
+                groupedByBuyer[buyerId].messages.push(inq);
             });
 
             let html = '';
 
-            // Render each product and its conversation thread
-            for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
-                const prodName = prodData.product?.product_name || `Product ${prodId}`;
-                const prodImage = prodData.product?.product_images?.[0] || 'https://via.placeholder.com/200?text=No+Image';
-                const messages = prodData.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            // Render each buyer and their conversation thread (collapsed by default)
+            for (const [buyerId, buyerData] of Object.entries(groupedByBuyer)) {
+                const buyerName = buyerData.buyer?.full_name || 'Unknown Buyer';
+                const buyerEmail = buyerData.buyer?.email || 'No email';
+                const messages = buyerData.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                const messageCount = messages.length;
 
-                // Find if there's any feedback pending verification in this product's messages
-                const hasPendingFeedback = messages.some(msg => msg.image_url && (msg.status || 'pending').toLowerCase() === 'pending');
-                const feedbackStatus = hasPendingFeedback ? '⚠️ PENDING VERIFICATION' : '✓ No pending feedback';
-                const feedbackBadgeColor = hasPendingFeedback ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-                const feedbackTextColor = hasPendingFeedback ? 'text-red-700' : 'text-green-700';
+                // Count pending feedback
+                const pendingFeedback = messages.filter(msg => msg.image_url && (msg.status || 'pending').toLowerCase() === 'pending').length;
+                const pendingBadge = pendingFeedback > 0 ? `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">${pendingFeedback} Pending Feedback</span>` : '';
+
+                const buyerHeaderId = `buyer-${buyerId}`;
+                const buyerContentId = `buyer-content-${buyerId}`;
+                const buyerIconId = `buyer-icon-${buyerId}`;
 
                 html += `
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-4 hover:shadow-md transition">
-                        <!-- Product Header -->
-                        <div class="bg-gray-50 border-b border-gray-200 p-4">
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-3 hover:shadow-md transition">
+                        <!-- Buyer Header - Collapsible -->
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-25 border-b border-gray-200 p-4 cursor-pointer hover:bg-blue-100 transition" onclick="toggleAccordion('${buyerContentId}', '${buyerIconId}')">
                             <div class="flex gap-3 items-start justify-between">
-                                <div class="flex gap-3">
-                                    <img src="${prodImage}" alt="Product" class="w-16 h-16 object-cover rounded border border-gray-200 bg-white">
-                                    <div>
-                                        <div class="text-sm font-bold text-gray-800">${escapeHtml(prodName)}</div>
-                                        <div class="text-[11px] text-gray-500">Product ID: ${escapeHtml(prodId)}</div>
-                                        <div class="text-[11px] text-gray-400 mt-1">${messages.length} message${messages.length === 1 ? '' : 's'}</div>
+                                <div class="flex gap-3 flex-1">
+                                    <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                        ${escapeHtml(buyerName.charAt(0).toUpperCase())}
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-bold text-gray-800">👤 ${escapeHtml(buyerName)}</div>
+                                        <div class="text-[11px] text-gray-600">${escapeHtml(buyerEmail)}</div>
+                                        <div class="text-[11px] text-gray-500 mt-1">${messageCount} message${messageCount === 1 ? '' : 's'}</div>
                                     </div>
                                 </div>
-                                <div class="${feedbackBadgeColor} border rounded-lg px-3 py-2 text-center">
-                                    <div class="text-[11px] font-bold ${feedbackTextColor}">${feedbackStatus}</div>
+                                <div class="flex items-center gap-2">
+                                    ${pendingBadge}
+                                    <span id="${buyerIconId}" class="text-gray-400 transition-transform duration-200">▶</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Conversation Thread -->
-                        <div class="p-4 space-y-3">
+                        <!-- Messages Container - Collapsed by Default -->
+                        <div id="${buyerContentId}" class="hidden">
+                            <div class="p-4 space-y-3 bg-gray-50 max-h-96 overflow-y-auto">
                 `;
 
                 // Render each message in the thread
@@ -524,20 +527,13 @@
                     const senderType = msg.sender_type || 'buyer';
                     const senderId = msg.sender_id || (senderType === 'buyer' ? msg.buyer_id : null);
 
-                    let senderName, senderEmail, senderLabel, msgColor, msgIcon;
-
+                    let senderIcon, msgColor;
                     if (senderType === 'buyer') {
-                        senderName = msg.buyers?.full_name || 'Unknown Buyer';
-                        senderEmail = msg.buyers?.email || 'No email';
-                        senderLabel = `Buyer: ${senderName}`;
+                        senderIcon = '👤';
                         msgColor = 'bg-blue-50 border-blue-200';
-                        msgIcon = '👤';
                     } else {
-                        senderName = msg.products?.vendor_name || 'Vendor';
-                        senderEmail = msg.products?.vendor_email || 'No email';
-                        senderLabel = `Vendor: ${senderName}`;
+                        senderIcon = '🏪';
                         msgColor = 'bg-green-50 border-green-200';
-                        msgIcon = '🏪';
                     }
 
                     const timestamp = new Date(msg.created_at).toLocaleString();
@@ -555,18 +551,19 @@
                         msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
                     }
 
+                    const productName = msg.products?.product_name || `Product ${msg.product_id}`;
+
                     html += `
-                        <div class="border ${msgColor} rounded-lg p-3 space-y-2">
+                        <div class="border ${msgColor} rounded-lg p-3 space-y-2 bg-white">
                             <div class="flex justify-between items-start gap-2">
                                 <div class="flex-1">
-                                    <div class="text-xs font-bold text-gray-700">${msgIcon} ${escapeHtml(senderLabel)} (ID: ${escapeHtml(senderId)})</div>
-                                    <div class="text-[11px] text-gray-500">${escapeHtml(senderEmail)}</div>
-                                    <div class="text-[11px] text-gray-400 mt-0.5">${timestamp}</div>
+                                    <div class="text-xs font-bold text-gray-700">${senderIcon} ${msgTypeLabel} - ${escapeHtml(productName)}</div>
+                                    <div class="text-[11px] text-gray-500">${timestamp}</div>
                                 </div>
                                 <span class="${msgTypeBadgeColor} px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">${msgTypeLabel}</span>
                             </div>
 
-                            <div class="text-xs text-gray-700 bg-white rounded p-2 max-h-24 overflow-y-auto">
+                            <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
                                 ${escapeHtml(msg.message || '[No message]')}
                             </div>
                     `;
@@ -586,36 +583,25 @@
                             : null;
 
                         html += `
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 mt-2">
-                                <div class="text-[11px] font-bold text-blue-700 uppercase">Feedback Proof</div>
-                                ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] text-blue-600 hover:underline break-all">🔗 ${amazonUrl}</a>` : ''}
-                                <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 rounded font-semibold inline-block">View Image</button>
-                                <div class="flex gap-2 justify-between items-center mt-2">
-                                    ${statusBadge}
+                            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-2 space-y-2 mt-2">
+                                <div class="text-[11px] font-bold text-indigo-700 uppercase">📸 Feedback Image</div>
+                                ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] text-indigo-600 hover:underline break-all">🔗 Amazon URL</a>` : ''}
+                                <div class="flex gap-2 items-center">
+                                    <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 rounded font-semibold">View</button>
                                     ${(status === 'pending' || status === 'flagged') ? `
-                                        <div class="flex gap-1">
-                                            <button onclick="rejectInquiry('${msg.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Reject</button>
-                                            <button onclick="flagInquiry('${msg.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">Flag</button>
-                                            <button onclick="verifyInquiry('${msg.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-[10px] font-bold">Verify</button>
-                                        </div>
-                                    ` : '<span class="text-[11px] text-gray-400">Completed</span>'}
+                                        <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold">Verify</button>
+                                        <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold">Reject</button>
+                                    ` : ''}
+                                    ${statusBadge}
                                 </div>
                             </div>
                         `;
                     }
 
-                    // If no vendor response yet and this is an initial inquiry, show waiting status
-                    if (msgType === 'inquiry' && idx === 0) {
-                        const hasVendorResponse = messages.some(m => m.message_type === 'vendor_response' || m.sender_type === 'vendor');
-                        if (!hasVendorResponse) {
-                            html += `<div class="text-[11px] text-yellow-700 bg-yellow-50 rounded p-2 mt-1">⏳ Awaiting vendor response</div>`;
-                        }
-                    }
-
                     html += `</div>`;
                 });
 
-                html += `</div></div>`;
+                html += `</div></div></div>`;
             }
 
             container.innerHTML = html;
