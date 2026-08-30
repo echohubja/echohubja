@@ -615,7 +615,6 @@
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
-                    vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: message
                 }
