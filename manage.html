@@ -139,6 +139,166 @@
             }
         }
 
+        /* Earnings Drawer (Left Sidebar) */
+        .earnings-drawer {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            border-radius: 12px;
+            padding: 24px;
+            color: white;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(30, 90, 168, 0.15);
+        }
+
+        .earnings-drawer h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            opacity: 0.95;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .balance-card {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .balance-label {
+            font-size: 0.85em;
+            opacity: 0.85;
+            margin-bottom: 6px;
+        }
+
+        .balance-amount {
+            font-size: 1.8em;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .threshold-info {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+
+        .progress-container {
+            margin: 16px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80 0%, #fbbf24 50%, #ef4444 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .payout-btn {
+            width: 100%;
+            background: white;
+            color: #1e5aa8;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .payout-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .payout-btn:disabled {
+            background: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.6);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .earnings-history {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e1e8ed;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .earnings-history .panel-header {
+            margin-bottom: 16px;
+        }
+
+        .earnings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .earnings-table thead {
+            background: #f1f5f9;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        .earnings-table th {
+            padding: 12px;
+            text-align: left;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+        }
+
+        .earnings-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e1e8ed;
+            color: #475569;
+        }
+
+        .earnings-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-verified {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
         /* Cards */
         .panel {
             background: white;
@@ -374,6 +534,60 @@
                 <div class="profile-tags">
                     <div class="tag">Email: <strong id="profileEmail">-</strong></div>
                     <div class="tag">Type: <strong id="profileType">-</strong></div>
+                </div>
+            </div>
+
+            <!-- Commission Payable Drawer Section -->
+            <div class="earnings-drawer">
+                <h3>💳 Commission Payable</h3>
+
+                <div class="balance-card">
+                    <div class="balance-label">Total Commission Due</div>
+                    <div class="balance-amount" id="earnings-balance">$0.00</div>
+                    <div class="threshold-info">
+                        Threshold: $<span id="earnings-threshold">0.00</span>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Threshold Progress</span>
+                        <span id="earnings-percent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="earnings-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <button id="payout-btn" class="payout-btn" onclick="initiatePayoutProcess()" disabled>
+                    💳 Pay Commission Due
+                </button>
+            </div>
+
+            <!-- Commission Payable History Section -->
+            <div class="earnings-history">
+                <div class="panel-header">
+                    <h2>Commission Payment History</h2>
+                    <span class="badge" id="earnings-count">0 records</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="earnings-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Feedback ID</th>
+                                <th>Commission Fee (Due)</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="earnings-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -628,6 +842,7 @@
 
                 await loadVendorProducts();
                 await loadPendingInquiries();
+                await loadEarningsData();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -1097,6 +1312,169 @@
             loadingState.style.display = 'none';
             portalContent.style.display = 'none';
             errorState.style.display = 'block';
+        }
+
+        // --- COMMISSION PAYABLE FUNCTIONS ---
+        async function loadEarningsData() {
+            try {
+                // Fetch current vendor's commission payable data
+                const { data: vendor, error: vendorError } = await sbClient
+                    .from('vendors')
+                    .select('id, accumulated_balance, commission_threshold, commission')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                if (vendorError) {
+                    console.error('Vendor fetch error:', vendorError);
+                    return;
+                }
+
+                if (!vendor) {
+                    console.warn('No vendor data found');
+                    return;
+                }
+
+                // Update commission payable drawer
+                const accumulated = parseFloat(vendor.accumulated_balance || 0);
+                const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
+                const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
+
+                document.getElementById('earnings-balance').textContent = `$${accumulated.toFixed(2)}`;
+                document.getElementById('earnings-threshold').textContent = threshold.toFixed(2);
+                document.getElementById('earnings-percent').textContent = `${Math.min(progressPercent, 100)}%`;
+
+                // Update progress bar color based on percentage
+                const progressFill = document.getElementById('earnings-progress');
+                progressFill.style.width = `${Math.min(progressPercent, 100)}%`;
+
+                // Enable payment button if balance >= threshold
+                const payoutBtn = document.getElementById('payout-btn');
+                payoutBtn.disabled = accumulated < threshold;
+                if (accumulated >= threshold) {
+                    payoutBtn.textContent = '💳 Ready to Pay - Click Here';
+                } else {
+                    payoutBtn.textContent = `💳 Pay Commission Due (${progressPercent}% of threshold)`;
+                }
+
+                // Load commission payment history
+                await loadEarningsHistory();
+
+            } catch (err) {
+                console.error('Error loading earnings data:', err);
+            }
+        }
+
+        async function loadEarningsHistory() {
+            try {
+                // Fetch inquiries with feedback for this vendor (joined via products)
+                const { data: products } = await sbClient
+                    .from('products')
+                    .select('id')
+                    .eq('vendor_id', currentVendor.id);
+
+                if (!products || products.length === 0) {
+                    document.getElementById('earnings-body').innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8;">No products listed yet</td>
+                        </tr>
+                    `;
+                    document.getElementById('earnings-count').textContent = '0 records';
+                    return;
+                }
+
+                const productIds = products.map(p => p.id);
+
+                // Fetch feedback (inquiries with message_type='feedback')
+                const { data: feedbackInquiries, error: inquiryError } = await sbClient
+                    .from('inquiries')
+                    .select('id, created_at, product_id, status, message')
+                    .in('product_id', productIds)
+                    .eq('message_type', 'feedback')
+                    .order('created_at', { ascending: false });
+
+                if (inquiryError) {
+                    console.error('Inquiry fetch error:', inquiryError);
+                    document.getElementById('earnings-body').innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #ef4444;">Error loading earnings history</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                if (!feedbackInquiries || feedbackInquiries.length === 0) {
+                    document.getElementById('earnings-body').innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8;">No feedback submissions yet</td>
+                        </tr>
+                    `;
+                    document.getElementById('earnings-count').textContent = '0 records';
+                    return;
+                }
+
+                // Get commission amount from current vendor
+                const { data: vendorData } = await sbClient
+                    .from('vendors')
+                    .select('commission')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                const commissionAmount = parseFloat(vendorData?.commission || 0);
+
+                // Render earnings history table
+                const rows = feedbackInquiries.map(feedback => {
+                    const date = new Date(feedback.created_at).toLocaleDateString();
+                    const status = (feedback.status || 'pending').toLowerCase();
+                    let statusBadge = `<span class="status-badge status-pending">PENDING</span>`;
+                    if (status === 'verified') {
+                        statusBadge = `<span class="status-badge status-verified">VERIFIED</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td>${date}</td>
+                            <td style="font-family: monospace; font-size: 0.85em;">${feedback.id.substring(0, 8)}...</td>
+                            <td style="font-weight: 600; color: #1e5aa8;">$${commissionAmount.toFixed(2)}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button onclick="viewFeedbackDetails('${feedback.id}')" style="background: #e0e7ff; color: #4f46e5; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; cursor: pointer;">View</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('earnings-body').innerHTML = rows;
+                document.getElementById('earnings-count').textContent = `${feedbackInquiries.length} record${feedbackInquiries.length !== 1 ? 's' : ''}`;
+
+            } catch (err) {
+                console.error('Error loading earnings history:', err);
+                document.getElementById('earnings-body').innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #ef4444;">Error loading earnings history</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function initiatePayoutProcess() {
+            const balanceText = document.getElementById('earnings-balance').textContent;
+            const balance = parseFloat(balanceText.replace('$', ''));
+
+            if (balance <= 0) {
+                alert('Your balance is zero. No payout to process.');
+                return;
+            }
+
+            alert(`Payout Process Initiated\n\n💳 Balance to Payout: ${balanceText}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
+
+            // In production, this would redirect to a secure PayPal payment flow
+            // For now, we just show an alert
+            console.log('Payout initiated for balance:', balance);
+        }
+
+        function viewFeedbackDetails(feedbackId) {
+            alert(`Feedback ID: ${feedbackId}\n\nFull details page would open here in production.`);
+            console.log('Viewing feedback:', feedbackId);
         }
 
         // Guaranteed DOM-safe event listener for logout
