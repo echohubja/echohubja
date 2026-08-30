@@ -282,6 +282,52 @@ button[type="submit"]:disabled {
             toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
         });
 
+        // PBKDF2 password hashing function - matches login.html verification
+        async function generatePBKDF2Hash(password) {
+            try {
+                // Generate random 16-byte salt
+                const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+
+                // Import password as key material
+                const encoder = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    encoder.encode(password),
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveBits']
+                );
+
+                // Derive 256 bits (32 bytes) using PBKDF2
+                const derivedBits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBuffer,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial,
+                    256
+                );
+
+                // Combine salt + hash and encode as Base64
+                const hashArray = new Uint8Array(derivedBits);
+                const combinedArray = new Uint8Array(saltBuffer.length + hashArray.length);
+                combinedArray.set(saltBuffer, 0);
+                combinedArray.set(hashArray, saltBuffer.length);
+
+                // Convert to Base64
+                let base64Hash = '';
+                for (let i = 0; i < combinedArray.length; i++) {
+                    base64Hash += String.fromCharCode(combinedArray[i]);
+                }
+                return btoa(base64Hash);
+            } catch (err) {
+                console.error('PBKDF2 hashing error:', err);
+                throw new Error('Failed to hash password. Please try again.');
+            }
+        }
+
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const errorDiv = document.getElementById('buyerError');
@@ -350,6 +396,13 @@ button[type="submit"]:disabled {
                     approval_status: 'pending'
                 });
 
+                // Hash password using PBKDF2 before storing
+                let hashedPassword = null;
+                if (password && password.trim()) {
+                    hashedPassword = await generatePBKDF2Hash(password);
+                    console.log('[SECURITY] Password hashed with PBKDF2 (100k iterations, SHA-256)');
+                }
+
                 // Attempt to insert with all fields (if database has them)
                 const buyerRecord = {
                     full_name: fullName,
@@ -359,7 +412,7 @@ button[type="submit"]:disabled {
                 // Try adding extended fields if they exist in the schema
                 const extendedBuyerRecord = {
                     ...buyerRecord,
-                    password: password || null,
+                    password: hashedPassword || null,
                     whatsapp_number: whatsapp || null,
                     categories_interest: selectedCategories,
                     referred_by: referredBy || null,
