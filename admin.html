@@ -637,7 +637,7 @@
                             }
 
                             const amazonUrl = msg.message && msg.message.includes('http')
-                                ? msg.message.match(/https?://[^\s]+/)[0]
+                                ? msg.message.match(/https?:\/\/[^\s]+/)[0]
                                 : null;
 
                             html += `
