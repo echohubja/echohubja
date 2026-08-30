@@ -366,21 +366,22 @@
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             const { data: { session } } = await db.auth.getSession();
-            currentActiveEmail = localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
+            const currentActiveBuyerId = localStorage.getItem('buyer_id');
+            currentActiveEmail = localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
+
             console.log('[checkBuyerSession] Step 1: Checking session');
+            console.log('  localStorage buyer_id:', currentActiveBuyerId || 'null');
+            console.log('  localStorage buyer_email:', currentActiveEmail || 'null');
             console.log('  Session email:', session?.user?.email || 'null');
-            console.log('  localStorage echo_hub_buyer_email:', localStorage.getItem('echo_hub_buyer_email') || 'null');
-            console.log('  localStorage buyer_email:', localStorage.getItem('buyer_email') || 'null');
-            console.log('  Final currentActiveEmail:', currentActiveEmail);
             console.log('  All localStorage keys:', Object.keys(localStorage));
 
-            if (currentActiveEmail) {
-                console.log('[checkBuyerSession] Step 2: Email found, querying buyers table for:', currentActiveEmail);
-                // Query buyers table to verify approval status
+            if (currentActiveBuyerId) {
+                console.log('[checkBuyerSession] Step 2: Buyer ID found, querying buyers table for ID:', currentActiveBuyerId);
+                // Query buyers table to verify approval status using numeric ID
                 const { data: buyerData, error } = await db
                     .from('buyers')
                     .select('id, approval_status')
-                    .eq('email', currentActiveEmail)
+                    .eq('id', currentActiveBuyerId)
                     .maybeSingle();
 
                 console.log('[checkBuyerSession] Step 3: Query result');
@@ -441,7 +442,7 @@
 
         async function logoutBuyer() {
             await db.auth.signOut();
-            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_id');
             localStorage.removeItem('buyer_email');
             localStorage.removeItem('user_email');
             window.location.reload();
