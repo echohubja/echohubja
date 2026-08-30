@@ -376,7 +376,7 @@
                     .eq('email', currentActiveEmail)
                     .maybeSingle();
 
-                if (buyerData && buyerData.approval_status === 'approved') {
+                if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
                     // Buyer is approved - show marketplace access
                     buyerNameSpan.textContent = currentActiveEmail;
                     buyerPill.style.display = 'flex';
@@ -385,7 +385,7 @@
                     btnOpenInquiries.style.display = 'flex';
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
-                } else if (buyerData && buyerData.approval_status !== 'approved') {
+                } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     // Buyer exists but not approved - show blocked message
                     document.body.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);">
