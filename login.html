@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Account Portal & Authentication</title>
+    <title>Echo Hub - Login</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Bcrypt for password verification -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -59,7 +61,7 @@
             color: #475569;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
@@ -71,7 +73,7 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             border-color: #1e5aa8;
             background: #f8fafc;
@@ -101,7 +103,7 @@
         }
 
         .alert-msg {
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 6px;
             font-size: 0.85em;
             margin-bottom: 20px;
@@ -118,26 +120,57 @@
             color: #b91c1c;
         }
 
-        .toggle-mode {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #64748b;
+        .alert-warning {
+            background: #fef3c7;
+            color: #d97706;
         }
 
-        .toggle-mode a {
+        .account-type-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .account-type-btn {
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .account-type-btn:hover {
+            border-color: #1e5aa8;
+            background: #f8fafc;
+        }
+
+        .account-type-btn.active {
+            background: #1e5aa8;
+            color: white;
+            border-color: #1e5aa8;
+        }
+
+        .register-links {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.85em;
+            color: #64748b;
+            line-height: 1.8;
+        }
+
+        .register-links a {
             color: #1e5aa8;
             text-decoration: none;
             font-weight: 600;
         }
 
-        .toggle-mode a:hover {
+        .register-links a:hover {
             text-decoration: underline;
-        }
-
-        .row-fields {
-            display: flex;
-            gap: 12px;
         }
     </style>
 </head>
@@ -145,45 +178,22 @@
 
     <div class="auth-container">
         <div id="formHeader">
-            <h2 id="formTitle">Account Login</h2>
-            <p class="subtitle" id="formSubtitle">Access your Echo Hub marketplace account or dashboard</p>
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Sign in to your Echo Hub account</p>
         </div>
 
         <div id="authAlert" class="alert-msg"></div>
 
-        <form id="authForm">
-            <!-- Extra Registration Fields (Hidden by default) -->
-            <div id="registerFields" style="display: none;">
-                <div class="form-group">
-                    <label for="accountType">I want to register as a:</label>
-                    <select id="accountType">
-                        <option value="buyer">Buyer / Reviewer</option>
-                        <option value="vendor">Vendor Partner</option>
-                    </select>
-                </div>
+        <!-- Account Type Selection -->
+        <div class="account-type-selection">
+            <button type="button" class="account-type-btn active" data-type="buyer">🛍️ Buyer</button>
+            <button type="button" class="account-type-btn" data-type="vendor">🏪 Vendor</button>
+        </div>
 
-                <div class="row-fields">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="India">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Stronghold">
-                    </div>
-                </div>
-
-                <div id="vendorSpecificFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="vendorType">Vendor Classification</label>
-                        <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
-                    </div>
-                </div>
-            </div>
-
+        <form id="loginForm">
             <div class="form-group">
-                <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="name@example.com">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required placeholder="your@email.com">
             </div>
 
             <div class="form-group">
@@ -194,190 +204,132 @@
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
         </form>
 
-        <div class="toggle-mode">
-            <span id="toggleText">New to Echo Hub?</span> 
-            <a href="#" id="toggleBtn">Create an account</a>
+        <div class="register-links">
+            Don't have an account? <a href="buyer-register.html">Register as Buyer</a>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        let isRegisterMode = false;
+        let selectedAccountType = 'buyer';
 
-        const authForm = document.getElementById('authForm');
-        const formTitle = document.getElementById('formTitle');
-        const formSubtitle = document.getElementById('formSubtitle');
+        const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const toggleText = document.getElementById('toggleText');
-        const registerFields = document.getElementById('registerFields');
-        const accountTypeSelect = document.getElementById('accountType');
-        const vendorSpecificFields = document.getElementById('vendorSpecificFields');
         const authAlert = document.getElementById('authAlert');
 
-        // Toggle visibility of vendor-specific inputs based on role selection
-        accountTypeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'vendor') {
-                vendorSpecificFields.style.display = 'block';
-            } else {
-                vendorSpecificFields.style.display = 'none';
-            }
+        // Account Type Selection
+        document.querySelectorAll('.account-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.account-type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedAccountType = btn.dataset.type;
+                showAlert('', false);
+            });
         });
 
-        // Toggle between Login and Registration views
-        toggleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            isRegisterMode = !isRegisterMode;
-            showAlert('', false);
-
-            if (isRegisterMode) {
-                formTitle.textContent = 'Create Account';
-                formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
-                submitBtn.textContent = 'Complete Registration';
-                registerFields.style.display = 'block';
-                toggleText.textContent = 'Already have an account?';
-                toggleBtn.textContent = 'Sign in';
-            } else {
-                formTitle.textContent = 'Account Login';
-                formSubtitle.textContent = 'Access your Echo Hub marketplace account or dashboard';
-                submitBtn.textContent = 'Sign In';
-                registerFields.style.display = 'none';
-                toggleText.textContent = 'New to Echo Hub?';
-                toggleBtn.textContent = 'Create an account';
-            }
-        });
-
-        // Handle Form Submission (Login or Register)
-        authForm.addEventListener('submit', async (e) => {
+        // Handle Login Form Submission
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             showAlert('', false);
             submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
 
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const password = document.getElementById('password').value;
 
             try {
                 if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
 
-                if (isRegisterMode) {
-                    // --- REGISTRATION FLOW ---
-                    const accountType = accountTypeSelect.value;
-                    const firstName = document.getElementById('firstName').value.trim() || (accountType === 'vendor' ? 'Vendor' : 'Buyer');
-                    const lastName = document.getElementById('lastName').value.trim() || 'Partner';
+                if (selectedAccountType === 'vendor') {
+                    // VENDOR LOGIN
+                    console.log('[VENDOR_LOGIN] Querying vendors table for email:', email);
 
-                    submitBtn.textContent = 'Creating account...';
+                    const { data: vendorData, error: queryError } = await supabaseClient
+                        .from('vendors')
+                        .select('*')
+                        .eq('email', email)
+                        .single();
 
-                    // 1. Create Supabase Auth User
-                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { first_name: firstName, last_name: lastName, role: accountType } }
-                    });
+                    if (queryError || !vendorData) {
+                        throw new Error('Vendor account not found. Please register at vendor registration portal.');
+                    }
 
-                    if (authError) throw new Error(authError.message);
-                    if (!authData.user) throw new Error('Registration failed to return user session.');
+                    // Verify password with bcryptjs
+                    console.log('[VENDOR_LOGIN] Verifying password');
+                    const passwordMatch = await bcryptjs.compare(password, vendorData.password);
 
-                    const authUuid = authData.user.id;
+                    if (!passwordMatch) {
+                        throw new Error('Invalid email or password.');
+                    }
 
-                    if (accountType === 'vendor') {
-                        // Vendor Registration Path
-                        const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
-                        const { count, error: countError } = await supabaseClient
-                            .from('vendors')
-                            .select('*', { count: 'exact', head: true });
+                    // Store vendor session
+                    console.log('[VENDOR_LOGIN] Login successful, storing session');
+                    localStorage.setItem('vendor_id', vendorData.id);
+                    localStorage.setItem('vendor_email', vendorData.email);
+                    localStorage.setItem('vendor_is_blocked', vendorData.is_blocked);
+                    localStorage.setItem('vendor_session', JSON.stringify(vendorData));
 
-                        if (countError) throw new Error('Could not calculate vendor sequence.');
-
-                        const nextNum = (count || 0) + 1;
-                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
-
-                        const { error: insertError } = await supabaseClient.from('vendors').insert([
-                            {
-                                id: formattedId,
-                                user_id: authUuid,
-                                email: email,
-                                first_name: firstName,
-                                last_name: lastName,
-                                vendor_type: vendorType,
-                                status: 'ACTIVE',
-                                created_at: new Date()
-                            }
-                        ]);
-
-                        if (insertError) throw new Error('Vendor profile creation error: ' + insertError.message);
-
-                        showAlert('Registration successful! Redirecting to dashboard...', false);
-                        setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
-
+                    if (vendorData.is_blocked) {
+                        showAlert('⚠️ Your account is currently blocked. Update your commission to activate.', 'warning');
+                        setTimeout(() => {
+                            window.location.href = 'manage.html';
+                        }, 1500);
                     } else {
-                        // Buyer Registration Path (creates referral code & profile)
-                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                        
-                        const { error: insertError } = await supabaseClient.from('user_profiles').insert([
-                            {
-                                id: authUuid,
-                                email: email,
-                                first_name: firstName,
-                                last_name: lastName,
-                                referral_code: refCode,
-                                created_at: new Date()
-                            }
-                        ]);
-
-                        if (insertError) throw new Error('Buyer profile creation error: ' + insertError.message);
-
-                        showAlert('Registration successful! Redirecting to storefront...', false);
-                        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                        showAlert('Login successful! Redirecting to dashboard...', false);
+                        setTimeout(() => {
+                            window.location.href = 'manage.html';
+                        }, 1000);
                     }
 
                 } else {
-                    // --- LOGIN FLOW ---
-                    submitBtn.textContent = 'Signing in...';
+                    // BUYER LOGIN
+                    console.log('[BUYER_LOGIN] Querying user_profiles for email:', email);
 
-                    // 1. Authenticate via Supabase Auth
-                    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-                        email,
-                        password
-                    });
-
-                    if (authError) throw new Error(authError.message);
-                    const authUser = authData.user;
-
-                    // 2. Check if user is a Vendor first
-                    const { data: vendorData } = await supabaseClient
-                        .from('vendors')
-                        .select('*')
-                        .eq('user_id', authUser.id)
-                        .maybeSingle();
-
-                    if (vendorData) {
-                        window.location.href = 'manage.html';
-                        return;
-                    }
-
-                    // 3. Check if user is a Buyer profile
-                    const { data: buyerData } = await supabaseClient
+                    const { data: buyerData, error: queryError } = await supabaseClient
                         .from('user_profiles')
                         .select('*')
-                        .eq('id', authUser.id)
-                        .maybeSingle();
+                        .eq('email', email)
+                        .single();
 
-                    if (buyerData) {
-                        window.location.href = 'index.html';
-                        return;
+                    if (queryError || !buyerData) {
+                        throw new Error('Buyer account not found. Please register first.');
                     }
 
-                    // Fallback to index if no profile table matches
-                    window.location.href = 'index.html';
+                    // Verify password with bcryptjs
+                    console.log('[BUYER_LOGIN] Verifying password');
+                    const passwordMatch = await bcryptjs.compare(password, buyerData.password);
+
+                    if (!passwordMatch) {
+                        throw new Error('Invalid email or password.');
+                    }
+
+                    // Check approval status
+                    if (buyerData.approval_status !== 'APPROVED') {
+                        throw new Error('Your account is pending approval. Please check your email for updates.');
+                    }
+
+                    // Store buyer session
+                    console.log('[BUYER_LOGIN] Login successful, storing session');
+                    localStorage.setItem('buyer_id', buyerData.id);
+                    localStorage.setItem('buyer_email', buyerData.email);
+                    localStorage.setItem('buyer_referral_code', buyerData.referral_code);
+                    localStorage.setItem('buyer_session', JSON.stringify(buyerData));
+
+                    showAlert('Login successful! Redirecting to marketplace...', false);
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
                 }
 
             } catch (err) {
+                console.error('[LOGIN_ERROR]', err);
                 showAlert(err.message, true);
                 submitBtn.disabled = false;
-                submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
+                submitBtn.textContent = 'Sign In';
             }
         });
 
@@ -387,7 +339,13 @@
                 return;
             }
             authAlert.textContent = msg;
-            authAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
+            if (isError === true) {
+                authAlert.className = 'alert-msg alert-error';
+            } else if (isError === 'warning') {
+                authAlert.className = 'alert-msg alert-warning';
+            } else {
+                authAlert.className = 'alert-msg alert-success';
+            }
             authAlert.style.display = 'block';
         }
     </script>
