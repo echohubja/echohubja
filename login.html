@@ -218,6 +218,19 @@
         const vendorSpecificFields = document.getElementById('vendorSpecificFields');
         const authAlert = document.getElementById('authAlert');
 
+        // Handle logout request from index.html
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('logout') === 'true') {
+            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('vendor_id');
+            localStorage.removeItem('vendor_email');
+            localStorage.removeItem('user_email');
+            if (supabaseClient) {
+                supabaseClient.auth.signOut();
+            }
+        }
+
         // Toggle visibility of vendor-specific inputs based on role selection
         accountTypeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'vendor') {
@@ -358,7 +371,32 @@
                         }
                     }
 
-                    // 2. If not vendor, try Supabase Auth for buyer
+                    // 2. Check if user is a Buyer - query buyers table directly by email
+                    const { data: buyerData, error: buyerError } = await supabaseClient
+                        .from('buyers')
+                        .select('*')
+                        .eq('email', email)
+                        .maybeSingle();
+
+                    if (buyerData) {
+                        // Verify password using PBKDF2
+                        const passwordMatch = await verifyPBKDF2Password(password, buyerData.password);
+                        if (passwordMatch) {
+                            // Check approval status
+                            if (buyerData.approval_status !== 'approved') {
+                                throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
+                            }
+                            // Store buyer session in localStorage for index.html
+                            localStorage.setItem('echo_hub_buyer_email', buyerData.email);
+                            localStorage.setItem('buyer_email', buyerData.email);
+                            window.location.href = 'index.html';
+                            return;
+                        } else {
+                            throw new Error('Invalid login credentials');
+                        }
+                    }
+
+                    // 3. If not vendor or buyer, try Supabase Auth (fallback for legacy user_profiles)
                     const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
                         email,
                         password
@@ -367,14 +405,28 @@
                     if (authError) throw new Error(authError.message);
                     const authUser = authData.user;
 
-                    // 3. Check if user is a Buyer profile
-                    const { data: buyerData } = await supabaseClient
+                    // 4. Check if user is a Buyer profile in user_profiles table
+                    const { data: userProfileData } = await supabaseClient
                         .from('user_profiles')
                         .select('*')
                         .eq('id', authUser.id)
                         .maybeSingle();
 
-                    if (buyerData) {
+                    if (userProfileData) {
+                        // SECURITY: Even via legacy auth, check buyer approval status
+                        const { data: buyerCheckData } = await supabaseClient
+                            .from('buyers')
+                            .select('approval_status')
+                            .eq('email', email)
+                            .maybeSingle();
+
+                        if (buyerCheckData && buyerCheckData.approval_status !== 'approved') {
+                            throw new Error(`Your account is ${buyerCheckData.approval_status}. You will receive access once your national ID is verified.`);
+                        }
+
+                        // Store buyer session
+                        localStorage.setItem('echo_hub_buyer_email', email);
+                        localStorage.setItem('buyer_email', email);
                         window.location.href = 'index.html';
                         return;
                     }
