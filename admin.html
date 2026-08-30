@@ -375,7 +375,6 @@
                 });
 
                 globalInquiriesData = inquiries;
-                console.log('✓ Inquiries loaded:', inquiries.length, inquiries);
                 // Reset filters to default (actionable only)
                 document.getElementById('inquiry-search').value = '';
                 document.getElementById('status-filter').value = 'actionable';
@@ -394,10 +393,6 @@
             const dateFrom = document.getElementById('date-from').value;
             const dateTo = document.getElementById('date-to').value;
 
-            console.log('=== FILTER CALLED ===');
-            console.log('Global data count:', globalInquiriesData.length);
-            console.log('Status filter dropdown value:', statusFilterValue);
-            console.log('All statuses in data:', globalInquiriesData.map(inq => inq.status));
 
             let filtered = globalInquiriesData;
 
@@ -427,25 +422,26 @@
             }
 
             // Apply status filter
-            console.log('Before status filter - filtered count:', filtered.length);
-
             if (statusFilterValue === 'actionable') {
-                console.log('→ Applying ACTIONABLE filter (pending OR flagged)');
+                // Show pending, flagged, and pending_verification
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    return status === 'pending' || status === 'flagged';
+                    return status === 'pending' || status === 'flagged' || status === 'pending_verification';
+                });
+            } else if (statusFilterValue === 'pending') {
+                // Show pending and pending_verification
+                filtered = filtered.filter(inq => {
+                    const status = (inq.status || 'pending').toLowerCase();
+                    return status === 'pending' || status === 'pending_verification';
                 });
             } else if (statusFilterValue) {
-                console.log('→ Applying specific status filter:', statusFilterValue);
+                // Show specific status
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    console.log(`  Inquiry: status="${inq.status}" → normalized="${status}" vs filter="${statusFilterValue}" → passes=${status === statusFilterValue}`);
                     return status === statusFilterValue;
                 });
-            } else {
-                console.log('→ No status filter (show all)');
             }
-            console.log('After status filter - filtered count:', filtered.length);
+            // If statusFilterValue is empty string, show all (no filter)
 
             // Apply date range filter
             if (dateFrom) {
