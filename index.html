@@ -369,24 +369,49 @@
             currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
 
             if (currentActiveEmail) {
-                buyerNameSpan.textContent = currentActiveEmail;
-                buyerPill.style.display = 'flex';
-                portalBtn.style.display = 'none';
-                btnOpenReferrals.style.display = 'flex';
-                btnOpenInquiries.style.display = 'flex';
-
+                // Query buyers table to verify approval status
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, buyer_id')
+                    .select('id, buyer_id, approval_status')
                     .eq('email', currentActiveEmail)
-                    .single();
+                    .maybeSingle();
 
-                if (buyerData) {
-                    currentBuyerId = buyerData.id; 
+                if (buyerData && buyerData.approval_status === 'approved') {
+                    // Buyer is approved - show marketplace access
+                    buyerNameSpan.textContent = currentActiveEmail;
+                    buyerPill.style.display = 'flex';
+                    portalBtn.style.display = 'none';
+                    btnOpenReferrals.style.display = 'flex';
+                    btnOpenInquiries.style.display = 'flex';
+                    currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
-                } else {
+                } else if (buyerData && buyerData.approval_status !== 'approved') {
+                    // Buyer exists but not approved - show blocked message
+                    document.body.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);">
+                            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(30, 90, 168, 0.1);">
+                                <h2 style="color: #1e5aa8; margin-bottom: 16px; font-size: 1.8em;">Account Under Review</h2>
+                                <p style="color: #4a5568; margin-bottom: 20px; font-size: 1em; line-height: 1.6;">
+                                    Your national ID is being reviewed by our team. You will receive access to the marketplace once your account is verified.
+                                </p>
+                                <p style="color: #718096; font-size: 0.9em; margin-bottom: 24px;">Status: <strong style="color: #1e5aa8;">${buyerData.approval_status.toUpperCase()}</strong></p>
+                                <a href="login.html?logout=true" style="background: #1e5aa8; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Sign Out</a>
+                            </div>
+                        </div>
+                    `;
                     currentBuyerId = '';
-                    currentBuyerStringId = 'BUYER-00000';
+                    currentBuyerStringId = '';
+                    return;
+                } else {
+                    // No buyer found in database - clear session
+                    localStorage.removeItem('echo_hub_buyer_email');
+                    localStorage.removeItem('buyer_email');
+                    buyerPill.style.display = 'none';
+                    portalBtn.style.display = 'inline-block';
+                    btnOpenReferrals.style.display = 'none';
+                    btnOpenInquiries.style.display = 'none';
+                    currentBuyerId = '';
+                    currentBuyerStringId = '';
                 }
             } else {
                 buyerPill.style.display = 'none';
