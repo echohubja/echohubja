@@ -6,8 +6,6 @@
     <title>Echo Hub - Login</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Bcrypt for password verification - cloudflare CDN (most reliable) -->
-    <script async src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcryptjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -205,7 +203,7 @@
         </form>
 
         <div class="register-links">
-            Don't have an account? <a href="buyer-register.html">Register as Buyer</a>
+            Don't have an account? <a href="register.html">Register as Buyer</a>
         </div>
     </div>
 
@@ -220,27 +218,53 @@
         const submitBtn = document.getElementById('submitBtn');
         const authAlert = document.getElementById('authAlert');
 
-        // Wait for bcryptjs to load
-        let bcryptReady = false;
-        const waitForBcrypt = async () => {
-            let attempts = 0;
-            while (typeof window.bcryptjs === 'undefined' && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (typeof window.bcryptjs !== 'undefined') {
-                bcryptReady = true;
-                console.log('[INIT] bcryptjs loaded successfully');
-            } else {
-                console.warn('[INIT] bcryptjs failed to load after 5 seconds');
-            }
-        };
-        waitForBcrypt();
+        // Web Crypto API password verification using PBKDF2
+        async function verifyPassword(password, storedHash) {
+            try {
+                // Decode the stored hash (salt + hash combined in base64)
+                const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
+                const salt = combined.slice(0, 16);
+                const hashToCompare = combined.slice(16);
 
-        // Debug: Log script load attempts
-        window.addEventListener('load', () => {
-            console.log('[DEBUG] Page fully loaded, bcryptjs status:', typeof window.bcryptjs);
-        });
+                // Hash the provided password with the same salt
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    data,
+                    'PBKDF2',
+                    false,
+                    ['deriveBits']
+                );
+
+                const bits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: salt,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    key,
+                    256
+                );
+
+                const computedHash = new Uint8Array(bits);
+
+                // Constant-time comparison to prevent timing attacks
+                let match = true;
+                for (let i = 0; i < hashToCompare.length; i++) {
+                    if (hashToCompare[i] !== computedHash[i]) {
+                        match = false;
+                    }
+                }
+
+                return match;
+            } catch (err) {
+                console.error('[PASSWORD_VERIFY_ERROR]', err);
+                return false;
+            }
+        }
 
         // Account Type Selection
         document.querySelectorAll('.account-type-btn').forEach(btn => {
@@ -266,20 +290,6 @@
             try {
                 if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
 
-                // Wait for bcryptjs to load if not ready
-                if (!bcryptReady && typeof window.bcryptjs === 'undefined') {
-                    submitBtn.textContent = 'Loading security...';
-                    let attempts = 0;
-                    while (typeof window.bcryptjs === 'undefined' && attempts < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        attempts++;
-                    }
-                    if (typeof window.bcryptjs === 'undefined') {
-                        throw new Error('Security library failed to load. Please check your internet connection and refresh the page.');
-                    }
-                    bcryptReady = true;
-                }
-
                 if (selectedAccountType === 'vendor') {
                     // VENDOR LOGIN
                     console.log('[VENDOR_LOGIN] Querying vendors table for email:', email);
@@ -294,9 +304,9 @@
                         throw new Error('Vendor account not found. Please register at vendor registration portal.');
                     }
 
-                    // Verify password with bcryptjs
+                    // Verify password with Web Crypto API
                     console.log('[VENDOR_LOGIN] Verifying password');
-                    const passwordMatch = await bcryptjs.compare(password, vendorData.password);
+                    const passwordMatch = await verifyPassword(password, vendorData.password);
 
                     if (!passwordMatch) {
                         throw new Error('Invalid email or password.');
@@ -335,9 +345,9 @@
                         throw new Error('Buyer account not found. Please register first.');
                     }
 
-                    // Verify password with bcryptjs
+                    // Verify password with Web Crypto API
                     console.log('[BUYER_LOGIN] Verifying password');
-                    const passwordMatch = await bcryptjs.compare(password, buyerData.password);
+                    const passwordMatch = await verifyPassword(password, buyerData.password);
 
                     if (!passwordMatch) {
                         throw new Error('Invalid email or password.');
