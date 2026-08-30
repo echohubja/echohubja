@@ -475,10 +475,10 @@
     <script>
         const SUPABASE_URL = 'https://pueffzvcnonfyjftloto.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_IMUxKFnuQIQP2XmfXhc6zQ_HVYZSKZS';
-        const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        let sbClient = null;
 
         let currentVendor = null;
-        let editingProductId = null; 
+        let editingProductId = null;
         let cachedProducts = []; 
 
         // DOM Elements
@@ -503,7 +503,30 @@
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const formAlert = document.getElementById('formAlert');
 
+        // Wait for Supabase SDK to load before initializing the client
+        async function initSupabaseClient() {
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (window.supabase) {
+                        clearInterval(checkInterval);
+                        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        resolve();
+                    }
+                }, 10);
+                // Timeout after 5 seconds to prevent infinite wait
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    resolve();
+                }, 5000);
+            });
+        }
+
         async function initPortal() {
+            // Ensure Supabase client is initialized
+            if (!sbClient) {
+                await initSupabaseClient();
+            }
+
             if (!sbClient) {
                 showError();
                 return;
@@ -832,6 +855,9 @@
                     } catch (err) {
                         console.error("Sign out error:", err);
                     } finally {
+                        // Clear vendor session from localStorage
+                        localStorage.removeItem('vendor_id');
+                        localStorage.removeItem('vendor_email');
                         window.location.href = 'login.html';
                     }
                 });
