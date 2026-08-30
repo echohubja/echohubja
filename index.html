@@ -368,7 +368,15 @@
             const { data: { session } } = await db.auth.getSession();
             currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
 
+            console.log('[checkBuyerSession] Step 1: Checking session');
+            console.log('  Session email:', session?.user?.email || 'null');
+            console.log('  localStorage echo_hub_buyer_email:', localStorage.getItem('echo_hub_buyer_email') || 'null');
+            console.log('  localStorage buyer_email:', localStorage.getItem('buyer_email') || 'null');
+            console.log('  Final currentActiveEmail:', currentActiveEmail);
+            console.log('  All localStorage keys:', Object.keys(localStorage));
+
             if (currentActiveEmail) {
+                console.log('[checkBuyerSession] Step 2: Email found, querying buyers table for:', currentActiveEmail);
                 // Query buyers table to verify approval status
                 const { data: buyerData, error } = await db
                     .from('buyers')
@@ -376,7 +384,12 @@
                     .eq('email', currentActiveEmail)
                     .maybeSingle();
 
+                console.log('[checkBuyerSession] Step 3: Query result');
+                console.log('  buyerData:', buyerData);
+                console.log('  error:', error);
+
                 if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
+                    console.log('[checkBuyerSession] Step 4: APPROVED - showing buyer pill');
                     // Buyer is approved - show marketplace access
                     buyerNameSpan.textContent = currentActiveEmail;
                     buyerPill.style.display = 'flex';
@@ -385,7 +398,9 @@
                     btnOpenInquiries.style.display = 'flex';
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.buyer_id || 'BUYER-00000';
+                    console.log('  ✓ Buyer pill visible, email set to:', currentActiveEmail);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
+                    console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
                     // Buyer exists but not approved - show blocked message
                     document.body.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);">
@@ -403,6 +418,7 @@
                     currentBuyerStringId = '';
                     return;
                 } else {
+                    console.log('[checkBuyerSession] Step 4: NO BUYER FOUND in database - clearing session');
                     // No buyer found in database - clear session
                     localStorage.removeItem('echo_hub_buyer_email');
                     localStorage.removeItem('buyer_email');
@@ -414,6 +430,7 @@
                     currentBuyerStringId = '';
                 }
             } else {
+                console.log('[checkBuyerSession] Step 1: NO EMAIL FOUND in session or localStorage - showing sign in button');
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
                 btnOpenReferrals.style.display = 'none';
