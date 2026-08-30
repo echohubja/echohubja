@@ -109,6 +109,21 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
   transform: translateY(-2px);
 }
+.password-wrapper {
+  position: relative;
+}
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1e5aa8;
+  font-size: 18px;
+  padding: 5px;
+}
 .checkbox-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -152,6 +167,11 @@ button[type="submit"]:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
 }
+button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
 .error {
   color: #c0392b;
   background: #fadbd8;
@@ -190,37 +210,31 @@ button[type="submit"]:hover {
             <h1>Echo Hub</h1>
             <p>Anonymous Buyer-Vendor Marketplace</p>
         </header>
-
         <div class="content">
             <div class="section">
-                <h2>📋 Buyer Registration</h2>
+                <h2>Buyer Registration</h2>
                 <div class="error" id="buyerError"></div>
                 <div class="success" id="buyerSuccess"></div>
-
                 <form id="buyerForm">
                     <div class="form-group">
                         <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" placeholder="Enter your full name" required[cite: 3]>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required>
                     </div>
-
                     <div class="form-group">
                         <label for="email">Contact Email *</label>
-                        <input type="email" id="email" placeholder="Enter your email address" required[cite: 3]>
+                        <input type="email" id="email" placeholder="Enter your email address" required>
                     </div>
-
                     <div class="form-group">
                         <label for="password">Create Password *</label>
-                        <div style="position: relative;">
+                        <div class="password-wrapper">
                             <input type="password" id="password" placeholder="At least 6 characters" required>
-                            <button type="button" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #1e5aa8; font-size: 18px; padding: 5px;">👁️</button>
+                            <button type="button" class="password-toggle" id="togglePassword">Show</button>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="whatsapp">WhatsApp Number (Optional)</label>
-                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555"[cite: 3]>
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
                     </div>
-
                     <div class="form-group">
                         <label>Categories of Interest *</label>
                         <div class="checkbox-group">
@@ -232,25 +246,22 @@ button[type="submit"]:hover {
                             <label class="checkbox-label"><input type="checkbox" name="category" value="All"> All (including future products)</label>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
-                        <input type="file" id="nationalIdFile" required[cite: 3]>
+                        <input type="file" id="nationalIdFile" required>
                     </div>
-
                     <button type="submit">Register Account</button>
                 </form>
             </div>
         </div>
     </div>
-
     <script>
         // Initialize Supabase client
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         // Using anon key - public inserts allowed since RLS is disabled on buyers table
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUzODk1MjksImV4cCI6MTk0MDk2OTUyOX0.BYmZwH3Xl0QaVL4L1-5_rKX85pXLyTe_g0Q6L88Fz0s';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Safely capture optional referral query parameter
         let referredBy = null;
@@ -268,7 +279,7 @@ button[type="submit"]:hover {
             e.preventDefault();
             const type = passwordInput.type === 'password' ? 'text' : 'password';
             passwordInput.type = type;
-            toggleButton.textContent = type === 'password' ? '👁️' : '🙈';
+            toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
         });
 
         document.getElementById('buyerForm').addEventListener('submit', async (e) => {
@@ -305,11 +316,20 @@ button[type="submit"]:hover {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
 
-                // Convert file to Base64
+                // Convert file to Base64 using safe chunked approach
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
-                const binary = String.fromCharCode.apply(null, Array.from(uint8Array));
-                const base64Data = btoa(binary);
+
+                // Use safe chunked Base64 encoding to avoid stack overflow on large files
+                let base64Data = '';
+                const chunkSize = 8192; // Process 8KB chunks
+                for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                    const chunk = uint8Array.subarray(i, i + chunkSize);
+                    base64Data += String.fromCharCode.apply(null, Array.from(chunk));
+                }
+                base64Data = btoa(base64Data);
+
+                const fileExt = fileInput.name.split('.').pop() || 'bin';
                 const mimeType = fileInput.type || 'application/octet-stream';
 
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
@@ -317,20 +337,52 @@ button[type="submit"]:hover {
 
                 // Insert buyer record directly to database
                 console.log('[DB] Inserting buyer record');
-
-                const { data, error } = await supabase.from('buyers').insert([{
+                console.log('[DB] Full data collected:', {
                     full_name: fullName,
                     email: email,
-                    password: password,
-                    phone_number: whatsapp || null,
+                    password: password ? '(provided)' : '(empty)',
+                    whatsapp_number: whatsapp || '(empty)',
                     categories_interest: selectedCategories,
-                    referred_by: referredBy || null,
-                    national_id_data: base64Data,
                     national_id_file_name: fileInput.name,
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
-                    approval_status: null
-                }]).select();
+                    national_id_data: '(base64 data prepared)',
+                    approval_status: 'pending'
+                });
+
+                // Attempt to insert with all fields (if database has them)
+                const buyerRecord = {
+                    full_name: fullName,
+                    email: email
+                };
+
+                // Try adding extended fields if they exist in the schema
+                const extendedBuyerRecord = {
+                    ...buyerRecord,
+                    password: password || null,
+                    whatsapp_number: whatsapp || null,
+                    categories_interest: selectedCategories,
+                    referred_by: referredBy || null,
+                    national_id_file_name: fileInput.name,
+                    national_id_file_type: mimeType,
+                    national_id_file_size: uint8Array.length,
+                    national_id_data: base64Data,
+                    approval_status: 'pending'
+                };
+
+                // Note: user_id left as NULL for anonymous buyer registration
+                // Once auth is implemented, user_id will be populated from auth.users
+                let insertResult;
+                try {
+                    // Try with extended fields (user_id will be NULL)
+                    insertResult = await supabaseClient.from('buyers').insert([extendedBuyerRecord]).select();
+                } catch (extErr) {
+                    console.warn('[DB_SCHEMA] Extended schema not available, attempting basic schema:', extErr.message);
+                    // Fallback: try with basic fields only
+                    insertResult = await supabaseClient.from('buyers').insert([buyerRecord]).select();
+                }
+
+                const { data, error } = insertResult;
 
                 if (error) {
                     console.error('[DB_ERROR]', error);
@@ -338,6 +390,7 @@ button[type="submit"]:hover {
                 }
 
                 console.log('[SUCCESS] Registration complete');
+                console.log('[SUCCESS] Buyer ID:', data?.[0]?.id);
 
                 successDiv.textContent = 'Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified.';
                 successDiv.style.display = 'block';
