@@ -1,370 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Onboarding Portal</title>
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Bcryptjs for password hashing -->
-    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            animation: backgroundFade 0.8s ease-out;
-        }
-
-        @keyframes backgroundFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
-            overflow: hidden;
-            animation: containerSlideIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes containerSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 5px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        header p {
-            font-size: 1.1em;
-            opacity: 0.95;
-            margin: 0;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .section h2 {
-            color: #1e5aa8;
-            margin-bottom: 25px;
-            font-size: 1.6em;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 0.95em;
-            letter-spacing: 0.3px;
-        }
-
-        label .required {
-            color: #c0392b;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="number"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            font-family: inherit;
-            font-size: 15px;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            background: white;
-            color: #2c3e50;
-        }
-
-        input::placeholder, textarea::placeholder {
-            color: #a0aec0;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            background: #f8fbff;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
-            transform: translateY(-2px);
-        }
-
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 8px;
-        }
-
-        .radio-label {
-            display: flex;
-            align-items: center;
-            font-weight: normal;
-            color: #2c3e50;
-            cursor: pointer;
-            font-size: 14px;
-            background: #fafbfc;
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .radio-label:hover {
-            background-color: #f8fbff;
-            border-color: #1e5aa8;
-        }
-
-        .radio-label input {
-            margin-right: 12px;
-            accent-color: #1e5aa8;
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .btn-submit {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            padding: 14px 32px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
-        }
-
-        .btn-submit:active {
-            transform: translateY(-1px);
-        }
-
-        .btn-submit:disabled {
-            background: #a0aec0;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .error {
-            color: #c0392b;
-            background: #fadbd8;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            border-left: 4px solid #c0392b;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .success {
-            color: #27ae60;
-            background: #d5f4e6;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            border-left: 4px solid #27ae60;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .warning {
-            color: #d97706;
-            background: #fef3c7;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            border-left: 4px solid #f59e0b;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .password-wrapper {
-            position: relative;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #1e5aa8;
-            font-size: 18px;
-            padding: 5px;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #64748b;
-        }
-
-        .login-link a {
-            color: #1e5aa8;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 600px) {
-            .content {
-                padding: 20px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Echo Hub - Vendor Registration</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding: 20px;
+  animation: backgroundFade 0.8s ease-out;
+}
+@keyframes backgroundFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(30, 90, 168, 0.08);
+  overflow: hidden;
+  animation: containerSlideIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes containerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+header {
+  background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+  color: white;
+  padding: 30px;
+  text-align: center;
+}
+header h1 {
+  font-size: 2.5em;
+  margin-bottom: 5px;
+}
+header p {
+  font-size: 1.1em;
+  opacity: 0.95;
+  margin: 0;
+}
+.content {
+  padding: 40px;
+}
+.section h2 {
+  color: #1e5aa8;
+  margin-bottom: 25px;
+  font-size: 1.6em;
+  font-weight: 700;
+}
+.form-group {
+  margin-bottom: 22px;
+}
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.95em;
+  letter-spacing: 0.3px;
+}
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  color: #2c3e50;
+}
+input::placeholder, textarea::placeholder {
+  color: #a0aec0;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #1e5aa8;
+  background: #f8fbff;
+  box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.08), inset 0 0 0 1px rgba(30, 90, 168, 0.04);
+  transform: translateY(-2px);
+}
+.password-wrapper {
+  position: relative;
+}
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1e5aa8;
+  font-size: 18px;
+  padding: 5px;
+}
+.radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+}
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.radio-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1e5aa8;
+  cursor: pointer;
+}
+.radio-option label {
+  margin: 0;
+  cursor: pointer;
+  font-weight: normal;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.help-text {
+  color: #64748b;
+  font-size: 0.8em;
+  margin-top: 6px;
+  font-style: italic;
+}
+button[type="submit"] {
+  background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+  color: white;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  margin-top: 10px;
+}
+button[type="submit"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(30, 90, 168, 0.25);
+}
+button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+.error {
+  color: #c0392b;
+  background: #fadbd8;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: none;
+  border-left: 4px solid #c0392b;
+  font-weight: 500;
+  font-size: 14px;
+}
+.success {
+  color: #27ae60;
+  background: #d5f4e6;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: none;
+  border-left: 4px solid #27ae60;
+  font-weight: 500;
+  font-size: 14px;
+}
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #64748b;
+}
+.login-link a {
+  color: #1e5aa8;
+  text-decoration: none;
+  font-weight: 600;
+}
+.login-link a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .radio-group {
+    flex-direction: column;
+  }
+  .content {
+    padding: 20px;
+  }
+}
+</style>
 </head>
 <body>
-
     <div class="container">
         <header>
             <h1>Echo Hub</h1>
-            <p>Vendor Onboarding Portal</p>
+            <p>Vendor Registration Portal</p>
         </header>
-
         <div class="content">
             <div class="section">
-                <h2>🤝 Vendor Registration</h2>
-
-                <div id="successAlert" class="success">
-                    <strong>Registration Successful!</strong> Your vendor account has been created and is active. You can now log in to your dashboard.
-                </div>
-
-                <div id="warningAlert" class="warning">
-                    <strong>⚠️ Account Blocked:</strong> Your commission is below $5 USD. Your account has been automatically blocked. Update your commission to $5 USD or higher in your dashboard to activate your account.
-                </div>
-
-                <div id="errorAlert" class="error">
-                    <strong>Submission Failed:</strong> <span id="errorMessage">Please check your inputs and try again.</span>
-                </div>
-
+                <h2>Create Your Vendor Account</h2>
+                <div class="error" id="vendorError"></div>
+                <div class="success" id="vendorSuccess"></div>
                 <form id="vendorForm">
                     <div class="form-group">
-                        <label>Vendor Type <span class="required">*</span></label>
+                        <label>Vendor Type <span style="color: #c0392b;">*</span></label>
                         <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="vendor_type" value="UPFRONT" required>
-                                <div><strong>UPFRONT</strong> - Pay upfront for products</div>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="vendor_type" value="REFUND_AFTER_REVIEW" required>
-                                <div><strong>REFUND AFTER REVIEW</strong> - Refunded after review</div>
-                            </label>
+                            <div class="radio-option">
+                                <input type="radio" id="vendorTypeUpfront" name="vendorType" value="UPFRONT" required>
+                                <label for="vendorTypeUpfront">UPFRONT (Payment before delivery)</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="vendorTypeRefund" name="vendorType" value="REFUND_AFTER_REVIEW" required>
+                                <label for="vendorTypeRefund">REFUND_AFTER_REVIEW</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name <span style="color: #c0392b;">*</span></label>
+                            <input type="text" id="firstName" placeholder="Enter your first name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span style="color: #c0392b;">*</span></label>
+                            <input type="text" id="lastName" placeholder="Enter your last name" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="firstName">First Name <span class="required">*</span></label>
-                        <input type="text" id="firstName" name="firstName" required placeholder="Enter your first name">
+                        <label for="email">Email Address <span style="color: #c0392b;">*</span></label>
+                        <input type="email" id="email" placeholder="your@email.com" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="lastName">Last Name <span class="required">*</span></label>
-                        <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">PayPal Email Address (For Payouts) <span class="required">*</span></label>
-                        <input type="email" id="email" name="email" required placeholder="your-paypal@email.com">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Account Password <span class="required">*</span></label>
+                        <label for="password">Create Password <span style="color: #c0392b;">*</span></label>
                         <div class="password-wrapper">
-                            <input type="password" id="password" name="password" required minlength="6" placeholder="At least 6 characters">
+                            <input type="password" id="password" placeholder="At least 6 characters" required minlength="6">
                             <button type="button" class="password-toggle" id="togglePassword">Show</button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="commission">Commission Amount (USD) <span class="required">*</span></label>
-                        <input type="number" id="commission" name="commission" required step="0.01" min="0" placeholder="e.g., 5.00">
-                        <small style="color: #64748b; margin-top: 4px; display: block;">Minimum $5 USD required for account activation</small>
+                        <label for="commission">Commission Amount (USD) <span style="color: #c0392b;">*</span></label>
+                        <input type="number" id="commission" min="0" step="0.01" placeholder="0.00" required>
+                        <div class="help-text">ℹ️ Minimum $5 USD required for account activation</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="businessDetails">List the product types that you will offer <span class="required">*</span></label>
-                        <textarea id="businessDetails" name="businessDetails" rows="3" required placeholder="Describe the types of products you will offer (e.g., Electronics, Fashion, Home Goods)"></textarea>
+                        <label for="businessDetails">Business Details <span style="color: #c0392b;">*</span></label>
+                        <textarea id="businessDetails" placeholder="List the product types that you will offer" required></textarea>
                     </div>
 
-                    <button type="submit" id="submitBtn" class="btn-submit">Register as Vendor</button>
+                    <button type="submit">Register Account</button>
                 </form>
-
                 <div class="login-link">
                     Already have an account? <a href="login.html">Sign in here</a>
                 </div>
             </div>
         </div>
     </div>
-
     <script>
-        // Initialize Supabase Client safely
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        // Web Crypto API password hashing using PBKDF2
+        async function hashPassword(password) {
+            try {
+                // Generate random salt
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+
+                // Encode password
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+
+                // Import key
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    data,
+                    'PBKDF2',
+                    false,
+                    ['deriveBits']
+                );
+
+                // Derive bits
+                const bits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: salt,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    key,
+                    256
+                );
+
+                // Combine salt and hash
+                const hashArray = new Uint8Array(bits);
+                const combined = new Uint8Array(salt.length + hashArray.length);
+                combined.set(salt, 0);
+                combined.set(hashArray, salt.length);
+
+                // Return as base64
+                return btoa(String.fromCharCode(...combined));
+            } catch (err) {
+                console.error('[PASSWORD_HASH_ERROR]', err);
+                throw new Error('Password hashing failed');
+            }
+        }
 
         // Password toggle functionality
         const passwordInput = document.getElementById('password');
@@ -376,30 +356,15 @@
             toggleButton.textContent = type === 'password' ? 'Show' : 'Hide';
         });
 
-        const form = document.getElementById('vendorForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const successAlert = document.getElementById('successAlert');
-        const warningAlert = document.getElementById('warningAlert');
-        const errorAlert = document.getElementById('errorAlert');
-        const errorMessage = document.getElementById('errorMessage');
-
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('vendorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const errorDiv = document.getElementById('vendorError');
+            const successDiv = document.getElementById('vendorSuccess');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
 
-            successAlert.style.display = 'none';
-            warningAlert.style.display = 'none';
-            errorAlert.style.display = 'none';
-
-            if (!supabaseClient) {
-                errorMessage.textContent = 'Supabase client failed to initialize.';
-                errorAlert.style.display = 'block';
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Registering...';
-
-            const vendorType = document.querySelector('input[name="vendor_type"]:checked').value;
+            const vendorType = document.querySelector('input[name="vendorType"]:checked').value;
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
@@ -407,34 +372,44 @@
             const commission = parseFloat(document.getElementById('commission').value);
             const businessDetails = document.getElementById('businessDetails').value.trim();
 
+            if (isNaN(commission) || commission < 0) {
+                errorDiv.textContent = 'Commission must be a valid number greater than or equal to 0.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!businessDetails) {
+                errorDiv.textContent = 'Please provide business details.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
             try {
-                // Validate commission
-                if (isNaN(commission) || commission < 0) {
-                    throw new Error('Please enter a valid commission amount.');
-                }
+                if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Registering...';
 
-                console.log('[SECURITY] Hashing password with bcryptjs');
-                const hashedPassword = await bcryptjs.hash(password, 10);
+                // Hash password with Web Crypto API
+                console.log('[SECURITY] Hashing password with Web Crypto API');
+                const hashedPassword = await hashPassword(password);
 
-                // Determine blocking status based on commission
+                // Calculate blocking status
                 const shouldBeBlocked = commission < 5.00;
 
-                console.log('[DB] Inserting vendor record');
-                console.log('[DB] Commission:', commission, '| Should be blocked:', shouldBeBlocked);
+                console.log('[VENDOR_REGISTER] Registering vendor - commission:', commission, 'blocked:', shouldBeBlocked);
 
-                const vendorRecord = {
+                // Insert vendor record
+                const { data, error } = await supabaseClient.from('vendors').insert([{
                     vendor_type: vendorType,
                     first_name: firstName,
                     last_name: lastName,
                     email: email,
                     password: hashedPassword,
                     commission: commission,
-                    is_blocked: shouldBeBlocked,
                     business_details: businessDetails,
-                    created_at: new Date()
-                };
-
-                const { data, error } = await supabaseClient.from('vendors').insert([vendorRecord]).select();
+                    is_blocked: shouldBeBlocked,
+                    created_at: new Date().toISOString()
+                }]).select();
 
                 if (error) {
                     console.error('[DB_ERROR]', error);
@@ -442,32 +417,25 @@
                 }
 
                 console.log('[SUCCESS] Vendor registration complete');
-                console.log('[SUCCESS] Vendor ID:', data?.[0]?.id);
-                console.log('[SUCCESS] Is Blocked:', shouldBeBlocked);
 
-                // Show appropriate message based on commission status
                 if (shouldBeBlocked) {
-                    warningAlert.style.display = 'block';
+                    successDiv.textContent = '⚠️ Registration successful! Your account is currently blocked because your commission is below $5 USD. Update your commission to $5 USD or higher to activate your account.';
                 } else {
-                    successAlert.style.display = 'block';
+                    successDiv.textContent = '✅ Registration successful! Your vendor account is now active. You can sign in to access your dashboard.';
                 }
 
-                form.reset();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-
-                // Redirect to login after 3 seconds
+                successDiv.style.display = 'block';
+                document.getElementById('vendorForm').reset();
+                submitBtn.textContent = 'Register Account';
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 3000);
-
             } catch (err) {
                 console.error('[ERROR]', err);
-                errorMessage.textContent = 'Error during registration: ' + err.message;
-                errorAlert.style.display = 'block';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } finally {
+                errorDiv.textContent = 'Error during registration: ' + err.message;
+                errorDiv.style.display = 'block';
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Register as Vendor';
+                submitBtn.textContent = 'Register Account';
             }
         });
     </script>
