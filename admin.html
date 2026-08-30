@@ -608,9 +608,6 @@
             container.innerHTML = html;
         }
 
-            container.innerHTML = html;
-        }
-
         function toggleAccordion(contentId, iconId) {
             const content = document.getElementById(contentId);
             const icon = document.getElementById(iconId);
@@ -763,10 +760,38 @@
             loadCommissionsPortal();
         }
 
+        function switchTab(tabName) {
+            const sections = document.querySelectorAll('[id^="section-"]');
+            const buttons = document.querySelectorAll('.tab-btn');
+
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            const activeSection = document.getElementById(`section-${tabName}`);
+            const activeButton = document.getElementById(`tab-btn-${tabName}`);
+
+            if (activeSection) activeSection.classList.remove('hidden');
+            if (activeButton) activeButton.classList.add('active');
+
+            // Load data for the active tab
+            if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'inquiries') loadInquiriesPortal();
+            else if (tabName === 'commissions') loadCommissionsPortal();
+        }
+
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBuyersPortal();
+        });
     </script>
 </body>
 </html>
