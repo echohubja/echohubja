@@ -6,7 +6,7 @@
     <title>Echo Hub - Vendor Onboarding Portal</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Bcrypt for password hashing -->
+    <!-- Bcryptjs for password hashing -->
     <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcryptjs.min.js"></script>
     <style>
         * {
@@ -225,13 +225,13 @@
         }
 
         .warning {
-            color: #d68910;
-            background: #fef5e7;
+            color: #d97706;
+            background: #fef3c7;
             padding: 16px;
             border-radius: 10px;
             margin-bottom: 20px;
             display: none;
-            border-left: 4px solid #d68910;
+            border-left: 4px solid #f59e0b;
             font-weight: 500;
             font-size: 14px;
         }
@@ -251,6 +251,23 @@
             color: #1e5aa8;
             font-size: 18px;
             padding: 5px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #64748b;
+        }
+
+        .login-link a {
+            color: #1e5aa8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 600px) {
@@ -273,11 +290,11 @@
                 <h2>🤝 Vendor Registration</h2>
 
                 <div id="successAlert" class="success">
-                    <strong id="successTitle">Registration Successful!</strong> <span id="successMessage"></span>
+                    <strong>Registration Successful!</strong> Your vendor account has been created and is active. You can now log in to your dashboard.
                 </div>
 
                 <div id="warningAlert" class="warning">
-                    <strong>Account Created But Blocked:</strong> Your account requires a $5.00 USD commission to be activated. Please contact support to update your commission.
+                    <strong>⚠️ Account Blocked:</strong> Your commission is below $5 USD. Your account has been automatically blocked. Update your commission to $5 USD or higher in your dashboard to activate your account.
                 </div>
 
                 <div id="errorAlert" class="error">
@@ -286,15 +303,15 @@
 
                 <form id="vendorForm">
                     <div class="form-group">
-                        <label>Are you an UPFRONT or REFUND AFTER REVIEW vendor? <span class="required">*</span></label>
+                        <label>Vendor Type <span class="required">*</span></label>
                         <div class="radio-group">
                             <label class="radio-label">
                                 <input type="radio" name="vendor_type" value="UPFRONT" required>
-                                <div><strong>UPFRONT</strong></div>
+                                <div><strong>UPFRONT</strong> - Pay upfront for products</div>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="vendor_type" value="REFUND_AFTER_REVIEW" required>
-                                <div><strong>REFUND AFTER REVIEW</strong></div>
+                                <div><strong>REFUND AFTER REVIEW</strong> - Refunded after review</div>
                             </label>
                         </div>
                     </div>
@@ -324,16 +341,21 @@
 
                     <div class="form-group">
                         <label for="commission">Commission Amount (USD) <span class="required">*</span></label>
-                        <input type="number" id="commission" name="commission" step="0.01" required placeholder="e.g., 5.00">
+                        <input type="number" id="commission" name="commission" required step="0.01" min="0" placeholder="e.g., 5.00">
+                        <small style="color: #64748b; margin-top: 4px; display: block;">Minimum $5 USD required for account activation</small>
                     </div>
 
                     <div class="form-group">
                         <label for="businessDetails">List the product types that you will offer <span class="required">*</span></label>
-                        <textarea id="businessDetails" name="businessDetails" rows="3" required placeholder="e.g., Electronics, Clothing, Home Goods, Services, etc."></textarea>
+                        <textarea id="businessDetails" name="businessDetails" rows="3" required placeholder="Describe the types of products you will offer (e.g., Electronics, Fashion, Home Goods)"></textarea>
                     </div>
 
                     <button type="submit" id="submitBtn" class="btn-submit">Register as Vendor</button>
                 </form>
+
+                <div class="login-link">
+                    Already have an account? <a href="login.html">Sign in here</a>
+                </div>
             </div>
         </div>
     </div>
@@ -360,7 +382,6 @@
         const warningAlert = document.getElementById('warningAlert');
         const errorAlert = document.getElementById('errorAlert');
         const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -387,24 +408,19 @@
             const businessDetails = document.getElementById('businessDetails').value.trim();
 
             try {
-                // Hash password using bcrypt
-                console.log('[SECURITY] Hashing password with bcrypt');
+                // Validate commission
+                if (isNaN(commission) || commission < 0) {
+                    throw new Error('Please enter a valid commission amount.');
+                }
+
+                console.log('[SECURITY] Hashing password with bcryptjs');
                 const hashedPassword = await bcryptjs.hash(password, 10);
 
-                // Determine if vendor should be blocked based on commission
-                const isBlocked = commission < 5.00;
+                // Determine blocking status based on commission
+                const shouldBeBlocked = commission < 5.00;
 
                 console.log('[DB] Inserting vendor record');
-                console.log('[DB] Full data collected:', {
-                    vendor_type: vendorType,
-                    first_name: firstName,
-                    last_name: lastName,
-                    email: email,
-                    password: '(hashed)',
-                    commission: commission,
-                    is_blocked: isBlocked,
-                    business_details: businessDetails
-                });
+                console.log('[DB] Commission:', commission, '| Should be blocked:', shouldBeBlocked);
 
                 const vendorRecord = {
                     vendor_type: vendorType,
@@ -413,8 +429,9 @@
                     email: email,
                     password: hashedPassword,
                     commission: commission,
-                    is_blocked: isBlocked,
-                    business_details: businessDetails
+                    is_blocked: shouldBeBlocked,
+                    business_details: businessDetails,
+                    created_at: new Date()
                 };
 
                 const { data, error } = await supabaseClient.from('vendors').insert([vendorRecord]).select();
@@ -426,18 +443,22 @@
 
                 console.log('[SUCCESS] Vendor registration complete');
                 console.log('[SUCCESS] Vendor ID:', data?.[0]?.id);
-                console.log('[SUCCESS] Vendor Blocked Status:', data?.[0]?.is_blocked);
+                console.log('[SUCCESS] Is Blocked:', shouldBeBlocked);
 
-                // Show appropriate message based on commission amount
-                if (isBlocked) {
+                // Show appropriate message based on commission status
+                if (shouldBeBlocked) {
                     warningAlert.style.display = 'block';
                 } else {
-                    successMessage.textContent = 'Your vendor account is ready to use. You can now login to the marketplace.';
                     successAlert.style.display = 'block';
                 }
 
                 form.reset();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Redirect to login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
 
             } catch (err) {
                 console.error('[ERROR]', err);
