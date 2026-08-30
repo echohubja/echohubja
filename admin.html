@@ -350,9 +350,13 @@
                 let imageMap = {};
                 if (productIds.length > 0) {
                     try {
-                        const { data: images } = await db
+                        const { data: images, error: imgError } = await db
                             .from('product-images')
                             .select('*');
+
+                        console.log('Product IDs to fetch:', productIds);
+                        console.log('Images fetched:', images);
+                        console.log('Image fetch error:', imgError);
 
                         if (images) {
                             images.forEach(img => {
@@ -361,6 +365,7 @@
                                     imageMap[img.product_id].push(img.image_url);
                                 }
                             });
+                            console.log('Image map after processing:', imageMap);
                         }
                     } catch (e) {
                         console.error('Product images fetch error (table may not exist):', e);
@@ -525,93 +530,130 @@
                             <div class="p-4 space-y-3 bg-gray-50 max-h-96 overflow-y-auto">
                 `;
 
-                // Render each message in the thread
-                messages.forEach((msg, idx) => {
-                    const msgType = msg.message_type || 'inquiry';
-                    const senderType = msg.sender_type || 'buyer';
-                    const senderId = msg.sender_id || (senderType === 'buyer' ? msg.buyer_id : null);
-
-                    let senderIcon, msgColor;
-                    if (senderType === 'buyer') {
-                        senderIcon = '👤';
-                        msgColor = 'bg-blue-50 border-blue-200';
-                    } else {
-                        senderIcon = '🏪';
-                        msgColor = 'bg-green-50 border-green-200';
+                // Group messages by product
+                const groupedByProduct = {};
+                messages.forEach(msg => {
+                    const prodId = msg.product_id || 'unknown';
+                    if (!groupedByProduct[prodId]) {
+                        groupedByProduct[prodId] = {
+                            product: msg.products || { id: prodId, product_name: `Product ${prodId}` },
+                            productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
+                            messages: []
+                        };
                     }
+                    groupedByProduct[prodId].messages.push(msg);
+                });
 
-                    const timestamp = new Date(msg.created_at).toLocaleString();
-                    let msgTypeLabel = 'Inquiry';
-                    let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
-
-                    if (msgType === 'vendor_response') {
-                        msgTypeLabel = 'Vendor Response';
-                        msgTypeBadgeColor = 'bg-green-100 text-green-700';
-                    } else if (msgType === 'buyer_followup') {
-                        msgTypeLabel = 'Buyer Follow-up';
-                        msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
-                    } else if (msgType === 'feedback') {
-                        msgTypeLabel = 'Feedback Submission';
-                        msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
-                    }
-
-                    const productName = msg.products?.product_name || `Product ${msg.product_id}`;
-                    const productImage = msg.product_images?.[0] || msg.products?.product_images?.[0] || null;
-                    const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
-                    const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
+                // Render each product group
+                for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
+                    const prodName = prodData.product?.product_name || `Product ${prodId}`;
+                    const prodImage = prodData.productImage;
 
                     html += `
-                        <div class="border ${msgColor} rounded-lg p-3 space-y-2 bg-white ${feedbackHighlight}">
-                            <div class="flex justify-between items-start gap-3">
-                                <div class="flex gap-2 flex-1">
-                                    ${productImage ? `<img src="${productImage}" alt="Product" class="w-12 h-12 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-md transition" onclick="openLightbox('${productImage}')" title="Click to view product image">` : '<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500 flex-shrink-0">No Image</div>'}
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-xs font-bold text-gray-700">${senderIcon} ${msgTypeLabel} - ${escapeHtml(productName)}</div>
-                                        <div class="text-[11px] text-gray-500">${timestamp}</div>
-                                    </div>
+                        <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
+                            <!-- Product Header -->
+                            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex gap-4 items-start">
+                                <!-- Large Product Image -->
+                                <div class="flex-shrink-0">
+                                    ${prodImage ? `<img src="${prodImage}" alt="Product" class="w-20 h-20 object-cover rounded-lg border-2 border-white shadow-lg cursor-pointer hover:shadow-xl transition" onclick="openLightbox('${prodImage}')" title="Click to view product image">` : '<div class="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center text-4xl flex-shrink-0 font-bold shadow-lg border-2 border-white" title="Product image not uploaded by vendor">📦</div>'}
                                 </div>
-                                <span class="${msgTypeBadgeColor} px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
+                                <!-- Product Info -->
+                                <div class="flex-1">
+                                    <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
+                                    <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
+                                    <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
+                                </div>
                             </div>
 
-                            <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
-                                ${escapeHtml(msg.message || '[No message]')}
-                            </div>
+                            <!-- Messages Container -->
+                            <div class="p-4 space-y-3">
                     `;
 
-                    // If feedback submission, show image and verification UI
-                    if (msgType === 'feedback' && msg.image_url) {
-                        const status = (msg.status || 'pending_verification').toLowerCase();
-                        let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
-                        if (status === 'verified') {
-                            statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
-                        } else if (status === 'rejected') {
-                            statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">REJECTED</span>`;
+                    // Render messages for this product
+                    prodData.messages.forEach((msg, idx) => {
+                        const msgType = msg.message_type || 'inquiry';
+                        const senderType = msg.sender_type || 'buyer';
+                        const senderId = msg.sender_id || (senderType === 'buyer' ? msg.buyer_id : null);
+
+                        let senderIcon, msgColor;
+                        if (senderType === 'buyer') {
+                            senderIcon = '👤';
+                            msgColor = 'bg-blue-50 border-blue-200';
+                        } else {
+                            senderIcon = '🏪';
+                            msgColor = 'bg-green-50 border-green-200';
                         }
 
-                        const amazonUrl = msg.message && msg.message.includes('http')
-                            ? msg.message.match(/https?:\/\/[^\s]+/)[0]
-                            : null;
+                        const timestamp = new Date(msg.created_at).toLocaleString();
+                        let msgTypeLabel = 'Inquiry';
+                        let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
+
+                        if (msgType === 'vendor_response') {
+                            msgTypeLabel = 'Vendor Response';
+                            msgTypeBadgeColor = 'bg-green-100 text-green-700';
+                        } else if (msgType === 'buyer_followup') {
+                            msgTypeLabel = 'Buyer Follow-up';
+                            msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
+                        } else if (msgType === 'feedback') {
+                            msgTypeLabel = 'Feedback Submission';
+                            msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
+                        }
+
+                        const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
+                        const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
 
                         html += `
-                            <div class="bg-orange-100 border-2 border-orange-400 rounded-lg p-3 space-y-2 mt-2">
-                                <div class="text-[11px] font-bold text-orange-800 uppercase">📸 Feedback Proof Submitted</div>
-                                <div class="flex gap-2 items-center flex-wrap">
-                                    <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1.5 rounded font-semibold transition">📷 View Feedback Image</button>
-                                    ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded font-semibold transition">🔗 Amazon Link</a>` : ''}
+                            <div class="border-l-4 ${msgColor} rounded-lg p-4 space-y-2 bg-white shadow-sm hover:shadow-md transition">
+                                <div class="flex justify-between items-start gap-3">
+                                    <div class="flex-1">
+                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${msgTypeLabel}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">${timestamp}</div>
+                                    </div>
+                                    <span class="${msgTypeBadgeColor} px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
                                 </div>
-                                <div class="flex gap-2 items-center flex-wrap pt-1 border-t border-orange-300">
-                                    ${statusBadge}
-                                    ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
-                                        <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold transition">✓ Verify</button>
-                                        <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold transition">✗ Reject</button>
-                                    ` : '<span class="text-[11px] text-gray-600">Action Complete</span>'}
-                                </div>
-                            </div>
-                        `;
-                    }
 
-                    html += `</div>`;
-                });
+                                <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
+                                    ${escapeHtml(msg.message || '[No message]')}
+                                </div>
+                        `;
+
+                        // If feedback submission, show image and verification UI
+                        if (msgType === 'feedback' && msg.image_url) {
+                            const status = (msg.status || 'pending_verification').toLowerCase();
+                            let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
+                            if (status === 'verified') {
+                                statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">VERIFIED</span>`;
+                            } else if (status === 'rejected') {
+                                statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">REJECTED</span>`;
+                            }
+
+                            const amazonUrl = msg.message && msg.message.includes('http')
+                                ? msg.message.match(/https?:\/\/[^\s]+/)[0]
+                                : null;
+
+                            html += `
+                                <div class="bg-orange-100 border-2 border-orange-400 rounded-lg p-3 space-y-2 mt-2">
+                                    <div class="text-[11px] font-bold text-orange-800 uppercase">📸 Feedback Proof Submitted</div>
+                                    <div class="flex gap-2 items-center flex-wrap">
+                                        <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1.5 rounded font-semibold transition">📷 View Feedback Image</button>
+                                        ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded font-semibold transition">🔗 Amazon Link</a>` : ''}
+                                    </div>
+                                    <div class="flex gap-2 items-center flex-wrap pt-1 border-t border-orange-300">
+                                        ${statusBadge}
+                                        ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
+                                            <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded font-bold transition">✓ Verify</button>
+                                            <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-bold transition">✗ Reject</button>
+                                        ` : '<span class="text-[11px] text-gray-600">Action Complete</span>'}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        html += `</div>`;
+                    });
+
+                    html += `</div></div>`;
+                }
 
                 html += `</div></div></div>`;
             }
