@@ -392,9 +392,10 @@ button[type="submit"]:disabled {
                 console.log('[SUCCESS] Registration complete');
                 console.log('[SUCCESS] Buyer ID:', data?.[0]?.id);
 
-                successDiv.textContent = 'Registration successful! Your national ID will be reviewed by our team. You will be notified via email once your account is verified.';
+                // Hide form and show success message with login link
+                document.getElementById('buyerForm').style.display = 'none';
+                successDiv.innerHTML = `Registration successful! Your national ID is under review. Once approved, you will receive access to the marketplace. <br><br><a href="login.html" style="color: #1e5aa8; font-weight: 600; text-decoration: none;">Go to Login →</a>`;
                 successDiv.style.display = 'block';
-                document.getElementById('buyerForm').reset();
                 submitBtn.textContent = 'Register Account';
             } catch (err) {
                 console.error('[ERROR]', err);
