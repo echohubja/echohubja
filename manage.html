@@ -537,6 +537,14 @@
                 </div>
             </div>
 
+            <!-- Alerts Banner Section -->
+            <div id="alerts-banner" style="display: none; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+                    <div id="alerts-content" style="flex: 1;"></div>
+                    <button onclick="closeAlertsBanner()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #92400e;">×</button>
+                </div>
+            </div>
+
             <!-- Commission Payable Drawer Section -->
             <div class="earnings-drawer">
                 <h3>💳 Commission Payable</h3>
@@ -843,6 +851,7 @@
                 await loadVendorProducts();
                 await loadPendingInquiries();
                 await loadEarningsData();
+                await loadVendorAlerts();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -1312,6 +1321,75 @@
             loadingState.style.display = 'none';
             portalContent.style.display = 'none';
             errorState.style.display = 'block';
+        }
+
+        // --- ALERT FUNCTIONS ---
+        async function loadVendorAlerts() {
+            try {
+                if (!currentVendor) return;
+
+                // Fetch unread alerts for this vendor
+                const { data: alerts, error } = await sbClient
+                    .from('alerts')
+                    .select('*')
+                    .eq('recipient_id', currentVendor.id)
+                    .eq('recipient_type', 'vendor')
+                    .eq('is_read', false)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error fetching alerts:', error);
+                    return;
+                }
+
+                if (!alerts || alerts.length === 0) {
+                    document.getElementById('alerts-banner').style.display = 'none';
+                    return;
+                }
+
+                // Display alerts banner
+                const alertsContent = document.getElementById('alerts-content');
+                let html = '';
+
+                alerts.forEach((alert, idx) => {
+                    html += `
+                        <div style="margin-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; padding-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; border-bottom: ${idx < alerts.length - 1 ? '1px solid #fcd34d' : 'none'};">
+                            <div style="font-weight: 600; color: #92400e; font-size: 0.95em;">🔔 ${escapeHtml(alert.title)}</div>
+                            <div style="color: #b45309; font-size: 0.9em; margin-top: 4px;">${escapeHtml(alert.message)}</div>
+                            <button onclick="markAlertAsRead('${alert.id}')" style="background: #fbbf24; color: #78350f; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
+                        </div>
+                    `;
+                });
+
+                alertsContent.innerHTML = html;
+                document.getElementById('alerts-banner').style.display = 'block';
+
+            } catch (err) {
+                console.error('Unexpected error loading alerts:', err);
+            }
+        }
+
+        async function markAlertAsRead(alertId) {
+            try {
+                const { error } = await sbClient
+                    .from('alerts')
+                    .update({ is_read: true })
+                    .eq('id', alertId);
+
+                if (error) {
+                    console.error('Error marking alert as read:', error);
+                    return;
+                }
+
+                // Reload alerts to refresh the banner
+                await loadVendorAlerts();
+            } catch (err) {
+                console.error('Error updating alert:', err);
+            }
+        }
+
+        function closeAlertsBanner() {
+            document.getElementById('alerts-banner').style.display = 'none';
         }
 
         // --- COMMISSION PAYABLE FUNCTIONS ---
