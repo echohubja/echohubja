@@ -440,7 +440,7 @@
             document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
 
             tableBody.innerHTML = data.map(buyer => {
-                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
+                const rawStatus = (buyer.approval_status || '').trim().toUpperCase();
                 let statusBadge = '';
                 let actionButton = '';
 
@@ -466,6 +466,7 @@
                         <td class="p-2.5">
                             <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
                             <div class="text-[11px] text-gray-500">${escapeHtml(buyer.email)}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(buyer.phone_number || 'No phone')}</div>
                         </td>
                         <td class="p-2.5">${idCellContent}</td>
                         <td class="p-2.5">${statusBadge}</td>
@@ -477,7 +478,7 @@
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             if (!confirm(`Update access status for ${buyerEmail}?`)) return;
-            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
+            const { error } = await db.from('buyers').update({ approval_status: newStatus }).eq('id', buyerId);
             if (error) { alert('Error: ' + error.message); return; }
             loadBuyersPortal();
         }
