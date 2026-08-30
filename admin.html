@@ -445,7 +445,7 @@
                 let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
                 if (buyer.national_id_data) {
                     const dataUrl = `data:${buyer.national_id_file_type || 'image/png'};base64,${buyer.national_id_data}`;
-                    idCellContent = `<button onclick="window.open('${dataUrl}', '_blank')" class="text-[#1e5aa8] underline text-xs font-medium hover:text-blue-700">View ID (${escapeHtml(buyer.national_id_file_name || 'Image')})</button>`;
+                    idCellContent = `<button onclick="openIdLightbox('${dataUrl}', '${escapeHtml(buyer.national_id_file_name || 'ID Image')}')" class="text-[#1e5aa8] underline text-xs font-medium hover:text-blue-700">View ID (${escapeHtml(buyer.national_id_file_name || 'Image')})</button>`;
                 }
 
                 return `
@@ -688,6 +688,23 @@
             if (error) { alert('Error updating payout status: ' + error.message); return; }
             alert('Commission marked as paid!');
             loadCommissionsPortal();
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('image-lightbox');
+            if (lightbox) {
+                lightbox.classList.add('hidden');
+            }
+        }
+
+        function openIdLightbox(imageUrl, fileName) {
+            const lightbox = document.getElementById('image-lightbox');
+            const imgEl = document.getElementById('lightbox-img-element');
+            const titleEl = document.querySelector('#image-lightbox h3');
+            if (!lightbox || !imgEl) return;
+            imgEl.src = imageUrl;
+            if (titleEl) titleEl.textContent = `ID Verification: ${fileName}`;
+            lightbox.classList.remove('hidden');
         }
 
         function escapeHtml(str) {
