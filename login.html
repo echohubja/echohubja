@@ -382,8 +382,8 @@
                         // Verify password using PBKDF2
                         const passwordMatch = await verifyPBKDF2Password(password, buyerData.password);
                         if (passwordMatch) {
-                            // Check approval status
-                            if (buyerData.approval_status !== 'approved') {
+                            // Check approval status (case-insensitive)
+                            if (buyerData.approval_status?.toLowerCase() !== 'approved') {
                                 throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
                             }
                             // Store buyer session in localStorage for index.html
@@ -420,7 +420,7 @@
                             .eq('email', email)
                             .maybeSingle();
 
-                        if (buyerCheckData && buyerCheckData.approval_status !== 'approved') {
+                        if (buyerCheckData && buyerCheckData.approval_status?.toLowerCase() !== 'approved') {
                             throw new Error(`Your account is ${buyerCheckData.approval_status}. You will receive access once your national ID is verified.`);
                         }
 
