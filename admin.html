@@ -280,23 +280,57 @@
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
+            // Fetch inquiries (all records, no relationships - fetch separately)
             const { data: inquiries, error: inqError } = await db
                 .from('inquiries')
-                .select('*, buyers:buyer_id(id, full_name, email), products:product_id(id, product_name)')
+                .select('*')
                 .order('created_at', { ascending: false });
 
             if (inqError) {
-                container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
+                container.innerHTML = `<div class="p-4 text-center text-red-500">Error fetching inquiries: ${escapeHtml(inqError.message)}</div>`;
                 return;
             }
             if (!inquiries || inquiries.length === 0) {
-                container.innerHTML = `<div class="p-4 text-center text-gray-500">No product feedback submissions found.</div>`;
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found.</div>`;
                 document.getElementById('inquiry-count').textContent = '0 records';
                 return;
             }
 
-            // Fetch product images for all inquiries
+            // Get unique buyer and product IDs
+            const buyerIds = [...new Set(inquiries.map(inq => inq.buyer_id).filter(Boolean))];
             const productIds = [...new Set(inquiries.map(inq => inq.product_id).filter(Boolean))];
+
+            // Fetch buyer data
+            let buyerMap = {};
+            if (buyerIds.length > 0) {
+                const { data: buyers, error: buyerError } = await db
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .in('id', buyerIds);
+
+                if (!buyerError && buyers) {
+                    buyers.forEach(buyer => {
+                        buyerMap[buyer.id] = buyer;
+                    });
+                }
+            }
+
+            // Fetch product data
+            let productMap = {};
+            if (productIds.length > 0) {
+                const { data: products, error: prodError } = await db
+                    .from('products')
+                    .select('id, product_name')
+                    .in('id', productIds);
+
+                if (!prodError && products) {
+                    products.forEach(prod => {
+                        productMap[prod.id] = prod;
+                    });
+                }
+            }
+
+            // Fetch product images
             let imageMap = {};
             if (productIds.length > 0) {
                 const { data: images, error: imgError } = await db
@@ -312,8 +346,10 @@
                 }
             }
 
-            // Attach images to inquiry data
+            // Merge related data into inquiries
             inquiries.forEach(inq => {
+                inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
+                inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
                 inq.product_images = imageMap[inq.product_id] || [];
             });
 
