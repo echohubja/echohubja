@@ -221,7 +221,7 @@
         // Handle logout request from index.html
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('logout') === 'true') {
-            localStorage.removeItem('echo_hub_buyer_email');
+            localStorage.removeItem('buyer_id');
             localStorage.removeItem('buyer_email');
             localStorage.removeItem('vendor_id');
             localStorage.removeItem('vendor_email');
@@ -386,8 +386,8 @@
                             if (buyerData.approval_status?.toLowerCase() !== 'approved') {
                                 throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
                             }
-                            // Store buyer session in localStorage for index.html
-                            localStorage.setItem('echo_hub_buyer_email', buyerData.email);
+                            // Store buyer session in localStorage for index.html (use numeric ID as primary)
+                            localStorage.setItem('buyer_id', buyerData.id);
                             localStorage.setItem('buyer_email', buyerData.email);
                             window.location.href = 'index.html';
                             return;
@@ -424,8 +424,8 @@
                             throw new Error(`Your account is ${buyerCheckData.approval_status}. You will receive access once your national ID is verified.`);
                         }
 
-                        // Store buyer session
-                        localStorage.setItem('echo_hub_buyer_email', email);
+                        // Store buyer session (use numeric ID as primary)
+                        localStorage.setItem('buyer_id', authUser.id);
                         localStorage.setItem('buyer_email', email);
                         window.location.href = 'index.html';
                         return;
