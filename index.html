@@ -366,8 +366,7 @@
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             const { data: { session } } = await db.auth.getSession();
-            currentActiveEmail = session?.user?.email || localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || localStorage.getItem('user_email');
-
+            currentActiveEmail = localStorage.getItem('echo_hub_buyer_email') || localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
             console.log('[checkBuyerSession] Step 1: Checking session');
             console.log('  Session email:', session?.user?.email || 'null');
             console.log('  localStorage echo_hub_buyer_email:', localStorage.getItem('echo_hub_buyer_email') || 'null');
