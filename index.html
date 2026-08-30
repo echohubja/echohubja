@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-        body { 
+        body {
             background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
             background-attachment: fixed;
             min-height: 100vh;
-            color: #2c3e50; 
+            color: #2c3e50;
         }
         header {
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
@@ -60,13 +60,13 @@
             background: #f8fbff;
             transform: translateY(-1px);
         }
-        .layout { 
-            max-width: 1400px; 
-            margin: 40px auto; 
-            padding: 0 20px; 
-            display: grid; 
-            grid-template-columns: 240px 1fr; 
-            gap: 40px; 
+        .layout {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 40px;
         }
         aside {
             background: white;
@@ -75,42 +75,42 @@
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
             height: fit-content;
         }
-        .filter-group h3 { 
-            font-size: 14px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            color: #1e5aa8; 
-            margin-bottom: 15px; 
+        .filter-group h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1e5aa8;
+            margin-bottom: 15px;
             font-weight: 700;
         }
         .filter-links { display: flex; flex-direction: column; gap: 8px; }
-        .filter-link { 
-            background: none; 
-            border: none; 
-            text-align: left; 
-            padding: 10px 12px; 
+        .filter-link {
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 10px 12px;
             border-radius: 8px;
-            font-size: 15px; 
-            color: #4a5568; 
-            cursor: pointer; 
+            font-size: 15px;
+            color: #4a5568;
+            cursor: pointer;
             transition: all 0.2s ease;
             width: 100%;
         }
-        .filter-link:hover, .filter-link.active { 
+        .filter-link:hover, .filter-link.active {
             background: #f0f4f8;
-            color: #1e5aa8; 
-            font-weight: 600; 
+            color: #1e5aa8;
+            font-weight: 600;
         }
         .content-area { display: flex; flex-direction: column; gap: 20px; }
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
-        .product-box { 
-            background: #fff; 
-            border: 2px solid #e1e8ed; 
-            border-radius: 12px; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
+        .product-box {
+            background: #fff;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
@@ -120,18 +120,17 @@
         }
         .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
         .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
-        .product-box button { 
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
-            color: #fff; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 8px; 
-            cursor: pointer; 
+        .product-box button {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
             font-weight: 600;
             transition: opacity 0.2s ease;
         }
         .product-box button:hover { opacity: 0.9; }
-
         .drawer-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: none; z-index: 1100;
@@ -146,16 +145,15 @@
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
             color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
         }
-        .drawer-body { 
-            padding: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            overflow-y: auto; 
-            flex: 1; 
+        .drawer-body {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex: 1;
         }
         .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
-
         .product-hover-container {
             position: relative;
             display: inline-block;
@@ -198,7 +196,6 @@
             visibility: visible;
             opacity: 1;
         }
-
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
@@ -226,7 +223,6 @@
             <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
     </header>
-
     <div class="layout">
         <aside>
             <div class="filter-group">
@@ -240,44 +236,40 @@
             <div class="products-grid" id="products-container"></div>
         </main>
     </div>
-
     <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
     <div class="drawer-container" id="inquiry-drawer">
         <div class="drawer-header">
             <h2 style="font-size: 20px; margin: 0;">Product Inquiry</h2>
             <button class="btn-close-drawer" onclick="closeInquiryDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 16px;"></p>
-            
+
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
                 <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
                 <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
             </div>
-
             <input type="hidden" id="modal-product-id">
             <input type="hidden" id="modal-vendor-id">
-            
+
             <div>
                 <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
                 <textarea id="inquiry-message" placeholder="Ask details about this product..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
             </div>
-
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                 <button onclick="closeInquiryDrawer()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #e2e8f0; color: #4a5568;">Cancel</button>
                 <button id="btn-submit-inquiry" onclick="submitInquiry()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #1e5aa8; color: white;">Send Inquiry</button>
             </div>
         </div>
     </div>
-
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
     <div class="drawer-container" id="referral-drawer">
         <div class="drawer-header">
             <h2 style="font-size: 20px; margin: 0;">Referral Dashboard</h2>
             <button class="btn-close-drawer" onclick="toggleReferralDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <div>
                 <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 5px;">Your Unique Referral Link</label>
@@ -286,7 +278,6 @@
                     <button onclick="copyReferralLink()" style="background: #2b6cb0; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Copy</button>
                 </div>
             </div>
-
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                 <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
                     <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Referrals</span>
@@ -301,7 +292,6 @@
                     <h3 id="stat-payable-balance" style="font-size: 18px; color: #38a169; margin-top: 4px;">$0.00</h3>
                 </div>
             </div>
-
             <div>
                 <h4 style="color: #2d3748; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Commission History</h4>
                 <div style="overflow-x: auto;">
@@ -322,34 +312,29 @@
             </div>
         </div>
     </div>
-
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
         <div class="drawer-header">
             <h2 style="font-size: 20px; margin: 0;">My Inquiries & Product Feedback</h2>
             <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
         </div>
-        
+
         <div class="drawer-body">
             <div>
                 <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
             </div>
-
             <div id="buyer-inquiries-body" style="display: flex; flex-direction: column; gap: 12px;">
                 <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
             </div>
         </div>
     </div>
-
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
-
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
             const refParam = urlParams.get('ref');
@@ -357,40 +342,32 @@
                 localStorage.setItem('echo_hub_referrer', refParam);
             }
         }
-
         async function checkBuyerSession() {
             const buyerPill = document.getElementById('buyer-pill');
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
             const btnOpenReferrals = document.getElementById('btn-open-referrals');
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
-
             const { data: { session } } = await db.auth.getSession();
             const currentActiveBuyerId = localStorage.getItem('buyer_id');
             currentActiveEmail = localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
-
             console.log('[checkBuyerSession] Step 1: Checking session');
             console.log('  localStorage buyer_id:', currentActiveBuyerId || 'null');
             console.log('  localStorage buyer_email:', currentActiveEmail || 'null');
             console.log('  Session email:', session?.user?.email || 'null');
             console.log('  All localStorage keys:', Object.keys(localStorage));
-
             if (currentActiveBuyerId) {
                 console.log('[checkBuyerSession] Step 2: Buyer ID found, querying buyers table for ID:', currentActiveBuyerId);
-                // Query buyers table to verify approval status using numeric ID
                 const { data: buyerData, error } = await db
                     .from('buyers')
                     .select('id, approval_status')
                     .eq('id', currentActiveBuyerId)
                     .maybeSingle();
-
                 console.log('[checkBuyerSession] Step 3: Query result');
                 console.log('  buyerData:', buyerData);
                 console.log('  error:', error);
-
                 if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
                     console.log('[checkBuyerSession] Step 4: APPROVED - showing buyer pill');
-                    // Buyer is approved - show marketplace access
                     buyerNameSpan.textContent = currentActiveEmail;
                     buyerPill.style.display = 'flex';
                     portalBtn.style.display = 'none';
@@ -401,7 +378,6 @@
                     console.log('  ✓ Buyer pill visible, email set to:', currentActiveEmail);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
-                    // Buyer exists but not approved - show blocked message
                     document.body.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);">
                             <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(30, 90, 168, 0.1);">
@@ -419,7 +395,6 @@
                     return;
                 } else {
                     console.log('[checkBuyerSession] Step 4: NO BUYER FOUND in database - clearing session');
-                    // No buyer found in database - clear session
                     localStorage.removeItem('echo_hub_buyer_email');
                     localStorage.removeItem('buyer_email');
                     buyerPill.style.display = 'none';
@@ -439,7 +414,6 @@
                 currentBuyerStringId = '';
             }
         }
-
         async function logoutBuyer() {
             await db.auth.signOut();
             localStorage.removeItem('buyer_id');
@@ -447,16 +421,13 @@
             localStorage.removeItem('user_email');
             window.location.reload();
         }
-
         async function loadCategories() {
             const { data, error } = await db.from('products').select('category');
             const filterContainer = document.getElementById('category-filters');
-            
             if (error) {
                 console.error('Error loading categories:', error.message);
                 return;
             }
-
             const taxonomy = {};
             if (data && data.length > 0) {
                 data.forEach(item => {
@@ -464,11 +435,9 @@
                         const rawCat = item.category.trim();
                         const parts = rawCat.split('>').map(p => p.trim());
                         const mainCat = parts[0];
-                        
                         if (!taxonomy[mainCat]) {
                             taxonomy[mainCat] = {};
                         }
-                        
                         if (parts.length > 1) {
                             const subCat = parts[1];
                             taxonomy[mainCat][subCat] = rawCat;
@@ -476,15 +445,12 @@
                     }
                 });
             }
-
             let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
-            
             for (const [mainCat, subs] of Object.entries(taxonomy)) {
                 html += `
                     <div class="category-group" style="margin-top: 10px;">
                         <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
                 `;
-                
                 const subKeys = Object.keys(subs);
                 if (subKeys.length > 0) {
                     html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
@@ -496,13 +462,10 @@
                 }
                 html += `</div>`;
             }
-            
             filterContainer.innerHTML = html;
         }
-
         async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
-            let query = db.from('products').select('*');
-            
+            let query = db.from('products').select('id, product_name, price, vendor_id, category');
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
                     query = query.ilike('category', `${categoryQuery}%`);
@@ -510,39 +473,54 @@
                     query = query.eq('category', categoryQuery);
                 }
             }
-
-            const { data, error } = await query;
+            const { data: products, error: productsError } = await query;
             const container = document.getElementById('products-container');
-            
-            if (error) {
-                console.error('Error loading products:', error.message);
+            if (productsError) {
+                console.error('Error loading products:', productsError.message);
                 container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
                 return;
             }
-
-            if (data && data.length > 0) {
-                container.innerHTML = data.map(product => `
+            if (!products || products.length === 0) {
+                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
+                return;
+            }
+            const productIds = products.map(p => p.id);
+            const { data: imagesData, error: imagesError } = await db
+                .from('product-images')
+                .select('product_id, image_url')
+                .in('product_id', productIds);
+            if (imagesError) {
+                console.error('Error loading product images:', imagesError.message);
+            }
+            const imageMap = {};
+            if (imagesData) {
+                imagesData.forEach(img => {
+                    if (!imageMap[img.product_id]) {
+                        imageMap[img.product_id] = [];
+                    }
+                    imageMap[img.product_id].push(img.image_url);
+                });
+            }
+            container.innerHTML = products.map(product => {
+                const productImage = imageMap[product.id] ? imageMap[product.id][0] : null;
+                return `
                     <div class="product-box">
                         <div>
-                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
+                            ${productImage ? `<img src="${productImage}" alt="${product.product_name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
                             <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
-                            <h5 style="margin-top: 4px;">${product.name}</h5>
+                            <h5 style="margin-top: 4px;">${product.product_name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
                         </div>
-                        <button onclick="openInquiryDrawer('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire Product</button>
+                        <button onclick="openInquiryDrawer('${product.id}', '${product.product_name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire Product</button>
                     </div>
-                `).join('');
-            } else {
-                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
-            }
+                `;
+            }).join('');
         }
-
         function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
             document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
             buttonElement.classList.add('active');
             loadProducts(categoryQuery, isMainGroup);
         }
-
         function openInquiryDrawer(productId, productName, vendorId) {
             if (!currentActiveEmail) {
                 alert('Please sign in through the account portal before sending an inquiry.');
@@ -552,66 +530,53 @@
             document.getElementById('modal-product-id').value = productId;
             document.getElementById('modal-vendor-id').value = vendorId;
             document.getElementById('modal-product-title').textContent = productName;
-            
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
-
             document.getElementById('inquiry-message').value = '';
-            
             const drawer = document.getElementById('inquiry-drawer');
             const overlay = document.getElementById('inquiry-drawer-overlay');
             drawer.classList.add('open');
             overlay.style.display = 'block';
         }
-
         function closeInquiryDrawer() {
             const drawer = document.getElementById('inquiry-drawer');
             const overlay = document.getElementById('inquiry-drawer-overlay');
             drawer.classList.remove('open');
             overlay.style.display = 'none';
         }
-
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
             const message = document.getElementById('inquiry-message').value.trim();
             const submitBtn = document.getElementById('btn-submit-inquiry');
-
             if (!message) {
                 alert('Please enter a message or question.');
                 return;
             }
-
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
-
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
-                    buyer_id: currentBuyerId, 
+                    buyer_id: currentBuyerId,
                     message: message,
                     image_url: null
                 }
             ]);
-
             submitBtn.disabled = false;
             submitBtn.textContent = 'Send Inquiry';
-
             if (error) {
                 console.error('Error submitting inquiry:', error.message);
                 alert('Failed to send inquiry. Please try again.');
                 return;
             }
-
             alert('Inquiry submitted successfully!');
             closeInquiryDrawer();
         }
-
         function toggleReferralDrawer() {
             const drawer = document.getElementById('referral-drawer');
             const overlay = document.getElementById('drawer-overlay');
-            
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
@@ -622,11 +587,9 @@
                 loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
             }
         }
-
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
             const overlay = document.getElementById('inquiries-drawer-overlay');
-            
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
@@ -638,30 +601,43 @@
                 loadBuyerInquiriesHistory(currentBuyerId);
             }
         }
-
         async function loadBuyerInquiriesHistory(buyerId) {
             if (!buyerId) return;
-
             const container = document.getElementById('buyer-inquiries-body');
-
             const { data: inquiries, error } = await db
                 .from('inquiries')
-                .select('*, products(name, image_url_1)')
+                .select('*, products(id, product_name)')
                 .eq('buyer_id', buyerId)
                 .order('created_at', { ascending: false });
-
             if (error) {
                 console.error('Error loading inquiry history:', error.message);
                 container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your inquiries.</p>';
                 return;
             }
-
             if (inquiries && inquiries.length > 0) {
+                const productIds = inquiries
+                    .map(item => item.product_id)
+                    .filter(id => id !== null && id !== undefined);
+                let imageMap = {};
+                if (productIds.length > 0) {
+                    const { data: imagesData } = await db
+                        .from('product-images')
+                        .select('product_id, image_url')
+                        .in('product_id', productIds);
+                    if (imagesData) {
+                        imagesData.forEach(img => {
+                            if (!imageMap[img.product_id]) {
+                                imageMap[img.product_id] = [];
+                            }
+                            imageMap[img.product_id].push(img.image_url);
+                        });
+                    }
+                }
                 const grouped = {};
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
-                    const pName = item.products?.name || 'General Inquiries';
-                    const pImg = item.products?.image_url_1 || '';
+                    const pName = item.products?.product_name || 'General Inquiries';
+                    const pImg = imageMap[item.product_id] ? imageMap[item.product_id][0] : '';
                     if (!grouped[pKey]) {
                         grouped[pKey] = {
                             productId: item.product_id,
@@ -676,23 +652,18 @@
                         grouped[pKey].latestTimestamp = item.created_at;
                     }
                 });
-
                 const sortedGroups = Object.entries(grouped).sort((a, b) => new Date(b[1].latestTimestamp) - new Date(a[1].latestTimestamp));
-
                 let html = '';
                 let index = 0;
-
                 for (const [pKey, group] of sortedGroups) {
                     index++;
                     const count = group.items.length;
                     const contentId = `inquiry-group-${pKey}-${index}`;
-
                     const latestMsg = group.items[0];
                     const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
-                    const statusBadge = isPending 
+                    const statusBadge = isPending
                         ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
                         : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
-
                     const vendorGroups = {};
                     group.items.forEach(item => {
                         const vKey = item.vendor_id || 'Echo Hub';
@@ -701,7 +672,6 @@
                         }
                         vendorGroups[vKey].push(item);
                     });
-
                     const productTitleHtml = group.productImage ? `
                         <div class="product-hover-container" style="display: inline-block;">
                             <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700; cursor: help; text-decoration: underline dotted;">${group.productName} 🖼️</h4>
@@ -711,7 +681,6 @@
                             </div>
                         </div>
                     ` : `<h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700;">${group.productName}</h4>`;
-
                     html += `
                         <div class="inquiry-card-item" data-search="${group.productName.toLowerCase()} ${Object.keys(vendorGroups).join(' ').toLowerCase()}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
                             <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
@@ -725,13 +694,11 @@
                                     <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
                             </div>
-
                             <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
-                                
+
                                 <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
                                     💡 Your inquiry has been routed to the assigned vendor. Vendors typically respond within 24 hours.
                                 </div>
-
                                 <div style="background: #f0f4f8; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Submit Post-Receipt Feedback & Amazon Link</label>
                                     <input type="text" id="product-feedback-link-${pKey}" placeholder="Paste Amazon.com review/feedback link here..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; background: #fff;">
@@ -740,16 +707,13 @@
                                         <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
                                     </div>
                                 </div>
-
                                 <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #edf2f7; padding-top: 10px;">
                                     <h5 style="font-size: 12px; color: #718096; text-transform: uppercase; font-weight: 700;">Messages by Vendor ID</h5>
                     `;
-
                     let vIndex = 0;
                     for (const [vendorId, vItems] of Object.entries(vendorGroups)) {
                         vIndex++;
                         const vAccordionId = `vendor-group-${pKey}-${vIndex}`;
-
                         html += `
                             <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                                 <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
@@ -760,10 +724,8 @@
                                     </div>
                                     <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
-
                                 <div id="${vAccordionId}" style="display: none; padding: 12px; flex-direction: column; gap: 10px;">
                         `;
-
                         vItems.forEach(item => {
                             const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
                                 year: 'numeric',
@@ -775,18 +737,14 @@
                                 hour12: true,
                                 timeZoneName: 'short'
                             });
-                            
                             html += `
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
                                         <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Message Record</span>
                                         <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
-
                                     <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
-                                    
                                     ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
-                                    
                                     <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
                                         <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
                                         <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
@@ -795,30 +753,25 @@
                                 </div>
                             `;
                         });
-
                         html += `
                                 </div>
                             </div>
                         `;
                     }
-
                     html += `
                                 </div>
                             </div>
                         </div>
                     `;
                 }
-
                 container.innerHTML = html;
             } else {
                 container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries yet.</p>';
             }
         }
-
         function filterInquiriesList() {
             const query = document.getElementById('inquiry-search-input').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.inquiry-card-item');
-
             cards.forEach(card => {
                 const searchData = card.getAttribute('data-search') || '';
                 if (searchData.includes(query)) {
@@ -828,11 +781,9 @@
                 }
             });
         }
-
         function toggleInquiryGroup(contentId, headerElement) {
             const bodyDiv = document.getElementById(contentId);
             const iconSpan = document.getElementById(`icon-${contentId}`);
-            
             if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
                 bodyDiv.style.display = 'flex';
                 iconSpan.style.transform = 'rotate(180deg)';
@@ -843,11 +794,9 @@
                 headerElement.style.background = '#f8fafc';
             }
         }
-
         function toggleVendorGroup(vendorAccordionId, headerElement) {
             const bodyDiv = document.getElementById(vendorAccordionId);
             const iconSpan = document.getElementById(`icon-${vendorAccordionId}`);
-            
             if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
                 bodyDiv.style.display = 'flex';
                 iconSpan.style.transform = 'rotate(180deg)';
@@ -858,43 +807,34 @@
                 headerElement.style.background = '#edf2f7';
             }
         }
-
         async function uploadProductFeedbackImage(productId, pKey) {
             const fileInput = document.getElementById(`product-feedback-file-${pKey}`);
             const linkInput = document.getElementById(`product-feedback-link-${pKey}`);
             const amazonLink = linkInput ? linkInput.value.trim() : '';
-
             const hasFile = fileInput.files && fileInput.files[0];
             if (!hasFile && !amazonLink) {
                 alert('Please provide either an Amazon feedback link or upload an image.');
                 return;
             }
-
             let imageUrl = null;
-
             if (hasFile) {
                 const file = fileInput.files[0];
                 const fileExt = file.name.split('.').pop();
                 const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
                 const filePath = `feedback/${fileName}`;
-
                 const { error: uploadError } = await db.storage
                     .from('product-images')
                     .upload(filePath, file);
-
                 if (uploadError) {
                     console.error('Error uploading feedback image:', uploadError.message);
                     alert('Failed to upload feedback image.');
                     return;
                 }
-
                 const { data: publicUrlData } = db.storage
                     .from('product-images')
                     .getPublicUrl(filePath);
-
                 imageUrl = publicUrlData.publicUrl;
             }
-
             const { data: existingFeedback, error: fetchErr } = await db
                 .from('inquiries')
                 .select('id, image_url, message')
@@ -902,14 +842,11 @@
                 .eq('product_id', productId)
                 .ilike('message', '%[Post-Receipt Product Feedback%')
                 .maybeSingle();
-
             if (fetchErr) {
                 console.error('Error checking existing feedback:', fetchErr.message);
             }
-
             const feedbackMessage = `[Post-Receipt Product Feedback]\nAmazon Link: ${amazonLink || 'None provided'}`;
             let dbError = null;
-
             if (existingFeedback && existingFeedback.id) {
                 const updatePayload = {
                     message: feedbackMessage,
@@ -918,7 +855,6 @@
                 if (imageUrl) {
                     updatePayload.image_url = imageUrl;
                 }
-
                 const { error: updateErr } = await db
                     .from('inquiries')
                     .update(updatePayload)
@@ -935,26 +871,21 @@
                 ]);
                 dbError = insertErr;
             }
-
             if (dbError) {
                 console.error('Error saving feedback record:', dbError.message);
                 alert('Failed to save feedback record.');
                 return;
             }
-
             alert('Product feedback (link & image) successfully submitted!');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
-
         async function submitFollowupMessage(inquiryId, productId, vendorId) {
             const msgInput = document.getElementById(`followup-msg-${inquiryId}`);
             const messageText = msgInput.value.trim();
-
             if (!messageText) {
                 alert('Please enter a reply message.');
                 return;
             }
-
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId === 'null' || !productId ? null : productId,
@@ -964,46 +895,36 @@
                     image_url: null
                 }
             ]);
-
             if (error) {
                 console.error('Error submitting follow-up:', error.message);
                 alert('Failed to submit follow-up message.');
                 return;
             }
-
             alert('Follow-up message sent successfully!');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
-
         async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
             if (!buyerId) return;
-
             const refLink = `${window.location.origin}/index.html?ref=${buyerStringId || buyerId}`;
             document.getElementById('referral-link-input').value = refLink;
-
             const { data: ledgerRows, error } = await db
                 .from('referral_ledger')
                 .select('*')
                 .eq('referrer_id', buyerId)
                 .order('created_at', { ascending: false });
-
             if (error) {
                 console.error('Error loading buyer ledger:', error.message);
                 return;
             }
-
             let totalReferrals = ledgerRows ? ledgerRows.length : 0;
             let pendingBal = 0;
             let payableBal = 0;
-
             const tbody = document.getElementById('buyer-ledger-body');
-
             if (ledgerRows && ledgerRows.length > 0) {
                 tbody.innerHTML = ledgerRows.map(row => {
                     const amt = parseFloat(row.commission_amount || 0);
                     if (row.status === 'pending') pendingBal += amt;
                     if (row.status === 'payable' || row.status === 'paid') payableBal += amt;
-
                     return `
                         <tr>
                             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
@@ -1016,12 +937,10 @@
             } else {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
             }
-
             document.getElementById('stat-total-referrals').innerText = totalReferrals;
             document.getElementById('stat-pending-balance').innerText = `$${pendingBal.toFixed(2)}`;
             document.getElementById('stat-payable-balance').innerText = `$${payableBal.toFixed(2)}`;
         }
-
         function copyReferralLink() {
             const input = document.getElementById('referral-link-input');
             input.select();
@@ -1029,7 +948,6 @@
             navigator.clipboard.writeText(input.value);
             alert('Referral link copied to clipboard!');
         }
-
         window.addEventListener('DOMContentLoaded', async () => {
             captureReferralCode();
             await checkBuyerSession();
