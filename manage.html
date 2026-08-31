@@ -1085,7 +1085,7 @@
         let currentVendor = null;
         let editingProductId = null;
         let cachedProducts = [];
-        let realtimeSubscription = null;
+        let pollingIntervals = {};
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -1172,7 +1172,7 @@
                 await loadCommissionSettings();
                 await loadEarningsData();
                 await loadVendorAlerts();
-                await setupRealtimeSubscriptions();
+                await setupPolling();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -1182,17 +1182,12 @@
             }
         }
 
-        async function setupRealtimeSubscriptions() {
+        async function setupPolling() {
             if (!currentVendor || !sbClient) return;
 
-            // Cleanup existing subscription
-            if (realtimeSubscription) {
-                sbClient.removeAllChannels();
-                realtimeSubscription = null;
-            }
+            stopPolling();
 
             try {
-                // Get vendor's product IDs for filtering
                 const { data: vendorProducts } = await sbClient
                     .from('products')
                     .select('id')
@@ -1201,135 +1196,108 @@
                 const productIds = vendorProducts ? vendorProducts.map(p => p.id) : [];
                 if (productIds.length === 0) return;
 
-                console.log('📋 Vendor product IDs:', productIds);
+                console.log('📋 Starting polling for vendor:', currentVendor.id);
 
-                // Create SEPARATE subscriptions for each table (more reliable than chaining)
-                const inquiriesChannel = sbClient
-                    .channel(`public:inquiries:${currentVendor.id}`)
-                    .on('postgres_changes',
-                        {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'inquiries'
-                        },
-                        (payload) => {
-                            const record = payload.new;
-                            console.log('🔍 NEW INQUIRY RECEIVED:', {
-                                product_id: record.product_id,
-                                message_type: record.message_type,
-                                sender_type: record.sender_type,
-                                isVendorProduct: productIds.includes(record.product_id)
-                            });
+                let lastInquiriesHash = '';
+                let lastVendorHash = '';
+                let lastAlertsHash = '';
+                let lastProductsHash = '';
 
-                            if (record && productIds.includes(record.product_id)) {
-                                if (['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
-                                    console.log('💬 New buyer message detected - RELOADING');
-                                    loadPendingInquiries();
-                                }
-                            }
-                        }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: 'UPDATE',
-                            schema: 'public',
-                            table: 'inquiries'
-                        },
-                        (payload) => {
-                            const record = payload.new;
-                            if (record && productIds.includes(record.product_id)) {
-                                console.log('🔄 Inquiry updated - RELOADING');
-                                loadPendingInquiries();
-                            }
-                        }
-                    )
-                    .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('✅ Inquiries channel SUBSCRIBED');
-                        } else {
-                            console.log('⚠️ Inquiries channel status:', status);
-                        }
-                    });
+                // Poll inquiries every 3 seconds
+                pollingIntervals.inquiries = setInterval(async () => {
+                    try {
+                        const { data: inquiries } = await sbClient
+                            .from('inquiries')
+                            .select('*')
+                            .in('product_id', productIds)
+                            .in('message_type', ['inquiry', 'feedback', 'buyer_followup'])
+                            .eq('sender_type', 'buyer');
 
-                const vendorsChannel = sbClient
-                    .channel(`public:vendors:${currentVendor.id}`)
-                    .on('postgres_changes',
-                        {
-                            event: 'UPDATE',
-                            schema: 'public',
-                            table: 'vendors',
-                            filter: `id=eq.${currentVendor.id}`
-                        },
-                        (payload) => {
-                            const record = payload.new;
-                            if (record) {
-                                currentVendor = record;
-                                console.log('💰 Vendor data updated - RELOADING');
-                                loadCommissionSettings();
-                                loadEarningsData();
-                            }
+                        const currentHash = JSON.stringify(inquiries || []);
+                        if (currentHash !== lastInquiriesHash) {
+                            console.log('💬 Inquiries changed - RELOADING');
+                            lastInquiriesHash = currentHash;
+                            loadPendingInquiries();
                         }
-                    )
-                    .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('✅ Vendors channel SUBSCRIBED');
-                        }
-                    });
+                    } catch (err) {
+                        console.error('Polling error (inquiries):', err);
+                    }
+                }, 3000);
 
-                const alertsChannel = sbClient
-                    .channel(`public:alerts:${currentVendor.id}`)
-                    .on('postgres_changes',
-                        {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'alerts',
-                            filter: `vendor_id=eq.${currentVendor.id}`
-                        },
-                        (payload) => {
-                            const record = payload.new;
-                            if (record) {
-                                console.log('⚠️ New alert - RELOADING');
-                                loadVendorAlerts();
-                            }
-                        }
-                    )
-                    .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('✅ Alerts channel SUBSCRIBED');
-                        }
-                    });
+                // Poll vendor data every 4 seconds
+                pollingIntervals.vendor = setInterval(async () => {
+                    try {
+                        const { data: vendor } = await sbClient
+                            .from('vendors')
+                            .select('*')
+                            .eq('id', currentVendor.id)
+                            .single();
 
-                const productsChannel = sbClient
-                    .channel(`public:products:${currentVendor.id}`)
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'products',
-                            filter: `vendor_id=eq.${currentVendor.id}`
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
-                            if (record) {
-                                console.log('📦 Product updated - RELOADING');
-                                loadVendorProducts();
-                            }
+                        const currentHash = JSON.stringify(vendor || {});
+                        if (currentHash !== lastVendorHash) {
+                            console.log('💰 Vendor data changed - RELOADING');
+                            lastVendorHash = currentHash;
+                            if (vendor) currentVendor = vendor;
+                            loadCommissionSettings();
+                            loadEarningsData();
                         }
-                    )
-                    .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('✅ Products channel SUBSCRIBED');
+                    } catch (err) {
+                        console.error('Polling error (vendor):', err);
+                    }
+                }, 4000);
+
+                // Poll alerts every 5 seconds
+                pollingIntervals.alerts = setInterval(async () => {
+                    try {
+                        const { data: alerts } = await sbClient
+                            .from('alerts')
+                            .select('*')
+                            .eq('recipient_id', currentVendor.id)
+                            .eq('is_read', false);
+
+                        const currentHash = JSON.stringify(alerts || []);
+                        if (currentHash !== lastAlertsHash) {
+                            console.log('⚠️ Alerts changed - RELOADING');
+                            lastAlertsHash = currentHash;
+                            loadVendorAlerts();
                         }
-                    });
+                    } catch (err) {
+                        console.error('Polling error (alerts):', err);
+                    }
+                }, 5000);
 
-                // Store primary subscription reference
-                realtimeSubscription = inquiriesChannel;
+                // Poll products every 4 seconds
+                pollingIntervals.products = setInterval(async () => {
+                    try {
+                        const { data: products } = await sbClient
+                            .from('products')
+                            .select('*')
+                            .eq('vendor_id', currentVendor.id);
 
-                console.log('🔔 Global real-time subscriptions set up for vendor:', currentVendor.id);
-                console.log('✅ REALTIME CONNECTION ESTABLISHED');
+                        const currentHash = JSON.stringify(products || []);
+                        if (currentHash !== lastProductsHash) {
+                            console.log('📦 Products changed - RELOADING');
+                            lastProductsHash = currentHash;
+                            loadVendorProducts();
+                        }
+                    } catch (err) {
+                        console.error('Polling error (products):', err);
+                    }
+                }, 4000);
+
+                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds');
             } catch (err) {
-                console.error('Error setting up real-time subscriptions:', err);
+                console.error('Error setting up polling:', err);
             }
+        }
+
+        function stopPolling() {
+            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
+            if (pollingIntervals.vendor) clearInterval(pollingIntervals.vendor);
+            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
+            if (pollingIntervals.products) clearInterval(pollingIntervals.products);
+            pollingIntervals = {};
+            console.log('🛑 Polling stopped');
         }
 
         async function loadVendorProducts() {
@@ -2240,6 +2208,7 @@
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async () => {
                     try {
+                        stopPolling();
                         if (sbClient) {
                             await sbClient.auth.signOut();
                         }
