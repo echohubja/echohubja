@@ -672,6 +672,255 @@
             background: #cbd5e1;
         }
 
+        /* Inquiry Filter Bar */
+        .inquiry-filter-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid #e1e8ed;
+            padding: 16px 20px;
+            margin: 0 -20px -16px -20px;
+            margin-top: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip, .filter-chip-type {
+            padding: 6px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 20px;
+            background: white;
+            color: #475569;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .filter-chip:hover, .filter-chip-type:hover {
+            border-color: #1e5aa8;
+            color: #1e5aa8;
+        }
+
+        .filter-chip.active, .filter-chip-type.active {
+            background: #1e5aa8;
+            color: white;
+            border-color: #1e5aa8;
+        }
+
+        /* Inquiry Cards Grid */
+        .inquiry-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+            padding: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .inquiry-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Inquiry Card */
+        .inquiry-card {
+            background: white;
+            border: 1.5px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .inquiry-card:hover {
+            border-color: #1e5aa8;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Card Header - Status & Customer */
+        .inquiry-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .inquiry-customer-name {
+            font-weight: 700;
+            font-size: 1em;
+            color: #1e293b;
+            flex: 1;
+        }
+
+        .inquiry-status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .inquiry-status-badge.new {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .inquiry-status-badge.awaiting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .inquiry-status-badge.responded {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        /* Card Meta Info */
+        .inquiry-card-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 0.8em;
+            color: #64748b;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .inquiry-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .inquiry-type-badge {
+            padding: 2px 8px;
+            background: #e0e7ff;
+            color: #3730a3;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+
+        .inquiry-type-badge.feedback {
+            background: #fce7f3;
+            color: #be185d;
+        }
+
+        .inquiry-type-badge.followup {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        /* Card Message Preview */
+        .inquiry-message-preview {
+            color: #475569;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Card Footer - Time & Action */
+        .inquiry-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #e1e8ed;
+            gap: 8px;
+        }
+
+        .inquiry-time-waiting {
+            font-size: 0.8em;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .inquiry-time-waiting.overdue {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .inquiry-card-action {
+            padding: 6px 12px;
+            background: #1e5aa8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .inquiry-card-action:hover {
+            background: #174887;
+        }
+
+        .inquiry-card-action.responded {
+            background: #15803d;
+            cursor: default;
+        }
+
+        .inquiry-card-action.responded:hover {
+            background: #15803d;
+        }
+
+        /* Expanded Card Content */
+        .inquiry-card-expanded {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            margin-left: -16px;
+            margin-right: -16px;
+            margin-bottom: -16px;
+            padding-left: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .inquiry-card-expanded strong {
+            display: block;
+            color: #475569;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        .inquiry-card-expanded strong:first-child {
+            margin-top: 0;
+        }
+
+        .inquiry-card-expanded-text {
+            color: #64748b;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
         .alert-msg {
             padding: 10px 14px;
             border-radius: 6px;
@@ -1007,36 +1256,47 @@
 
             </div>
 
-            <!-- Pending Inquiries Section -->
+            <!-- Pending Inquiries Section - Smart Card Layout -->
             <div class="panel" style="margin-top: 24px;">
                 <div class="panel-header">
                     <h2>Pending Customer Inquiries</h2>
                     <span class="badge" id="inquiryCountBadge">0 inquiries</span>
                 </div>
 
-                <div class="table-responsive">
-                    <table id="inquiriesTable">
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Product</th>
-                                <th>Message</th>
-                                <th>Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inquiriesBody">
-                            <!-- Dynamic rows inserted here -->
-                        </tbody>
-                    </table>
-
-                    <div id="emptyInquiries" class="empty-inventory" style="display: none;">
-                        <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <p>No pending inquiries.</p>
-                        <p style="font-size: 0.8em; color: #cbd5e1;">Customers will contact you here when they have questions!</p>
+                <!-- Filter Bar -->
+                <div class="inquiry-filter-bar">
+                    <div class="filter-group">
+                        <label style="font-weight: 600; font-size: 0.85em; color: #475569; margin-right: 12px;">Status:</label>
+                        <div class="filter-chips">
+                            <button class="filter-chip active" data-filter="status" data-value="all">All</button>
+                            <button class="filter-chip" data-filter="status" data-value="new">🔴 New</button>
+                            <button class="filter-chip" data-filter="status" data-value="awaiting">⏳ Awaiting</button>
+                            <button class="filter-chip" data-filter="status" data-value="responded">✓ Responded</button>
+                        </div>
                     </div>
+                    <div class="filter-group" style="margin-top: 12px;">
+                        <label style="font-weight: 600; font-size: 0.85em; color: #475569; margin-right: 12px;">Type:</label>
+                        <div class="filter-chips">
+                            <button class="filter-chip-type active" data-filter="type" data-value="all">All</button>
+                            <button class="filter-chip-type" data-filter="type" data-value="inquiry">Inquiry</button>
+                            <button class="filter-chip-type" data-filter="type" data-value="feedback">Feedback</button>
+                            <button class="filter-chip-type" data-filter="type" data-value="buyer_followup">Followup</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cards Grid -->
+                <div id="inquiriesCardGrid" class="inquiry-cards-grid">
+                    <!-- Dynamic cards inserted here -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyInquiries" class="empty-inventory" style="display: none;">
+                    <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p>No pending inquiries.</p>
+                    <p style="font-size: 0.8em; color: #cbd5e1;">Customers will contact you here when they have questions!</p>
                 </div>
             </div>
             </div>
@@ -1450,6 +1710,9 @@
 
         let currentInquiry = null;
 
+        let currentStatusFilter = 'all';
+        let currentTypeFilter = 'all';
+
         async function loadPendingInquiries() {
             if (!currentVendor) return;
 
@@ -1461,7 +1724,7 @@
                     .eq('vendor_id', currentVendor.id);
 
                 if (!vendorProducts || vendorProducts.length === 0) {
-                    document.getElementById('inquiriesTable').style.display = 'none';
+                    document.getElementById('inquiriesCardGrid').innerHTML = '';
                     document.getElementById('emptyInquiries').style.display = 'block';
                     document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
                     return;
@@ -1511,64 +1774,165 @@
                     }
                 }
 
-                // Check for vendor responses to filter out responded inquiries
-                let respondedInquiries = new Set();
+                // Check for vendor responses to determine status
+                let responseMap = {};
                 if (inquiries && inquiries.length > 0) {
                     const { data: responses } = await sbClient
                         .from('inquiries')
-                        .select('id')
+                        .select('parent_id, created_at')
                         .in('product_id', productIds)
                         .eq('message_type', 'vendor_response')
                         .eq('sender_type', 'vendor');
 
-                    // For now, we'll mark all vendor responses as "responded"
-                    // In a real system, we'd track which inquiry each response is for
                     if (responses) {
                         responses.forEach(resp => {
-                            respondedInquiries.add(resp.product_id);
+                            responseMap[resp.parent_id] = resp;
                         });
                     }
                 }
 
                 if (!inquiries || inquiries.length === 0) {
-                    document.getElementById('inquiriesTable').style.display = 'none';
+                    document.getElementById('inquiriesCardGrid').innerHTML = '';
                     document.getElementById('emptyInquiries').style.display = 'block';
                     document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
                     return;
                 }
 
-                document.getElementById('inquiriesTable').style.display = 'table';
                 document.getElementById('emptyInquiries').style.display = 'none';
                 document.getElementById('inquiryCountBadge').textContent = `${inquiries.length} inquir${inquiries.length === 1 ? 'y' : 'ies'}`;
 
-                const inquiriesBody = document.getElementById('inquiriesBody');
-                inquiriesBody.innerHTML = '';
+                const cardGrid = document.getElementById('inquiriesCardGrid');
+                cardGrid.innerHTML = '';
 
                 inquiries.forEach(inq => {
                     const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A' };
                     const product = productMap[inq.product_id] || { product_name: 'Unknown' };
-                    const timestamp = new Date(inq.created_at).toLocaleDateString();
-                    const hasResponse = respondedInquiries.has(inq.product_id);
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${escapeHtml(buyer.full_name)}</strong><br><small style="color: #64748b;">${escapeHtml(buyer.email)}</small></td>
-                        <td>${escapeHtml(product.product_name)}</td>
-                        <td><small style="max-height: 40px; overflow: hidden; display: block;">${escapeHtml(inq.message || '[No message]')}</small></td>
-                        <td><small>${timestamp}</small></td>
-                        <td>
-                            ${hasResponse
-                                ? '<span style="color: #15803d; font-weight: 600;">✓ Responded</span>'
-                                : `<button class="btn-action btn-edit" onclick="openResponseModal('${inq.id}')">Respond</button>`
+                    // Determine status
+                    let status = 'new';
+                    if (responseMap[inq.id]) {
+                        status = 'responded';
+                    }
+
+                    // Calculate time waiting
+                    const createdTime = new Date(inq.created_at).getTime();
+                    const now = Date.now();
+                    const diffMs = now - createdTime;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    let timeWaiting = '';
+                    if (diffHours > 0) {
+                        timeWaiting = `${diffHours}h waiting`;
+                    } else {
+                        timeWaiting = `${diffMins}m waiting`;
+                    }
+
+                    // Determine if overdue (>2 hours for new, >6 hours for awaiting)
+                    const isOverdue = (status === 'new' && diffHours >= 2) || (status === 'awaiting' && diffHours >= 6);
+
+                    const card = document.createElement('div');
+                    card.className = 'inquiry-card';
+                    card.innerHTML = `
+                        <div class="inquiry-card-header">
+                            <div class="inquiry-customer-name">${escapeHtml(buyer.full_name)}</div>
+                            <span class="inquiry-status-badge ${status}">${status === 'new' ? '🔴 NEW' : status === 'responded' ? '✓ Responded' : '⏳ AWAITING'}</span>
+                        </div>
+
+                        <div class="inquiry-card-meta">
+                            <div class="inquiry-meta-item">
+                                <span class="inquiry-type-badge ${inq.message_type === 'feedback' ? 'feedback' : inq.message_type === 'buyer_followup' ? 'followup' : ''}">${inq.message_type === 'inquiry' ? 'Inquiry' : inq.message_type === 'feedback' ? 'Feedback' : 'Followup'}</span>
+                            </div>
+                            <div class="inquiry-meta-item" style="margin-left: auto;">
+                                <span style="color: #64748b; font-size: 0.75em;">${escapeHtml(product.product_name)}</span>
+                            </div>
+                        </div>
+
+                        <div class="inquiry-message-preview">${escapeHtml(inq.message || '[No message]')}</div>
+
+                        <div class="inquiry-card-footer">
+                            <span class="inquiry-time-waiting ${isOverdue ? 'overdue' : ''}">${timeWaiting}</span>
+                            ${status === 'responded'
+                                ? '<button class="inquiry-card-action responded">✓ Responded</button>'
+                                : `<button class="inquiry-card-action" onclick="openResponseModal('${inq.id}')">Respond</button>`
                             }
-                        </td>
+                        </div>
                     `;
-                    inquiriesBody.appendChild(tr);
+
+                    cardGrid.appendChild(card);
                 });
+
+                // Attach filter event listeners
+                attachFilterListeners();
             } catch (err) {
                 console.error('Error loading inquiries:', err);
-                document.getElementById('inquiriesTable').style.display = 'none';
+                document.getElementById('inquiriesCardGrid').innerHTML = '';
                 document.getElementById('emptyInquiries').style.display = 'block';
+            }
+        }
+
+        function attachFilterListeners() {
+            // Status filter chips
+            document.querySelectorAll('[data-filter="status"]').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    document.querySelectorAll('[data-filter="status"]').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentStatusFilter = this.dataset.value;
+                    applyCardFilters();
+                });
+            });
+
+            // Type filter chips
+            document.querySelectorAll('[data-filter="type"]').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    document.querySelectorAll('[data-filter="type"]').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentTypeFilter = this.dataset.value;
+                    applyCardFilters();
+                });
+            });
+        }
+
+        function applyCardFilters() {
+            const cards = document.querySelectorAll('.inquiry-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                let showCard = true;
+
+                // Check status filter
+                if (currentStatusFilter !== 'all') {
+                    const statusBadge = card.querySelector('.inquiry-status-badge');
+                    const cardStatus = statusBadge.textContent.toLowerCase().includes('responded') ? 'responded' :
+                                      statusBadge.textContent.includes('🔴') ? 'new' : 'awaiting';
+                    if (cardStatus !== currentStatusFilter) {
+                        showCard = false;
+                    }
+                }
+
+                // Check type filter
+                if (currentTypeFilter !== 'all' && showCard) {
+                    const typeText = card.querySelector('.inquiry-type-badge').textContent.toLowerCase();
+                    if (!typeText.includes(currentTypeFilter)) {
+                        showCard = false;
+                    }
+                }
+
+                card.style.display = showCard ? 'flex' : 'none';
+                if (showCard) visibleCount++;
+            });
+
+            // Show empty message if no cards visible
+            if (visibleCount === 0) {
+                const grid = document.getElementById('inquiriesCardGrid');
+                if (!grid.querySelector('.empty-filter-message')) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'empty-filter-message';
+                    emptyMsg.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8;';
+                    emptyMsg.innerHTML = '<p>No inquiries match your filter.</p>';
+                    grid.appendChild(emptyMsg);
+                }
+            } else {
+                document.querySelector('.empty-filter-message')?.remove();
             }
         }
 
