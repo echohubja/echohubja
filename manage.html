@@ -1355,7 +1355,6 @@
                     .select('*')
                     .in('product_id', productIds)
                     .eq('message_type', 'inquiry')
-                    .eq('sender_type', 'buyer')
                     .order('created_at', { ascending: false });
 
                 // Fetch buyer details
@@ -1398,8 +1397,7 @@
                         .from('inquiries')
                         .select('id')
                         .in('product_id', productIds)
-                        .eq('message_type', 'vendor_response')
-                        .eq('sender_type', 'vendor');
+                        .eq('message_type', 'vendor_response');
 
                     // For now, we'll mark all vendor responses as "responded"
                     // In a real system, we'd track which inquiry each response is for
@@ -1461,6 +1459,7 @@
                 // Fetch inquiry details from database
                 const { data: inquiry, error: inquiryError } = await sbClient.from('inquiries').select('*').eq('id', id).single();
                 console.log('Query result:', { inquiry, inquiryError });
+
                 if (!inquiry) {
                     console.error('Inquiry not found for id:', id);
                     alert('Inquiry not found: ' + id);
@@ -1507,12 +1506,11 @@
 
             try {
                 const { error } = await sbClient.from('inquiries').insert([{
-                    product_id: parseInt(currentInquiry.id.split('-')[0]),
-                    buyer_id: null,
+                    product_id: currentInquiry.product_id,
+                    buyer_id: currentInquiry.buyer_id,
+                    vendor_id: currentVendor.id,
                     message: responseText,
                     message_type: 'vendor_response',
-                    sender_type: 'vendor',
-                    sender_id: currentVendor.id,
                     created_at: new Date().toISOString()
                 }]);
 
