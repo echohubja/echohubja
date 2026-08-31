@@ -125,28 +125,217 @@
             color: #1e293b;
         }
 
-        /* Management Grid (Two Columns) */
-        .portal-grid {
+        /* Metrics Grid (Three Columns) */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 24px;
-            align-items: start;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
-        @media (max-width: 992px) {
-            .portal-grid {
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* Earnings Drawer (Left Sidebar) */
-        .earnings-drawer {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+        .metric-card {
+            background: white;
+            border: 1px solid #e1e8ed;
             border-radius: 12px;
-            padding: 24px;
-            color: white;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 15px rgba(30, 90, 168, 0.15);
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .metric-card:hover {
+            border-color: #1e5aa8;
+            box-shadow: 0 4px 16px rgba(30, 90, 168, 0.08);
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1e5aa8;
+            margin-bottom: 6px;
+        }
+
+        .metric-subtext {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        .metric-status {
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .metric-status.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .metric-status.warning {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .metric-status.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Main Content Grid (Inventory Priority 70/30) */
+        .main-content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            align-items: start;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content-grid {
+                grid-template-columns: 1.5fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Collapsible Sections */
+        .collapsible-section {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            cursor: pointer;
+            background: #f8fafc;
+            border-bottom: 1px solid #e1e8ed;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .collapsible-header:hover {
+            background: #f1f5f9;
+        }
+
+        .collapsible-header h3 {
+            font-size: 1em;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .collapsible-icon {
+            font-size: 1.2em;
+            transition: transform 0.2s;
+            color: #1e5aa8;
+        }
+
+        .collapsible-section.open .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-section.open .collapsible-content {
+            max-height: 2000px;
+            transition: max-height 0.4s ease-in;
+        }
+
+        .collapsible-body {
+            padding: 20px;
+        }
+
+        /* Commission Sidebar */
+        .commission-sidebar {
+            background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+            border: 2px solid #dbeafe;
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 16px;
+        }
+
+        .sidebar-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .sidebar-label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .sidebar-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #1e5aa8;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-subtext {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        /* Earnings Drawer (Compact Header) */
+        .earnings-drawer {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            display: none;
         }
 
         .earnings-drawer h3 {
@@ -545,103 +734,170 @@
                 </div>
             </div>
 
-            <!-- Commission Payable Drawer Section -->
-            <div class="earnings-drawer">
-                <h3>💳 Commission Payable</h3>
-
-                <div class="balance-card">
-                    <div class="balance-label">Total Commission Due</div>
-                    <div class="balance-amount" id="earnings-balance">$0.00</div>
-                    <div class="threshold-info">
-                        Threshold: $<span id="earnings-threshold">0.00</span>
-                    </div>
+            <!-- Metrics Grid (3 Cards) -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">💳 Commission Due</div>
+                    <div class="metric-value" id="metrics-commission-due">$0.00</div>
+                    <div class="metric-subtext" id="metrics-commission-subtext">Total accumulated balance</div>
                 </div>
-
-                <div class="progress-container">
-                    <div class="progress-label">
-                        <span>Threshold Progress</span>
-                        <span id="earnings-percent">0%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="earnings-progress" style="width: 0%"></div>
-                    </div>
+                <div class="metric-card">
+                    <div class="metric-label">📊 Threshold</div>
+                    <div class="metric-value" id="metrics-threshold">$0.00</div>
+                    <div class="metric-subtext" id="metrics-threshold-subtext">Payout trigger amount</div>
                 </div>
-
-                <button id="payout-btn" class="payout-btn" onclick="initiatePayoutProcess()" disabled>
-                    💳 Pay Commission Due
-                </button>
+                <div class="metric-card">
+                    <div class="metric-label">⚡ Progress to Payout</div>
+                    <div class="metric-value" id="metrics-percent">0%</div>
+                    <div id="metrics-status" class="metric-status active">Ready to Review</div>
+                </div>
             </div>
 
-            <!-- Commission Settings Section -->
-            <div class="earnings-history">
-                <div class="panel-header">
-                    <h2>Commission Settings</h2>
-                    <span class="badge" id="commission-status">View/Update</span>
+            <!-- Main Content Grid (Inventory 70% | Commission Sidebar 30%) -->
+            <div class="main-content-grid">
+                <!-- LEFT: Inventory Management (Priority) -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>📦 Your Product Inventory</h2>
+                        <span class="badge" id="itemCountBadge">0 items</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryBody">
+                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #94a3b8;">Loading inventory...</td></tr>
+                            </tbody>
+                        </table>
+                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
+                            <p>No products listed yet. Create your first product using the form below.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 8px; display: block;">Commission Per Feedback ($)</label>
-                        <div style="display: flex; gap: 10px; align-items: end;">
-                            <div style="flex: 1;">
-                                <input type="number" id="commission-amount" step="0.01" min="0" placeholder="e.g., 5.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
+                <!-- RIGHT: Commission Sidebar -->
+                <div class="commission-sidebar">
+                    <div class="sidebar-section">
+                        <div class="sidebar-label">Commission Due Now</div>
+                        <div class="sidebar-value" id="sidebar-balance">$0.00</div>
+                        <div class="sidebar-subtext">Waiting for threshold</div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <div class="sidebar-label">Threshold</div>
+                        <div class="sidebar-value" id="sidebar-threshold">$0.00</div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="sidebar-percent">0%</span>
                             </div>
-                            <button onclick="updateCommissionAmount()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
-                                Save
-                            </button>
-                        </div>
-                        <div style="font-size: 0.8em; color: #64748b; margin-top: 8px;">
-                            ℹ️ This is the amount you pay as commission for each verified feedback submission.
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="sidebar-progress" style="width: 0%"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Threshold Change Request Section -->
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;">
-                    <h3 style="font-size: 1.1em; color: #1e5aa8; margin-bottom: 12px; font-weight: 600;">Request Payout Threshold Change</h3>
-
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Current Threshold</label>
-                        <input type="text" id="current-threshold-display" readonly style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Requested Threshold ($)</label>
-                        <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Reason for Change (Optional)</label>
-                        <textarea id="threshold-reason" placeholder="e.g., Business growing faster, want to reduce payout frequency" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; min-height: 80px; resize: vertical;"></textarea>
-                    </div>
-
-                    <div id="threshold-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
-
-                    <button onclick="submitThresholdChangeRequest()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
-                        Submit Request
-                    </button>
-
-                    <div style="font-size: 0.8em; color: #64748b; margin-top: 12px;">
-                        ℹ️ Your threshold change request will be reviewed by the admin. The new threshold will apply to future commissions once approved.
+                    <div class="sidebar-section">
+                        <button id="payout-btn" class="payout-btn" onclick="initiatePayoutProcess()" disabled style="width: 100%;">
+                            💳 Pay Commission Due
+                        </button>
+                        <div style="font-size: 0.75em; color: #94a3b8; margin-top: 8px; text-align: center;">
+                            Enable when threshold reached
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Commission Payable History Section -->
-            <div class="earnings-history">
-                <div class="panel-header">
-                    <h2>Commission Payment History</h2>
-                    <span class="badge" id="earnings-count">0 records</span>
+            <!-- Collapsible Sections Below Main Content -->
+            <!-- Commission Settings Section -->
+            <div class="collapsible-section open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <h3><span class="collapsible-icon">▼</span> ⚙️ Commission Settings</h3>
                 </div>
+                <div class="collapsible-content">
+                    <div class="collapsible-body">
+                        <!-- Update Commission Amount -->
+                        <div style="margin-bottom: 24px;">
+                            <h4 style="font-size: 0.95em; font-weight: 600; color: #1e293b; margin-bottom: 12px;">Update Commission Per Feedback</h4>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                                <div class="form-group">
+                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 8px; display: block;">Commission Amount ($)</label>
+                                    <div style="display: flex; gap: 10px; align-items: end;">
+                                        <div style="flex: 1;">
+                                            <input type="number" id="commission-amount" step="0.01" min="0" placeholder="e.g., 5.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
+                                        </div>
+                                        <button onclick="updateCommissionAmount()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s; white-space: nowrap;">
+                                            Save
+                                        </button>
+                                    </div>
+                                    <div style="font-size: 0.8em; color: #64748b; margin-top: 8px;">
+                                        ℹ️ Amount you pay per verified feedback submission
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="table-responsive">
-                    <table class="earnings-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Feedback ID</th>
-                                <th>Commission Fee (Due)</th>
-                                <th>Status</th>
+                        <!-- Threshold Change Request -->
+                        <div>
+                            <h4 style="font-size: 0.95em; font-weight: 600; color: #1e293b; margin-bottom: 12px;">Request Payout Threshold Change</h4>
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px;">
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Current Threshold</label>
+                                    <input type="text" id="current-threshold-display" readonly style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Requested Threshold ($)</label>
+                                    <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Reason (Optional)</label>
+                                    <textarea id="threshold-reason" placeholder="e.g., Business growing, want less frequent payouts" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; min-height: 70px; resize: vertical;"></textarea>
+                                </div>
+
+                                <div id="threshold-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+
+                                <button onclick="submitThresholdChangeRequest()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
+                                    Submit Request
+                                </button>
+                                <div style="font-size: 0.8em; color: #64748b; margin-top: 10px;">
+                                    ℹ️ Admin will review and approve your threshold change request
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commission Payment History Section -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <h3><span class="collapsible-icon">▼</span> 📋 Commission Payment History</h3>
+                </div>
+                <div class="collapsible-content">
+                    <div class="collapsible-body">
+                        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9em; color: #64748b;"><strong id="earnings-count">0</strong> payment records</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="earnings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Feedback ID</th>
+                                        <th>Commission Fee (Due)</th>
+                                        <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -651,10 +907,13 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="portal-grid">
+            <!-- Product Creation & Management Section -->
+            <div style="margin-top: 28px;">
+            <div class="panel">
 
                 <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
@@ -778,6 +1037,8 @@
                         <p style="font-size: 0.8em; color: #cbd5e1;">Customers will contact you here when they have questions!</p>
                     </div>
                 </div>
+            </div>
+            </div>
             </div>
 
             <!-- Response Modal -->
@@ -1448,6 +1709,12 @@
             document.getElementById('alerts-banner').style.display = 'none';
         }
 
+        // --- COLLAPSIBLE SECTIONS ---
+        function toggleCollapsible(headerElement) {
+            const section = headerElement.parentElement;
+            section.classList.toggle('open');
+        }
+
         // --- COMMISSION SETTINGS FUNCTIONS ---
         async function loadCommissionSettings() {
             try {
@@ -1617,18 +1884,45 @@
                     return;
                 }
 
-                // Update commission payable drawer
+                // Calculate earnings data
                 const accumulated = parseFloat(vendor.accumulated_balance || 0);
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
+                const capped_percent = Math.min(progressPercent, 100);
 
-                document.getElementById('earnings-balance').textContent = `$${accumulated.toFixed(2)}`;
-                document.getElementById('earnings-threshold').textContent = threshold.toFixed(2);
-                document.getElementById('earnings-percent').textContent = `${Math.min(progressPercent, 100)}%`;
+                // Update metrics grid
+                document.getElementById('metrics-commission-due').textContent = `$${accumulated.toFixed(2)}`;
+                document.getElementById('metrics-threshold').textContent = `$${threshold.toFixed(2)}`;
+                document.getElementById('metrics-percent').textContent = `${capped_percent}%`;
 
-                // Update progress bar color based on percentage
-                const progressFill = document.getElementById('earnings-progress');
-                progressFill.style.width = `${Math.min(progressPercent, 100)}%`;
+                const statusElement = document.getElementById('metrics-status');
+                if (accumulated >= threshold) {
+                    statusElement.textContent = '✅ Ready to Payout';
+                    statusElement.className = 'metric-status active';
+                } else if (progressPercent >= 80) {
+                    statusElement.textContent = '⚠️ Nearly Due';
+                    statusElement.className = 'metric-status warning';
+                } else {
+                    statusElement.textContent = '📊 Accumulating';
+                    statusElement.className = 'metric-status active';
+                }
+
+                // Update commission sidebar
+                document.getElementById('sidebar-balance').textContent = `$${accumulated.toFixed(2)}`;
+                document.getElementById('sidebar-threshold').textContent = `$${threshold.toFixed(2)}`;
+                document.getElementById('sidebar-percent').textContent = `${capped_percent}%`;
+
+                const sidebarProgress = document.getElementById('sidebar-progress');
+                sidebarProgress.style.width = `${capped_percent}%`;
+
+                // Update progress bar colors based on status
+                if (capped_percent >= 100) {
+                    sidebarProgress.style.background = '#ef4444';
+                } else if (capped_percent >= 80) {
+                    sidebarProgress.style.background = '#f59e0b';
+                } else {
+                    sidebarProgress.style.background = '#10b981';
+                }
 
                 // Enable payment button if balance >= threshold
                 const payoutBtn = document.getElementById('payout-btn');
