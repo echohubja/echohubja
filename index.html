@@ -117,6 +117,8 @@
             white-space: nowrap;
             transition: all 0.2s ease;
             flex-shrink: 0;
+            pointer-events: auto;
+            touch-action: manipulation;
         }
         .btn-buyer-signout:hover {
             background: rgba(255, 255, 255, 0.25);
@@ -306,7 +308,7 @@
             .header-right { gap: 6px; }
             .buyer-pill { padding: 10px 14px; gap: 10px; }
             .buyer-avatar { width: 32px; height: 32px; font-size: 14px; }
-            .btn-buyer-signout { padding: 8px 14px; font-size: 13px; min-width: 50px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+            .btn-buyer-signout { padding: 8px 14px; font-size: 13px; min-width: 50px; min-height: 44px; display: flex; align-items: center; justify-content: center; pointer-events: auto; touch-action: manipulation; }
             .layout { gap: 12px; padding: 0 8px; margin: 20px auto; }
             .products-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
             .product-box { padding: 10px; overflow: hidden; }
@@ -576,21 +578,42 @@
         }
 
         async function logoutBuyer() {
-            // Clean up subscriptions
-            if (globalBuyerSubscription) {
-                db.removeAllChannels();
-                globalBuyerSubscription = null;
-            }
-            if (inquiriesRealtimeSubscription) {
-                db.removeAllChannels();
-                inquiriesRealtimeSubscription = null;
+            try {
+                console.log('[logoutBuyer] Starting logout process');
+
+                // Clean up subscriptions
+                if (globalBuyerSubscription) {
+                    db.removeAllChannels();
+                    globalBuyerSubscription = null;
+                }
+                if (inquiriesRealtimeSubscription) {
+                    db.removeAllChannels();
+                    inquiriesRealtimeSubscription = null;
+                }
+
+                // Clear localStorage immediately
+                localStorage.removeItem('buyer_id');
+                localStorage.removeItem('buyer_email');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('echo_hub_buyer_email');
+                console.log('[logoutBuyer] LocalStorage cleared');
+
+                // Try to sign out, but don't wait if it takes too long
+                const signOutPromise = db.auth.signOut();
+                const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000));
+                await Promise.race([signOutPromise, timeoutPromise]);
+
+                console.log('[logoutBuyer] Signed out successfully, reloading page');
+            } catch (err) {
+                console.error('[logoutBuyer] Error during logout:', err);
+                // Still proceed with reload even if logout failed
+                console.log('[logoutBuyer] Proceeding to reload despite error');
             }
 
-            await db.auth.signOut();
-            localStorage.removeItem('buyer_id');
-            localStorage.removeItem('buyer_email');
-            localStorage.removeItem('user_email');
-            window.location.reload();
+            // Force reload after a short delay to ensure localStorage changes are applied
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 500);
         }
 
         async function setupPolling(buyerId) {
