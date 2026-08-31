@@ -1201,86 +1201,106 @@
                 const productIds = vendorProducts ? vendorProducts.map(p => p.id) : [];
                 if (productIds.length === 0) return;
 
-                // Create main subscription channel
-                realtimeSubscription = sbClient
-                    .channel('public:vendor-portal')
+                console.log('📋 Vendor product IDs:', productIds);
+
+                // Create SEPARATE subscriptions for each table (more reliable than chaining)
+                const inquiriesChannel = sbClient
+                    .channel(`public:inquiries:${currentVendor.id}`)
                     .on('postgres_changes',
                         {
-                            event: '*',
+                            event: 'INSERT',
                             schema: 'public',
                             table: 'inquiries'
                         },
                         (payload) => {
-                            const record = payload.new || payload.old;
-
-                            // DIAGNOSTIC LOGGING
-                            console.log('🔍 INQUIRY EVENT FIRED:', {
-                                eventType: payload.eventType,
-                                product_id: record?.product_id,
-                                vendor_id: record?.vendor_id,
-                                message_type: record?.message_type,
-                                sender_type: record?.sender_type,
-                                isVendorProduct: record && productIds.includes(record.product_id),
-                                vendorProductIds: productIds
+                            const record = payload.new;
+                            console.log('🔍 NEW INQUIRY RECEIVED:', {
+                                product_id: record.product_id,
+                                message_type: record.message_type,
+                                sender_type: record.sender_type,
+                                isVendorProduct: productIds.includes(record.product_id)
                             });
 
-                            // Only reload if change affects vendor's products
                             if (record && productIds.includes(record.product_id)) {
-                                console.log('✅ Product matches vendor');
-
-                                // For new messages from buyers (inquiry, feedback, followup)
-                                if (payload.eventType === 'INSERT' && ['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
-                                    console.log('💬 New buyer message detected:', record);
+                                if (['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
+                                    console.log('💬 New buyer message detected - RELOADING');
                                     loadPendingInquiries();
                                 }
-                                // For vendor responses or status updates
-                                else if (payload.eventType === 'INSERT' && record.message_type === 'vendor_response') {
-                                    console.log('💬 New vendor response detected:', record);
-                                    loadPendingInquiries();
-                                }
-                                // For inquiry updates
-                                else if (payload.eventType === 'UPDATE') {
-                                    console.log('💬 Inquiry updated:', record);
-                                    loadPendingInquiries();
-                                }
-                            } else {
-                                console.log('❌ No match - product_id not in vendor list or record missing');
                             }
                         }
                     )
                     .on('postgres_changes',
                         {
-                            event: '*',
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'inquiries'
+                        },
+                        (payload) => {
+                            const record = payload.new;
+                            if (record && productIds.includes(record.product_id)) {
+                                console.log('🔄 Inquiry updated - RELOADING');
+                                loadPendingInquiries();
+                            }
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Inquiries channel SUBSCRIBED');
+                        } else {
+                            console.log('⚠️ Inquiries channel status:', status);
+                        }
+                    });
+
+                const vendorsChannel = sbClient
+                    .channel(`public:vendors:${currentVendor.id}`)
+                    .on('postgres_changes',
+                        {
+                            event: 'UPDATE',
                             schema: 'public',
                             table: 'vendors',
                             filter: `id=eq.${currentVendor.id}`
                         },
                         (payload) => {
-                            const record = payload.new || payload.old;
-                            if (record && record.id === currentVendor.id) {
-                                // Update current vendor data
+                            const record = payload.new;
+                            if (record) {
                                 currentVendor = record;
-                                console.log('💰 Vendor profile updated (commission/balance):', record);
+                                console.log('💰 Vendor data updated - RELOADING');
                                 loadCommissionSettings();
                                 loadEarningsData();
                             }
                         }
                     )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Vendors channel SUBSCRIBED');
+                        }
+                    });
+
+                const alertsChannel = sbClient
+                    .channel(`public:alerts:${currentVendor.id}`)
                     .on('postgres_changes',
                         {
-                            event: '*',
+                            event: 'INSERT',
                             schema: 'public',
                             table: 'alerts',
                             filter: `vendor_id=eq.${currentVendor.id}`
                         },
                         (payload) => {
-                            const record = payload.new || payload.old;
-                            if (record && record.vendor_id === currentVendor.id) {
-                                console.log('⚠️ Alert received:', record);
+                            const record = payload.new;
+                            if (record) {
+                                console.log('⚠️ New alert - RELOADING');
                                 loadVendorAlerts();
                             }
                         }
                     )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Alerts channel SUBSCRIBED');
+                        }
+                    });
+
+                const productsChannel = sbClient
+                    .channel(`public:products:${currentVendor.id}`)
                     .on('postgres_changes',
                         {
                             event: '*',
@@ -1290,25 +1310,23 @@
                         },
                         (payload) => {
                             const record = payload.new || payload.old;
-                            if (record && record.vendor_id === currentVendor.id) {
-                                console.log('📦 Product updated (price/inventory):', record);
+                            if (record) {
+                                console.log('📦 Product updated - RELOADING');
                                 loadVendorProducts();
                             }
                         }
                     )
-                    .subscribe((status, err) => {
+                    .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
-                            console.log('✅ REALTIME CONNECTION ESTABLISHED');
-                        } else if (status === 'CLOSED') {
-                            console.log('❌ REALTIME CONNECTION CLOSED');
-                        } else if (status === 'CHANNEL_ERROR') {
-                            console.error('❌ REALTIME CHANNEL ERROR:', err);
-                        } else {
-                            console.log('🔄 Subscription status:', status, err);
+                            console.log('✅ Products channel SUBSCRIBED');
                         }
                     });
 
+                // Store primary subscription reference
+                realtimeSubscription = inquiriesChannel;
+
                 console.log('🔔 Global real-time subscriptions set up for vendor:', currentVendor.id);
+                console.log('✅ REALTIME CONNECTION ESTABLISHED');
             } catch (err) {
                 console.error('Error setting up real-time subscriptions:', err);
             }
