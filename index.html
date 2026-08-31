@@ -737,6 +737,31 @@
                     }
                 }
 
+                // Fetch buyer names for all inquiries
+                let buyerMap = {};
+                const buyerIds = [
+                    ...new Set(
+                        inquiries
+                            .map(item => item.buyer_id)
+                            .filter(id => id)
+                    )
+                ];
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await db
+                        .from('buyers')
+                        .select('id, full_name, email')
+                        .in('id', buyerIds);
+
+                    if (buyers) {
+                        buyers.forEach(buyer => {
+                            buyerMap[buyer.id] = {
+                                full_name: `${buyer.full_name || 'Unknown Buyer'}`,
+                                email: buyer.email || ''
+                            };
+                        });
+                    }
+                }
+
                 const grouped = {};
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
@@ -858,6 +883,10 @@
                                 timeZoneName: 'short'
                             });
 
+                            // Get buyer name for easy reference
+                            const buyerName = buyerMap[item.buyer_id]?.full_name || 'Unknown Buyer';
+                            const buyerEmail = buyerMap[item.buyer_id]?.email || '';
+
                             // Determine message type and color - CHECK DATABASE FIELD FIRST
                             let messageType = 'Initial Inquiry';
                             let badgeColor = '#2563eb';
@@ -897,7 +926,11 @@
                             html += `
                                 <div style="background: #f8fafc; border-left: 4px solid ${messageBorderColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7;">
-                                        <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
+                                            <span style="font-size: 10px; color: #4a5568; font-weight: 600;">${buyerName}</span>
+                                            ${buyerEmail ? `<span style="font-size: 9px; color: #718096; font-style: italic;">${buyerEmail}</span>` : ''}
+                                        </div>
                                         <span style="font-size: 10px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
 
@@ -996,21 +1029,32 @@
                 const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
                 const filePath = `feedback/${fileName}`;
 
+                console.log('📸 Uploading feedback image:', { fileName, filePath, fileSize: file.size });
+
                 const { error: uploadError } = await db.storage
                     .from('product-images')
                     .upload(filePath, file);
 
                 if (uploadError) {
-                    console.error('Error uploading feedback image:', uploadError.message);
-                    alert('Failed to upload feedback image.');
+                    console.error('❌ Error uploading feedback image:', uploadError);
+                    alert(`Failed to upload feedback image: ${uploadError.message}`);
                     return;
                 }
+
+                console.log('✅ Image uploaded successfully');
 
                 const { data: publicUrlData } = db.storage
                     .from('product-images')
                     .getPublicUrl(filePath);
 
                 imageUrl = publicUrlData.publicUrl;
+                console.log('🖼️ Public URL generated:', imageUrl);
+
+                if (!imageUrl) {
+                    console.error('❌ Failed to generate public URL');
+                    alert('Failed to generate image URL.');
+                    return;
+                }
             }
 
             // Get vendor_id from product (not from pKey which might be 'Echo Hub')
