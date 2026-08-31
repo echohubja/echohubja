@@ -381,6 +381,7 @@
         let globalInquiriesData = [];
         let productMap = {};
         let vendorMap = {};
+        let adminRealtimeSubscription = null;
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -390,6 +391,7 @@
                 loadBuyersPortal();
                 loadInquiriesPortal();
                 loadCommissionsPortal();
+                await setupRealtimeSubscriptions();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -409,6 +411,117 @@
             if (tabName === 'buyers') loadBuyersPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
+        }
+
+        async function setupRealtimeSubscriptions() {
+            if (!db) return;
+
+            // Cleanup existing subscription
+            if (adminRealtimeSubscription) {
+                db.removeAllChannels();
+                adminRealtimeSubscription = null;
+            }
+
+            try {
+                // Create main subscription channel for admin portal
+                adminRealtimeSubscription = db
+                    .channel('public:admin-portal')
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'inquiries'
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+
+                            // For new feedback submissions
+                            if (payload.eventType === 'INSERT' && record.message_type === 'feedback') {
+                                console.log('📬 New feedback submitted:', record);
+                                loadInquiriesPortal();
+                            }
+                            // For status updates (verified, rejected, flagged)
+                            else if (payload.eventType === 'UPDATE' && ['verified', 'rejected', 'flagged', 'pending'].includes(record.status)) {
+                                console.log('✅ Inquiry status updated:', record);
+                                loadInquiriesPortal();
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'vendors'
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            // Update on commission or balance changes
+                            if (payload.eventType === 'UPDATE' && (record.commission || record.accumulated_balance || record.commission_threshold)) {
+                                console.log('💳 Vendor commission/balance updated:', record);
+                                loadVendorCommissionSettings();
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'threshold_change_requests'
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            // New threshold change request
+                            if (payload.eventType === 'INSERT') {
+                                console.log('📊 New threshold change request:', record);
+                                loadThresholdChangeRequests();
+                            }
+                            // Request status update
+                            else if (payload.eventType === 'UPDATE') {
+                                console.log('📊 Threshold request updated:', record);
+                                loadThresholdChangeRequests();
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'alerts',
+                            filter: `recipient_type=eq.admin`
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            if (record && record.recipient_type === 'admin') {
+                                console.log('⚠️ Admin alert received:', record);
+                                // Show toast notification for critical alerts
+                                if (record.alert_type && ['commission_threshold', 'suspicious_activity', 'system_error'].includes(record.alert_type)) {
+                                    showAdminAlert(record);
+                                }
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                console.log('🔔 Global real-time subscriptions set up for admin portal');
+            } catch (err) {
+                console.error('Error setting up real-time subscriptions:', err);
+            }
+        }
+
+        function showAdminAlert(alert) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #ef4444; color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; max-width: 350px; animation: slideIn 0.3s ease-out;';
+            toast.innerHTML = `
+                <div style="font-weight: 700; margin-bottom: 4px;">${alert.title || 'Admin Alert'}</div>
+                <div style="font-size: 13px; opacity: 0.95;">${alert.message || 'An alert requires your attention.'}</div>
+            `;
+            document.body.appendChild(toast);
+
+            // Auto-dismiss after 8 seconds
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 8000);
         }
 
         // --- TAB 1: BUYERS ---
