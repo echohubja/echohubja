@@ -699,6 +699,28 @@
             border-left-color: #1e5aa8;
         }
 
+        .inquiry-thread.vendor-approved {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+            animation: pulse-green 2s infinite;
+        }
+
+        .inquiry-thread.both-approved {
+            background: #fef9e7;
+            border-left-color: #eab308;
+            animation: pulse-gold 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { background: #f0fdf4; }
+            50% { background: #ecfdf5; }
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { background: #fef9e7; }
+            50% { background: #fef3c7; }
+        }
+
         .inquiry-thread.expanded {
             background: #f8fafc;
         }
@@ -835,6 +857,75 @@
             font-size: 0.75em;
             color: #94a3b8;
             margin-top: 6px;
+        }
+
+        .inquiry-feedback-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-right: 8px;
+        }
+
+        .inquiry-feedback-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .inquiry-feedback-status.verified {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inquiry-feedback-status.rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .inquiry-feedback-status.flagged {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .inquiry-approval-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .inquiry-approve-btn, .inquiry-reject-btn {
+            padding: 6px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #475569;
+        }
+
+        .inquiry-approve-btn:hover {
+            background: #dcfce7;
+            border-color: #15803d;
+            color: #15803d;
+        }
+
+        .inquiry-reject-btn:hover {
+            background: #fee2e2;
+            border-color: #991b1b;
+            color: #991b1b;
+        }
+
+        .inquiry-approve-btn.approved, .inquiry-reject-btn.rejected {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: default;
         }
 
         .inquiry-thread-actions {
@@ -1210,6 +1301,14 @@
                 <div class="panel-header">
                     <h2>Pending Customer Inquiries</h2>
                     <span class="badge" id="inquiryCountBadge">0 inquiries</span>
+                </div>
+
+                <!-- Product Filter Dropdown -->
+                <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
+                    <label for="productFilter" style="font-weight: 600; color: #475569; font-size: 0.9em;">Filter by Product:</label>
+                    <select id="productFilter" style="padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; background: white; color: #1e293b; font-size: 0.9em; cursor: pointer;">
+                        <option value="">All Products</option>
+                    </select>
                 </div>
 
                 <!-- Inbox-Style Thread List -->
@@ -1731,6 +1830,18 @@
                 const threadList = document.getElementById('inquiriesThreadList');
                 threadList.innerHTML = '';
 
+                // Populate product filter dropdown
+                const productFilterSelect = document.getElementById('productFilter');
+                const existingOptions = Array.from(productFilterSelect.options).map(opt => opt.value);
+                Object.values(productMap).forEach(product => {
+                    if (!existingOptions.includes(product.id)) {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = product.product_name;
+                        productFilterSelect.appendChild(option);
+                    }
+                });
+
                 // Render each thread
                 Object.values(threads).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime)).forEach(thread => {
                     const lastMsg = thread.messages[thread.messages.length - 1];
@@ -1748,8 +1859,25 @@
                         typeClass = 'followup';
                     }
 
+                    // Get all products in this thread
+                    const threadProductIds = [...new Set(thread.messages.map(m => m.product_id).filter(Boolean))];
+
+                    // Check for vendor and admin feedback actions
+                    const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
+                    const vendorApprovedFeedback = feedbackMessages.filter(m => m.vendor_status === 'approved');
+                    const adminVerifiedFeedback = feedbackMessages.filter(m => m.status === 'verified');
+                    const bothApprovedFeedback = feedbackMessages.filter(m => m.vendor_status === 'approved' && m.status === 'verified');
+                    const hasAdminAction = adminVerifiedFeedback.length > 0 || vendorApprovedFeedback.length > 0;
+
                     const threadEl = document.createElement('div');
-                    threadEl.className = 'inquiry-thread';
+                    let threadClass = 'inquiry-thread';
+                    if (bothApprovedFeedback.length > 0) {
+                        threadClass += ' both-approved'; // Golden highlight - commission eligible
+                    } else if (vendorApprovedFeedback.length > 0) {
+                        threadClass += ' vendor-approved'; // Green highlight - waiting for admin
+                    }
+                    threadEl.className = threadClass;
+                    threadEl.dataset.productIds = threadProductIds.join(',');
                     threadEl.innerHTML = `
                         <div class="inquiry-thread-header">
                             <div class="inquiry-thread-avatar">${buyerInitials}</div>
@@ -1759,6 +1887,8 @@
                             </div>
                             <div class="inquiry-thread-meta">
                                 <span class="inquiry-thread-type ${typeClass}">${typeIcon}</span>
+                                ${vendorApprovedFeedback.length > 0 ? `<span style="font-size: 0.7em; padding: 2px 6px; background: #dcfce7; color: #166534; border-radius: 8px; font-weight: 600; white-space: nowrap;">You: ✅</span>` : ''}
+                                ${adminVerifiedFeedback.length > 0 ? `<span style="font-size: 0.7em; padding: 2px 6px; background: #d1e7f5; color: #0c4a6e; border-radius: 8px; font-weight: 600; white-space: nowrap;">Admin: ✅</span>` : ''}
                                 <span class="inquiry-thread-time">${formatThreadTime(lastMsg.created_at)}</span>
                                 <span class="inquiry-thread-expand">▼</span>
                             </div>
@@ -1767,11 +1897,41 @@
                             ${thread.messages.map(msg => {
                                 const isBuyer = msg.sender_type === 'buyer';
                                 const product = productMap[msg.product_id];
+                                const isFeedback = msg.message_type === 'feedback';
+                                const imageUrl = msg.image_url_1 || msg.image_url_2;
+
+                                // Vendor status (vendor_status field)
+                                const vendorStatusIcon = msg.vendor_status === 'approved' ? '✅' : msg.vendor_status === 'rejected' ? '❌' : '📋';
+
+                                // Admin status (status field)
+                                const adminStatusIcon = msg.status === 'verified' ? '✅' : msg.status === 'rejected' ? '❌' : msg.status === 'flagged' ? '🚩' : '';
+
                                 return `
                                     <div class="inquiry-message ${isBuyer ? 'buyer' : 'vendor'}">
                                         <div class="inquiry-message-sender">${isBuyer ? thread.buyer.full_name : 'You'} - ${msg.message_type.replace('_', ' ').toUpperCase()}</div>
                                         ${product ? `<div style="font-size: 0.8em; color: #64748b; margin-bottom: 6px;">📦 ${escapeHtml(product.product_name)}</div>` : ''}
                                         <div class="inquiry-message-text">${escapeHtml(msg.message || '[No message]')}</div>
+
+                                        ${isFeedback ? `
+                                            <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                                <span class="inquiry-feedback-status ${msg.vendor_status || 'pending'}" style="background: ${msg.vendor_status === 'approved' ? '#dcfce7' : msg.vendor_status === 'rejected' ? '#fee2e2' : '#fef3c7'}; color: ${msg.vendor_status === 'approved' ? '#166534' : msg.vendor_status === 'rejected' ? '#991b1b' : '#92400e'};">
+                                                    ${vendorStatusIcon} You: ${(msg.vendor_status || 'pending').toUpperCase()}
+                                                </span>
+                                                ${msg.status ? `<span class="inquiry-feedback-status ${msg.status}" style="background: ${msg.status === 'verified' ? '#dcfce7' : '#fee2e2'}; color: ${msg.status === 'verified' ? '#166534' : '#991b1b'};">
+                                                    ${adminStatusIcon} Admin: ${msg.status.toUpperCase()}
+                                                </span>` : ''}
+                                            </div>
+                                        ` : ''}
+
+                                        ${isFeedback && imageUrl ? `<div style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 6px; font-size: 0.85em;"><strong>📸 Feedback Image:</strong><br><a href="${escapeHtml(imageUrl)}" target="_blank" style="color: #1e5aa8; word-break: break-all;">${escapeHtml(imageUrl)}</a></div>` : ''}
+
+                                        ${isFeedback && !msg.vendor_status ? `
+                                            <div class="inquiry-approval-buttons">
+                                                <button class="inquiry-approve-btn" onclick="approveVendorFeedback('${msg.id}')">👍 Approve</button>
+                                                <button class="inquiry-reject-btn" onclick="rejectVendorFeedback('${msg.id}')">👎 Reject</button>
+                                            </div>
+                                        ` : ''}
+
                                         <div class="inquiry-message-time">${new Date(msg.created_at).toLocaleString()}</div>
                                     </div>
                                 `;
@@ -1793,6 +1953,27 @@
 
                     threadList.appendChild(threadEl);
                 });
+
+                // Add product filter change listener
+                productFilterSelect.addEventListener('change', (e) => {
+                    const selectedProductId = e.target.value;
+                    const allThreads = document.querySelectorAll('.inquiry-thread');
+                    let visibleCount = 0;
+
+                    allThreads.forEach(thread => {
+                        const threadProductIds = thread.dataset.productIds.split(',');
+                        const shouldShow = !selectedProductId || threadProductIds.includes(selectedProductId);
+                        thread.style.display = shouldShow ? 'block' : 'none';
+                        if (shouldShow) visibleCount++;
+                    });
+
+                    // Show/hide empty state
+                    if (visibleCount === 0 && allThreads.length > 0) {
+                        document.getElementById('emptyInquiries').style.display = 'block';
+                    } else if (visibleCount > 0) {
+                        document.getElementById('emptyInquiries').style.display = 'none';
+                    }
+                });
             } catch (err) {
                 console.error('Error loading inquiries:', err);
                 document.getElementById('inquiriesThreadList').innerHTML = '';
@@ -1813,6 +1994,52 @@
             if (diffHours < 24) return `${diffHours}h ago`;
             return `${diffDays}d ago`;
         }
+
+        window.approveVendorFeedback = async function(inquiryId) {
+            if (!currentVendor) return;
+
+            try {
+                const { error } = await sbClient
+                    .from('inquiries')
+                    .update({ vendor_status: 'approved' })
+                    .eq('id', inquiryId);
+
+                if (error) {
+                    console.error('Error approving feedback:', error);
+                    alert('Failed to approve feedback');
+                    return;
+                }
+
+                console.log('📋 Feedback approved by vendor:', inquiryId);
+                loadPendingInquiries(); // Refresh to show updated status
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Error approving feedback');
+            }
+        };
+
+        window.rejectVendorFeedback = async function(inquiryId) {
+            if (!currentVendor) return;
+
+            try {
+                const { error } = await sbClient
+                    .from('inquiries')
+                    .update({ vendor_status: 'rejected' })
+                    .eq('id', inquiryId);
+
+                if (error) {
+                    console.error('Error rejecting feedback:', error);
+                    alert('Failed to reject feedback');
+                    return;
+                }
+
+                console.log('📋 Feedback rejected by vendor:', inquiryId);
+                loadPendingInquiries(); // Refresh to show updated status
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Error rejecting feedback');
+            }
+        };
 
         window.openResponseModal = async function(inquiryId) {
             try {
