@@ -481,26 +481,16 @@
 
             try {
                 // Fetch all inquiries (includes pending conversations and feedback submissions)
-                console.log('🔍 Fetching all inquiries...');
                 const { data: inquiries, error: inqError } = await db
                     .from('inquiries')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (inqError) {
-                    console.error('❌ Inquiry fetch error:', inqError);
+                    console.error('Inquiry fetch error:', inqError);
                     container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
                     return;
                 }
-
-                console.log('✅ Inquiries fetched:', inquiries?.length || 0);
-
-                // Log feedback records specifically
-                const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
-                console.log('📸 Feedback submissions found:', feedbackRecords.length);
-                feedbackRecords.forEach((f, idx) => {
-                    console.log(`  [${idx + 1}] ID: ${f.id}, image_url: ${f.image_url ? '✅ Set' : '❌ NULL'}`);
-                });
 
                 if (!inquiries || inquiries.length === 0) {
                     container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found yet.</div>`;
@@ -532,7 +522,6 @@
 
                 // Fetch product data
                 let productMap = {};
-                let vendorMap = {};
                 console.log('📦 productIds extracted:', productIds);
                 if (productIds.length > 0) {
                     try {
@@ -552,29 +541,6 @@
                             console.warn('📦 No products returned from database');
                         }
                         console.log('📦 Final productMap:', productMap);
-
-                        // Fetch vendor names for all unique vendor IDs from products
-                        const vendorIds = [...new Set(products?.map(p => p.vendor_id).filter(Boolean) || [])];
-                        console.log('🏢 vendorIds extracted:', vendorIds);
-
-                        if (vendorIds.length > 0) {
-                            try {
-                                const { data: vendors } = await db
-                                    .from('vendors')
-                                    .select('id, first_name, last_name')
-                                    .in('id', vendorIds);
-
-                                if (vendors) {
-                                    vendors.forEach(vendor => {
-                                        vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
-                                        console.log(`🏢 Added vendor to map: ${vendor.id} => ${vendorMap[vendor.id]}`);
-                                    });
-                                }
-                                console.log('🏢 Final vendorMap:', vendorMap);
-                            } catch (e) {
-                                console.error('Vendor fetch error:', e);
-                            }
-                        }
                     } catch (e) {
                         console.error('Product fetch error:', e);
                     }
@@ -772,15 +738,8 @@
                 messages.forEach(msg => {
                     const prodId = msg.product_id || 'unknown';
                     if (!groupedByProduct[prodId]) {
-                        const baseProduct = msg.products || productMap[prodId] || { id: prodId, product_name: `Product ${prodId}` };
-                        const vendorId = baseProduct.vendor_id;
-                        const vendorName = vendorId ? vendorMap[vendorId] || 'Unknown Vendor' : 'N/A';
-
                         groupedByProduct[prodId] = {
-                            product: {
-                                ...baseProduct,
-                                vendor_name: vendorName
-                            },
+                            product: msg.products || { id: prodId, product_name: `Product ${prodId}` },
                             productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
                             messages: []
                         };
@@ -792,10 +751,6 @@
                 for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
                     const prodName = prodData.product?.product_name || `Product ${prodId}`;
                     const prodImage = prodData.productImage;
-
-                    // Get vendor info from product
-                    const vendorName = prodData.product?.vendor_name || 'Unknown Vendor';
-                    const vendorId = prodData.product?.vendor_id || 'N/A';
 
                     html += `
                         <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
@@ -809,8 +764,6 @@
                                 <div class="flex-1">
                                     <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
                                     <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
-                                    <div class="text-sm text-yellow-100 mt-2 font-semibold">🏢 Vendor: ${escapeHtml(vendorName)}</div>
-                                    <div class="text-xs text-blue-100 mt-0.5">ID: <span class="font-mono">${escapeHtml(vendorId)}</span></div>
                                     <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
                                 </div>
                             </div>
