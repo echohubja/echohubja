@@ -672,293 +672,566 @@
             background: #cbd5e1;
         }
 
-        /* Inbox-Style Thread List */
+        /* ==================== OPTION 2B PHASE 1 STYLES ==================== */
+
+        /* Folder Navigation Tabs */
+        .inquiry-folder-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            overflow-x: auto;
+        }
+
+        .folder-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .folder-tab:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .folder-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .folder-icon {
+            font-size: 16px;
+        }
+
+        .folder-name {
+            font-weight: 600;
+        }
+
+        .folder-count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .folder-tab.active .folder-count {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Search & Sort Controls */
+        .inquiry-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #9ca3af;
+        }
+
+        .sort-controls,
+        .filter-box {
+            flex: 0 0 auto;
+        }
+
+        .sort-select,
+        .filter-select {
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sort-select:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Thread List Container */
         .inquiry-thread-list {
             display: flex;
             flex-direction: column;
-            gap: 1px;
-            background: #e1e8ed;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 16px;
+            gap: 12px;
         }
 
+        /* Individual Thread */
         .inquiry-thread {
             background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s;
-            border-left: 4px solid transparent;
         }
 
         .inquiry-thread:hover {
-            background: #f8fafc;
-        }
-
-        .inquiry-thread.unread {
-            background: #eff6ff;
-            border-left-color: #1e5aa8;
+            border-color: #d1d5db;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .inquiry-thread.vendor-approved {
-            background: #f0fdf4;
-            border-left-color: #22c55e;
-            animation: pulse-green 2s infinite;
+            animation: pulse-green 2s ease-in-out infinite;
         }
 
         .inquiry-thread.both-approved {
-            background: #fef9e7;
-            border-left-color: #eab308;
-            animation: pulse-gold 2s infinite;
+            animation: pulse-gold 2s ease-in-out infinite;
         }
 
         @keyframes pulse-green {
-            0%, 100% { background: #f0fdf4; }
-            50% { background: #ecfdf5; }
+            0%, 100% {
+                border-color: #10b981;
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3);
+            }
+            50% {
+                border-color: #10b981;
+                box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            }
         }
 
         @keyframes pulse-gold {
-            0%, 100% { background: #fef9e7; }
-            50% { background: #fef3c7; }
-        }
-
-        .inquiry-thread.expanded {
-            background: #f8fafc;
+            0%, 100% {
+                border-color: #f59e0b;
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
+            }
+            50% {
+                border-color: #f59e0b;
+                box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+            }
         }
 
         /* Thread Header */
         .inquiry-thread-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 14px 16px;
-            gap: 12px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s ease;
         }
 
-        .inquiry-thread-avatar {
-            width: 40px;
-            height: 40px;
-            background: #e0e7ff;
-            color: #3730a3;
-            border-radius: 50%;
+        .inquiry-thread:hover .inquiry-thread-header {
+            background: #f3f4f6;
+        }
+
+        .thread-header-left {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.9em;
-            flex-shrink: 0;
-        }
-
-        .inquiry-thread-main {
+            gap: 12px;
             flex: 1;
             min-width: 0;
         }
 
-        .inquiry-thread-customer {
-            font-weight: 600;
-            color: #1e293b;
-            font-size: 0.95em;
-            margin-bottom: 2px;
+        .thread-customer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
-        .inquiry-thread-preview {
-            color: #64748b;
-            font-size: 0.85em;
+        .thread-customer-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .thread-customer-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .thread-message-preview {
+            font-size: 12px;
+            color: #6b7280;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .inquiry-thread-meta {
+        .thread-meta-info {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-shrink: 0;
         }
 
-        .inquiry-thread-type {
-            padding: 4px 8px;
-            background: #e0e7ff;
-            color: #3730a3;
-            border-radius: 4px;
-            font-size: 0.7em;
-            font-weight: 600;
+        .message-type-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 14px;
+            background: #f3f4f6;
         }
 
-        .inquiry-thread-type.feedback {
-            background: #fce7f3;
-            color: #be185d;
+        .message-type-badge.feedback {
+            background: #fef3c7;
+            color: #b45309;
         }
 
-        .inquiry-thread-type.followup {
+        .message-type-badge.inquiry {
             background: #dbeafe;
-            color: #0c4a6e;
+            color: #0284c7;
         }
 
-        .inquiry-thread-time {
-            font-size: 0.8em;
-            color: #94a3b8;
-            white-space: nowrap;
+        .message-type-badge.followup {
+            background: #e0e7ff;
+            color: #4338ca;
         }
 
-        .inquiry-thread-expand {
-            color: #cbd5e1;
-            font-size: 1.2em;
-            transition: transform 0.2s;
-        }
-
-        .inquiry-thread.expanded .inquiry-thread-expand {
-            transform: rotate(180deg);
-        }
-
-        /* Thread Conversation Content */
-        .inquiry-thread-content {
-            display: none;
-            background: #f8fafc;
-            padding: 0 16px 14px 16px;
-            border-top: 1px solid #e1e8ed;
-        }
-
-        .inquiry-thread.expanded .inquiry-thread-content {
-            display: block;
-        }
-
-        .inquiry-message {
-            margin-bottom: 12px;
-            padding: 10px 12px;
-            border-radius: 6px;
-            background: white;
-            border: 1px solid #e1e8ed;
-        }
-
-        .inquiry-message.buyer {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-        }
-
-        .inquiry-message.vendor {
-            background: #dcfce7;
-            border-color: #86efac;
-        }
-
-        .inquiry-message-sender {
-            font-weight: 600;
-            font-size: 0.8em;
-            color: #475569;
-            margin-bottom: 4px;
-        }
-
-        .inquiry-message-text {
-            color: #1e293b;
-            font-size: 0.9em;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-
-        .inquiry-message-time {
-            font-size: 0.75em;
-            color: #94a3b8;
-            margin-top: 6px;
-        }
-
-        .inquiry-feedback-status {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            margin-top: 8px;
+        /* Commission Display */
+        .thread-commission {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 0 8px;
+            border-right: 1px solid #e5e7eb;
             margin-right: 8px;
         }
 
-        .inquiry-feedback-status.pending {
-            background: #fef3c7;
-            color: #92400e;
+        .commission-amount {
+            font-weight: 700;
+            font-size: 14px;
+            color: #059669;
         }
 
-        .inquiry-feedback-status.verified {
-            background: #dcfce7;
-            color: #166534;
+        .commission-status {
+            font-size: 11px;
+            color: #6b7280;
         }
 
-        .inquiry-feedback-status.rejected {
+        /* Time Waiting SLA */
+        .thread-sla {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 0 8px;
+            min-width: 50px;
+        }
+
+        .sla-time {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .sla-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .sla-indicator.warning {
+            background: #f59e0b;
+        }
+
+        .sla-indicator.critical {
+            background: #ef4444;
+        }
+
+        /* Approval Badges */
+        .inquiry-feedback-status {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .status-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge-pill.vendor {
+            background: #dbeafe;
+            color: #0284c7;
+        }
+
+        .status-badge-pill.vendor.approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge-pill.vendor.rejected {
             background: #fee2e2;
-            color: #991b1b;
+            color: #7f1d1d;
         }
 
-        .inquiry-feedback-status.flagged {
-            background: #fed7aa;
-            color: #9a3412;
+        .status-badge-pill.admin {
+            background: #f3e8ff;
+            color: #6b21a8;
         }
 
-        .inquiry-approval-buttons {
+        .status-badge-pill.admin.verified {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-badge-pill.admin.rejected {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        /* Thread Expand Arrow */
+        .thread-expand-arrow {
+            font-size: 18px;
+            color: #9ca3af;
+            transition: transform 0.2s ease;
+            margin-left: 8px;
+        }
+
+        .inquiry-thread.expanded .thread-expand-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Thread Content (Messages) */
+        .inquiry-thread-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .inquiry-thread.expanded .inquiry-thread-content {
+            max-height: 1200px;
+        }
+
+        .thread-messages {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .inquiry-message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message-avatar.buyer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message-avatar.vendor {
+            background: #10b981;
+            color: white;
+        }
+
+        .message-body {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .message-timestamp {
+            color: #9ca3af;
+        }
+
+        .message-product {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            margin-top: 6px;
+            word-wrap: break-word;
+        }
+
+        .message-images {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(0,0,0,0.1);
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .message-image-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            color: #0284c7;
+            font-size: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .message-image-link:hover {
+            background: #0284c7;
+            color: white;
+        }
+
+        /* Approval Buttons */
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .inquiry-approve-btn, .inquiry-reject-btn {
             padding: 6px 12px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 0.8em;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            background: white;
-            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .inquiry-approve-btn {
+            background: #d1fae5;
+            color: #065f46;
         }
 
         .inquiry-approve-btn:hover {
-            background: #dcfce7;
-            border-color: #15803d;
-            color: #15803d;
+            background: #10b981;
+            color: white;
+        }
+
+        .inquiry-reject-btn {
+            background: #fee2e2;
+            color: #7f1d1d;
         }
 
         .inquiry-reject-btn:hover {
-            background: #fee2e2;
-            border-color: #991b1b;
-            color: #991b1b;
-        }
-
-        .inquiry-approve-btn.approved, .inquiry-reject-btn.rejected {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-            color: #94a3b8;
-            cursor: default;
-        }
-
-        .inquiry-thread-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e1e8ed;
-        }
-
-        .inquiry-respond-btn {
-            padding: 8px 16px;
-            background: #1e5aa8;
+            background: #ef4444;
             color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .inquiry-respond-btn:hover {
-            background: #174887;
+        .inquiry-approve-btn:disabled,
+        .inquiry-reject-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .inquiry-respond-btn.responded {
-            background: #15803d;
-            cursor: default;
+        /* Empty State */
+        .inquiry-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
         }
 
-        .inquiry-respond-btn.responded:hover {
-            background: #15803d;
+        .inquiry-empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .inquiry-empty-state-text {
+            font-size: 14px;
         }
 
         .alert-msg {
@@ -977,6 +1250,27 @@
         .alert-error {
             background: #fee2e2;
             color: #b91c1c;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .inquiry-controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .thread-meta-info {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .thread-commission,
+            .thread-sla {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -1188,15 +1482,16 @@
                                         <th>Feedback ID</th>
                                         <th>Commission Fee (Due)</th>
                                         <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="earnings-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="earnings-body">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1204,16 +1499,15 @@
             <!-- Product Creation & Management Section -->
             <div style="margin-top: 28px;">
             <div class="panel">
-
                 <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Your Products Inventory</h2>
-                        <span class="badge" id="itemCountBadge">0 items</span>
+                        <span class="badge" id="itemCountBadge2">0 items</span>
                     </div>
 
                     <div class="table-responsive">
-                        <table id="inventoryTable">
+                        <table id="inventoryTable2">
                             <thead>
                                 <tr>
                                     <th>Image</th>
@@ -1223,17 +1517,13 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventoryBody">
+                            <tbody id="inventoryBody2">
                                 <!-- Dynamic rows inserted here -->
                             </tbody>
                         </table>
 
-                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
-                            <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
+                        <div id="emptyInventory2" class="empty-inventory" style="display: none;">
                             <p>You haven't listed any products yet.</p>
-                            <p style="font-size: 0.8em; color: #cbd5e1;">Use the form on the right to add your first item!</p>
                         </div>
                     </div>
                 </div>
@@ -1296,35 +1586,71 @@
 
             </div>
 
-            <!-- Pending Inquiries Section - Smart Card Layout -->
+            <!-- Pending Inquiries Section - OPTION 2B PHASE 1 -->
             <div class="panel" style="margin-top: 24px;">
                 <div class="panel-header">
-                    <h2>Pending Customer Inquiries</h2>
+                    <h2>📬 Pending Customer Inquiries</h2>
                     <span class="badge" id="inquiryCountBadge">0 inquiries</span>
                 </div>
 
-                <!-- Product Filter Dropdown -->
-                <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
-                    <label for="productFilter" style="font-weight: 600; color: #475569; font-size: 0.9em;">Filter by Product:</label>
-                    <select id="productFilter" style="padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; background: white; color: #1e293b; font-size: 0.9em; cursor: pointer;">
-                        <option value="">All Products</option>
-                    </select>
+                <!-- Folder Navigation Tabs -->
+                <div class="inquiry-folder-tabs">
+                    <button class="folder-tab active" data-folder="all">
+                        <span class="folder-icon">📋</span>
+                        <span class="folder-name">All Messages</span>
+                        <span class="folder-count" id="count-all">0</span>
+                    </button>
+                    <button class="folder-tab" data-folder="feedback-pending">
+                        <span class="folder-icon">📋</span>
+                        <span class="folder-name">Feedback Pending</span>
+                        <span class="folder-count" id="count-feedback-pending">0</span>
+                    </button>
+                    <button class="folder-tab" data-folder="inquiries">
+                        <span class="folder-icon">❓</span>
+                        <span class="folder-name">Inquiries</span>
+                        <span class="folder-count" id="count-inquiries">0</span>
+                    </button>
+                    <button class="folder-tab" data-folder="responded">
+                        <span class="folder-icon">✅</span>
+                        <span class="folder-name">Responded</span>
+                        <span class="folder-count" id="count-responded">0</span>
+                    </button>
+                    <button class="folder-tab" data-folder="flagged">
+                        <span class="folder-icon">🚩</span>
+                        <span class="folder-name">Flagged</span>
+                        <span class="folder-count" id="count-flagged">0</span>
+                    </button>
                 </div>
 
-                <!-- Inbox-Style Thread List -->
-                <div id="inquiriesThreadList" class="inquiry-thread-list">
-                    <!-- Dynamic threads inserted here -->
+                <!-- Search & Sort Controls -->
+                <div class="inquiry-controls">
+                    <div class="search-box">
+                        <input type="text" id="inquirySearch" placeholder="Search by customer name, ID, product..." class="search-input">
+                        <span class="search-icon">🔍</span>
+                    </div>
+
+                    <div class="sort-controls">
+                        <select id="inquirySortBy" class="sort-select">
+                            <option value="date-newest">📅 Newest First</option>
+                            <option value="date-oldest">📅 Oldest First</option>
+                            <option value="commission-high">💰 Highest Commission</option>
+                            <option value="commission-low">💰 Lowest Commission</option>
+                            <option value="status-urgent">⚠️ Urgent (Waiting)</option>
+                            <option value="unread">🔔 Unread First</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-box">
+                        <select id="productFilterDropdown" class="filter-select">
+                            <option value="">All Products</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Empty State -->
-                <div id="emptyInquiries" class="empty-inventory" style="display: none;">
-                    <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    <p>No pending inquiries.</p>
-                    <p style="font-size: 0.8em; color: #cbd5e1;">Customers will contact you here when they have questions!</p>
+                <!-- Thread List -->
+                <div class="inquiry-thread-list" id="inquiriesThreadList">
+                    <!-- Dynamically populated by JavaScript -->
                 </div>
-            </div>
             </div>
             </div>
 
@@ -1367,11 +1693,20 @@
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         let sbClient = null;
+        const db = null;
 
         let currentVendor = null;
         let editingProductId = null;
         let cachedProducts = [];
         let pollingIntervals = {};
+
+        // OPTION 2B Phase 1 State Variables
+        let inquiriesCache = [];
+        let filteredInquiries = [];
+        let currentFolder = 'all';
+        let currentSort = 'date-newest';
+        let currentProductFilter = '';
+        let searchQuery = '';
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -1382,7 +1717,6 @@
         const profileEmail = document.getElementById('profileEmail');
         const profileType = document.getElementById('profileType');
 
-        const inventoryTable = document.getElementById('inventoryTable');
         const inventoryBody = document.getElementById('inventoryBody');
         const emptyInventory = document.getElementById('emptyInventory');
         const itemCountBadge = document.getElementById('itemCountBadge');
@@ -1402,6 +1736,7 @@
                     if (window.supabase) {
                         clearInterval(checkInterval);
                         sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        window.db = sbClient;
                         resolve();
                     }
                 }, 10);
@@ -1598,7 +1933,7 @@
 
             if (error || !products || products.length === 0) {
                 cachedProducts = [];
-                inventoryTable.style.display = 'none';
+                document.getElementById('inventoryTable').style.display = 'none';
                 emptyInventory.style.display = 'block';
                 itemCountBadge.textContent = '0 items';
                 return;
@@ -1621,7 +1956,7 @@
             }
 
             cachedProducts = products;
-            inventoryTable.style.display = 'table';
+            document.getElementById('inventoryTable').style.display = 'table';
             emptyInventory.style.display = 'none';
             itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
 
@@ -1736,331 +2071,478 @@
 
         let currentInquiry = null;
 
-        let currentStatusFilter = 'all';
-        let currentTypeFilter = 'all';
+        // ==================== OPTION 2B PHASE 1 IMPLEMENTATION ====================
 
         async function loadPendingInquiries() {
             if (!currentVendor) return;
 
             try {
-                // Fetch all inquiries for vendor's products
-                const { data: vendorProducts } = await sbClient
-                    .from('products')
-                    .select('id')
-                    .eq('vendor_id', currentVendor.id);
-
-                if (!vendorProducts || vendorProducts.length === 0) {
-                    document.getElementById('inquiriesThreadList').innerHTML = '';
-                    document.getElementById('emptyInquiries').style.display = 'block';
-                    document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
-                    return;
-                }
-
-                const productIds = vendorProducts.map(p => p.id);
-
-                // Fetch all messages (inquiries, feedback, followups, vendor responses)
-                const { data: allMessages } = await sbClient
-                    .from('inquiries')
-                    .select('*')
-                    .in('product_id', productIds)
-                    .order('created_at', { ascending: true });
-
-                // Fetch buyer details
-                let buyerMap = {};
-                if (allMessages && allMessages.length > 0) {
-                    const buyerIds = [...new Set(allMessages.map(msg => msg.buyer_id).filter(Boolean))];
-                    if (buyerIds.length > 0) {
-                        const { data: buyers } = await sbClient
-                            .from('buyers')
-                            .select('id, full_name')
-                            .in('id', buyerIds);
-                        if (buyers) {
-                            buyers.forEach(buyer => {
-                                buyerMap[buyer.id] = buyer;
-                            });
-                        }
-                    }
-                }
-
-                // Fetch product details
-                let productMap = {};
+                // Fetch vendor's products
                 const { data: products } = await sbClient
                     .from('products')
                     .select('id, product_name')
-                    .in('id', productIds);
-                if (products) {
-                    products.forEach(prod => {
-                        productMap[prod.id] = prod;
-                    });
-                }
+                    .eq('vendor_id', currentVendor.id);
 
-                // Group messages by buyer (conversation threads)
-                let threads = {};
-                if (allMessages && allMessages.length > 0) {
-                    allMessages.forEach(msg => {
-                        const buyerId = msg.buyer_id;
-                        if (!threads[buyerId]) {
-                            threads[buyerId] = {
-                                buyerId,
-                                buyer: buyerMap[buyerId] || { full_name: 'Unknown' },
-                                messages: [],
-                                lastMessageTime: msg.created_at,
-                                hasVendorResponse: false
-                            };
-                        }
-                        threads[buyerId].messages.push(msg);
-                        threads[buyerId].lastMessageTime = msg.created_at;
-                        if (msg.message_type === 'vendor_response') {
-                            threads[buyerId].hasVendorResponse = true;
-                        }
-                    });
-                }
-
-                if (Object.keys(threads).length === 0) {
-                    document.getElementById('inquiriesThreadList').innerHTML = '';
-                    document.getElementById('emptyInquiries').style.display = 'block';
-                    document.getElementById('inquiryCountBadge').textContent = '0 inquiries';
+                if (!products || products.length === 0) {
+                    document.getElementById('inquiriesThreadList').innerHTML =
+                        '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No products found. Add a product to receive inquiries.</p></div>';
                     return;
                 }
 
-                document.getElementById('emptyInquiries').style.display = 'none';
-                const threadCount = Object.keys(threads).length;
-                document.getElementById('inquiryCountBadge').textContent = `${threadCount} thread${threadCount === 1 ? '' : 's'}`;
+                // Fetch all inquiries for vendor's products
+                const productIds = products.map(p => p.id);
+                const { data: inquiries } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .in('product_id', productIds)
+                    .order('created_at', { ascending: false });
 
-                const threadList = document.getElementById('inquiriesThreadList');
-                threadList.innerHTML = '';
+                if (!inquiries) {
+                    document.getElementById('inquiriesThreadList').innerHTML =
+                        '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No inquiries yet.</p></div>';
+                    return;
+                }
 
-                // Populate product filter dropdown
-                const productFilterSelect = document.getElementById('productFilter');
-                const existingOptions = Array.from(productFilterSelect.options).map(opt => opt.value);
-                Object.values(productMap).forEach(product => {
-                    if (!existingOptions.includes(product.id)) {
-                        const option = document.createElement('option');
-                        option.value = product.id;
-                        option.textContent = product.product_name;
-                        productFilterSelect.appendChild(option);
+                // Fetch buyer names
+                let buyerMap = {};
+                const buyerIds = [...new Set(inquiries.map(i => i.buyer_id).filter(Boolean))];
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await sbClient
+                        .from('buyers')
+                        .select('id, full_name')
+                        .in('id', buyerIds);
+                    if (buyers) {
+                        buyers.forEach(b => buyerMap[b.id] = b);
+                    }
+                }
+
+                // Create product map
+                let productMap = {};
+                products.forEach(p => productMap[p.id] = p);
+
+                // Group inquiries by buyer_id (conversation threads)
+                const threadsMap = {};
+                inquiries.forEach(inquiry => {
+                    const buyerId = inquiry.buyer_id;
+                    if (!threadsMap[buyerId]) {
+                        threadsMap[buyerId] = {
+                            buyer_id: buyerId,
+                            buyer_name: buyerMap[buyerId]?.full_name || buyerId,
+                            messages: [],
+                            lastMessage: null,
+                            lastMessageTime: null,
+                            commissionValue: 0,
+                            folder: 'inquiries'
+                        };
+                    }
+                    threadsMap[buyerId].messages.push(inquiry);
+
+                    // Track most recent message
+                    if (!threadsMap[buyerId].lastMessageTime || new Date(inquiry.created_at) > new Date(threadsMap[buyerId].lastMessageTime)) {
+                        threadsMap[buyerId].lastMessage = inquiry.message;
+                        threadsMap[buyerId].lastMessageTime = inquiry.created_at;
+                    }
+
+                    // Calculate commission if feedback and approved
+                    if (inquiry.message_type === 'feedback' && inquiry.status === 'verified' && inquiry.vendor_status === 'approved') {
+                        threadsMap[buyerId].commissionValue += 2.5;
                     }
                 });
 
-                // Render each thread
-                Object.values(threads).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime)).forEach(thread => {
-                    const lastMsg = thread.messages[thread.messages.length - 1];
-                    const firstMsg = thread.messages[0];
-                    const buyerInitials = thread.buyer.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
-
-                    // Determine message type icon
-                    let typeIcon = '📋';
-                    let typeClass = '';
-                    if (lastMsg.message_type === 'feedback') {
-                        typeIcon = '📸';
-                        typeClass = 'feedback';
-                    } else if (lastMsg.message_type === 'buyer_followup') {
-                        typeIcon = '💬';
-                        typeClass = 'followup';
-                    }
-
-                    // Get all products in this thread
-                    const threadProductIds = [...new Set(thread.messages.map(m => m.product_id).filter(Boolean))];
-
-                    // Check for vendor and admin feedback actions
+                // Categorize threads into folders
+                const threads = Object.values(threadsMap);
+                threads.forEach(thread => {
                     const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
-                    const vendorApprovedFeedback = feedbackMessages.filter(m => m.vendor_status === 'approved');
-                    const adminVerifiedFeedback = feedbackMessages.filter(m => m.status === 'verified');
-                    const bothApprovedFeedback = feedbackMessages.filter(m => m.vendor_status === 'approved' && m.status === 'verified');
-                    const hasAdminAction = adminVerifiedFeedback.length > 0 || vendorApprovedFeedback.length > 0;
+                    const hasUnverifiedFeedback = feedbackMessages.some(m => !m.vendor_status);
+                    const hasVendorApproved = feedbackMessages.some(m => m.vendor_status === 'approved');
+                    const hasResponse = thread.messages.some(m => m.message_type === 'vendor_response');
 
-                    const threadEl = document.createElement('div');
-                    let threadClass = 'inquiry-thread';
-                    if (bothApprovedFeedback.length > 0) {
-                        threadClass += ' both-approved'; // Golden highlight - commission eligible
-                    } else if (vendorApprovedFeedback.length > 0) {
-                        threadClass += ' vendor-approved'; // Green highlight - waiting for admin
-                    }
-                    threadEl.className = threadClass;
-                    threadEl.dataset.productIds = threadProductIds.join(',');
-                    threadEl.innerHTML = `
-                        <div class="inquiry-thread-header">
-                            <div class="inquiry-thread-avatar">${buyerInitials}</div>
-                            <div class="inquiry-thread-main">
-                                <div class="inquiry-thread-customer">${escapeHtml(thread.buyer.full_name)}</div>
-                                <div class="inquiry-thread-preview">${escapeHtml(lastMsg.message?.substring(0, 60) || '[No message]')}${lastMsg.message?.length > 60 ? '...' : ''}</div>
-                            </div>
-                            <div class="inquiry-thread-meta">
-                                <span class="inquiry-thread-type ${typeClass}">${typeIcon}</span>
-                                ${vendorApprovedFeedback.length > 0 ? `<span style="font-size: 0.7em; padding: 2px 6px; background: #dcfce7; color: #166534; border-radius: 8px; font-weight: 600; white-space: nowrap;">You: ✅</span>` : ''}
-                                ${adminVerifiedFeedback.length > 0 ? `<span style="font-size: 0.7em; padding: 2px 6px; background: #d1e7f5; color: #0c4a6e; border-radius: 8px; font-weight: 600; white-space: nowrap;">Admin: ✅</span>` : ''}
-                                <span class="inquiry-thread-time">${formatThreadTime(lastMsg.created_at)}</span>
-                                <span class="inquiry-thread-expand">▼</span>
-                            </div>
-                        </div>
-                        <div class="inquiry-thread-content">
-                            ${thread.messages.map(msg => {
-                                const isBuyer = msg.sender_type === 'buyer';
-                                const product = productMap[msg.product_id];
-                                const isFeedback = msg.message_type === 'feedback';
-                                const imageUrl = msg.image_url_1 || msg.image_url_2;
-
-                                // Vendor status (vendor_status field)
-                                const vendorStatusIcon = msg.vendor_status === 'approved' ? '✅' : msg.vendor_status === 'rejected' ? '❌' : '📋';
-
-                                // Admin status (status field)
-                                const adminStatusIcon = msg.status === 'verified' ? '✅' : msg.status === 'rejected' ? '❌' : msg.status === 'flagged' ? '🚩' : '';
-
-                                return `
-                                    <div class="inquiry-message ${isBuyer ? 'buyer' : 'vendor'}">
-                                        <div class="inquiry-message-sender">${isBuyer ? thread.buyer.full_name : 'You'} - ${msg.message_type.replace('_', ' ').toUpperCase()}</div>
-                                        ${product ? `<div style="font-size: 0.8em; color: #64748b; margin-bottom: 6px;">📦 ${escapeHtml(product.product_name)}</div>` : ''}
-                                        <div class="inquiry-message-text">${escapeHtml(msg.message || '[No message]')}</div>
-
-                                        ${isFeedback ? `
-                                            <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                                                <span class="inquiry-feedback-status ${msg.vendor_status || 'pending'}" style="background: ${msg.vendor_status === 'approved' ? '#dcfce7' : msg.vendor_status === 'rejected' ? '#fee2e2' : '#fef3c7'}; color: ${msg.vendor_status === 'approved' ? '#166534' : msg.vendor_status === 'rejected' ? '#991b1b' : '#92400e'};">
-                                                    ${vendorStatusIcon} You: ${(msg.vendor_status || 'pending').toUpperCase()}
-                                                </span>
-                                                ${msg.status ? `<span class="inquiry-feedback-status ${msg.status}" style="background: ${msg.status === 'verified' ? '#dcfce7' : '#fee2e2'}; color: ${msg.status === 'verified' ? '#166534' : '#991b1b'};">
-                                                    ${adminStatusIcon} Admin: ${msg.status.toUpperCase()}
-                                                </span>` : ''}
-                                            </div>
-                                        ` : ''}
-
-                                        ${isFeedback && imageUrl ? `<div style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 6px; font-size: 0.85em;"><strong>📸 Feedback Image:</strong><br><a href="${escapeHtml(imageUrl)}" target="_blank" style="color: #1e5aa8; word-break: break-all;">${escapeHtml(imageUrl)}</a></div>` : ''}
-
-                                        ${isFeedback && !msg.vendor_status ? `
-                                            <div class="inquiry-approval-buttons">
-                                                <button class="inquiry-approve-btn" onclick="approveVendorFeedback('${msg.id}')">👍 Approve</button>
-                                                <button class="inquiry-reject-btn" onclick="rejectVendorFeedback('${msg.id}')">👎 Reject</button>
-                                            </div>
-                                        ` : ''}
-
-                                        <div class="inquiry-message-time">${new Date(msg.created_at).toLocaleString()}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                            <div class="inquiry-thread-actions">
-                                ${thread.hasVendorResponse
-                                    ? '<button class="inquiry-respond-btn responded">✓ You Responded</button>'
-                                    : `<button class="inquiry-respond-btn" onclick="openResponseModal('${firstMsg.id}')">Respond to ${escapeHtml(thread.buyer.full_name)}</button>`
-                                }
-                            </div>
-                        </div>
-                    `;
-
-                    threadEl.addEventListener('click', (e) => {
-                        if (!e.target.closest('.inquiry-respond-btn')) {
-                            threadEl.classList.toggle('expanded');
-                        }
-                    });
-
-                    threadList.appendChild(threadEl);
-                });
-
-                // Add product filter change listener
-                productFilterSelect.addEventListener('change', (e) => {
-                    const selectedProductId = e.target.value;
-                    const allThreads = document.querySelectorAll('.inquiry-thread');
-                    let visibleCount = 0;
-
-                    allThreads.forEach(thread => {
-                        const threadProductIds = thread.dataset.productIds.split(',');
-                        const shouldShow = !selectedProductId || threadProductIds.includes(selectedProductId);
-                        thread.style.display = shouldShow ? 'block' : 'none';
-                        if (shouldShow) visibleCount++;
-                    });
-
-                    // Show/hide empty state
-                    if (visibleCount === 0 && allThreads.length > 0) {
-                        document.getElementById('emptyInquiries').style.display = 'block';
-                    } else if (visibleCount > 0) {
-                        document.getElementById('emptyInquiries').style.display = 'none';
+                    if (hasUnverifiedFeedback) {
+                        thread.folder = 'feedback-pending';
+                    } else if (hasVendorApproved && thread.messages.some(m => m.message_type === 'feedback')) {
+                        thread.folder = 'feedback-pending';
+                    } else if (hasResponse) {
+                        thread.folder = 'responded';
+                    } else {
+                        thread.folder = 'inquiries';
                     }
                 });
-            } catch (err) {
-                console.error('Error loading inquiries:', err);
-                document.getElementById('inquiriesThreadList').innerHTML = '';
-                document.getElementById('emptyInquiries').style.display = 'block';
+
+                inquiriesCache = threads;
+                populateProductFilter(products);
+                setupInquiryEventListeners();
+                renderInquiries();
+                updateFolderCounts();
+
+            } catch (error) {
+                console.error('❌ Error loading inquiries:', error);
             }
+        }
+
+        function populateProductFilter(products) {
+            const filterSelect = document.getElementById('productFilterDropdown');
+            const currentValue = filterSelect.value;
+
+            filterSelect.innerHTML = '<option value="">All Products</option>';
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = product.product_name;
+                filterSelect.appendChild(option);
+            });
+
+            filterSelect.value = currentValue;
+        }
+
+        function setupInquiryEventListeners() {
+            // Folder tabs
+            document.querySelectorAll('.folder-tab').forEach(tab => {
+                tab.removeEventListener('click', folderTabClickHandler);
+                tab.addEventListener('click', folderTabClickHandler);
+            });
+
+            // Search
+            const searchInput = document.getElementById('inquirySearch');
+            if (searchInput) {
+                searchInput.removeEventListener('input', searchInputHandler);
+                searchInput.addEventListener('input', searchInputHandler);
+            }
+
+            // Sort
+            const sortSelect = document.getElementById('inquirySortBy');
+            if (sortSelect) {
+                sortSelect.removeEventListener('change', sortSelectHandler);
+                sortSelect.addEventListener('change', sortSelectHandler);
+            }
+
+            // Product filter
+            const filterSelect = document.getElementById('productFilterDropdown');
+            if (filterSelect) {
+                filterSelect.removeEventListener('change', filterSelectHandler);
+                filterSelect.addEventListener('change', filterSelectHandler);
+            }
+        }
+
+        const folderTabClickHandler = (e) => {
+            document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            currentFolder = e.currentTarget.dataset.folder;
+            renderInquiries();
+        };
+
+        const searchInputHandler = (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderInquiries();
+        };
+
+        const sortSelectHandler = (e) => {
+            currentSort = e.target.value;
+            renderInquiries();
+        };
+
+        const filterSelectHandler = (e) => {
+            currentProductFilter = e.target.value;
+            renderInquiries();
+        };
+
+        function filterInquiries() {
+            let filtered = inquiriesCache;
+
+            // Folder filter
+            if (currentFolder !== 'all') {
+                filtered = filtered.filter(t => t.folder === currentFolder);
+            }
+
+            // Product filter
+            if (currentProductFilter) {
+                filtered = filtered.filter(thread =>
+                    thread.messages.some(m => m.product_id === currentProductFilter)
+                );
+            }
+
+            // Search filter
+            if (searchQuery) {
+                filtered = filtered.filter(thread => {
+                    const buyerId = thread.buyer_id;
+                    const buyerName = thread.buyer_name.toLowerCase();
+                    const buyerIdMatch = buyerId.toLowerCase().includes(searchQuery);
+                    const buyerNameMatch = buyerName.includes(searchQuery);
+                    const messageMatches = thread.messages.some(m =>
+                        m.message.toLowerCase().includes(searchQuery)
+                    );
+                    return buyerIdMatch || buyerNameMatch || messageMatches;
+                });
+            }
+
+            return filtered;
+        }
+
+        function sortInquiries(threads) {
+            const sorted = [...threads];
+
+            switch(currentSort) {
+                case 'date-newest':
+                    sorted.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                    break;
+                case 'date-oldest':
+                    sorted.sort((a, b) => new Date(a.lastMessageTime) - new Date(b.lastMessageTime));
+                    break;
+                case 'commission-high':
+                    sorted.sort((a, b) => b.commissionValue - a.commissionValue);
+                    break;
+                case 'commission-low':
+                    sorted.sort((a, b) => a.commissionValue - b.commissionValue);
+                    break;
+                case 'status-urgent':
+                    sorted.sort((a, b) => {
+                        const aWait = calculateWaitTime(a.lastMessageTime);
+                        const bWait = calculateWaitTime(b.lastMessageTime);
+                        return bWait - aWait;
+                    });
+                    break;
+                case 'unread':
+                    sorted.sort((a, b) => {
+                        const aUnread = a.messages.filter(m => m.message_type !== 'vendor_response').length;
+                        const bUnread = b.messages.filter(m => m.message_type !== 'vendor_response').length;
+                        return bUnread - aUnread;
+                    });
+                    break;
+            }
+
+            return sorted;
+        }
+
+        function calculateWaitTime(lastMessageTime) {
+            const now = new Date();
+            const last = new Date(lastMessageTime);
+            return Math.floor((now - last) / 1000 / 60);
         }
 
         function formatThreadTime(dateString) {
             const date = new Date(dateString);
             const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const seconds = Math.floor((now - date) / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
 
-            if (diffMins < 1) return 'now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffHours < 24) return `${diffHours}h ago`;
-            return `${diffDays}d ago`;
+            if (seconds < 60) return 'now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        window.approveVendorFeedback = async function(inquiryId) {
-            if (!currentVendor) return;
+        function getSLAStatus(lastMessageTime) {
+            const waitMinutes = calculateWaitTime(lastMessageTime);
+            if (waitMinutes > 120) return { status: 'critical', label: '>2h', indicator: 'critical' };
+            if (waitMinutes > 60) return { status: 'warning', label: '>1h', indicator: 'warning' };
+            return { status: 'ok', label: '<1h', indicator: 'ok' };
+        }
 
+        function renderInquiries() {
+            const threadList = document.getElementById('inquiriesThreadList');
+
+            if (!inquiriesCache || inquiriesCache.length === 0) {
+                threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No inquiries yet.</p></div>';
+                return;
+            }
+
+            filteredInquiries = filterInquiries();
+            filteredInquiries = sortInquiries(filteredInquiries);
+
+            if (filteredInquiries.length === 0) {
+                threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">🔍</div><p class="inquiry-empty-state-text">No inquiries match your filters.</p></div>';
+                return;
+            }
+
+            threadList.innerHTML = filteredInquiries.map(thread => {
+                const lastMsg = thread.messages[thread.messages.length - 1];
+                const messageType = lastMsg.message_type;
+                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
+
+                const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
+                const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
+                const adminVerified = feedbackMessages.filter(m => m.status === 'verified').length > 0;
+
+                const sla = getSLAStatus(thread.lastMessageTime);
+
+                const threadClass = `inquiry-thread ${
+                    vendorApproved && adminVerified ? 'both-approved' :
+                    vendorApproved ? 'vendor-approved' : ''
+                }`;
+
+                return `
+                    <div class="${threadClass}">
+                        <div class="inquiry-thread-header">
+                            <div class="thread-header-left">
+                                <div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div>
+                                <div class="thread-customer-info">
+                                    <div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div>
+                                    <div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div>
+                                </div>
+                            </div>
+
+                            <div class="thread-meta-info">
+                                <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
+                                <div class="thread-commission">
+                                    <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
+                                    <div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div>
+                                </div>
+                                <div class="thread-sla">
+                                    <div class="sla-time">${sla.label}</div>
+                                    <div class="sla-indicator ${sla.indicator}"></div>
+                                </div>
+                                <div class="thread-expand-arrow">▼</div>
+                            </div>
+                        </div>
+
+                        <div class="inquiry-thread-content">
+                            <div class="thread-messages">
+                                ${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.inquiry-thread').forEach(thread => {
+                thread.removeEventListener('click', threadClickHandler);
+                thread.addEventListener('click', threadClickHandler);
+            });
+        }
+
+        const threadClickHandler = (e) => {
+            if (!e.target.closest('.inquiry-approve-btn') && !e.target.closest('.inquiry-reject-btn')) {
+                e.currentTarget.classList.toggle('expanded');
+            }
+        };
+
+        function renderMessage(msg, buyerName, idx) {
+            const isBuyer = msg.message_type !== 'vendor_response';
+            const avatar = isBuyer ? 'B' : 'V';
+            const senderName = isBuyer ? 'Buyer' : 'You';
+            const avatarClass = isBuyer ? 'buyer' : 'vendor';
+
+            const feedbackStatus = msg.message_type === 'feedback' ? `
+                <div class="inquiry-feedback-status">
+                    ${msg.vendor_status ? `<span class="status-badge-pill vendor ${msg.vendor_status}">You: ${msg.vendor_status === 'approved' ? '✅' : '❌'}</span>` : ''}
+                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending'}</span>` : ''}
+                </div>
+            ` : '';
+
+            const imageLinks = msg.image_url_1 || msg.image_url_2 ? `
+                <div class="message-images">
+                    ${msg.image_url_1 ? `<a href="${msg.image_url_1}" target="_blank" class="message-image-link">🖼️ Image 1</a>` : ''}
+                    ${msg.image_url_2 ? `<a href="${msg.image_url_2}" target="_blank" class="message-image-link">🖼️ Image 2</a>` : ''}
+                </div>
+            ` : '';
+
+            const approvalButtons = msg.message_type === 'feedback' && !msg.vendor_status ? `
+                <div class="message-actions">
+                    <button class="inquiry-approve-btn" onclick="approveVendorFeedback('${msg.id}', this)">Approve</button>
+                    <button class="inquiry-reject-btn" onclick="rejectVendorFeedback('${msg.id}', this)">Reject</button>
+                </div>
+            ` : '';
+
+            return `
+                <div class="inquiry-message">
+                    <div class="message-avatar ${avatarClass}">${avatar}</div>
+                    <div class="message-body">
+                        <div class="message-header">
+                            <span class="message-sender">${senderName}</span>
+                            <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
+                        </div>
+                        <div class="message-text">${escapeHtml(msg.message || '[No message]')}</div>
+                        ${imageLinks}
+                        ${feedbackStatus}
+                        ${approvalButtons}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function approveVendorFeedback(inquiryId, buttonElement) {
             try {
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Approving...';
+
                 const { error } = await sbClient
                     .from('inquiries')
                     .update({ vendor_status: 'approved' })
                     .eq('id', inquiryId);
 
-                if (error) {
-                    console.error('Error approving feedback:', error);
-                    alert('Failed to approve feedback');
-                    return;
-                }
+                if (error) throw error;
 
-                console.log('📋 Feedback approved by vendor:', inquiryId);
-                loadPendingInquiries(); // Refresh to show updated status
-            } catch (err) {
-                console.error('Error:', err);
-                alert('Error approving feedback');
+                console.log('✅ Feedback approved');
+                loadPendingInquiries();
+            } catch (error) {
+                console.error('❌ Error approving feedback:', error);
+                buttonElement.disabled = false;
+                buttonElement.textContent = 'Approve';
             }
-        };
+        }
 
-        window.rejectVendorFeedback = async function(inquiryId) {
-            if (!currentVendor) return;
-
+        async function rejectVendorFeedback(inquiryId, buttonElement) {
             try {
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Rejecting...';
+
                 const { error } = await sbClient
                     .from('inquiries')
                     .update({ vendor_status: 'rejected' })
                     .eq('id', inquiryId);
 
-                if (error) {
-                    console.error('Error rejecting feedback:', error);
-                    alert('Failed to reject feedback');
-                    return;
-                }
+                if (error) throw error;
 
-                console.log('📋 Feedback rejected by vendor:', inquiryId);
-                loadPendingInquiries(); // Refresh to show updated status
-            } catch (err) {
-                console.error('Error:', err);
-                alert('Error rejecting feedback');
+                console.log('✅ Feedback rejected');
+                loadPendingInquiries();
+            } catch (error) {
+                console.error('❌ Error rejecting feedback:', error);
+                buttonElement.disabled = false;
+                buttonElement.textContent = 'Reject';
             }
-        };
+        }
+
+        function updateFolderCounts() {
+            const folders = ['all', 'feedback-pending', 'inquiries', 'responded', 'flagged'];
+            folders.forEach(folder => {
+                let count = inquiriesCache.length;
+                if (folder !== 'all') {
+                    count = inquiriesCache.filter(t => t.folder === folder).length;
+                }
+                const countEl = document.getElementById(`count-${folder}`);
+                if (countEl) countEl.textContent = count;
+            });
+        }
 
         window.openResponseModal = async function(inquiryId) {
             try {
-                // Keep UUID as-is (don't parse as number)
                 const id = inquiryId;
-                console.log('openResponseModal called with:', { inquiryId, id, type: typeof id });
 
-                // Fetch inquiry details from database
-                const { data: inquiry, error: inquiryError } = await sbClient.from('inquiries').select('*').eq('id', id).single();
-                console.log('Query result:', { inquiry, inquiryError });
+                const { data: inquiry, error: inquiryError } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
                 if (!inquiry) {
-                    console.error('Inquiry not found for id:', id);
                     alert('Inquiry not found: ' + id);
                     return;
                 }
 
-                // Fetch buyer details
-                const { data: buyer } = await sbClient.from('buyers').select('full_name, email').eq('id', inquiry.buyer_id).single();
+                const { data: buyer } = await sbClient
+                    .from('buyers')
+                    .select('full_name, email')
+                    .eq('id', inquiry.buyer_id)
+                    .single();
 
-                // Fetch product details
-                const { data: product } = await sbClient.from('products').select('product_name').eq('id', inquiry.product_id).single();
+                const { data: product } = await sbClient
+                    .from('products')
+                    .select('product_name')
+                    .eq('id', inquiry.product_id)
+                    .single();
 
                 currentInquiry = { id, ...inquiry, buyerName: buyer?.full_name || 'Unknown', productName: product?.product_name || 'Unknown' };
 
@@ -2184,7 +2666,6 @@
 
                     if (updateError) throw updateError;
 
-                    // Delete old images and insert new ones
                     await sbClient.from('product-images').delete().eq('product_id', editingProductId);
 
                     const imagesToInsert = [];
@@ -2217,7 +2698,6 @@
 
                     const productId = insertedProduct[0].id;
 
-                    // Insert images
                     const imagesToInsert = [];
                     if (uploadedPrimary) imagesToInsert.push({ product_id: productId, image_url: uploadedPrimary });
                     if (uploadedSecondary) imagesToInsert.push({ product_id: productId, image_url: uploadedSecondary });
@@ -2257,12 +2737,11 @@
             errorState.style.display = 'block';
         }
 
-        // --- ALERT FUNCTIONS ---
+        // Alert Functions
         async function loadVendorAlerts() {
             try {
                 if (!currentVendor) return;
 
-                // Fetch unread alerts for this vendor
                 const { data: alerts, error } = await sbClient
                     .from('alerts')
                     .select('*')
@@ -2281,7 +2760,6 @@
                     return;
                 }
 
-                // Display alerts banner
                 const alertsContent = document.getElementById('alerts-content');
                 let html = '';
 
@@ -2315,7 +2793,6 @@
                     return;
                 }
 
-                // Reload alerts to refresh the banner
                 await loadVendorAlerts();
             } catch (err) {
                 console.error('Error updating alert:', err);
@@ -2326,18 +2803,17 @@
             document.getElementById('alerts-banner').style.display = 'none';
         }
 
-        // --- COLLAPSIBLE SECTIONS ---
+        // Collapsible Sections
         function toggleCollapsible(headerElement) {
             const section = headerElement.parentElement;
             section.classList.toggle('open');
         }
 
-        // --- COMMISSION SETTINGS FUNCTIONS ---
+        // Commission Settings Functions
         async function loadCommissionSettings() {
             try {
                 if (!currentVendor) return;
 
-                // Fetch current commission amount and threshold
                 const { data: vendor, error } = await sbClient
                     .from('vendors')
                     .select('commission, commission_threshold')
@@ -2352,7 +2828,6 @@
                 if (vendor) {
                     document.getElementById('commission-amount').value = parseFloat(vendor.commission || 0).toFixed(2);
                     document.getElementById('current-threshold-display').value = '$' + parseFloat(vendor.commission_threshold || 0).toFixed(2);
-                    // Update currentVendor object to reflect current threshold
                     currentVendor.commission_threshold = vendor.commission_threshold;
                 }
             } catch (err) {
@@ -2391,37 +2866,31 @@
             }
         }
 
-        // --- THRESHOLD CHANGE REQUEST FUNCTIONS ---
+        // Threshold Change Request Functions
         async function submitThresholdChangeRequest() {
             try {
                 const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
                 const reason = document.getElementById('threshold-reason').value.trim();
                 const statusDiv = document.getElementById('threshold-request-status');
 
-                // Validation
                 if (isNaN(requestedThreshold) || requestedThreshold < 0) {
                     statusDiv.textContent = '❌ Please enter a valid threshold amount (must be 0 or greater)';
                     statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert-error';
                     return;
                 }
 
                 if (!currentVendor || !currentVendor.commission_threshold) {
                     statusDiv.textContent = '❌ Could not load current threshold. Please refresh the page.';
                     statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert-error';
                     return;
                 }
 
-                // Check if requested threshold is the same as current
                 if (Math.abs(requestedThreshold - currentVendor.commission_threshold) < 0.01) {
                     statusDiv.textContent = '⚠️ Requested threshold is the same as current. No change needed.';
                     statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert-warning';
                     return;
                 }
 
-                // Check for existing pending request
                 const { data: existingRequest, error: checkError } = await sbClient
                     .from('threshold_change_requests')
                     .select('id, status')
@@ -2432,11 +2901,9 @@
                 if (!checkError && existingRequest) {
                     statusDiv.textContent = '⚠️ You already have a pending threshold change request. Please wait for admin approval.';
                     statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert-warning';
                     return;
                 }
 
-                // Submit the threshold change request
                 const { data, error } = await sbClient
                     .from('threshold_change_requests')
                     .insert([{
@@ -2452,22 +2919,17 @@
                     console.error('Error submitting request:', error);
                     statusDiv.textContent = '❌ Error submitting request: ' + error.message;
                     statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert-error';
                     return;
                 }
 
-                // Success
                 statusDiv.textContent = '✅ Request submitted successfully! The admin will review your request shortly.';
                 statusDiv.style.display = 'block';
-                statusDiv.className = 'alert-success';
                 statusDiv.style.background = '#dcfce7';
                 statusDiv.style.color = '#166534';
 
-                // Clear form
                 document.getElementById('requested-threshold').value = '';
                 document.getElementById('threshold-reason').value = '';
 
-                // Reload to show updated status
                 setTimeout(() => {
                     loadCommissionSettings();
                 }, 2000);
@@ -2477,14 +2939,12 @@
                 const statusDiv = document.getElementById('threshold-request-status');
                 statusDiv.textContent = '❌ Unexpected error: ' + err.message;
                 statusDiv.style.display = 'block';
-                statusDiv.className = 'alert-error';
             }
         }
 
-        // --- COMMISSION PAYABLE FUNCTIONS ---
+        // Earnings Functions
         async function loadEarningsData() {
             try {
-                // Fetch current vendor's commission payable data
                 const { data: vendor, error: vendorError } = await sbClient
                     .from('vendors')
                     .select('id, accumulated_balance, commission_threshold, commission')
@@ -2501,13 +2961,11 @@
                     return;
                 }
 
-                // Calculate earnings data
                 const accumulated = parseFloat(vendor.accumulated_balance || 0);
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
                 const capped_percent = Math.min(progressPercent, 100);
 
-                // Update metrics grid
                 document.getElementById('metrics-commission-due').textContent = `$${accumulated.toFixed(2)}`;
                 document.getElementById('metrics-threshold').textContent = `$${threshold.toFixed(2)}`;
                 document.getElementById('metrics-percent').textContent = `${capped_percent}%`;
@@ -2524,7 +2982,6 @@
                     statusElement.className = 'metric-status active';
                 }
 
-                // Update commission sidebar
                 document.getElementById('sidebar-balance').textContent = `$${accumulated.toFixed(2)}`;
                 document.getElementById('sidebar-threshold').textContent = `$${threshold.toFixed(2)}`;
                 document.getElementById('sidebar-percent').textContent = `${capped_percent}%`;
@@ -2532,7 +2989,6 @@
                 const sidebarProgress = document.getElementById('sidebar-progress');
                 sidebarProgress.style.width = `${capped_percent}%`;
 
-                // Update progress bar colors based on status
                 if (capped_percent >= 100) {
                     sidebarProgress.style.background = '#ef4444';
                 } else if (capped_percent >= 80) {
@@ -2541,7 +2997,6 @@
                     sidebarProgress.style.background = '#10b981';
                 }
 
-                // Enable payment button if balance >= threshold
                 const payoutBtn = document.getElementById('payout-btn');
                 payoutBtn.disabled = accumulated < threshold;
                 if (accumulated >= threshold) {
@@ -2550,7 +3005,6 @@
                     payoutBtn.textContent = `💳 Pay Commission Due (${progressPercent}% of threshold)`;
                 }
 
-                // Load commission payment history
                 await loadEarningsHistory();
 
             } catch (err) {
@@ -2560,7 +3014,6 @@
 
         async function loadEarningsHistory() {
             try {
-                // Fetch inquiries with feedback for this vendor (joined via products)
                 const { data: products } = await sbClient
                     .from('products')
                     .select('id')
@@ -2578,7 +3031,6 @@
 
                 const productIds = products.map(p => p.id);
 
-                // Fetch feedback (inquiries with message_type='feedback')
                 const { data: feedbackInquiries, error: inquiryError } = await sbClient
                     .from('inquiries')
                     .select('id, created_at, product_id, status, message')
@@ -2606,7 +3058,6 @@
                     return;
                 }
 
-                // Get commission amount from current vendor
                 const { data: vendorData } = await sbClient
                     .from('vendors')
                     .select('commission')
@@ -2615,7 +3066,6 @@
 
                 const commissionAmount = parseFloat(vendorData?.commission || 0);
 
-                // Render earnings history table
                 const rows = feedbackInquiries.map(feedback => {
                     const date = new Date(feedback.created_at).toLocaleDateString();
                     const status = (feedback.status || 'pending').toLowerCase();
@@ -2651,18 +3101,15 @@
         }
 
         function initiatePayoutProcess() {
-            const balanceText = document.getElementById('earnings-balance').textContent;
-            const balance = parseFloat(balanceText.replace('$', ''));
+            const balance = parseFloat(document.getElementById('sidebar-balance').textContent.replace('$', ''));
 
             if (balance <= 0) {
                 alert('Your balance is zero. No payout to process.');
                 return;
             }
 
-            alert(`Payout Process Initiated\n\n💳 Balance to Payout: ${balanceText}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
+            alert(`Payout Process Initiated\n\n💳 Balance to Payout: $${balance.toFixed(2)}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
 
-            // In production, this would redirect to a secure PayPal payment flow
-            // For now, we just show an alert
             console.log('Payout initiated for balance:', balance);
         }
 
@@ -2671,7 +3118,7 @@
             console.log('Viewing feedback:', feedbackId);
         }
 
-        // Guaranteed DOM-safe event listener for logout
+        // Logout Handler
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
@@ -2684,7 +3131,6 @@
                     } catch (err) {
                         console.error("Sign out error:", err);
                     } finally {
-                        // Clear vendor session from localStorage
                         localStorage.removeItem('vendor_id');
                         localStorage.removeItem('vendor_email');
                         window.location.href = 'login.html';
