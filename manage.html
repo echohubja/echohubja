@@ -572,6 +572,61 @@
                 </button>
             </div>
 
+            <!-- Commission Settings Section -->
+            <div class="earnings-history">
+                <div class="panel-header">
+                    <h2>Commission Settings</h2>
+                    <span class="badge" id="commission-status">View/Update</span>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 8px; display: block;">Commission Per Feedback ($)</label>
+                        <div style="display: flex; gap: 10px; align-items: end;">
+                            <div style="flex: 1;">
+                                <input type="number" id="commission-amount" step="0.01" min="0" placeholder="e.g., 5.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
+                            </div>
+                            <button onclick="updateCommissionAmount()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
+                                Save
+                            </button>
+                        </div>
+                        <div style="font-size: 0.8em; color: #64748b; margin-top: 8px;">
+                            ℹ️ This is the amount you pay as commission for each verified feedback submission.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threshold Change Request Section -->
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;">
+                    <h3 style="font-size: 1.1em; color: #1e5aa8; margin-bottom: 12px; font-weight: 600;">Request Payout Threshold Change</h3>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Current Threshold</label>
+                        <input type="text" id="current-threshold-display" readonly style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Requested Threshold ($)</label>
+                        <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Reason for Change (Optional)</label>
+                        <textarea id="threshold-reason" placeholder="e.g., Business growing faster, want to reduce payout frequency" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; min-height: 80px; resize: vertical;"></textarea>
+                    </div>
+
+                    <div id="threshold-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+
+                    <button onclick="submitThresholdChangeRequest()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
+                        Submit Request
+                    </button>
+
+                    <div style="font-size: 0.8em; color: #64748b; margin-top: 12px;">
+                        ℹ️ Your threshold change request will be reviewed by the admin. The new threshold will apply to future commissions once approved.
+                    </div>
+                </div>
+            </div>
+
             <!-- Commission Payable History Section -->
             <div class="earnings-history">
                 <div class="panel-header">
@@ -850,6 +905,7 @@
 
                 await loadVendorProducts();
                 await loadPendingInquiries();
+                await loadCommissionSettings();
                 await loadEarningsData();
                 await loadVendorAlerts();
 
@@ -1390,6 +1446,155 @@
 
         function closeAlertsBanner() {
             document.getElementById('alerts-banner').style.display = 'none';
+        }
+
+        // --- COMMISSION SETTINGS FUNCTIONS ---
+        async function loadCommissionSettings() {
+            try {
+                if (!currentVendor) return;
+
+                // Fetch current commission amount and threshold
+                const { data: vendor, error } = await sbClient
+                    .from('vendors')
+                    .select('commission, commission_threshold')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching commission:', error);
+                    return;
+                }
+
+                if (vendor) {
+                    document.getElementById('commission-amount').value = parseFloat(vendor.commission || 0).toFixed(2);
+                    document.getElementById('current-threshold-display').value = '$' + parseFloat(vendor.commission_threshold || 0).toFixed(2);
+                    // Update currentVendor object to reflect current threshold
+                    currentVendor.commission_threshold = vendor.commission_threshold;
+                }
+            } catch (err) {
+                console.error('Error loading commission settings:', err);
+            }
+        }
+
+        async function updateCommissionAmount() {
+            try {
+                const newCommission = parseFloat(document.getElementById('commission-amount').value);
+
+                if (isNaN(newCommission) || newCommission < 0) {
+                    alert('Please enter a valid commission amount (must be 0 or greater)');
+                    return;
+                }
+
+                if (!confirm(`Update commission to $${newCommission.toFixed(2)} per feedback?`)) {
+                    return;
+                }
+
+                const { error } = await sbClient
+                    .from('vendors')
+                    .update({ commission: newCommission })
+                    .eq('id', currentVendor.id);
+
+                if (error) {
+                    alert('Error updating commission: ' + error.message);
+                    return;
+                }
+
+                alert(`✓ Commission updated to $${newCommission.toFixed(2)} per feedback!`);
+                await loadCommissionSettings();
+            } catch (err) {
+                console.error('Error updating commission:', err);
+                alert('Unexpected error: ' + err.message);
+            }
+        }
+
+        // --- THRESHOLD CHANGE REQUEST FUNCTIONS ---
+        async function submitThresholdChangeRequest() {
+            try {
+                const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
+                const reason = document.getElementById('threshold-reason').value.trim();
+                const statusDiv = document.getElementById('threshold-request-status');
+
+                // Validation
+                if (isNaN(requestedThreshold) || requestedThreshold < 0) {
+                    statusDiv.textContent = '❌ Please enter a valid threshold amount (must be 0 or greater)';
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
+                    return;
+                }
+
+                if (!currentVendor || !currentVendor.commission_threshold) {
+                    statusDiv.textContent = '❌ Could not load current threshold. Please refresh the page.';
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
+                    return;
+                }
+
+                // Check if requested threshold is the same as current
+                if (Math.abs(requestedThreshold - currentVendor.commission_threshold) < 0.01) {
+                    statusDiv.textContent = '⚠️ Requested threshold is the same as current. No change needed.';
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-warning';
+                    return;
+                }
+
+                // Check for existing pending request
+                const { data: existingRequest, error: checkError } = await sbClient
+                    .from('threshold_change_requests')
+                    .select('id, status')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'pending')
+                    .single();
+
+                if (!checkError && existingRequest) {
+                    statusDiv.textContent = '⚠️ You already have a pending threshold change request. Please wait for admin approval.';
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-warning';
+                    return;
+                }
+
+                // Submit the threshold change request
+                const { data, error } = await sbClient
+                    .from('threshold_change_requests')
+                    .insert([{
+                        vendor_id: currentVendor.id,
+                        current_threshold: currentVendor.commission_threshold,
+                        requested_threshold: requestedThreshold,
+                        reason: reason || null,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) {
+                    console.error('Error submitting request:', error);
+                    statusDiv.textContent = '❌ Error submitting request: ' + error.message;
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
+                    return;
+                }
+
+                // Success
+                statusDiv.textContent = '✅ Request submitted successfully! The admin will review your request shortly.';
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert-success';
+                statusDiv.style.background = '#dcfce7';
+                statusDiv.style.color = '#166534';
+
+                // Clear form
+                document.getElementById('requested-threshold').value = '';
+                document.getElementById('threshold-reason').value = '';
+
+                // Reload to show updated status
+                setTimeout(() => {
+                    loadCommissionSettings();
+                }, 2000);
+
+            } catch (err) {
+                console.error('Error submitting threshold change request:', err);
+                const statusDiv = document.getElementById('threshold-request-status');
+                statusDiv.textContent = '❌ Unexpected error: ' + err.message;
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert-error';
+            }
         }
 
         // --- COMMISSION PAYABLE FUNCTIONS ---
