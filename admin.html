@@ -34,16 +34,6 @@
             color: #1e5aa8;
             font-weight: 700;
         }
-
-        @media (max-width: 480px) {
-            span[style*="font-size: 11px"],
-            span[style*="font-size: 12px"],
-            div[style*="font-size: 11px"],
-            div[style*="font-size: 12px"] {
-                word-break: break-word;
-                overflow-wrap: break-word;
-            }
-        }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -57,6 +47,7 @@
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
+        <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Payment Verification</button>
     </div>
 
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
@@ -241,6 +232,57 @@
         </div>
     </div>
 
+    <div id="section-payments" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Payment Proof Verification</h2>
+            <span id="payment-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+        </div>
+
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Vendor Payment Proofs</h3>
+            <p class="text-xs text-gray-500 mb-4">Review and verify payment proof documents submitted by vendors.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor Details</th>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Payment Method</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-payments-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading vendor payment proofs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Buyer Payment Proofs</h3>
+            <p class="text-xs text-gray-500 mb-4">Review and verify payment proof documents submitted by buyers.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Buyer Details</th>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Payment Method</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyer-payments-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading buyer payment proofs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Product Image Tooltip Box -->
     <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
         <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
@@ -385,14 +427,71 @@
         </div>
     </div>
 
+    <!-- Payment Proof Review Modal -->
+    <div id="payment-proof-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <h3 class="text-lg font-bold text-[#1e5aa8]">Payment Proof Verification</h3>
+                <button onclick="closePaymentProofModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Payer Name</label>
+                        <div id="payment-payer-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Amount</label>
+                        <div id="payment-amount" class="bg-gray-100 p-2 rounded text-sm font-bold text-green-700">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Payment Method</label>
+                        <div id="payment-method" class="bg-gray-100 p-2 rounded text-sm text-gray-800">-</div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Submitted Date</label>
+                        <div id="payment-date" class="bg-gray-100 p-2 rounded text-sm text-gray-800">-</div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-2">Payment Proof Document</label>
+                    <div id="payment-proof-container" class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50 min-h-48 flex items-center justify-center">
+                        <img id="payment-proof-img" src="" alt="Payment Proof" class="max-w-full max-h-96 object-contain rounded" style="display:none;">
+                        <a id="payment-proof-link" href="" target="_blank" class="text-blue-600 hover:underline font-semibold">View Proof Document</a>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Admin Notes (Required if Rejecting)</label>
+                    <textarea id="payment-admin-notes" placeholder="Enter rejection reason or verification notes..." class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
+                    ℹ️ Approving confirms the payment proof and marks it as verified. Rejecting requires a reason to be sent to the payer.
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-5 pt-4 border-t">
+                <button onclick="closePaymentProofModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
+                <button onclick="rejectPaymentProof()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
+                <button onclick="approvePaymentProof()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let db;
         let activeThresholdVendorId = null;
         let globalInquiriesData = [];
-        let productMap = {};
-        let vendorMap = {};
-        let pollingIntervals = {};
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+
+        let currentPaymentProofId = null;
+        let currentPaymentProofType = null; // 'vendor' or 'buyer'
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
@@ -401,7 +500,7 @@
                 loadBuyersPortal();
                 loadInquiriesPortal();
                 loadCommissionsPortal();
-                await setupPolling();
+                loadPaymentProofsPortal();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -414,6 +513,7 @@
             document.getElementById('section-buyers').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
+            document.getElementById('section-payments').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -421,126 +521,7 @@
             if (tabName === 'buyers') loadBuyersPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
-        }
-
-        async function setupPolling() {
-            if (!db) return;
-            stopPolling();
-            try {
-                console.log('📋 Starting polling for admin portal');
-
-                let lastInquiriesHash = '';
-                let lastVendorsHash = '';
-                let lastThresholdHash = '';
-                let lastAlertsHash = '';
-
-                // Poll inquiries every 3 seconds
-                pollingIntervals.inquiries = setInterval(async () => {
-                    try {
-                        const { data: inquiries } = await db
-                            .from('inquiries')
-                            .select('*');
-
-                        const currentHash = JSON.stringify(inquiries || []);
-                        if (currentHash !== lastInquiriesHash) {
-                            console.log('📬 Inquiries changed - RELOADING');
-                            lastInquiriesHash = currentHash;
-                            loadInquiriesPortal();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (inquiries):', err);
-                    }
-                }, 3000);
-
-                // Poll vendors every 4 seconds
-                pollingIntervals.vendors = setInterval(async () => {
-                    try {
-                        const { data: vendors } = await db
-                            .from('vendors')
-                            .select('*');
-
-                        const currentHash = JSON.stringify(vendors || []);
-                        if (currentHash !== lastVendorsHash) {
-                            console.log('💳 Vendors changed - RELOADING');
-                            lastVendorsHash = currentHash;
-                            loadCommissionsPortal();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (vendors):', err);
-                    }
-                }, 4000);
-
-                // Poll threshold requests every 5 seconds
-                pollingIntervals.threshold = setInterval(async () => {
-                    try {
-                        const { data: requests } = await db
-                            .from('threshold_change_requests')
-                            .select('*');
-
-                        const currentHash = JSON.stringify(requests || []);
-                        if (currentHash !== lastThresholdHash) {
-                            console.log('📊 Threshold requests changed - RELOADING');
-                            lastThresholdHash = currentHash;
-                            loadThresholdChangeRequests();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (threshold):', err);
-                    }
-                }, 5000);
-
-                // Poll alerts every 4 seconds
-                pollingIntervals.alerts = setInterval(async () => {
-                    try {
-                        const { data: alerts } = await db
-                            .from('alerts')
-                            .select('*')
-                            .eq('recipient_type', 'admin')
-                            .eq('is_read', false);
-
-                        const currentHash = JSON.stringify(alerts || []);
-                        if (currentHash !== lastAlertsHash) {
-                            console.log('⚠️ Alerts changed - RELOADING');
-                            lastAlertsHash = currentHash;
-                            alerts.forEach(alert => {
-                                if (alert.alert_type && ['commission_threshold', 'suspicious_activity', 'system_error'].includes(alert.alert_type)) {
-                                    showAdminAlert(alert);
-                                }
-                            });
-                        }
-                    } catch (err) {
-                        console.error('Polling error (alerts):', err);
-                    }
-                }, 4000);
-
-                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds');
-            } catch (err) {
-                console.error('Error setting up polling:', err);
-            }
-        }
-
-        function stopPolling() {
-            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
-            if (pollingIntervals.vendors) clearInterval(pollingIntervals.vendors);
-            if (pollingIntervals.threshold) clearInterval(pollingIntervals.threshold);
-            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
-            pollingIntervals = {};
-            console.log('🛑 Polling stopped');
-        }
-
-        function showAdminAlert(alert) {
-            const toast = document.createElement('div');
-            toast.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #ef4444; color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; max-width: 350px; animation: slideIn 0.3s ease-out;';
-            toast.innerHTML = `
-                <div style="font-weight: 700; margin-bottom: 4px;">${alert.title || 'Admin Alert'}</div>
-                <div style="font-size: 13px; opacity: 0.95;">${alert.message || 'An alert requires your attention.'}</div>
-            `;
-            document.body.appendChild(toast);
-
-            // Auto-dismiss after 8 seconds
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease-out';
-                setTimeout(() => toast.remove(), 300);
-            }, 8000);
+            else if (tabName === 'payments') loadPaymentProofsPortal();
         }
 
         // --- TAB 1: BUYERS ---
@@ -609,47 +590,21 @@
         }
 
         // --- TAB 2: INQUIRIES & FEEDBACK ---
-        // Track expanded accordion items to preserve state during real-time updates
-        let expandedAccordionIds = [];
-
         async function loadInquiriesPortal() {
             const container = document.getElementById('inquiries-container');
             if (!container) return;
 
-            // Save expanded accordions before re-rendering
-            expandedAccordionIds = [];
-            document.querySelectorAll('[id$="-content"]').forEach(content => {
-                if (!content.classList.contains('hidden')) {
-                    expandedAccordionIds.push(content.id);
-                }
-            });
-
             try {
                 // Fetch all inquiries (includes pending conversations and feedback submissions)
-                console.log('🔍 Fetching all inquiries...');
                 const { data: inquiries, error: inqError } = await db
                     .from('inquiries')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (inqError) {
-                    console.error('❌ Inquiry fetch error:', inqError);
+                    console.error('Inquiry fetch error:', inqError);
                     container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
                     return;
-                }
-
-                console.log('✅ Inquiries fetched:', inquiries?.length || 0, 'records');
-
-                // Log feedback records specifically
-                const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
-                console.log('📸 Feedback submissions found:', feedbackRecords.length);
-
-                // DIAGNOSTIC: Log all feedback with details
-                if (feedbackRecords.length > 0) {
-                    console.log('📸 FEEDBACK DETAILS:');
-                    feedbackRecords.forEach((fb, idx) => {
-                        console.log(`   [${idx + 1}] ID: ${fb.id}, Status: "${fb.status}", BuyerID: ${fb.buyer_id}, ProductID: ${fb.product_id}, HasImage: ${!!fb.image_url}`);
-                    });
                 }
 
                 if (!inquiries || inquiries.length === 0) {
@@ -680,9 +635,8 @@
                     }
                 }
 
-                // Fetch product data (using global maps)
-                productMap = {};
-                vendorMap = {};
+                // Fetch product data
+                let productMap = {};
                 console.log('📦 productIds extracted:', productIds);
                 if (productIds.length > 0) {
                     try {
@@ -690,39 +644,18 @@
                             .from('products')
                             .select('*');
 
-                        console.log('📦 Products fetched from DB:', products?.length || 0, 'records');
-                        if (prodError) console.log('📦 Product fetch error:', prodError.message);
+                        console.log('📦 ALL products from DB:', products);
+                        console.log('📦 Product fetch error:', prodError);
 
                         if (products && products.length > 0) {
                             products.forEach(prod => {
                                 productMap[prod.id] = prod;
+                                console.log(`📦 Added product to map: ${prod.id} => ${prod.product_name}`);
                             });
-                            console.log(`📦 Added ${products.length} products to map`);
                         } else {
                             console.warn('📦 No products returned from database');
                         }
-
-                        // Fetch vendor names for all unique vendor IDs from products
-                        const vendorIds = [...new Set(products?.map(p => p.vendor_id).filter(Boolean) || [])];
-                        console.log('🏢 Vendor IDs to fetch:', vendorIds.length);
-
-                        if (vendorIds.length > 0) {
-                            try {
-                                const { data: vendors } = await db
-                                    .from('vendors')
-                                    .select('id, first_name, last_name')
-                                    .in('id', vendorIds);
-
-                                if (vendors) {
-                                    vendors.forEach(vendor => {
-                                        vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
-                                    });
-                                    console.log(`🏢 Added ${vendors.length} vendors to map`);
-                                }
-                            } catch (e) {
-                                console.error('Vendor fetch error:', e);
-                            }
-                        }
+                        console.log('📦 Final productMap:', productMap);
                     } catch (e) {
                         console.error('Product fetch error:', e);
                     }
@@ -738,6 +671,10 @@
                             .from('product-images')
                             .select('*');
 
+                        console.log('Product IDs to fetch:', productIds);
+                        console.log('Images fetched:', images);
+                        console.log('Image fetch error:', imgError);
+
                         if (images) {
                             images.forEach(img => {
                                 if (productIds.includes(img.product_id)) {
@@ -745,10 +682,10 @@
                                     imageMap[img.product_id].push(img.image_url);
                                 }
                             });
-                            console.log('Product images loaded:', Object.keys(imageMap).length, 'products with images');
+                            console.log('Image map after processing:', imageMap);
                         }
                     } catch (e) {
-                        console.error('Product images fetch error (table may not exist):', e.message);
+                        console.error('Product images fetch error (table may not exist):', e);
                     }
                 }
 
@@ -757,6 +694,7 @@
                     inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
                     inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
                     inq.product_images = imageMap[inq.product_id] || [inq.image_url].filter(Boolean);
+                    console.log(`📦 Inquiry ${inq.id}: product_id=${inq.product_id}, found=${!!productMap[inq.product_id]}, product_name=${inq.products.product_name}`);
                 });
 
                 globalInquiriesData = inquiries;
@@ -766,19 +704,6 @@
                 document.getElementById('date-from').value = '';
                 document.getElementById('date-to').value = '';
                 filterInquiriesTree();
-
-                // Re-expand accordions that were expanded before re-rendering
-                setTimeout(() => {
-                    expandedAccordionIds.forEach(contentId => {
-                        const content = document.getElementById(contentId);
-                        if (content && content.classList.contains('hidden')) {
-                            const iconId = contentId.replace('-content', '-icon');
-                            const icon = document.getElementById(iconId);
-                            content.classList.remove('hidden');
-                            if (icon) icon.style.transform = 'rotate(90deg)';
-                        }
-                    });
-                }, 0);
             } catch (e) {
                 console.error('Unexpected error in loadInquiriesPortal:', e);
                 container.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error loading feedback.</div>`;
@@ -821,13 +746,11 @@
 
             // Apply status filter
             if (statusFilterValue === 'actionable') {
-                // Show pending, flagged, pending_verification, and verified
-                const beforeFilter = filtered.length;
+                // Show pending, flagged, and pending_verification
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
-                    return status === 'pending' || status === 'flagged' || status === 'pending_verification' || status === 'verified';
+                    return status === 'pending' || status === 'flagged' || status === 'pending_verification';
                 });
-                console.log(`Status filter 'actionable': ${beforeFilter} → ${filtered.length} records`);
             } else if (statusFilterValue === 'pending') {
                 // Show pending and pending_verification
                 filtered = filtered.filter(inq => {
@@ -853,7 +776,7 @@
                 filtered = filtered.filter(inq => new Date(inq.created_at).getTime() <= toDate);
             }
 
-            console.log('After filters. Remaining records:', filtered.length);
+            console.log('After filters. Remaining:', filtered.length, filtered);
             renderInquiriesTree(filtered);
         }
 
@@ -930,15 +853,8 @@
                 messages.forEach(msg => {
                     const prodId = msg.product_id || 'unknown';
                     if (!groupedByProduct[prodId]) {
-                        const baseProduct = msg.products || productMap[prodId] || { id: prodId, product_name: `Product ${prodId}` };
-                        const vendorId = baseProduct.vendor_id;
-                        const vendorName = vendorId ? vendorMap[vendorId] || 'Unknown Vendor' : 'N/A';
-
                         groupedByProduct[prodId] = {
-                            product: {
-                                ...baseProduct,
-                                vendor_name: vendorName
-                            },
+                            product: msg.products || { id: prodId, product_name: `Product ${prodId}` },
                             productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
                             messages: []
                         };
@@ -950,10 +866,6 @@
                 for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
                     const prodName = prodData.product?.product_name || `Product ${prodId}`;
                     const prodImage = prodData.productImage;
-
-                    // Get vendor info from product
-                    const vendorName = prodData.product?.vendor_name || 'Unknown Vendor';
-                    const vendorId = prodData.product?.vendor_id || 'N/A';
 
                     html += `
                         <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
@@ -967,8 +879,6 @@
                                 <div class="flex-1">
                                     <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
                                     <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
-                                    <div class="text-sm text-yellow-100 mt-2 font-semibold">🏢 Vendor: ${escapeHtml(vendorName)}</div>
-                                    <div class="text-xs text-blue-100 mt-0.5">ID: <span class="font-mono">${escapeHtml(vendorId)}</span></div>
                                     <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
                                 </div>
                             </div>
@@ -1754,6 +1664,293 @@
                 await loadThresholdChangeRequests();
             } catch (err) {
                 console.error('Error rejecting threshold request:', err);
+                alert('Error: ' + err.message);
+            }
+        }
+
+        // --- PAYMENT PROOF VERIFICATION ---
+        async function loadPaymentProofsPortal() {
+            try {
+                // Load vendor payment proofs pending admin review
+                const { data: vendorProofs, error: vendorError } = await db
+                    .from('vendor_payables')
+                    .select('*')
+                    .eq('payment_proof_status', 'pending_admin_review')
+                    .order('created_at', { ascending: false });
+
+                if (vendorError) {
+                    console.error('Error loading vendor proofs:', vendorError);
+                    document.getElementById('vendor-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading vendor proofs</td></tr>`;
+                } else {
+                    renderVendorPaymentProofs(vendorProofs || []);
+                }
+
+                // Load buyer payment proofs pending admin review
+                const { data: buyerProofs, error: buyerError } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('payment_proof_status', 'pending_admin_review')
+                    .order('created_at', { ascending: false });
+
+                if (buyerError) {
+                    console.error('Error loading buyer proofs:', buyerError);
+                    document.getElementById('buyer-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading buyer proofs</td></tr>`;
+                } else {
+                    renderBuyerPaymentProofs(buyerProofs || []);
+                }
+
+                // Update total count
+                const totalPending = (vendorProofs?.length || 0) + (buyerProofs?.length || 0);
+                document.getElementById('payment-count').textContent = `${totalPending} pending`;
+            } catch (err) {
+                console.error('Error in loadPaymentProofsPortal:', err);
+                alert('Error loading payment proofs: ' + err.message);
+            }
+        }
+
+        function renderVendorPaymentProofs(proofs) {
+            if (!proofs || proofs.length === 0) {
+                document.getElementById('vendor-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vendor payment proofs pending review</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            proofs.forEach(proof => {
+                const statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
+                const amount = parseFloat(proof.payable_amount || 0).toFixed(2);
+                const method = proof.payment_method || 'Not specified';
+                const vendorName = proof.vendor_name || 'Unknown Vendor';
+                const vendorEmail = proof.vendor_email || 'No email';
+
+                html += `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(vendorName)}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(vendorEmail)}</div>
+                        </td>
+                        <td class="p-2.5 font-bold text-gray-800">$${amount}</td>
+                        <td class="p-2.5 text-sm text-gray-600">${escapeHtml(method)}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="openPaymentProofModal('${proof.id}', 'vendor')" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('vendor-payments-body').innerHTML = html;
+        }
+
+        function renderBuyerPaymentProofs(proofs) {
+            if (!proofs || proofs.length === 0) {
+                document.getElementById('buyer-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No buyer payment proofs pending review</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            proofs.forEach(proof => {
+                const statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
+                const amount = parseFloat(proof.payable_amount || 0).toFixed(2);
+                const method = proof.payment_method || 'Not specified';
+                const buyerName = proof.buyer_name || 'Unknown Buyer';
+                const buyerEmail = proof.buyer_email || 'No email';
+
+                html += `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5">
+                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyerName)}</div>
+                            <div class="text-[11px] text-gray-500">${escapeHtml(buyerEmail)}</div>
+                        </td>
+                        <td class="p-2.5 font-bold text-gray-800">$${amount}</td>
+                        <td class="p-2.5 text-sm text-gray-600">${escapeHtml(method)}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="openPaymentProofModal('${proof.id}', 'buyer')" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('buyer-payments-body').innerHTML = html;
+        }
+
+        async function openPaymentProofModal(proofId, proofType) {
+            try {
+                currentPaymentProofId = proofId;
+                currentPaymentProofType = proofType;
+
+                const table = proofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
+                const { data: proof, error: fetchError } = await db
+                    .from(table)
+                    .select('*')
+                    .eq('id', proofId)
+                    .single();
+
+                if (fetchError || !proof) {
+                    alert('Error loading payment proof details');
+                    return;
+                }
+
+                // Set modal fields
+                const payerName = proofType === 'vendor'
+                    ? (proof.vendor_name || 'Unknown Vendor')
+                    : (proof.buyer_name || 'Unknown Buyer');
+
+                document.getElementById('payment-payer-name').textContent = escapeHtml(payerName);
+                document.getElementById('payment-amount').textContent = `$${parseFloat(proof.payable_amount || 0).toFixed(2)}`;
+                document.getElementById('payment-method').textContent = escapeHtml(proof.payment_method || 'Not specified');
+                document.getElementById('payment-date').textContent = new Date(proof.created_at).toLocaleDateString() + ' ' + new Date(proof.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('payment-admin-notes').value = '';
+
+                // Display payment proof (image or link)
+                const proofContainer = document.getElementById('payment-proof-container');
+                const proofImg = document.getElementById('payment-proof-img');
+                const proofLink = document.getElementById('payment-proof-link');
+
+                if (proof.payment_proof_url) {
+                    if (proof.payment_proof_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        proofImg.src = proof.payment_proof_url;
+                        proofImg.style.display = 'block';
+                        proofLink.style.display = 'none';
+                    } else {
+                        proofLink.href = proof.payment_proof_url;
+                        proofLink.textContent = 'View Proof Document';
+                        proofLink.style.display = 'block';
+                        proofImg.style.display = 'none';
+                    }
+                } else {
+                    proofContainer.innerHTML = '<span class="text-gray-500">No proof document provided</span>';
+                }
+
+                document.getElementById('payment-proof-modal').classList.remove('hidden');
+            } catch (err) {
+                console.error('Error opening payment proof modal:', err);
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function closePaymentProofModal() {
+            document.getElementById('payment-proof-modal').classList.add('hidden');
+            currentPaymentProofId = null;
+            currentPaymentProofType = null;
+        }
+
+        async function approvePaymentProof() {
+            if (!currentPaymentProofId || !currentPaymentProofType) return;
+
+            try {
+                const table = currentPaymentProofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
+
+                // Fetch proof to get payer details
+                const { data: proof, error: fetchError } = await db
+                    .from(table)
+                    .select('*')
+                    .eq('id', currentPaymentProofId)
+                    .single();
+
+                if (fetchError || !proof) {
+                    alert('Error fetching proof details');
+                    return;
+                }
+
+                // Update payment proof status
+                const { error: updateError } = await db
+                    .from(table)
+                    .update({
+                        payment_proof_status: 'confirmed',
+                        admin_verified_date: new Date().toISOString(),
+                        admin_verified_by: 'admin'
+                    })
+                    .eq('id', currentPaymentProofId);
+
+                if (updateError) {
+                    alert('Error updating payment status: ' + updateError.message);
+                    return;
+                }
+
+                // Create alert for payer
+                const recipientId = currentPaymentProofType === 'vendor' ? proof.vendor_id : proof.buyer_id;
+                const recipientType = currentPaymentProofType === 'vendor' ? 'vendor' : 'buyer';
+                const payerName = currentPaymentProofType === 'vendor' ? proof.vendor_name : proof.buyer_name;
+
+                await db.from('alerts').insert([{
+                    recipient_id: recipientId,
+                    recipient_type: recipientType,
+                    alert_type: 'payment_approved',
+                    title: 'Payment Proof Verified',
+                    message: `Your payment proof of $${parseFloat(proof.payable_amount).toFixed(2)} has been verified and approved by the admin.`,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                }]);
+
+                alert('✅ Payment proof approved! ' + payerName + ' has been notified.');
+                closePaymentProofModal();
+                await loadPaymentProofsPortal();
+            } catch (err) {
+                console.error('Error approving payment proof:', err);
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function rejectPaymentProof() {
+            if (!currentPaymentProofId || !currentPaymentProofType) return;
+
+            try {
+                const adminNotes = document.getElementById('payment-admin-notes').value.trim();
+
+                if (!adminNotes) {
+                    alert('Please provide a reason for rejection');
+                    return;
+                }
+
+                const table = currentPaymentProofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
+
+                // Fetch proof to get payer details
+                const { data: proof, error: fetchError } = await db
+                    .from(table)
+                    .select('*')
+                    .eq('id', currentPaymentProofId)
+                    .single();
+
+                if (fetchError || !proof) {
+                    alert('Error fetching proof details');
+                    return;
+                }
+
+                // Update payment proof status to rejected
+                const { error: updateError } = await db
+                    .from(table)
+                    .update({
+                        payment_proof_status: 'rejected',
+                        admin_verified_date: new Date().toISOString(),
+                        admin_verified_by: 'admin',
+                        admin_notes: adminNotes
+                    })
+                    .eq('id', currentPaymentProofId);
+
+                if (updateError) {
+                    alert('Error updating payment status: ' + updateError.message);
+                    return;
+                }
+
+                // Create alert for payer
+                const recipientId = currentPaymentProofType === 'vendor' ? proof.vendor_id : proof.buyer_id;
+                const recipientType = currentPaymentProofType === 'vendor' ? 'vendor' : 'buyer';
+                const payerName = currentPaymentProofType === 'vendor' ? proof.vendor_name : proof.buyer_name;
+
+                await db.from('alerts').insert([{
+                    recipient_id: recipientId,
+                    recipient_type: recipientType,
+                    alert_type: 'payment_rejected',
+                    title: 'Payment Proof Rejected',
+                    message: `Your payment proof of $${parseFloat(proof.payable_amount).toFixed(2)} was rejected. Reason: ${adminNotes}. Please resubmit with valid documentation.`,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                }]);
+
+                alert('✅ Payment proof rejected. ' + payerName + ' has been notified to resubmit.');
+                closePaymentProofModal();
+                await loadPaymentProofsPortal();
+            } catch (err) {
+                console.error('Error rejecting payment proof:', err);
                 alert('Error: ' + err.message);
             }
         }
