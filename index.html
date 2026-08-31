@@ -824,13 +824,31 @@
                                 timeZoneName: 'short'
                             });
 
-                            // Determine message type and color
+                            // Determine message type and color - CHECK DATABASE FIELD FIRST
                             let messageType = 'Initial Inquiry';
                             let badgeColor = '#2563eb';
                             let badgeBg = '#dbeafe';
                             let messageBorderColor = '#93c5fd';
 
-                            if (item.message.includes('[Post-Receipt Product Feedback]')) {
+                            // Priority 1: Check actual message_type from database
+                            if (item.message_type === 'vendor_response') {
+                                messageType = 'Vendor Response';
+                                badgeColor = '#059669';
+                                badgeBg = '#d1fae5';
+                                messageBorderColor = '#6ee7b7';
+                            } else if (item.message_type === 'feedback') {
+                                messageType = 'Feedback Submitted';
+                                badgeColor = '#ea580c';
+                                badgeBg = '#fed7aa';
+                                messageBorderColor = '#fdba74';
+                            } else if (item.message_type === 'buyer_followup') {
+                                messageType = 'Buyer Follow-up';
+                                badgeColor = '#7c3aed';
+                                badgeBg = '#ede9fe';
+                                messageBorderColor = '#d8b4fe';
+                            }
+                            // Priority 2: Fallback to pattern matching for legacy messages
+                            else if (item.message.includes('[Post-Receipt Product Feedback]')) {
                                 messageType = 'Feedback Submitted';
                                 badgeColor = '#ea580c';
                                 badgeBg = '#fed7aa';
