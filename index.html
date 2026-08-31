@@ -432,7 +432,7 @@
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
         let inquiriesRealtimeSubscription = null;
-        let globalBuyerSubscription = null;
+        let pollingIntervals = {};
         let currentActiveCategory = 'All';
 
         function captureReferralCode() {
@@ -494,7 +494,7 @@
                     console.log('  ✓ Buyer pill visible, name:', displayName, 'email:', displayEmail);
 
                     // Start global real-time subscriptions for this buyer
-                    await setupGlobalBuyerSubscriptions(buyerData.id);
+                    await setupPolling(buyerData.id);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
                     // Buyer exists but not approved - show blocked message
@@ -554,100 +554,106 @@
             window.location.reload();
         }
 
-        async function setupGlobalBuyerSubscriptions(buyerId) {
+        async function setupPolling(buyerId) {
             if (!buyerId || !db) return;
-
-            // Cleanup existing subscription
-            if (globalBuyerSubscription) {
-                db.removeAllChannels();
-                globalBuyerSubscription = null;
-            }
-
+            stopPolling();
             try {
-                // Subscribe to multiple tables for real-time buyer updates
-                globalBuyerSubscription = db
-                    .channel('public:buyer-global')
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'inquiries'
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
+                console.log('📋 Starting polling for buyer:', buyerId);
 
-                            // Vendor response to this buyer
-                            if (payload.eventType === 'INSERT' && record.buyer_id === buyerId && record.message_type === 'vendor_response') {
-                                console.log('🔔 Real-time: Vendor response received');
-                                loadBuyerInquiriesHistory(buyerId);
-                            }
-                            // Feedback status update (admin verified/rejected)
-                            else if (payload.eventType === 'UPDATE' && record.buyer_id === buyerId && record.message_type === 'feedback') {
-                                console.log('🔔 Real-time: Feedback status updated');
-                                loadBuyerInquiriesHistory(buyerId);
-                            }
+                let lastInquiriesHash = '';
+                let lastReferralHash = '';
+                let lastProductsHash = '';
+                let lastAlertsHash = '';
+
+                // Poll inquiries every 3 seconds
+                pollingIntervals.inquiries = setInterval(async () => {
+                    try {
+                        const { data: inquiries } = await db
+                            .from('inquiries')
+                            .select('*')
+                            .eq('buyer_id', buyerId);
+
+                        const currentHash = JSON.stringify(inquiries || []);
+                        if (currentHash !== lastInquiriesHash) {
+                            console.log('📬 Inquiries changed - RELOADING');
+                            lastInquiriesHash = currentHash;
+                            loadBuyerInquiriesHistory(buyerId);
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'referral_ledger'
-                        },
-                        (payload) => {
-                            // New commission earned
-                            if (payload.new.referrer_id === buyerId) {
-                                console.log('💰 Real-time: New commission recorded');
-                                loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
-                            }
+                    } catch (err) {
+                        console.error('Polling error (inquiries):', err);
+                    }
+                }, 3000);
+
+                // Poll referral ledger every 4 seconds
+                pollingIntervals.referral = setInterval(async () => {
+                    try {
+                        const { data: referrals } = await db
+                            .from('referral_ledger')
+                            .select('*')
+                            .eq('referrer_id', buyerId);
+
+                        const currentHash = JSON.stringify(referrals || []);
+                        if (currentHash !== lastReferralHash) {
+                            console.log('💰 Referrals changed - RELOADING');
+                            lastReferralHash = currentHash;
+                            loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: 'UPDATE',
-                            schema: 'public',
-                            table: 'referral_ledger'
-                        },
-                        (payload) => {
-                            // Commission status changed (pending → payable → paid)
-                            if (payload.new.referrer_id === buyerId) {
-                                console.log('💳 Real-time: Commission status updated');
-                                loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
-                            }
-                        }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: 'UPDATE',
-                            schema: 'public',
-                            table: 'products'
-                        },
-                        (payload) => {
-                            // Product price or availability changed
-                            console.log('📦 Real-time: Product updated');
+                    } catch (err) {
+                        console.error('Polling error (referrals):', err);
+                    }
+                }, 4000);
+
+                // Poll products every 4 seconds
+                pollingIntervals.products = setInterval(async () => {
+                    try {
+                        const { data: products } = await db
+                            .from('products')
+                            .select('*');
+
+                        const currentHash = JSON.stringify(products || []);
+                        if (currentHash !== lastProductsHash) {
+                            console.log('📦 Products changed - RELOADING');
+                            lastProductsHash = currentHash;
                             loadProducts(currentActiveCategory, false);
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'alerts'
-                        },
-                        (payload) => {
-                            // New alert for this buyer
-                            if (payload.new.recipient_id === buyerId && payload.new.recipient_type === 'buyer') {
-                                console.log('⚠️ Real-time: New alert received');
-                                showBuyerAlert(payload.new);
-                            }
-                        }
-                    )
-                    .subscribe();
+                    } catch (err) {
+                        console.error('Polling error (products):', err);
+                    }
+                }, 4000);
 
-                console.log('✅ Global real-time subscriptions active for buyer:', buyerId);
+                // Poll alerts every 5 seconds
+                pollingIntervals.alerts = setInterval(async () => {
+                    try {
+                        const { data: alerts } = await db
+                            .from('alerts')
+                            .select('*')
+                            .eq('recipient_id', buyerId)
+                            .eq('recipient_type', 'buyer');
+
+                        const currentHash = JSON.stringify(alerts || []);
+                        if (currentHash !== lastAlertsHash) {
+                            console.log('⚠️ Alerts changed - RELOADING');
+                            lastAlertsHash = currentHash;
+                            alerts.forEach(alert => showBuyerAlert(alert));
+                        }
+                    } catch (err) {
+                        console.error('Polling error (alerts):', err);
+                    }
+                }, 5000);
+
+                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds for buyer:', buyerId);
             } catch (err) {
-                console.error('Error setting up global subscriptions:', err);
+                console.error('Error setting up polling:', err);
             }
+        }
+
+        function stopPolling() {
+            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
+            if (pollingIntervals.referral) clearInterval(pollingIntervals.referral);
+            if (pollingIntervals.products) clearInterval(pollingIntervals.products);
+            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
+            pollingIntervals = {};
+            console.log('🛑 Polling stopped');
         }
 
         function showBuyerAlert(alert) {
