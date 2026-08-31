@@ -1459,10 +1459,7 @@
                 // Fetch inquiry details from database
                 const { data: inquiry, error: inquiryError } = await sbClient.from('inquiries').select('*').eq('id', id).single();
                 console.log('Query result:', { inquiry, inquiryError });
-<<<<<<< HEAD
-=======
 
->>>>>>> ced96b7df09c0acb9ba47accb30e25f569dd7218
                 if (!inquiry) {
                     console.error('Inquiry not found for id:', id);
                     alert('Inquiry not found: ' + id);
