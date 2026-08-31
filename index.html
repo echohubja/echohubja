@@ -1175,6 +1175,7 @@
                 const updatePayload = {
                     message: feedbackMessage,
                     message_type: 'feedback',
+                    status: 'pending',
                     created_at: new Date().toISOString()
                 };
                 if (imageUrl) {
@@ -1194,7 +1195,8 @@
                         vendor_id: actualVendorId,
                         message: feedbackMessage,
                         image_url: imageUrl,
-                        message_type: 'feedback'
+                        message_type: 'feedback',
+                        status: 'pending'
                     }
                 ]);
                 dbError = insertErr;
