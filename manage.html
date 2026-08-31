@@ -2363,11 +2363,24 @@
             return { status: 'ok', label: '<1h', indicator: 'ok' };
         }
 
+        // Track expanded thread to preserve state during polling
+        let expandedThreadId = null;
+
         function renderInquiries() {
             const threadList = document.getElementById('inquiriesThreadList');
 
+            // Save expanded thread before re-rendering
+            const expandedThread = document.querySelector('.inquiry-thread.expanded');
+            if (expandedThread) {
+                const firstMsg = expandedThread.querySelector('.inquiry-message');
+                if (firstMsg) {
+                    expandedThreadId = expandedThread.getAttribute('data-thread-id');
+                }
+            }
+
             if (!inquiriesCache || inquiriesCache.length === 0) {
                 threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No inquiries yet.</p></div>';
+                expandedThreadId = null;
                 return;
             }
 
@@ -2376,6 +2389,7 @@
 
             if (filteredInquiries.length === 0) {
                 threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">🔍</div><p class="inquiry-empty-state-text">No inquiries match your filters.</p></div>';
+                expandedThreadId = null;
                 return;
             }
 
@@ -2395,8 +2409,9 @@
                     vendorApproved ? 'vendor-approved' : ''
                 }`;
 
+                const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
                 return `
-                    <div class="${threadClass}">
+                    <div class="${threadClass}" data-thread-id="${threadId}">
                         <div class="inquiry-thread-header">
                             <div class="thread-header-left">
                                 <div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div>
@@ -2433,10 +2448,20 @@
                 thread.removeEventListener('click', threadClickHandler);
                 thread.addEventListener('click', threadClickHandler);
             });
+
+            // Re-expand the thread that was expanded before polling
+            if (expandedThreadId) {
+                const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
+                if (threadToExpand) {
+                    threadToExpand.classList.add('expanded');
+                }
+            }
         }
 
         const threadClickHandler = (e) => {
-            if (!e.target.closest('.inquiry-approve-btn') && !e.target.closest('.inquiry-reject-btn')) {
+            if (!e.target.closest('.inquiry-approve-btn') &&
+                !e.target.closest('.inquiry-reject-btn') &&
+                !e.target.closest('.inquiry-respond-btn')) {
                 e.currentTarget.classList.toggle('expanded');
             }
         };
