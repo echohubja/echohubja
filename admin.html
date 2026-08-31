@@ -501,6 +501,14 @@
                 const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
                 console.log('📸 Feedback submissions found:', feedbackRecords.length);
 
+                // DIAGNOSTIC: Log all feedback with details
+                if (feedbackRecords.length > 0) {
+                    console.log('📸 FEEDBACK DETAILS:');
+                    feedbackRecords.forEach((fb, idx) => {
+                        console.log(`   [${idx + 1}] ID: ${fb.id}, Status: "${fb.status}", BuyerID: ${fb.buyer_id}, ProductID: ${fb.product_id}, HasImage: ${!!fb.image_url}`);
+                    });
+                }
+
                 if (!inquiries || inquiries.length === 0) {
                     container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found yet.</div>`;
                     document.getElementById('inquiry-count').textContent = '0 records';
@@ -658,10 +666,17 @@
             // Apply status filter
             if (statusFilterValue === 'actionable') {
                 // Show pending, flagged, and pending_verification
+                const beforeFilter = filtered.length;
                 filtered = filtered.filter(inq => {
                     const status = (inq.status || 'pending').toLowerCase();
                     return status === 'pending' || status === 'flagged' || status === 'pending_verification';
                 });
+                console.log(`Status filter 'actionable': ${beforeFilter} → ${filtered.length} records`);
+
+                // DIAGNOSTIC: Show what was filtered out
+                const allStatuses = globalInquiriesData.map(i => ({ id: i.id, type: i.message_type, status: (i.status || 'pending').toLowerCase(), buyer: i.buyer_id }));
+                const uniqueStatuses = [...new Set(allStatuses.map(s => s.status))];
+                console.log('📊 All unique statuses in data:', uniqueStatuses);
             } else if (statusFilterValue === 'pending') {
                 // Show pending and pending_verification
                 filtered = filtered.filter(inq => {
