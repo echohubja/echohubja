@@ -600,7 +600,6 @@
 
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
-            const vendorId = document.getElementById('modal-vendor-id').value;
             const message = document.getElementById('inquiry-message').value.trim();
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
@@ -612,11 +611,22 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
+            // Get vendor_id from product table (not from modal which might be 'Echo Hub')
+            const { data: productData } = await db
+                .from('products')
+                .select('vendor_id')
+                .eq('id', productId)
+                .single();
+
+            const actualVendorId = productData?.vendor_id || null;
+
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
                     buyer_id: currentBuyerId,
-                    message: message
+                    vendor_id: actualVendorId,
+                    message: message,
+                    message_type: 'inquiry'
                 }
             ]);
 
@@ -1057,6 +1067,7 @@
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: `[Follow-up]: ${messageText}`,
+                    message_type: 'buyer_followup',
                     image_url: null
                 }
             ]);
