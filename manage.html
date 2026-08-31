@@ -1043,7 +1043,7 @@
             </div>
 
             <!-- Response Modal -->
-            <div id="responseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; flex-items: center; justify-content: center; padding: 20px;">
+            <div id="responseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; flex-direction: column;">
                 <div style="background: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto;">
                     <h3 style="color: #1e5aa8; font-size: 1.3em; margin-bottom: 16px;">Respond to Customer Inquiry</h3>
 
@@ -1439,7 +1439,7 @@
                         <td>
                             ${hasResponse
                                 ? '<span style="color: #15803d; font-weight: 600;">✓ Responded</span>'
-                                : `<button class="btn-action btn-edit" onclick="openResponseModal('${inq.id}', '${escapeHtml(buyer.full_name)}', '${escapeHtml(product.product_name)}', '${escapeHtml(inq.message)}')">Respond</button>`
+                                : `<button class="btn-action btn-edit" onclick="openResponseModal(${inq.id})">Respond</button>`
                             }
                         </td>
                     `;
@@ -1452,13 +1452,32 @@
             }
         }
 
-        window.openResponseModal = function(inquiryId, buyerName, productName, message) {
-            currentInquiry = { id: inquiryId, buyerName, productName, message };
-            document.getElementById('inqCustomer').textContent = buyerName;
-            document.getElementById('inqProduct').textContent = productName;
-            document.getElementById('inqMessage').textContent = message;
-            document.getElementById('responseText').value = '';
-            document.getElementById('responseModal').style.display = 'flex';
+        window.openResponseModal = async function(inquiryId) {
+            try {
+                // Fetch inquiry details from database
+                const { data: inquiry } = await sbClient.from('inquiries').select('*').eq('id', inquiryId).single();
+                if (!inquiry) {
+                    alert('Inquiry not found');
+                    return;
+                }
+
+                // Fetch buyer details
+                const { data: buyer } = await sbClient.from('buyers').select('full_name, email').eq('id', inquiry.buyer_id).single();
+
+                // Fetch product details
+                const { data: product } = await sbClient.from('products').select('product_name').eq('id', inquiry.product_id).single();
+
+                currentInquiry = { id: inquiryId, ...inquiry, buyerName: buyer?.full_name || 'Unknown', productName: product?.product_name || 'Unknown' };
+
+                document.getElementById('inqCustomer').textContent = buyer?.full_name || 'Unknown';
+                document.getElementById('inqProduct').textContent = product?.product_name || 'Unknown';
+                document.getElementById('inqMessage').textContent = inquiry.message || '[No message]';
+                document.getElementById('responseText').value = '';
+                document.getElementById('responseModal').style.display = 'flex';
+            } catch (err) {
+                console.error('Error opening response modal:', err);
+                alert('Failed to load inquiry details');
+            }
         };
 
         window.closeResponseModal = function() {
