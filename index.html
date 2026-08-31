@@ -984,10 +984,30 @@
             }
         }
 
+        // Track expanded inquiry/vendor groups to preserve state during polling
+        let expandedInquiryGroupId = null;
+        let expandedVendorGroupIds = [];
+
         async function loadBuyerInquiriesHistory(buyerId) {
             if (!buyerId) return;
 
             const container = document.getElementById('buyer-inquiries-body');
+
+            // Save expanded groups before re-rendering
+            expandedInquiryGroupId = null;
+            expandedVendorGroupIds = [];
+            document.querySelectorAll('.inquiry-card-item').forEach(card => {
+                const inquiryContent = card.querySelector('[style*="display: flex"]');
+                if (inquiryContent && inquiryContent.style.display === 'flex') {
+                    expandedInquiryGroupId = inquiryContent.id;
+                    // Also track expanded vendor groups within this inquiry
+                    inquiryContent.querySelectorAll('[id^="vendor-accordion-"]').forEach(vendorDiv => {
+                        if (vendorDiv.style.display === 'flex') {
+                            expandedVendorGroupIds.push(vendorDiv.id);
+                        }
+                    });
+                }
+            });
 
             // Fetch inquiries with product details (including vendor_id from products)
             const { data: inquiries, error } = await db
@@ -1276,6 +1296,30 @@
                 }
 
                 container.innerHTML = html;
+
+                // Re-expand the inquiry group that was expanded before polling
+                if (expandedInquiryGroupId) {
+                    const inquiryContent = document.getElementById(expandedInquiryGroupId);
+                    if (inquiryContent) {
+                        inquiryContent.style.display = 'flex';
+                        const icon = document.getElementById(`icon-${expandedInquiryGroupId}`);
+                        if (icon) icon.style.transform = 'rotate(180deg)';
+                        const header = inquiryContent.previousElementSibling;
+                        if (header) header.style.background = '#edf2f7';
+                    }
+                }
+
+                // Re-expand vendor groups that were expanded before polling
+                expandedVendorGroupIds.forEach(vendorGroupId => {
+                    const vendorContent = document.getElementById(vendorGroupId);
+                    if (vendorContent) {
+                        vendorContent.style.display = 'flex';
+                        const icon = document.getElementById(`icon-${vendorGroupId}`);
+                        if (icon) icon.style.transform = 'rotate(180deg)';
+                        const header = vendorContent.previousElementSibling;
+                        if (header) header.style.background = '#e2e8f0';
+                    }
+                });
             } else {
                 container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries yet.</p>';
             }
