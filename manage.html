@@ -721,6 +721,7 @@
                     <p>Manage your product listings and marketplace store sync.</p>
                 </div>
                 <div class="profile-tags">
+                    <div class="tag">ID: <strong id="profileVendorId">-</strong></div>
                     <div class="tag">Email: <strong id="profileEmail">-</strong></div>
                     <div class="tag">Type: <strong id="profileType">-</strong></div>
                 </div>
@@ -1160,6 +1161,7 @@
                 currentVendor = vendorData;
 
                 welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
+                document.getElementById('profileVendorId').textContent = vendorData.id;
                 profileEmail.textContent = vendorEmail;
                 profileType.textContent = vendorData.vendor_type || 'STANDARD';
                 vendorIdInput.value = vendorData.id;
