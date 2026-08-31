@@ -979,6 +979,15 @@
                 imageUrl = publicUrlData.publicUrl;
             }
 
+            // Get vendor_id from product (not from pKey which might be 'Echo Hub')
+            const { data: productData } = await db
+                .from('products')
+                .select('vendor_id')
+                .eq('id', productId)
+                .single();
+
+            const actualVendorId = productData?.vendor_id || null;
+
             const { data: existingFeedback, error: fetchErr } = await db
                 .from('inquiries')
                 .select('id, image_url, message')
@@ -1014,7 +1023,7 @@
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
-                        vendor_id: pKey === 'Echo Hub' || !pKey ? null : pKey,
+                        vendor_id: actualVendorId,
                         message: feedbackMessage,
                         image_url: imageUrl,
                         message_type: 'feedback'
