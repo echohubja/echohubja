@@ -1201,9 +1201,9 @@
                 const productIds = vendorProducts ? vendorProducts.map(p => p.id) : [];
                 if (productIds.length === 0) return;
 
-                // Subscribe to inquiries table changes
+                // Create main subscription channel
                 realtimeSubscription = sbClient
-                    .channel('public:inquiries')
+                    .channel('public:vendor-portal')
                     .on('postgres_changes',
                         {
                             event: '*',
@@ -1217,25 +1217,73 @@
                             if (record && productIds.includes(record.product_id)) {
                                 // For new messages from buyers (inquiry, feedback, followup)
                                 if (payload.eventType === 'INSERT' && ['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
-                                    console.log('New buyer message detected:', record);
+                                    console.log('💬 New buyer message detected:', record);
                                     loadPendingInquiries();
                                 }
                                 // For vendor responses or status updates
                                 else if (payload.eventType === 'INSERT' && record.message_type === 'vendor_response') {
-                                    console.log('New vendor response detected:', record);
+                                    console.log('💬 New vendor response detected:', record);
                                     loadPendingInquiries();
                                 }
                                 // For inquiry updates
                                 else if (payload.eventType === 'UPDATE') {
-                                    console.log('Inquiry updated:', record);
+                                    console.log('💬 Inquiry updated:', record);
                                     loadPendingInquiries();
                                 }
                             }
                         }
                     )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'vendors',
+                            filter: `id=eq.${currentVendor.id}`
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            if (record && record.id === currentVendor.id) {
+                                // Update current vendor data
+                                currentVendor = record;
+                                console.log('💰 Vendor profile updated (commission/balance):', record);
+                                loadCommissionSettings();
+                                loadEarningsData();
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'alerts',
+                            filter: `vendor_id=eq.${currentVendor.id}`
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            if (record && record.vendor_id === currentVendor.id) {
+                                console.log('⚠️ Alert received:', record);
+                                loadVendorAlerts();
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'products',
+                            filter: `vendor_id=eq.${currentVendor.id}`
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+                            if (record && record.vendor_id === currentVendor.id) {
+                                console.log('📦 Product updated (price/inventory):', record);
+                                loadVendorProducts();
+                            }
+                        }
+                    )
                     .subscribe();
 
-                console.log('Real-time subscriptions set up for vendor:', currentVendor.id);
+                console.log('🔔 Global real-time subscriptions set up for vendor:', currentVendor.id);
             } catch (err) {
                 console.error('Error setting up real-time subscriptions:', err);
             }
