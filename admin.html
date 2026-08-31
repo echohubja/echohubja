@@ -3,1609 +3,1311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Unified Admin Management Portal</title>
+    <title>Echo Hub - Marketplace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
         body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
-            background-attachment: fixed !important;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             color: #2c3e50; 
         }
         header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%) !important;
-            color: white !important;
-            padding: 20px;
-            text-align: center;
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            margin-bottom: 20px;
         }
-        header h1 { font-size: 2em; margin-bottom: 3px; font-weight: 700; color: white !important; }
-        header p { font-size: 0.95em; opacity: 0.95; margin: 0; color: white !important; }
-        .hub-card {
-            background: #ffffff !important;
-            border: 2px solid #e1e8ed;
+        .header-left h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        .header-left p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            margin: 0;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .buyer-pill {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 12px 18px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(30, 90, 168, 0.1);
+        }
+        .buyer-pill:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(30, 90, 168, 0.15);
+        }
+        .buyer-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .buyer-pill:hover .buyer-avatar {
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+        .buyer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .buyer-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .buyer-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 400;
+        }
+        .buyer-pill-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.25);
+            margin: 0 2px;
+        }
+        .btn-buyer-signout {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-buyer-signout:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-buyer-signout:active {
+            transform: translateY(0);
+        }
+        .btn-portal {
+            background: white;
+            color: #1e5aa8;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 10, 0.1);
+            transition: all 0.2s ease;
+        }
+        .btn-portal:hover {
+            background: #f8fbff;
+            transform: translateY(-1px);
+        }
+        .layout { 
+            max-width: 1400px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            display: grid; 
+            grid-template-columns: 240px 1fr; 
+            gap: 40px; 
+        }
+        aside {
+            background: white;
+            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            height: fit-content;
         }
-        .tab-btn.active {
-            border-bottom: 3px solid #1e5aa8;
-            color: #1e5aa8;
+        .filter-group h3 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #1e5aa8; 
+            margin-bottom: 15px; 
             font-weight: 700;
+        }
+        .filter-links { display: flex; flex-direction: column; gap: 8px; }
+        .filter-link { 
+            background: none; 
+            border: none; 
+            text-align: left; 
+            padding: 10px 12px; 
+            border-radius: 8px;
+            font-size: 15px; 
+            color: #4a5568; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .filter-link:hover, .filter-link.active { 
+            background: #f0f4f8;
+            color: #1e5aa8; 
+            font-weight: 600; 
+        }
+        .content-area { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-box { 
+            background: #fff; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 12px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(30, 90, 168, 0.1);
+        }
+        .product-box h5 { font-size: 16px; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        .product-box .cost { font-size: 18px; color: #1e5aa8; margin-bottom: 15px; font-weight: 700; }
+        .product-box button { 
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%); 
+            color: #fff; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+        .product-box button:hover { opacity: 0.9; }
+
+        .drawer-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: none; z-index: 1100;
+        }
+        .drawer-container {
+            position: fixed; top: 0; right: -480px; width: 100%; max-width: 480px; height: 100%;
+            background: white; box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15); z-index: 1200;
+            display: flex; flex-direction: column; transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .drawer-container.open { right: 0; }
+        .drawer-header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .drawer-body { 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            overflow-y: auto; 
+            flex: 1; 
+        }
+        .btn-close-drawer { background: none; border: none; color: white; font-size: 24px; cursor: pointer; font-weight: 700; }
+
+        .product-hover-container {
+            position: relative;
+            display: inline-block;
+        }
+        .product-hover-tooltip {
+            visibility: hidden;
+            width: 180px;
+            background-color: #fff;
+            color: #2c3e50;
+            text-align: center;
+            border-radius: 8px;
+            padding: 6px;
+            position: absolute;
+            z-index: 1300;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid #cbd5e0;
+            pointer-events: none;
+        }
+        .product-hover-tooltip img {
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #f8fafc;
+            display: block;
+        }
+        .product-hover-tooltip span {
+            font-size: 11px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-top: 4px;
+            display: block;
+        }
+        .product-hover-container:hover .product-hover-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+            .drawer-container { max-width: 100%; right: -100%; }
         }
     </style>
 </head>
-<body class="p-4 md:p-6">
-
+<body>
     <header>
-        <h1>Echo Hub</h1>
-        <p>Unified Marketplace & Referral Control Center</p>
+        <div class="header-left">
+            <h1>Echo Hub</h1>
+            <p>Where serious buyers meet serious sellers</p>
+        </div>
+        <div class="header-right">
+            <button id="btn-open-inquiries" onclick="toggleInquiriesDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
+                💬 My Inquiries
+            </button>
+            <button id="btn-open-referrals" onclick="toggleReferralDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
+                🎁 My Referrals
+            </button>
+            <div id="buyer-pill" class="buyer-pill">
+                <div class="buyer-avatar" id="buyer-avatar-initial">B</div>
+                <div class="buyer-info">
+                    <div class="buyer-name" id="current-buyer-name">Loading...</div>
+                    <div class="buyer-email" id="current-buyer-email"></div>
+                </div>
+                <div class="buyer-pill-divider"></div>
+                <button onclick="logoutBuyer()" class="btn-buyer-signout">Sign Out</button>
+            </div>
+            <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
+        </div>
     </header>
 
-    <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
-        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
-        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
-        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
+    <div class="layout">
+        <aside>
+            <div class="filter-group">
+                <h3>Catalog Sections</h3>
+                <div class="filter-links" id="category-filters">
+                    <button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>
+                </div>
+            </div>
+        </aside>
+        <main class="content-area">
+            <div class="products-grid" id="products-container"></div>
+        </main>
     </div>
 
-    <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Buyer Access Requests</h2>
-            <span id="buyer-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 buyers</span>
+    <div class="drawer-overlay" id="inquiry-drawer-overlay" onclick="closeInquiryDrawer()"></div>
+    <div class="drawer-container" id="inquiry-drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">Product Inquiry</h2>
+            <button class="btn-close-drawer" onclick="closeInquiryDrawer()">&times;</button>
         </div>
         
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                        <th class="p-2.5">Buyer Details</th>
-                        <th class="p-2.5">ID Verification</th>
-                        <th class="p-2.5">Status</th>
-                        <th class="p-2.5 text-center">Action Control</th>
-                    </tr>
-                </thead>
-                <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="mb-4 border-b pb-4">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8] mb-3">Feedback Verification Dashboard</h2>
-            <p class="text-xs text-gray-500 mb-4">Showing actionable feedback (pending/flagged). Verified/rejected are archived.</p>
-
-            <!-- Status Summary Bar -->
-            <div class="grid grid-cols-4 gap-2 mb-4">
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-2">
-                    <div class="text-[10px] text-amber-600 font-bold uppercase">Pending</div>
-                    <div id="count-pending" class="text-lg font-bold text-amber-700">0</div>
-                </div>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
-                    <div class="text-[10px] text-yellow-600 font-bold uppercase">Flagged</div>
-                    <div id="count-flagged" class="text-lg font-bold text-yellow-700">0</div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-2">
-                    <div class="text-[10px] text-green-600 font-bold uppercase">Verified</div>
-                    <div id="count-verified" class="text-lg font-bold text-green-700">0</div>
-                </div>
-                <div class="bg-red-50 border border-red-200 rounded-lg p-2">
-                    <div class="text-[10px] text-red-600 font-bold uppercase">Rejected</div>
-                    <div id="count-rejected" class="text-lg font-bold text-red-700">0</div>
-                </div>
+        <div class="drawer-body">
+            <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 16px;"></p>
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
+                <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
+                <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
             </div>
 
-            <!-- Filter Controls -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input type="text" id="inquiry-search" oninput="filterInquiriesTree()" placeholder="Search buyer or product..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-
-                <select id="status-filter" onchange="filterInquiriesTree()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                    <option value="actionable">Actionable Only (Default)</option>
-                    <option value="">All Statuses</option>
-                    <option value="pending">Pending Only</option>
-                    <option value="flagged">Flagged Only</option>
-                    <option value="verified">Verified Only</option>
-                    <option value="rejected">Rejected Only</option>
-                </select>
-
-                <input type="date" id="date-from" onchange="filterInquiriesTree()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-
-                <div class="flex gap-2">
-                    <input type="date" id="date-to" onchange="filterInquiriesTree()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8] flex-1">
-                    <span id="inquiry-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="inquiries-container" class="space-y-4">
-            <div class="p-4 text-center text-gray-500">Loading feedback submissions...</div>
-        </div>
-    </div>
-
-    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
-            <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Paid Out</div>
-                <div id="metric-total-paid" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
-            </div>
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div class="text-[11px] text-amber-600 font-semibold uppercase">Total Payable Balance</div>
-                <div id="metric-total-payable" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
-            </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <div class="text-[11px] text-gray-600 font-semibold uppercase">Total Processed Records</div>
-                <div id="metric-total-records" class="text-xl font-bold text-gray-800 mt-0.5">0</div>
-            </div>
-        </div>
-
-        <!-- VENDOR COMMISSION SETTINGS SECTION -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>⚙️ Vendor Commission Settings</span>
-                <span id="alert-count" class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">0 alerts</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-3">Manage vendor commission amounts and payout thresholds. Alert count shows vendors at 80%+ threshold.</p>
-
-            <!-- Threshold Alert Monitor -->
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4" id="alert-monitor">
-                <p class="text-xs text-orange-700 font-semibold mb-2">🚨 Vendors Reaching Threshold:</p>
-                <div id="alert-list" class="text-xs text-gray-600">No alerts at this time</div>
+            <input type="hidden" id="modal-product-id">
+            <input type="hidden" id="modal-vendor-id">
+            
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
+                <textarea id="inquiry-message" placeholder="Ask details about this product..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
             </div>
 
-            <!-- Vendor Settings Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-blue-50 text-blue-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">Commission/Fee</th>
-                            <th class="p-2.5">Threshold</th>
-                            <th class="p-2.5">Accumulated Balance</th>
-                            <th class="p-2.5 text-center">Progress</th>
-                            <th class="p-2.5 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vendor-settings-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor settings...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- THRESHOLD CHANGE REQUESTS SECTION -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>📋 Vendor Threshold Change Requests</span>
-                <span id="pending-requests-count" class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">0 pending</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-3">Review and approve/reject vendor requests to change their payout thresholds.</p>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-amber-50 text-amber-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">Current Threshold</th>
-                            <th class="p-2.5">Requested Threshold</th>
-                            <th class="p-2.5">Reason</th>
-                            <th class="p-2.5">Submitted</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="threshold-requests-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading threshold requests...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- REFERRAL COMMISSIONS TABLE SECTION -->
-        <div>
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Transaction History</h3>
-            <p class="text-xs text-gray-500 mb-3">Historical referral commission records and payout status.</p>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Referrer ID</th>
-                            <th class="p-2.5">Referral Target</th>
-                            <th class="p-2.5">Split Amount (20%)</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
-                    </tbody>
-                </table>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button onclick="closeInquiryDrawer()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #e2e8f0; color: #4a5568;">Cancel</button>
+                <button id="btn-submit-inquiry" onclick="submitInquiry()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #1e5aa8; color: white;">Send Inquiry</button>
             </div>
         </div>
     </div>
 
-    <!-- Floating Product Image Tooltip Box -->
-    <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
-        <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
-        <div id="tooltip-title" class="text-[11px] font-semibold text-gray-800 line-clamp-2"></div>
-    </div>
-
-    <!-- Feedback Image Lightbox Modal -->
-    <div id="image-lightbox" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="closeLightbox()">
-        <div class="bg-white rounded-lg p-4 max-w-2xl max-h-[90vh] flex flex-col relative" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-2 pb-2 border-b">
-                <h3 class="text-sm font-bold text-[#1e5aa8]">Feedback Proof Preview</h3>
-                <button onclick="closeLightbox()" class="text-gray-500 hover:text-gray-800 text-sm font-bold px-2 py-0.5 rounded bg-gray-100">&times; Close</button>
+    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
+    <div class="drawer-container" id="referral-drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">Referral Dashboard</h2>
+            <button class="btn-close-drawer" onclick="toggleReferralDrawer()">&times;</button>
+        </div>
+        
+        <div class="drawer-body">
+            <div>
+                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 5px;">Your Unique Referral Link</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="referral-link-input" readonly style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; background: #f8fafc; font-size: 13px;">
+                    <button onclick="copyReferralLink()" style="background: #2b6cb0; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Copy</button>
+                </div>
             </div>
-            <div class="overflow-auto flex-1 flex items-center justify-center bg-gray-50 rounded p-2">
-                <img id="lightbox-img-element" src="" alt="Proof Preview" class="max-h-[70vh] object-contain rounded">
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Referrals</span>
+                    <h3 id="stat-total-referrals" style="font-size: 18px; color: #2d3748; margin-top: 4px;">0</h3>
+                </div>
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Pending</span>
+                    <h3 id="stat-pending-balance" style="font-size: 18px; color: #d69e2e; margin-top: 4px;">$0.00</h3>
+                </div>
+                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Payable</span>
+                    <h3 id="stat-payable-balance" style="font-size: 18px; color: #38a169; margin-top: 4px;">$0.00</h3>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="color: #2d3748; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Commission History</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; color: #4a5568; font-size: 11px; text-transform: uppercase;">
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Date</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Net Comm.</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Your Split</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-ledger-body">
+                            <tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Vendor Details Modal -->
-    <div id="vendor-details-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">Vendor Details</h3>
-                <button onclick="closeVendorDetailsModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor Name</label>
-                    <div id="modal-vendor-fullname" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor ID</label>
-                    <div id="modal-vendor-id" class="bg-gray-100 p-2 rounded text-sm font-mono text-gray-800">-</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Email Address</label>
-                    <div id="modal-vendor-email" class="bg-gray-100 p-2 rounded text-sm text-gray-800">-</div>
-                </div>
-            </div>
-
-            <div class="flex gap-2 mt-5 pt-4 border-t">
-                <button onclick="closeVendorDetailsModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Close</button>
-            </div>
+    <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
+    <div class="drawer-container" id="inquiries-drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 20px; margin: 0;">My Inquiries & Product Feedback</h2>
+            <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
         </div>
-    </div>
-
-    <!-- Threshold Management Modal -->
-    <div id="threshold-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">Edit Commission Threshold</h3>
-                <button onclick="closeThresholdModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+        
+        <div class="drawer-body">
+            <div>
+                <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
             </div>
 
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor Name</label>
-                    <div id="modal-vendor-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Current Commission (Per Feedback)</label>
-                    <div id="modal-commission-amount" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">$0.00</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Current Threshold</label>
-                    <div id="modal-current-threshold" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">$0.00</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">New Threshold (USD) *</label>
-                    <input type="number" id="modal-new-threshold" step="0.01" min="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new threshold">
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
-                    ℹ️ This threshold applies immediately for new commissions. Existing balance remains unaffected.
-                </div>
-            </div>
-
-            <div class="flex gap-2 mt-5 pt-4 border-t">
-                <button onclick="closeThresholdModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="saveThresholdChange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition">Save Threshold</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Threshold Change Request Decision Modal -->
-    <div id="threshold-request-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">Review Threshold Request</h3>
-                <button onclick="closeThresholdRequestModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor Name</label>
-                    <div id="req-modal-vendor-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor ID</label>
-                    <div id="req-modal-vendor-id" class="bg-gray-100 p-2 rounded text-sm font-mono text-gray-600">-</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Current Threshold</label>
-                        <div id="req-modal-current-threshold" class="bg-blue-50 p-2 rounded text-sm font-medium text-blue-900">$0.00</div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Requested Threshold</label>
-                        <div id="req-modal-requested-threshold" class="bg-amber-50 p-2 rounded text-sm font-medium text-amber-900">$0.00</div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor's Reason (if provided)</label>
-                    <div id="req-modal-reason" class="bg-gray-50 p-2 rounded text-sm text-gray-700 min-h-12 max-h-20 overflow-y-auto">No reason provided</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Admin Notes (optional)</label>
-                    <textarea id="req-modal-admin-notes" placeholder="Add notes if rejecting..." class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2"></textarea>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
-                    ℹ️ Approving will update the vendor's threshold immediately. Rejecting requires a reason to be sent to the vendor.
-                </div>
-            </div>
-
-            <div class="flex gap-2 mt-5 pt-4 border-t">
-                <button onclick="closeThresholdRequestModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="rejectThresholdRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
-                <button onclick="approveThresholdRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
+            <div id="buyer-inquiries-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
             </div>
         </div>
     </div>
 
     <script>
-        let db;
-        let activeThresholdVendorId = null;
-        let globalInquiriesData = [];
-        let productMap = {};
-        let vendorMap = {};
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (window.supabase) {
-                const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
-                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                loadBuyersPortal();
-                loadInquiriesPortal();
-                loadCommissionsPortal();
-            } else {
-                console.error("Supabase library failed to load.");
+        let currentBuyerId = '';
+        let currentBuyerStringId = '';
+        let currentActiveEmail = '';
+
+        function captureReferralCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refParam = urlParams.get('ref');
+            if (refParam) {
+                localStorage.setItem('echo_hub_referrer', refParam);
             }
-        });
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
-
-            document.getElementById('section-buyers').classList.add('hidden');
-            document.getElementById('section-inquiries').classList.add('hidden');
-            document.getElementById('section-commissions').classList.add('hidden');
-
-            document.getElementById(`section-${tabName}`).classList.remove('hidden');
-
-            // Reload data for active tab
-            if (tabName === 'buyers') loadBuyersPortal();
-            else if (tabName === 'inquiries') loadInquiriesPortal();
-            else if (tabName === 'commissions') loadCommissionsPortal();
         }
 
-        // --- TAB 1: BUYERS ---
-        async function loadBuyersPortal() {
-            const tableBody = document.getElementById('buyers-table-body');
-            if (!tableBody) return;
-            
-            const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
-            if (error) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
-                return;
-            }
-            if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
-                document.getElementById('buyer-count').textContent = '0 buyers';
-                return;
-            }
+        async function checkBuyerSession() {
+            const buyerPill = document.getElementById('buyer-pill');
+            const buyerNameSpan = document.getElementById('current-buyer-name');
+            const portalBtn = document.getElementById('portal-btn');
+            const btnOpenReferrals = document.getElementById('btn-open-referrals');
+            const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
-            document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
+            const { data: { session } } = await db.auth.getSession();
+            const currentActiveBuyerId = localStorage.getItem('buyer_id');
+            currentActiveEmail = localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
 
-            tableBody.innerHTML = data.map(buyer => {
-                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
-                let statusBadge = '';
-                let actionButton = '';
+            console.log('[checkBuyerSession] Step 1: Checking session');
+            console.log('  localStorage buyer_id:', currentActiveBuyerId || 'null');
+            console.log('  localStorage buyer_email:', currentActiveEmail || 'null');
+            console.log('  Session email:', session?.user?.email || 'null');
+            console.log('  All localStorage keys:', Object.keys(localStorage));
 
-                if (rawStatus === 'READY' || rawStatus === 'APPROVED') {
-                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">APPROVED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'BLOCKED')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Block</button>`;
-                } else if (rawStatus === 'BLOCKED') {
-                    statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">BLOCKED</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Approve</button>`;
+            if (currentActiveBuyerId) {
+                console.log('[checkBuyerSession] Step 2: Buyer ID found, querying buyers table for ID:', currentActiveBuyerId);
+                // Query buyers table to verify approval status and get full name
+                const { data: buyerData, error } = await db
+                    .from('buyers')
+                    .select('id, approval_status, full_name, email')
+                    .eq('id', currentActiveBuyerId)
+                    .maybeSingle();
+
+                console.log('[checkBuyerSession] Step 3: Query result');
+                console.log('  buyerData:', buyerData);
+                console.log('  error:', error);
+
+                if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
+                    console.log('[checkBuyerSession] Step 4: APPROVED - showing buyer pill');
+                    // Buyer is approved - show marketplace access with full name and email
+                    const displayName = buyerData.full_name || 'Buyer';
+                    const displayEmail = buyerData.email || currentActiveEmail;
+                    const nameInitial = displayName.charAt(0).toUpperCase();
+
+                    // Update buyer pill fields
+                    buyerNameSpan.textContent = displayName;
+                    document.getElementById('current-buyer-email').textContent = displayEmail;
+                    document.getElementById('buyer-avatar-initial').textContent = nameInitial;
+
+                    buyerPill.style.display = 'flex';
+                    portalBtn.style.display = 'none';
+                    btnOpenReferrals.style.display = 'flex';
+                    btnOpenInquiries.style.display = 'flex';
+                    currentBuyerId = buyerData.id;
+                    currentBuyerStringId = buyerData.id || 'BUYER-00000';
+                    console.log('  ✓ Buyer pill visible, name:', displayName, 'email:', displayEmail);
+                } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
+                    console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
+                    // Buyer exists but not approved - show blocked message
+                    document.body.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);">
+                            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(30, 90, 168, 0.1);">
+                                <h2 style="color: #1e5aa8; margin-bottom: 16px; font-size: 1.8em;">Account Under Review</h2>
+                                <p style="color: #4a5568; margin-bottom: 20px; font-size: 1em; line-height: 1.6;">
+                                    Your national ID is being reviewed by our team. You will receive access to the marketplace once your account is verified.
+                                </p>
+                                <p style="color: #718096; font-size: 0.9em; margin-bottom: 24px;">Status: <strong style="color: #1e5aa8;">${buyerData.approval_status.toUpperCase()}</strong></p>
+                                <a href="login.html?logout=true" style="background: #1e5aa8; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Sign Out</a>
+                            </div>
+                        </div>
+                    `;
+                    currentBuyerId = '';
+                    currentBuyerStringId = '';
+                    return;
                 } else {
-                    statusBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>';
-                    actionButton = `<button onclick="updateBuyerStatus('${buyer.id}', '${escapeHtml(buyer.email)}', 'Ready To Invite')" class="bg-blue-50 text-[#1e5aa8] hover:bg-[#1e5aa8] hover:text-white px-2.5 py-1 rounded text-xs font-semibold transition">Mark Ready</button>`;
+                    console.log('[checkBuyerSession] Step 4: NO BUYER FOUND in database - clearing session');
+                    // No buyer found in database - clear session
+                    localStorage.removeItem('echo_hub_buyer_email');
+                    localStorage.removeItem('buyer_email');
+                    buyerPill.style.display = 'none';
+                    portalBtn.style.display = 'inline-block';
+                    btnOpenReferrals.style.display = 'none';
+                    btnOpenInquiries.style.display = 'none';
+                    currentBuyerId = '';
+                    currentBuyerStringId = '';
                 }
+            } else {
+                console.log('[checkBuyerSession] Step 1: NO EMAIL FOUND in session or localStorage - showing sign in button');
+                buyerPill.style.display = 'none';
+                portalBtn.style.display = 'inline-block';
+                btnOpenReferrals.style.display = 'none';
+                btnOpenInquiries.style.display = 'none';
+                currentBuyerId = '';
+                currentBuyerStringId = '';
+            }
+        }
 
-                let idCellContent = '<span class="text-gray-400 text-xs">No ID</span>';
-                if (buyer.national_id_url) {
-                    const rawVal = buyer.national_id_url.trim();
-                    if (rawVal.startsWith('http')) {
-                        idCellContent = `<a href="${rawVal}" target="_blank" class="text-[#1e5aa8] underline text-xs font-medium">View File</a>`;
-                    } else {
-                        idCellContent = `<span class="text-gray-500 text-xs">${escapeHtml(rawVal)}</span>`;
+        async function logoutBuyer() {
+            await db.auth.signOut();
+            localStorage.removeItem('buyer_id');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('user_email');
+            window.location.reload();
+        }
+
+        async function loadCategories() {
+            const { data, error } = await db.from('products').select('category');
+            const filterContainer = document.getElementById('category-filters');
+            
+            if (error) {
+                console.error('Error loading categories:', error.message);
+                return;
+            }
+
+            const taxonomy = {};
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    if (item.category) {
+                        const rawCat = item.category.trim();
+                        const parts = rawCat.split('>').map(p => p.trim());
+                        const mainCat = parts[0];
+                        
+                        if (!taxonomy[mainCat]) {
+                            taxonomy[mainCat] = {};
+                        }
+                        
+                        if (parts.length > 1) {
+                            const subCat = parts[1];
+                            taxonomy[mainCat][subCat] = rawCat;
+                        }
                     }
-                }
+                });
+            }
 
+            let html = `<button class="filter-link active" onclick="filterCategory('All', this)">All Categories</button>`;
+            
+            for (const [mainCat, subs] of Object.entries(taxonomy)) {
+                html += `
+                    <div class="category-group" style="margin-top: 10px;">
+                        <button class="filter-link" style="font-weight: 600;" onclick="filterCategory('${mainCat}', this, true)">${mainCat}</button>
+                `;
+                
+                const subKeys = Object.keys(subs);
+                if (subKeys.length > 0) {
+                    html += `<div class="subcategories" style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">`;
+                    subKeys.forEach(subCat => {
+                        const exactDbString = subs[subCat];
+                        html += `<button class="filter-link" style="font-size: 13px; padding: 6px 10px;" onclick="filterCategory('${exactDbString}', this, false)">↳ ${subCat}</button>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            
+            filterContainer.innerHTML = html;
+        }
+
+        async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
+            let query = db.from('products').select('id, product_name, price, vendor_id, category');
+
+            if (categoryQuery !== 'All') {
+                if (isMainGroup) {
+                    query = query.ilike('category', `${categoryQuery}%`);
+                } else {
+                    query = query.eq('category', categoryQuery);
+                }
+            }
+
+            const { data: products, error: productsError } = await query;
+            const container = document.getElementById('products-container');
+
+            if (productsError) {
+                console.error('Error loading products:', productsError.message);
+                container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
+                return;
+            }
+
+            if (!products || products.length === 0) {
+                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
+                return;
+            }
+
+            // Fetch images for all products
+            const productIds = products.map(p => p.id);
+            const { data: imagesData, error: imagesError } = await db
+                .from('product-images')
+                .select('product_id, image_url')
+                .in('product_id', productIds);
+
+            if (imagesError) {
+                console.error('Error loading product images:', imagesError.message);
+            }
+
+            // Build imageMap: product_id -> array of image URLs
+            const imageMap = {};
+            if (imagesData) {
+                imagesData.forEach(img => {
+                    if (!imageMap[img.product_id]) {
+                        imageMap[img.product_id] = [];
+                    }
+                    imageMap[img.product_id].push(img.image_url);
+                });
+            }
+
+            // Render products grid
+            container.innerHTML = products.map(product => {
+                const productImage = imageMap[product.id] ? imageMap[product.id][0] : null;
                 return `
-                    <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5">
-                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
-                            <div class="text-[11px] text-gray-500">${escapeHtml(buyer.email)}</div>
-                        </td>
-                        <td class="p-2.5">${idCellContent}</td>
-                        <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5 text-center">${actionButton}</td>
-                    </tr>
+                    <div class="product-box">
+                        <div>
+                            ${productImage ? `<img src="${productImage}" alt="${product.product_name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
+                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
+                            <h5 style="margin-top: 4px;">${product.product_name}</h5>
+                            <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
+                        </div>
+                        <button onclick="openInquiryDrawer('${product.id}', '${product.product_name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire Product</button>
+                    </div>
                 `;
             }).join('');
         }
 
-        async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
-            if (!confirm(`Update access status for ${buyerEmail}?`)) return;
-            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
-            if (error) { alert('Error: ' + error.message); return; }
-            loadBuyersPortal();
+        function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
+            document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            loadProducts(categoryQuery, isMainGroup);
         }
 
-        // --- TAB 2: INQUIRIES & FEEDBACK ---
-        async function loadInquiriesPortal() {
-            const container = document.getElementById('inquiries-container');
-            if (!container) return;
-
-            try {
-                // Fetch all inquiries (includes pending conversations and feedback submissions)
-                console.log('🔍 Fetching all inquiries...');
-                const { data: inquiries, error: inqError } = await db
-                    .from('inquiries')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (inqError) {
-                    console.error('❌ Inquiry fetch error:', inqError);
-                    container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
-                    return;
-                }
-
-                console.log('✅ Inquiries fetched:', inquiries?.length || 0, 'records');
-
-                // Log feedback records specifically
-                const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
-                console.log('📸 Feedback submissions found:', feedbackRecords.length);
-
-                // DIAGNOSTIC: Log all feedback with details
-                if (feedbackRecords.length > 0) {
-                    console.log('📸 FEEDBACK DETAILS:');
-                    feedbackRecords.forEach((fb, idx) => {
-                        console.log(`   [${idx + 1}] ID: ${fb.id}, Status: "${fb.status}", BuyerID: ${fb.buyer_id}, ProductID: ${fb.product_id}, HasImage: ${!!fb.image_url}`);
-                    });
-                }
-
-                if (!inquiries || inquiries.length === 0) {
-                    container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found yet.</div>`;
-                    document.getElementById('inquiry-count').textContent = '0 records';
-                    return;
-                }
-
-                // Get unique IDs from feedback inquiries
-                const buyerIds = [...new Set(inquiries.map(inq => inq.buyer_id).filter(Boolean))];
-                const productIds = [...new Set(inquiries.map(inq => inq.product_id).filter(Boolean))];
-
-                // Fetch buyer data
-                let buyerMap = {};
-                if (buyerIds.length > 0) {
-                    try {
-                        const { data: buyers } = await db
-                            .from('buyers')
-                            .select('id, full_name, email')
-                            .in('id', buyerIds);
-                        if (buyers) {
-                            buyers.forEach(buyer => {
-                                buyerMap[buyer.id] = buyer;
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Buyer fetch error:', e);
-                    }
-                }
-
-                // Fetch product data (using global maps)
-                productMap = {};
-                vendorMap = {};
-                console.log('📦 productIds extracted:', productIds);
-                if (productIds.length > 0) {
-                    try {
-                        const { data: products, error: prodError } = await db
-                            .from('products')
-                            .select('*');
-
-                        console.log('📦 Products fetched from DB:', products?.length || 0, 'records');
-                        if (prodError) console.log('📦 Product fetch error:', prodError.message);
-
-                        if (products && products.length > 0) {
-                            products.forEach(prod => {
-                                productMap[prod.id] = prod;
-                            });
-                            console.log(`📦 Added ${products.length} products to map`);
-                        } else {
-                            console.warn('📦 No products returned from database');
-                        }
-
-                        // Fetch vendor names for all unique vendor IDs from products
-                        const vendorIds = [...new Set(products?.map(p => p.vendor_id).filter(Boolean) || [])];
-                        console.log('🏢 Vendor IDs to fetch:', vendorIds.length);
-
-                        if (vendorIds.length > 0) {
-                            try {
-                                const { data: vendors } = await db
-                                    .from('vendors')
-                                    .select('id, first_name, last_name')
-                                    .in('id', vendorIds);
-
-                                if (vendors) {
-                                    vendors.forEach(vendor => {
-                                        vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
-                                    });
-                                    console.log(`🏢 Added ${vendors.length} vendors to map`);
-                                }
-                            } catch (e) {
-                                console.error('Vendor fetch error:', e);
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Product fetch error:', e);
-                    }
-                } else {
-                    console.warn('📦 No productIds found in inquiries');
-                }
-
-                // Fetch product images (if table exists)
-                let imageMap = {};
-                if (productIds.length > 0) {
-                    try {
-                        const { data: images, error: imgError } = await db
-                            .from('product-images')
-                            .select('*');
-
-                        if (images) {
-                            images.forEach(img => {
-                                if (productIds.includes(img.product_id)) {
-                                    if (!imageMap[img.product_id]) imageMap[img.product_id] = [];
-                                    imageMap[img.product_id].push(img.image_url);
-                                }
-                            });
-                            console.log('Product images loaded:', Object.keys(imageMap).length, 'products with images');
-                        }
-                    } catch (e) {
-                        console.error('Product images fetch error (table may not exist):', e.message);
-                    }
-                }
-
-                // Merge related data into inquiries
-                inquiries.forEach(inq => {
-                    inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
-                    inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
-                    inq.product_images = imageMap[inq.product_id] || [inq.image_url].filter(Boolean);
-                });
-
-                globalInquiriesData = inquiries;
-                // Reset filters to default (actionable only)
-                document.getElementById('inquiry-search').value = '';
-                document.getElementById('status-filter').value = 'actionable';
-                document.getElementById('date-from').value = '';
-                document.getElementById('date-to').value = '';
-                filterInquiriesTree();
-            } catch (e) {
-                console.error('Unexpected error in loadInquiriesPortal:', e);
-                container.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error loading feedback.</div>`;
+        function openInquiryDrawer(productId, productName, vendorId) {
+            if (!currentActiveEmail) {
+                alert('Please sign in through the account portal before sending an inquiry.');
+                window.location.href = 'portal.html';
+                return;
             }
+            document.getElementById('modal-product-id').value = productId;
+            document.getElementById('modal-vendor-id').value = vendorId;
+            document.getElementById('modal-product-title').textContent = productName;
+            
+            document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
+            document.getElementById('modal-vendor-id-display').textContent = vendorId;
+
+            document.getElementById('inquiry-message').value = '';
+            
+            const drawer = document.getElementById('inquiry-drawer');
+            const overlay = document.getElementById('inquiry-drawer-overlay');
+            drawer.classList.add('open');
+            overlay.style.display = 'block';
         }
 
-        function filterInquiriesTree() {
-            const searchQuery = document.getElementById('inquiry-search').value.toLowerCase().trim();
-            const statusFilterValue = document.getElementById('status-filter').value;
-            const dateFrom = document.getElementById('date-from').value;
-            const dateTo = document.getElementById('date-to').value;
-
-
-            let filtered = globalInquiriesData;
-
-            // Count statuses for display
-            const statusCounts = { pending: 0, flagged: 0, verified: 0, rejected: 0 };
-            globalInquiriesData.forEach(inq => {
-                const status = (inq.status || 'pending').toLowerCase();
-                if (statusCounts.hasOwnProperty(status)) {
-                    statusCounts[status]++;
-                }
-            });
-            document.getElementById('count-pending').textContent = statusCounts.pending;
-            document.getElementById('count-flagged').textContent = statusCounts.flagged;
-            document.getElementById('count-verified').textContent = statusCounts.verified;
-            document.getElementById('count-rejected').textContent = statusCounts.rejected;
-
-            // Apply search filter
-            if (searchQuery) {
-                filtered = filtered.filter(inq => {
-                    const buyerName = (inq.buyers?.full_name || '').toLowerCase();
-                    const buyerEmail = (inq.buyers?.email || '').toLowerCase();
-                    const prodName = (inq.products?.product_name || '').toLowerCase();
-                    const prodId = String(inq.product_id || '').toLowerCase();
-                    const msg = (inq.message || '').toLowerCase();
-                    return buyerName.includes(searchQuery) || buyerEmail.includes(searchQuery) || prodName.includes(searchQuery) || prodId.includes(searchQuery) || msg.includes(searchQuery);
-                });
-            }
-
-            // Apply status filter
-            if (statusFilterValue === 'actionable') {
-                // Show pending, flagged, and pending_verification
-                const beforeFilter = filtered.length;
-                filtered = filtered.filter(inq => {
-                    const status = (inq.status || 'pending').toLowerCase();
-                    return status === 'pending' || status === 'flagged' || status === 'pending_verification';
-                });
-                console.log(`Status filter 'actionable': ${beforeFilter} → ${filtered.length} records`);
-
-                // DIAGNOSTIC: Show what was filtered out
-                const allStatuses = globalInquiriesData.map(i => ({ id: i.id, type: i.message_type, status: (i.status || 'pending').toLowerCase(), buyer: i.buyer_id }));
-                const uniqueStatuses = [...new Set(allStatuses.map(s => s.status))];
-                console.log('📊 All unique statuses in data:', uniqueStatuses);
-            } else if (statusFilterValue === 'pending') {
-                // Show pending and pending_verification
-                filtered = filtered.filter(inq => {
-                    const status = (inq.status || 'pending').toLowerCase();
-                    return status === 'pending' || status === 'pending_verification';
-                });
-            } else if (statusFilterValue) {
-                // Show specific status
-                filtered = filtered.filter(inq => {
-                    const status = (inq.status || 'pending').toLowerCase();
-                    return status === statusFilterValue;
-                });
-            }
-            // If statusFilterValue is empty string, show all (no filter)
-
-            // Apply date range filter
-            if (dateFrom) {
-                const fromDate = new Date(dateFrom).getTime();
-                filtered = filtered.filter(inq => new Date(inq.created_at).getTime() >= fromDate);
-            }
-            if (dateTo) {
-                const toDate = new Date(dateTo).getTime();
-                filtered = filtered.filter(inq => new Date(inq.created_at).getTime() <= toDate);
-            }
-
-            console.log('After filters. Remaining records:', filtered.length);
-            renderInquiriesTree(filtered);
+        function closeInquiryDrawer() {
+            const drawer = document.getElementById('inquiry-drawer');
+            const overlay = document.getElementById('inquiry-drawer-overlay');
+            drawer.classList.remove('open');
+            overlay.style.display = 'none';
         }
 
-        function renderInquiriesTree(data) {
-            const container = document.getElementById('inquiries-container');
-            if (!container) return;
+        async function submitInquiry() {
+            const productId = document.getElementById('modal-product-id').value;
+            const message = document.getElementById('inquiry-message').value.trim();
+            const submitBtn = document.getElementById('btn-submit-inquiry');
 
-            document.getElementById('inquiry-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
-
-            if (data.length === 0) {
-                container.innerHTML = `<div class="p-4 text-center text-gray-500">No inquiries found.</div>`;
+            if (!message) {
+                alert('Please enter a message or question.');
                 return;
             }
 
-            // Group inquiries by buyer_id
-            const groupedByBuyer = {};
-            data.forEach(inq => {
-                const buyerId = inq.buyer_id || 'unknown';
-                if (!groupedByBuyer[buyerId]) {
-                    groupedByBuyer[buyerId] = {
-                        buyer: inq.buyers || { id: buyerId, full_name: 'Unknown Buyer', email: 'No email' },
-                        messages: []
-                    };
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            // Get vendor_id from product table (not from modal which might be 'Echo Hub')
+            const { data: productData } = await db
+                .from('products')
+                .select('vendor_id')
+                .eq('id', productId)
+                .single();
+
+            const actualVendorId = productData?.vendor_id || null;
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId,
+                    buyer_id: currentBuyerId,
+                    vendor_id: actualVendorId,
+                    message: message,
+                    message_type: 'inquiry'
                 }
-                groupedByBuyer[buyerId].messages.push(inq);
-            });
+            ]);
 
-            let html = '';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Inquiry';
 
-            // Render each buyer and their conversation thread (collapsed by default)
-            for (const [buyerId, buyerData] of Object.entries(groupedByBuyer)) {
-                const buyerName = buyerData.buyer?.full_name || 'Unknown Buyer';
-                const buyerEmail = buyerData.buyer?.email || 'No email';
-                const messages = buyerData.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                const messageCount = messages.length;
+            if (error) {
+                console.error('Error submitting inquiry:', error.message);
+                alert('Failed to send inquiry. Please try again.');
+                return;
+            }
 
-                // Count pending feedback
-                const pendingFeedback = messages.filter(msg => msg.image_url && (msg.status || 'pending').toLowerCase() === 'pending').length;
-                const pendingBadge = pendingFeedback > 0 ? `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">${pendingFeedback} Pending Feedback</span>` : '';
+            alert('Inquiry submitted successfully!');
+            closeInquiryDrawer();
+        }
 
-                const buyerHeaderId = `buyer-${buyerId}`;
-                const buyerContentId = `buyer-content-${buyerId}`;
-                const buyerIconId = `buyer-icon-${buyerId}`;
+        function toggleReferralDrawer() {
+            const drawer = document.getElementById('referral-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                drawer.classList.add('open');
+                overlay.style.display = 'block';
+                loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
+            }
+        }
 
-                html += `
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-3 hover:shadow-md transition">
-                        <!-- Buyer Header - Collapsible -->
-                        <div class="bg-gradient-to-r from-blue-50 to-blue-25 border-b border-gray-200 p-4 cursor-pointer hover:bg-blue-100 transition" onclick="toggleAccordion('${buyerContentId}', '${buyerIconId}')">
-                            <div class="flex gap-3 items-start justify-between">
-                                <div class="flex gap-3 flex-1">
-                                    <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        ${escapeHtml(buyerName.charAt(0).toUpperCase())}
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="text-sm font-bold text-gray-800">👤 ${escapeHtml(buyerName)}</div>
-                                        <div class="text-[11px] text-gray-600">${escapeHtml(buyerEmail)}</div>
-                                        <div class="text-[11px] text-gray-500 mt-1">${messageCount} message${messageCount === 1 ? '' : 's'}</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    ${pendingBadge}
-                                    <span id="${buyerIconId}" class="text-gray-400 transition-transform duration-200">▶</span>
-                                </div>
-                            </div>
-                        </div>
+        function toggleInquiriesDrawer() {
+            const drawer = document.getElementById('inquiries-drawer');
+            const overlay = document.getElementById('inquiries-drawer-overlay');
+            
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                drawer.classList.add('open');
+                overlay.style.display = 'block';
+                document.getElementById('inquiry-search-input').value = '';
+                loadBuyerInquiriesHistory(currentBuyerId);
+            }
+        }
 
-                        <!-- Messages Container - Collapsed by Default -->
-                        <div id="${buyerContentId}" class="hidden">
-                            <div class="p-4 space-y-3 bg-gray-50 max-h-96 overflow-y-auto">
-                `;
+        async function loadBuyerInquiriesHistory(buyerId) {
+            if (!buyerId) return;
 
-                // Group messages by product
-                const groupedByProduct = {};
-                messages.forEach(msg => {
-                    const prodId = msg.product_id || 'unknown';
-                    if (!groupedByProduct[prodId]) {
-                        const baseProduct = msg.products || productMap[prodId] || { id: prodId, product_name: `Product ${prodId}` };
-                        const vendorId = baseProduct.vendor_id;
-                        const vendorName = vendorId ? vendorMap[vendorId] || 'Unknown Vendor' : 'N/A';
+            const container = document.getElementById('buyer-inquiries-body');
 
-                        groupedByProduct[prodId] = {
-                            product: {
-                                ...baseProduct,
-                                vendor_name: vendorName
-                            },
-                            productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
-                            messages: []
+            // Fetch inquiries with product details (including vendor_id from products)
+            const { data: inquiries, error } = await db
+                .from('inquiries')
+                .select('*, products(id, product_name, vendor_id)')
+                .eq('buyer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading inquiry history:', error.message);
+                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your inquiries.</p>';
+                return;
+            }
+
+            if (inquiries && inquiries.length > 0) {
+                // Get all product IDs to fetch images
+                const productIds = inquiries
+                    .map(item => item.product_id)
+                    .filter(id => id !== null && id !== undefined);
+
+                let imageMap = {};
+                if (productIds.length > 0) {
+                    const { data: imagesData } = await db
+                        .from('product-images')
+                        .select('product_id, image_url')
+                        .in('product_id', productIds);
+
+                    if (imagesData) {
+                        imagesData.forEach(img => {
+                            if (!imageMap[img.product_id]) {
+                                imageMap[img.product_id] = [];
+                            }
+                            imageMap[img.product_id].push(img.image_url);
+                        });
+                    }
+                }
+
+                // Fetch vendor names for all unique vendor IDs
+                let vendorMap = {};
+                const vendorIds = [
+                    ...new Set(
+                        inquiries
+                            .map(item => item.products?.vendor_id)
+                            .filter(id => id && id !== 'Echo Hub')
+                    )
+                ];
+                if (vendorIds.length > 0) {
+                    const { data: vendors } = await db
+                        .from('vendors')
+                        .select('id, first_name, last_name')
+                        .in('id', vendorIds);
+
+                    if (vendors) {
+                        vendors.forEach(vendor => {
+                            vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
+                        });
+                    }
+                }
+
+                // Fetch buyer names for all inquiries
+                let buyerMap = {};
+                const buyerIds = [
+                    ...new Set(
+                        inquiries
+                            .map(item => item.buyer_id)
+                            .filter(id => id)
+                    )
+                ];
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await db
+                        .from('buyers')
+                        .select('id, full_name, email')
+                        .in('id', buyerIds);
+
+                    if (buyers) {
+                        buyers.forEach(buyer => {
+                            buyerMap[buyer.id] = {
+                                full_name: `${buyer.full_name || 'Unknown Buyer'}`,
+                                email: buyer.email || ''
+                            };
+                        });
+                    }
+                }
+
+                const grouped = {};
+                inquiries.forEach(item => {
+                    const pKey = item.product_id || 'general';
+                    const pName = item.products?.product_name || 'General Inquiries';
+                    const pImg = imageMap[item.product_id] ? imageMap[item.product_id][0] : '';
+                    if (!grouped[pKey]) {
+                        grouped[pKey] = {
+                            productId: item.product_id,
+                            productName: pName,
+                            productImage: pImg,
+                            items: [],
+                            latestTimestamp: item.created_at
                         };
                     }
-                    groupedByProduct[prodId].messages.push(msg);
+                    grouped[pKey].items.push(item);
+                    if (new Date(item.created_at) > new Date(grouped[pKey].latestTimestamp)) {
+                        grouped[pKey].latestTimestamp = item.created_at;
+                    }
                 });
 
-                // Render each product group
-                for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
-                    const prodName = prodData.product?.product_name || `Product ${prodId}`;
-                    const prodImage = prodData.productImage;
+                const sortedGroups = Object.entries(grouped).sort((a, b) => new Date(b[1].latestTimestamp) - new Date(a[1].latestTimestamp));
 
-                    // Get vendor info from product
-                    const vendorName = prodData.product?.vendor_name || 'Unknown Vendor';
-                    const vendorId = prodData.product?.vendor_id || 'N/A';
+                let html = '';
+                let index = 0;
+
+                for (const [pKey, group] of sortedGroups) {
+                    index++;
+                    const count = group.items.length;
+                    const contentId = `inquiry-group-${pKey}-${index}`;
+
+                    const latestMsg = group.items[0];
+                    const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
+                    const statusBadge = isPending 
+                        ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
+                        : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
+
+                    const vendorGroups = {};
+                    group.items.forEach(item => {
+                        const vKey = item.products?.vendor_id || 'Echo Hub';
+                        if (!vendorGroups[vKey]) {
+                            vendorGroups[vKey] = [];
+                        }
+                        vendorGroups[vKey].push(item);
+                    });
+
+                    const productTitleHtml = group.productImage ? `
+                        <div class="product-hover-container" style="display: inline-block;">
+                            <h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700; cursor: help; text-decoration: underline dotted;">${group.productName} 🖼️</h4>
+                            <div class="product-hover-tooltip">
+                                <img src="${group.productImage}" alt="${group.productName}">
+                                <span>${group.productName}</span>
+                            </div>
+                        </div>
+                    ` : `<h4 style="font-size: 14px; color: #1e5aa8; margin: 0; font-weight: 700;">${group.productName}</h4>`;
 
                     html += `
-                        <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
-                            <!-- Product Header -->
-                            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex gap-4 items-start">
-                                <!-- Large Product Image -->
-                                <div class="flex-shrink-0">
-                                    ${prodImage ? `<img src="${prodImage}" alt="Product" class="w-20 h-20 object-cover rounded-lg border-2 border-white shadow-lg cursor-pointer hover:shadow-xl transition" onclick="openLightbox('${prodImage}')" title="Click to view product image">` : '<div class="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center text-4xl flex-shrink-0 font-bold shadow-lg border-2 border-white" title="Product image not uploaded by vendor">📦</div>'}
+                        <div class="inquiry-card-item" data-search="${group.productName.toLowerCase()} ${Object.keys(vendorGroups).join(' ').toLowerCase()}" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <div onclick="toggleInquiryGroup('${contentId}', this)" style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 14px;">📦</span>
+                                    ${productTitleHtml}
+                                    ${statusBadge}
                                 </div>
-                                <!-- Product Info -->
-                                <div class="flex-1">
-                                    <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
-                                    <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
-                                    <div class="text-sm text-yellow-100 mt-2 font-semibold">🏢 Vendor: ${escapeHtml(vendorName)}</div>
-                                    <div class="text-xs text-blue-100 mt-0.5">ID: <span class="font-mono">${escapeHtml(vendorId)}</span></div>
-                                    <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 11px; background: #e2e8f0; color: #4a5568; padding: 2px 8px; border-radius: 10px; font-weight: 600;">${count} msg</span>
+                                    <span id="icon-${contentId}" style="font-size: 12px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
                             </div>
 
-                            <!-- Messages Container -->
-                            <div class="p-4 space-y-3">
+                            <div id="${contentId}" style="display: none; padding: 15px; flex-direction: column; gap: 14px; background: #fff;">
+                                
+                                <div style="background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #4a5568;">
+                                    💡 Your inquiry has been routed to the assigned vendor. Vendors typically respond within 24 hours.
+                                </div>
+
+                                <div style="background: #f0f4f8; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e5aa8; text-transform: uppercase;">Submit Post-Receipt Feedback & Amazon Link</label>
+                                    <input type="text" id="product-feedback-link-${pKey}" placeholder="Paste Amazon.com review/feedback link here..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; background: #fff;">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="file" id="product-feedback-file-${pKey}" accept="image/*" style="font-size: 12px; flex: 1; padding: 6px; background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;">
+                                        <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #edf2f7; padding-top: 10px;">
+                                    <h5 style="font-size: 12px; color: #718096; text-transform: uppercase; font-weight: 700;">Messages by Vendor ID</h5>
                     `;
 
-                    // Render messages for this product
-                    prodData.messages.forEach((msg, idx) => {
-                        const msgType = msg.message_type || 'inquiry';
-                        const senderType = msg.sender_type || 'buyer';
-                        const senderId = msg.sender_id || (senderType === 'buyer' ? msg.buyer_id : null);
-
-                        let senderIcon, msgColor;
-                        if (senderType === 'buyer') {
-                            senderIcon = '👤';
-                            msgColor = 'bg-blue-50 border-blue-200';
-                        } else {
-                            senderIcon = '🏪';
-                            msgColor = 'bg-green-50 border-green-200';
-                        }
-
-                        const timestamp = new Date(msg.created_at).toLocaleString();
-                        let msgTypeLabel = 'Inquiry';
-                        let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
-
-                        if (msgType === 'vendor_response') {
-                            msgTypeLabel = 'Vendor Response';
-                            msgTypeBadgeColor = 'bg-green-100 text-green-700';
-                        } else if (msgType === 'buyer_followup') {
-                            msgTypeLabel = 'Buyer Follow-up';
-                            msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
-                        } else if (msgType === 'feedback') {
-                            msgTypeLabel = 'Feedback Submission';
-                            msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
-                        }
-
-                        const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
-                        const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
+                    let vIndex = 0;
+                    for (const [vendorId, vItems] of Object.entries(vendorGroups)) {
+                        vIndex++;
+                        const vAccordionId = `vendor-group-${pKey}-${vIndex}`;
 
                         html += `
-                            <div class="border-l-4 ${msgType === 'feedback' ? 'border-l-orange-500 bg-orange-50' : msgColor} rounded-lg p-4 space-y-2 shadow-sm hover:shadow-md transition">
-                                <div class="flex justify-between items-start gap-3">
-                                    <div class="flex-1">
-                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${msgTypeLabel}</div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5">${timestamp}</div>
+                            <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        <span style="font-size: 12px;">🏢</span>
+                                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                                            ${vendorMap[vendorId] ? `<span style="font-size: 13px; font-weight: 700; color: #2d3748;">${vendorMap[vendorId]}</span><span style="font-size: 11px; color: #718096; font-weight: 500;">ID: ${vendorId}</span>` : `<span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>`}
+                                        </div>
+                                        <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
                                     </div>
-                                    <span class="${msgTypeBadgeColor} px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
+                                    <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
 
-                                <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
-                                    ${escapeHtml(msg.message || '[No message]')}
-                                </div>
+                                <div id="${vAccordionId}" style="display: none; padding: 12px; flex-direction: column; gap: 10px;">
                         `;
 
-                        // If feedback submission (has image_url), show image thumbnail and verification UI inline
-                        if (msg.image_url) {
-                            const status = (msg.status || 'pending_verification').toLowerCase();
-                            let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-[11px] font-bold">PENDING</span>`;
-                            if (status === 'verified') {
-                                statusBadge = `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded text-[11px] font-bold">✓ VERIFIED</span>`;
-                            } else if (status === 'rejected') {
-                                statusBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-[11px] font-bold">✗ REJECTED</span>`;
+                        vItems.forEach(item => {
+                            const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
+                                year: 'numeric',
+                                month: 'numeric',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true,
+                                timeZoneName: 'short'
+                            });
+
+                            // Get buyer name for easy reference
+                            const buyerName = buyerMap[item.buyer_id]?.full_name || 'Unknown Buyer';
+                            const buyerEmail = buyerMap[item.buyer_id]?.email || '';
+
+                            // Determine message type and color - CHECK DATABASE FIELD FIRST
+                            let messageType = 'Initial Inquiry';
+                            let badgeColor = '#2563eb';
+                            let badgeBg = '#dbeafe';
+                            let messageBorderColor = '#93c5fd';
+
+                            // Priority 1: Check actual message_type from database
+                            if (item.message_type === 'vendor_response') {
+                                messageType = 'Vendor Response';
+                                badgeColor = '#059669';
+                                badgeBg = '#d1fae5';
+                                messageBorderColor = '#6ee7b7';
+                            } else if (item.message_type === 'feedback') {
+                                messageType = 'Feedback Submitted';
+                                badgeColor = '#ea580c';
+                                badgeBg = '#fed7aa';
+                                messageBorderColor = '#fdba74';
+                            } else if (item.message_type === 'buyer_followup') {
+                                messageType = 'Buyer Follow-up';
+                                badgeColor = '#7c3aed';
+                                badgeBg = '#ede9fe';
+                                messageBorderColor = '#d8b4fe';
+                            }
+                            // Priority 2: Fallback to pattern matching for legacy messages
+                            else if (item.message.includes('[Post-Receipt Product Feedback]')) {
+                                messageType = 'Feedback Submitted';
+                                badgeColor = '#ea580c';
+                                badgeBg = '#fed7aa';
+                                messageBorderColor = '#fdba74';
+                            } else if (item.message.includes('[Follow-up]:')) {
+                                messageType = 'Buyer Follow-up';
+                                badgeColor = '#7c3aed';
+                                badgeBg = '#ede9fe';
+                                messageBorderColor = '#d8b4fe';
                             }
 
-                            const amazonUrl = msg.message && msg.message.includes('http')
-                                ? msg.message.match(/https?:\/\/[^\s]+/)[0]
-                                : null;
+                            // Determine if feedback is verified
+                            const isVerified = item.status === 'verified';
+                            const verificationBadge = isVerified ? `<span style="font-size: 10px; font-weight: 700; color: #059669; background: #d1fae5; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">✓ Verified</span>` : '';
 
                             html += `
-                                <div class="bg-gradient-to-r from-orange-100 to-amber-50 border-2 border-orange-400 rounded-lg p-3 space-y-3 mt-2">
-                                    <div class="flex gap-3 items-start">
-                                        <img src="${msg.image_url}" alt="Feedback" class="w-16 h-16 object-cover rounded-lg border-2 border-orange-300 shadow-md cursor-pointer hover:shadow-lg transition" onclick="openLightbox('${msg.image_url}')" title="Click to view full size">
-                                        <div class="flex-1">
-                                            <div class="text-[11px] font-bold text-orange-800 uppercase mb-1.5">📸 Feedback Proof Submitted</div>
-                                            <div class="flex gap-1.5 items-center flex-wrap">
-                                                ${statusBadge}
-                                                ${(status === 'pending_verification' || status === 'pending' || status === 'flagged') ? `
-                                                    <button onclick="verifyInquiry('${msg.id}')" class="text-[11px] bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded font-bold transition">✓ Verify & Approve</button>
-                                                    <button onclick="rejectInquiry('${msg.id}')" class="text-[11px] bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded font-bold transition">✗ Reject</button>
-                                                ` : ''}
-                                            </div>
+                                <div style="background: #f8fafc; border-left: 4px solid ${messageBorderColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7;">
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                            <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
+                                            ${verificationBadge}
+                                            <span style="font-size: 10px; color: #4a5568; font-weight: 600;">${buyerName}</span>
+                                            ${buyerEmail ? `<span style="font-size: 9px; color: #718096; font-style: italic;">${buyerEmail}</span>` : ''}
                                         </div>
+                                        <span style="font-size: 10px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
-                                    <div class="flex gap-2 pt-2 border-t border-orange-300">
-                                        <button onclick="openLightbox('${msg.image_url}')" class="text-[11px] bg-orange-600 text-white hover:bg-orange-700 px-3 py-1 rounded font-semibold transition flex-1">📷 View Full Image</button>
-                                        ${amazonUrl ? `<a href="${amazonUrl}" target="_blank" class="text-[11px] bg-blue-600 text-white hover:bg-blue-700 px-3 py-1 rounded font-semibold transition flex-1 text-center">🔗 Amazon</a>` : '<button disabled class="text-[11px] bg-gray-300 text-gray-500 px-3 py-1 rounded font-semibold flex-1">No Amazon Link</button>'}
+
+                                    <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
+                                    
+                                    ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
+                                    
+                                    <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
+                                        <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
+                                        <button onclick="submitFollowupMessage('${item.id}', '${item.product_id}', '${item.vendor_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Reply</button>
                                     </div>
                                 </div>
                             `;
-                        }
-
-                        html += `</div>`;
-                    });
-
-                    html += `</div></div>`;
-                }
-
-                html += `</div></div></div>`;
-            }
-
-            container.innerHTML = html;
-        }
-
-        function toggleAccordion(contentId, iconId) {
-            const content = document.getElementById(contentId);
-            const icon = document.getElementById(iconId);
-            if (!content || !icon) return;
-
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.style.transform = 'rotate(90deg)';
-            } else {
-                content.classList.add('hidden');
-                icon.style.transform = 'rotate(0deg)';
-            }
-        }
-
-        function showProductPreview(event, imgUrl, title) {
-            const tooltip = document.getElementById('product-hover-tooltip');
-            const img = document.getElementById('tooltip-img');
-            const titleEl = document.getElementById('tooltip-title');
-            
-            img.src = imgUrl ? imgUrl : 'https://via.placeholder.com/150?text=No+Image';
-            titleEl.textContent = title;
-
-            tooltip.style.left = `${event.clientX + 15}px`;
-            tooltip.style.top = `${event.clientY + 15}px`;
-            tooltip.classList.remove('hidden');
-        }
-
-        function hideProductPreview() {
-            const tooltip = document.getElementById('product-hover-tooltip');
-            tooltip.classList.add('hidden');
-        }
-
-        function openLightbox(imageUrl) {
-            const lightbox = document.getElementById('image-lightbox');
-            const imgEl = document.getElementById('lightbox-img-element');
-            if (!lightbox || !imgEl) return;
-            imgEl.src = imageUrl;
-            lightbox.classList.remove('hidden');
-        }
-
-        function closeLightbox() {
-            const lightbox = document.getElementById('image-lightbox');
-            if (lightbox) {
-                lightbox.classList.add('hidden');
-            }
-        }
-
-        async function verifyInquiry(inquiryId) {
-            if (!confirm("Verify this feedback submission and trigger the automated referral commission?")) return;
-
-            try {
-                // Fetch inquiry details
-                const { data: inquiry, error: inqError } = await db
-                    .from('inquiries')
-                    .select('id, buyer_id, product_id')
-                    .eq('id', inquiryId)
-                    .single();
-
-                if (inqError || !inquiry) {
-                    alert('Error fetching inquiry details');
-                    return;
-                }
-
-                // Fetch product to get vendor_id
-                const { data: product, error: prodError } = await db
-                    .from('products')
-                    .select('vendor_id')
-                    .eq('id', inquiry.product_id)
-                    .single();
-
-                if (prodError || !product) {
-                    alert('Error fetching product details');
-                    return;
-                }
-
-                // Update inquiry status to verified
-                const { error: updateError } = await db
-                    .from('inquiries')
-                    .update({ status: 'verified' })
-                    .eq('id', inquiryId);
-
-                if (updateError) {
-                    alert('Error verifying feedback: ' + updateError.message);
-                    return;
-                }
-
-                // Create alert for buyer (feedback approved)
-                const buyerAlertData = {
-                    recipient_id: inquiry.buyer_id,
-                    recipient_type: 'buyer',
-                    alert_type: 'feedback_approved',
-                    title: 'Feedback Approved',
-                    message: 'Your product feedback has been verified and approved by the admin.',
-                    related_inquiry_id: inquiryId,
-                    is_read: false
-                };
-
-                await db.from('alerts').insert([buyerAlertData]);
-
-                // Create alert for vendor (commission triggered)
-                const vendorAlertData = {
-                    recipient_id: product.vendor_id,
-                    recipient_type: 'vendor',
-                    alert_type: 'commission_triggered',
-                    title: 'Commission Generated',
-                    message: 'A new commission has been added to your account balance from verified feedback.',
-                    related_inquiry_id: inquiryId,
-                    is_read: false
-                };
-
-                await db.from('alerts').insert([vendorAlertData]);
-
-                alert('✓ Feedback verified! Buyer and vendor notified.');
-                loadInquiriesPortal();
-                loadCommissionsPortal();
-            } catch (err) {
-                console.error('Error in verifyInquiry:', err);
-                alert('Unexpected error: ' + err.message);
-            }
-        }
-
-        async function rejectInquiry(inquiryId) {
-            if (!confirm("Reject this feedback submission? The buyer will need to resubmit.")) return;
-
-            try {
-                // Fetch inquiry details to get buyer_id
-                const { data: inquiry, error: inqError } = await db
-                    .from('inquiries')
-                    .select('id, buyer_id')
-                    .eq('id', inquiryId)
-                    .single();
-
-                if (inqError || !inquiry) {
-                    alert('Error fetching inquiry details');
-                    return;
-                }
-
-                // Update inquiry status to rejected
-                const { error: updateError } = await db
-                    .from('inquiries')
-                    .update({ status: 'rejected' })
-                    .eq('id', inquiryId);
-
-                if (updateError) {
-                    alert('Error rejecting feedback: ' + updateError.message);
-                    return;
-                }
-
-                // Create alert for buyer (feedback rejected)
-                const buyerAlertData = {
-                    recipient_id: inquiry.buyer_id,
-                    recipient_type: 'buyer',
-                    alert_type: 'feedback_rejected',
-                    title: 'Feedback Rejected',
-                    message: 'Your product feedback was rejected. Please review and resubmit with better quality proof.',
-                    related_inquiry_id: inquiryId,
-                    is_read: false
-                };
-
-                await db.from('alerts').insert([buyerAlertData]);
-
-                alert('✓ Feedback rejected. Buyer notified.');
-                loadInquiriesPortal();
-            } catch (err) {
-                console.error('Error in rejectInquiry:', err);
-                alert('Unexpected error: ' + err.message);
-            }
-        }
-
-        async function flagInquiry(inquiryId) {
-            const reason = prompt("Enter reason for flag (e.g., 'Suspicious image quality', 'Amazon URL unclear'):");
-            if (!reason) return;
-            const { error } = await db.from('inquiries').update({ status: 'flagged', flag_reason: reason }).eq('id', inquiryId);
-            if (error) { alert('Error flagging feedback: ' + error.message); return; }
-            alert('Feedback flagged for manual review.');
-            loadInquiriesPortal();
-        }
-
-        async function unflagInquiry(inquiryId) {
-            if (!confirm("Remove flag and return to pending status?")) return;
-            const { error } = await db.from('inquiries').update({ status: 'pending', flag_reason: null }).eq('id', inquiryId);
-            if (error) { alert('Error removing flag: ' + error.message); return; }
-            alert('Flag removed. Feedback back to pending.');
-            loadInquiriesPortal();
-        }
-
-        // --- TAB 3: COMMISSIONS ---
-        async function loadCommissionsPortal() {
-            // Load vendor commission settings first
-            await loadVendorCommissionSettings();
-            // Load threshold change requests
-            await loadThresholdChangeRequests();
-
-            const tableBody = document.getElementById('commissions-table-body');
-            if (!tableBody) return;
-
-            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
-            if (error) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
-                return;
-            }
-            if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
-                document.getElementById('commission-count').textContent = '0 records';
-                document.getElementById('metric-total-paid').textContent = '$0.00 USD';
-                document.getElementById('metric-total-payable').textContent = '$0.00 USD';
-                document.getElementById('metric-total-records').textContent = '0';
-                return;
-            }
-
-            let totalPaid = 0;
-            let totalPayable = 0;
-            data.forEach(comm => {
-                const amt = parseFloat(comm.split_amount || 0);
-                const status = (comm.status || 'payable').toLowerCase();
-                if (status === 'paid') {
-                    totalPaid += amt;
-                } else {
-                    totalPayable += amt;
-                }
-            });
-
-            document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
-            document.getElementById('metric-total-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
-            document.getElementById('metric-total-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
-            document.getElementById('metric-total-records').textContent = data.length;
-
-            tableBody.innerHTML = data.map(comm => {
-                const status = (comm.status || 'payable').toLowerCase();
-                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
-                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
-
-                if (status === 'paid') {
-                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`;
-                    actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
-                }
-
-                let targetDisplay = comm.referred_id;
-                if (comm.referred_role) {
-                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
-                }
-
-                return `
-                    <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
-                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
-                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
-                        <td class="p-2.5">${badge}</td>
-                        <td class="p-2.5 text-center">${actionBtn}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        async function markCommissionPaid(commissionId) {
-            if (!confirm("Mark this referral commission payout as PAID?")) return;
-            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
-            if (error) { alert('Error updating payout status: ' + error.message); return; }
-            alert('Commission marked as paid!');
-            loadCommissionsPortal();
-        }
-
-        function switchTab(tabName) {
-            const sections = document.querySelectorAll('[id^="section-"]');
-            const buttons = document.querySelectorAll('.tab-btn');
-
-            sections.forEach(section => {
-                section.classList.add('hidden');
-            });
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            const activeSection = document.getElementById(`section-${tabName}`);
-            const activeButton = document.getElementById(`tab-btn-${tabName}`);
-
-            if (activeSection) activeSection.classList.remove('hidden');
-            if (activeButton) activeButton.classList.add('active');
-
-            // Load data for the active tab
-            if (tabName === 'buyers') loadBuyersPortal();
-            else if (tabName === 'inquiries') loadInquiriesPortal();
-            else if (tabName === 'commissions') loadCommissionsPortal();
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        // --- VENDOR COMMISSION MANAGEMENT ---
-        async function loadVendorCommissionSettings() {
-            const tableBody = document.getElementById('vendor-settings-body');
-            if (!tableBody) return;
-
-            try {
-                // Fetch vendors with commission info
-                const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name, email, commission, commission_threshold, accumulated_balance, referred_by_buyer_id').order('first_name');
-
-                if (vendorError) {
-                    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading vendors: ${escapeHtml(vendorError.message)}</td></tr>`;
-                    return;
-                }
-
-                if (!vendors || vendors.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No vendors registered yet.</td></tr>`;
-                    document.getElementById('alert-count').textContent = '0 alerts';
-                    return;
-                }
-
-                let alertCount = 0;
-                let alertList = [];
-
-                const rows = vendors.map(vendor => {
-                    const commission = parseFloat(vendor.commission || 0);
-                    const threshold = parseFloat(vendor.commission_threshold || commission); // Default threshold = commission
-                    const accumulated = parseFloat(vendor.accumulated_balance || 0);
-
-                    const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
-                    const isAlert = progressPercent >= 80;
-
-                    if (isAlert) {
-                        alertCount++;
-                        alertList.push({
-                            name: `${vendor.first_name || ''} ${vendor.last_name || ''}`.trim(),
-                            percent: progressPercent,
-                            vendor_id: vendor.id
                         });
+
+                        html += `
+                                </div>
+                            </div>
+                        `;
                     }
 
-                    let progressColor = 'bg-green-500';
-                    let progressBg = 'bg-green-100';
-                    if (progressPercent >= 100) {
-                        progressColor = 'bg-red-500';
-                        progressBg = 'bg-red-100';
-                    } else if (progressPercent >= 80) {
-                        progressColor = 'bg-orange-500';
-                        progressBg = 'bg-orange-100';
+                    html += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries yet.</p>';
+            }
+        }
+
+        function filterInquiriesList() {
+            const query = document.getElementById('inquiry-search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.inquiry-card-item');
+
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                if (searchData.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleInquiryGroup(contentId, headerElement) {
+            const bodyDiv = document.getElementById(contentId);
+            const iconSpan = document.getElementById(`icon-${contentId}`);
+            
+            if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
+                bodyDiv.style.display = 'flex';
+                iconSpan.style.transform = 'rotate(180deg)';
+                headerElement.style.background = '#edf2f7';
+            } else {
+                bodyDiv.style.display = 'none';
+                iconSpan.style.transform = 'rotate(0deg)';
+                headerElement.style.background = '#f8fafc';
+            }
+        }
+
+        function toggleVendorGroup(vendorAccordionId, headerElement) {
+            const bodyDiv = document.getElementById(vendorAccordionId);
+            const iconSpan = document.getElementById(`icon-${vendorAccordionId}`);
+            
+            if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
+                bodyDiv.style.display = 'flex';
+                iconSpan.style.transform = 'rotate(180deg)';
+                headerElement.style.background = '#e2e8f0';
+            } else {
+                bodyDiv.style.display = 'none';
+                iconSpan.style.transform = 'rotate(0deg)';
+                headerElement.style.background = '#edf2f7';
+            }
+        }
+
+        async function uploadProductFeedbackImage(productId, pKey) {
+            const fileInput = document.getElementById(`product-feedback-file-${pKey}`);
+            const linkInput = document.getElementById(`product-feedback-link-${pKey}`);
+            const amazonLink = linkInput ? linkInput.value.trim() : '';
+
+            const hasFile = fileInput.files && fileInput.files[0];
+            if (!amazonLink) {
+                alert('Amazon feedback link is required.');
+                return;
+            }
+
+            let imageUrl = null;
+
+            if (hasFile) {
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+                const filePath = `feedback/${fileName}`;
+
+                console.log('📸 Uploading feedback image:', { fileName, filePath, fileSize: file.size });
+
+                const { error: uploadError } = await db.storage
+                    .from('product-images')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('❌ Error uploading feedback image:', uploadError);
+                    alert(`Failed to upload feedback image: ${uploadError.message}`);
+                    return;
+                }
+
+                console.log('✅ Image uploaded successfully');
+
+                const { data: publicUrlData } = db.storage
+                    .from('product-images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrlData.publicUrl;
+                console.log('🖼️ Public URL generated:', imageUrl);
+
+                if (!imageUrl) {
+                    console.error('❌ Failed to generate public URL');
+                    alert('Failed to generate image URL.');
+                    return;
+                }
+            }
+
+            // Get vendor_id from product (not from pKey which might be 'Echo Hub')
+            const { data: productData } = await db
+                .from('products')
+                .select('vendor_id')
+                .eq('id', productId)
+                .single();
+
+            const actualVendorId = productData?.vendor_id || null;
+
+            const { data: existingFeedback, error: fetchErr } = await db
+                .from('inquiries')
+                .select('id, image_url, message')
+                .eq('buyer_id', currentBuyerId)
+                .eq('product_id', productId)
+                .ilike('message', '%[Post-Receipt Product Feedback%')
+                .maybeSingle();
+
+            if (fetchErr) {
+                console.error('Error checking existing feedback:', fetchErr.message);
+            }
+
+            const feedbackMessage = `[Post-Receipt Product Feedback]\nAmazon Link: ${amazonLink || 'None provided'}`;
+            let dbError = null;
+
+            if (existingFeedback && existingFeedback.id) {
+                const updatePayload = {
+                    message: feedbackMessage,
+                    message_type: 'feedback',
+                    status: 'pending',
+                    created_at: new Date().toISOString()
+                };
+                if (imageUrl) {
+                    updatePayload.image_url = imageUrl;
+                }
+
+                const { error: updateErr } = await db
+                    .from('inquiries')
+                    .update(updatePayload)
+                    .eq('id', existingFeedback.id);
+                dbError = updateErr;
+            } else {
+                const { error: insertErr } = await db.from('inquiries').insert([
+                    {
+                        product_id: productId === 'null' || !productId ? null : productId,
+                        buyer_id: currentBuyerId,
+                        vendor_id: actualVendorId,
+                        message: feedbackMessage,
+                        image_url: imageUrl,
+                        message_type: 'feedback',
+                        status: 'pending'
                     }
+                ]);
+                dbError = insertErr;
+            }
+
+            if (dbError) {
+                console.error('Error saving feedback record:', dbError.message);
+                alert('Failed to save feedback record.');
+                return;
+            }
+
+            alert('Product feedback (link & image) successfully submitted!');
+            loadBuyerInquiriesHistory(currentBuyerId);
+        }
+
+        async function submitFollowupMessage(inquiryId, productId, vendorId) {
+            const msgInput = document.getElementById(`followup-msg-${inquiryId}`);
+            const messageText = msgInput.value.trim();
+
+            if (!messageText) {
+                alert('Please enter a reply message.');
+                return;
+            }
+
+            const { error } = await db.from('inquiries').insert([
+                {
+                    product_id: productId === 'null' || !productId ? null : productId,
+                    vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
+                    buyer_id: currentBuyerId,
+                    message: `[Follow-up]: ${messageText}`,
+                    message_type: 'buyer_followup',
+                    image_url: null
+                }
+            ]);
+
+            if (error) {
+                console.error('Error submitting follow-up:', error.message);
+                alert('Failed to submit follow-up message.');
+                return;
+            }
+
+            alert('Follow-up message sent successfully!');
+            loadBuyerInquiriesHistory(currentBuyerId);
+        }
+
+        async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
+            if (!buyerId) return;
+
+            const refLink = `${window.location.origin}/index.html?ref=${buyerStringId || buyerId}`;
+            document.getElementById('referral-link-input').value = refLink;
+
+            const { data: ledgerRows, error } = await db
+                .from('referral_ledger')
+                .select('*')
+                .eq('referrer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading buyer ledger:', error.message);
+                return;
+            }
+
+            let totalReferrals = ledgerRows ? ledgerRows.length : 0;
+            let pendingBal = 0;
+            let payableBal = 0;
+
+            const tbody = document.getElementById('buyer-ledger-body');
+
+            if (ledgerRows && ledgerRows.length > 0) {
+                tbody.innerHTML = ledgerRows.map(row => {
+                    const amt = parseFloat(row.commission_amount || 0);
+                    if (row.status === 'pending') pendingBal += amt;
+                    if (row.status === 'payable' || row.status === 'paid') payableBal += amt;
 
                     return `
-                        <tr class="hover:bg-gray-50/50 transition ${isAlert ? 'bg-orange-50' : ''}">
-                            <td class="p-2.5">
-                                <div class="text-sm font-medium text-gray-800">${escapeHtml(vendor.first_name || '')} ${escapeHtml(vendor.last_name || '')}</div>
-                                <button onclick="openVendorDetailsModal('${vendor.id}', '${escapeHtml(vendor.first_name || '')} ${escapeHtml(vendor.last_name || '')}', '${escapeHtml(vendor.email || '')}', event)" class="text-xs text-blue-600 hover:text-blue-800 underline mt-1">View Details</button>
-                            </td>
-                            <td class="p-2.5 text-sm font-bold text-gray-800">$${commission.toFixed(2)}</td>
-                            <td class="p-2.5 text-sm font-bold text-gray-800">$${threshold.toFixed(2)}</td>
-                            <td class="p-2.5 text-sm font-bold text-gray-800">$${accumulated.toFixed(2)}</td>
-                            <td class="p-2.5">
-                                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                    <div class="${progressColor} h-full rounded-full transition-all" style="width: ${Math.min(progressPercent, 100)}%"></div>
-                                </div>
-                                <div class="text-[10px] text-gray-600 mt-0.5 font-semibold">${progressPercent}%</div>
-                            </td>
-                            <td class="p-2.5 text-center">
-                                <button onclick="openThresholdModal('${vendor.id}', '${escapeHtml(vendor.first_name || '')} ${escapeHtml(vendor.last_name || '')}', ${commission}, ${threshold})"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">
-                                    Edit Threshold
-                                </button>
-                            </td>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${parseFloat(row.net_commission || 0).toFixed(2)}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #2b6cb0;">$${amt.toFixed(2)}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${row.status === 'pending' ? '#feebc8; color: #c05621;' : '#c6f6d5; color: #22543d;'}">${row.status.toUpperCase()}</span></td>
                         </tr>
                     `;
                 }).join('');
-
-                tableBody.innerHTML = rows;
-
-                // Update alert monitor
-                document.getElementById('alert-count').textContent = `${alertCount} alert${alertCount !== 1 ? 's' : ''}`;
-
-                if (alertList.length > 0) {
-                    const alertHtml = alertList.map(alert =>
-                        `<div class="mb-1">⚠️ <strong>${escapeHtml(alert.name)}</strong>: ${alert.percent}% of threshold</div>`
-                    ).join('');
-                    document.getElementById('alert-list').innerHTML = alertHtml;
-                } else {
-                    document.getElementById('alert-list').innerHTML = 'No vendors reaching threshold';
-                }
-
-            } catch (err) {
-                console.error('Error in loadVendorCommissionSettings:', err);
-                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Unexpected error loading vendor settings</td></tr>`;
-            }
-        }
-
-        function openThresholdModal(vendorId, vendorName, commissionAmount, currentThreshold) {
-            activeThresholdVendorId = vendorId;
-            document.getElementById('modal-vendor-name').textContent = vendorName.trim();
-            document.getElementById('modal-commission-amount').textContent = `$${parseFloat(commissionAmount).toFixed(2)}`;
-            document.getElementById('modal-current-threshold').textContent = `$${parseFloat(currentThreshold).toFixed(2)}`;
-            document.getElementById('modal-new-threshold').value = parseFloat(currentThreshold).toFixed(2);
-            document.getElementById('threshold-modal').classList.remove('hidden');
-        }
-
-        function closeThresholdModal() {
-            document.getElementById('threshold-modal').classList.add('hidden');
-            activeThresholdVendorId = null;
-            document.getElementById('modal-new-threshold').value = '';
-        }
-
-        async function saveThresholdChange() {
-            if (!activeThresholdVendorId) {
-                alert('Error: Vendor ID not set');
-                return;
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
             }
 
-            const newThreshold = parseFloat(document.getElementById('modal-new-threshold').value);
-
-            if (isNaN(newThreshold) || newThreshold < 0) {
-                alert('Please enter a valid threshold amount (must be 0 or greater)');
-                return;
-            }
-
-            try {
-                const { error } = await db.from('vendors').update({ commission_threshold: newThreshold }).eq('id', activeThresholdVendorId);
-
-                if (error) {
-                    alert('Error saving threshold: ' + error.message);
-                    return;
-                }
-
-                alert(`Threshold updated to $${newThreshold.toFixed(2)}!`);
-                closeThresholdModal();
-                loadVendorCommissionSettings(); // Refresh the table
-            } catch (err) {
-                alert('Unexpected error: ' + err.message);
-            }
+            document.getElementById('stat-total-referrals').innerText = totalReferrals;
+            document.getElementById('stat-pending-balance').innerText = `$${pendingBal.toFixed(2)}`;
+            document.getElementById('stat-payable-balance').innerText = `$${payableBal.toFixed(2)}`;
         }
 
-        function openVendorDetailsModal(vendorId, vendorName, vendorEmail, event) {
-            event.stopPropagation();
-            document.getElementById('modal-vendor-fullname').textContent = vendorName;
-            document.getElementById('modal-vendor-id').textContent = vendorId;
-            document.getElementById('modal-vendor-email').textContent = vendorEmail || 'No email on file';
-            document.getElementById('vendor-details-modal').classList.remove('hidden');
+        function copyReferralLink() {
+            const input = document.getElementById('referral-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            alert('Referral link copied to clipboard!');
         }
 
-        function closeVendorDetailsModal() {
-            document.getElementById('vendor-details-modal').classList.add('hidden');
-        }
-
-        // --- THRESHOLD CHANGE REQUEST FUNCTIONS ---
-        let currentRequestId = null;
-
-        async function loadThresholdChangeRequests() {
-            try {
-                // Fetch all pending threshold change requests
-                const { data: requests, error: requestsError } = await db
-                    .from('threshold_change_requests')
-                    .select('*')
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
-
-                if (requestsError) {
-                    console.error('Error loading threshold requests:', requestsError);
-                    document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading requests</td></tr>';
-                    return;
-                }
-
-                // Update count
-                document.getElementById('pending-requests-count').textContent = requests.length + ' pending';
-
-                // If no requests, show empty state
-                if (!requests || requests.length === 0) {
-                    document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending threshold change requests</td></tr>';
-                    return;
-                }
-
-                // Fetch vendor names for display
-                let html = '';
-                for (const req of requests) {
-                    const { data: vendor } = await db
-                        .from('vendors')
-                        .select('id, first_name, last_name')
-                        .eq('id', req.vendor_id)
-                        .single();
-
-                    const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
-                    const vendorId = vendor ? vendor.id : req.vendor_id;
-                    const submittedDate = new Date(req.created_at).toLocaleDateString() + ' ' + new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    const statusBadge = `<span class="text-xs px-2 py-1 rounded-full font-semibold ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>`;
-
-                    html += `<tr class="hover:bg-gray-50">
-                        <td class="p-2.5 font-medium text-gray-800">${vendorName}</td>
-                        <td class="p-2.5 text-blue-600 font-semibold">$${parseFloat(req.current_threshold).toFixed(2)}</td>
-                        <td class="p-2.5 text-amber-600 font-semibold">$${parseFloat(req.requested_threshold).toFixed(2)}</td>
-                        <td class="p-2.5 text-xs text-gray-600 max-w-xs truncate">${req.reason || '—'}</td>
-                        <td class="p-2.5 text-xs text-gray-500">${submittedDate}</td>
-                        <td class="p-2.5 text-center">${statusBadge}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="openThresholdRequestModal(${req.id})" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
-                        </td>
-                    </tr>`;
-                }
-
-                document.getElementById('threshold-requests-body').innerHTML = html;
-            } catch (err) {
-                console.error('Error in loadThresholdChangeRequests:', err);
-                document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading requests</td></tr>';
-            }
-        }
-
-        async function openThresholdRequestModal(requestId) {
-            try {
-                currentRequestId = requestId;
-
-                // Fetch the request details
-                const { data: request, error: reqError } = await db
-                    .from('threshold_change_requests')
-                    .select('*')
-                    .eq('id', requestId)
-                    .single();
-
-                if (reqError || !request) {
-                    alert('Error loading request details');
-                    return;
-                }
-
-                // Fetch vendor details
-                const { data: vendor, error: vendorError } = await db
-                    .from('vendors')
-                    .select('id, first_name, last_name')
-                    .eq('id', request.vendor_id)
-                    .single();
-
-                if (vendorError || !vendor) {
-                    alert('Error loading vendor details');
-                    return;
-                }
-
-                // Populate modal
-                const vendorName = `${vendor.first_name} ${vendor.last_name}`;
-                document.getElementById('req-modal-vendor-name').textContent = vendorName;
-                document.getElementById('req-modal-vendor-id').textContent = vendor.id;
-                document.getElementById('req-modal-current-threshold').textContent = '$' + parseFloat(request.current_threshold).toFixed(2);
-                document.getElementById('req-modal-requested-threshold').textContent = '$' + parseFloat(request.requested_threshold).toFixed(2);
-                document.getElementById('req-modal-reason').textContent = request.reason || 'No reason provided';
-                document.getElementById('req-modal-admin-notes').value = '';
-
-                // Show modal
-                document.getElementById('threshold-request-modal').classList.remove('hidden');
-            } catch (err) {
-                console.error('Error in openThresholdRequestModal:', err);
-                alert('Error opening request details');
-            }
-        }
-
-        function closeThresholdRequestModal() {
-            document.getElementById('threshold-request-modal').classList.add('hidden');
-            currentRequestId = null;
-        }
-
-        async function approveThresholdRequest() {
-            if (!currentRequestId) return;
-
-            try {
-                // Fetch the request to get vendor_id and requested_threshold
-                const { data: request, error: fetchError } = await db
-                    .from('threshold_change_requests')
-                    .select('vendor_id, requested_threshold')
-                    .eq('id', currentRequestId)
-                    .single();
-
-                if (fetchError || !request) {
-                    alert('Error fetching request details');
-                    return;
-                }
-
-                // Update vendor's commission_threshold
-                const { error: updateError } = await db
-                    .from('vendors')
-                    .update({ commission_threshold: request.requested_threshold })
-                    .eq('id', request.vendor_id);
-
-                if (updateError) {
-                    alert('Error updating vendor threshold: ' + updateError.message);
-                    return;
-                }
-
-                // Update request status to approved
-                const { error: statusError } = await db
-                    .from('threshold_change_requests')
-                    .update({ status: 'approved', updated_at: new Date().toISOString() })
-                    .eq('id', currentRequestId);
-
-                if (statusError) {
-                    alert('Error updating request status: ' + statusError.message);
-                    return;
-                }
-
-                // Create alert for vendor
-                const { data: vendor } = await db
-                    .from('vendors')
-                    .select('id, first_name, last_name')
-                    .eq('id', request.vendor_id)
-                    .single();
-
-                const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
-
-                await db.from('alerts').insert([{
-                    recipient_id: request.vendor_id,
-                    recipient_type: 'vendor',
-                    alert_type: 'threshold_approved',
-                    title: 'Payout Threshold Approved',
-                    message: `Your request to change your payout threshold to $${parseFloat(request.requested_threshold).toFixed(2)} has been approved and is now active.`,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                }]);
-
-                alert('✅ Threshold request approved! Vendor has been notified.');
-                closeThresholdRequestModal();
-                await loadThresholdChangeRequests();
-            } catch (err) {
-                console.error('Error approving threshold request:', err);
-                alert('Error: ' + err.message);
-            }
-        }
-
-        async function rejectThresholdRequest() {
-            if (!currentRequestId) return;
-
-            try {
-                const adminNotes = document.getElementById('req-modal-admin-notes').value.trim();
-
-                if (!adminNotes) {
-                    alert('Please provide a reason for rejection');
-                    return;
-                }
-
-                // Fetch the request to get vendor_id
-                const { data: request, error: fetchError } = await db
-                    .from('threshold_change_requests')
-                    .select('vendor_id')
-                    .eq('id', currentRequestId)
-                    .single();
-
-                if (fetchError || !request) {
-                    alert('Error fetching request details');
-                    return;
-                }
-
-                // Update request status to rejected
-                const { error: statusError } = await db
-                    .from('threshold_change_requests')
-                    .update({
-                        status: 'rejected',
-                        admin_notes: adminNotes,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', currentRequestId);
-
-                if (statusError) {
-                    alert('Error updating request status: ' + statusError.message);
-                    return;
-                }
-
-                // Create alert for vendor
-                const { data: vendor } = await db
-                    .from('vendors')
-                    .select('id, first_name, last_name')
-                    .eq('id', request.vendor_id)
-                    .single();
-
-                const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
-
-                await db.from('alerts').insert([{
-                    recipient_id: request.vendor_id,
-                    recipient_type: 'vendor',
-                    alert_type: 'threshold_rejected',
-                    title: 'Payout Threshold Request Rejected',
-                    message: `Your request to change your payout threshold has been rejected. Reason: ${adminNotes}`,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                }]);
-
-                alert('✅ Threshold request rejected! Vendor has been notified.');
-                closeThresholdRequestModal();
-                await loadThresholdChangeRequests();
-            } catch (err) {
-                console.error('Error rejecting threshold request:', err);
-                alert('Error: ' + err.message);
-            }
-        }
+        window.addEventListener('DOMContentLoaded', async () => {
+            captureReferralCode();
+            await checkBuyerSession();
+            await loadCategories();
+            await loadProducts('All');
+        });
     </script>
 </body>
 </html>
