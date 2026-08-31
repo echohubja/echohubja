@@ -179,6 +179,34 @@
             </div>
         </div>
 
+        <!-- THRESHOLD CHANGE REQUESTS SECTION -->
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
+                <span>📋 Vendor Threshold Change Requests</span>
+                <span id="pending-requests-count" class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">0 pending</span>
+            </h3>
+            <p class="text-xs text-gray-500 mb-3">Review and approve/reject vendor requests to change their payout thresholds.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-amber-50 text-amber-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Current Threshold</th>
+                            <th class="p-2.5">Requested Threshold</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Submitted</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="threshold-requests-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading threshold requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- REFERRAL COMMISSIONS TABLE SECTION -->
         <div>
             <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Transaction History</h3>
@@ -290,6 +318,59 @@
             <div class="flex gap-2 mt-5 pt-4 border-t">
                 <button onclick="closeThresholdModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
                 <button onclick="saveThresholdChange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition">Save Threshold</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Threshold Change Request Decision Modal -->
+    <div id="threshold-request-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <h3 class="text-lg font-bold text-[#1e5aa8]">Review Threshold Request</h3>
+                <button onclick="closeThresholdRequestModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor Name</label>
+                    <div id="req-modal-vendor-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor ID</label>
+                    <div id="req-modal-vendor-id" class="bg-gray-100 p-2 rounded text-sm font-mono text-gray-600">-</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Current Threshold</label>
+                        <div id="req-modal-current-threshold" class="bg-blue-50 p-2 rounded text-sm font-medium text-blue-900">$0.00</div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Requested Threshold</label>
+                        <div id="req-modal-requested-threshold" class="bg-amber-50 p-2 rounded text-sm font-medium text-amber-900">$0.00</div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor's Reason (if provided)</label>
+                    <div id="req-modal-reason" class="bg-gray-50 p-2 rounded text-sm text-gray-700 min-h-12 max-h-20 overflow-y-auto">No reason provided</div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Admin Notes (optional)</label>
+                    <textarea id="req-modal-admin-notes" placeholder="Add notes if rejecting..." class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2"></textarea>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
+                    ℹ️ Approving will update the vendor's threshold immediately. Rejecting requires a reason to be sent to the vendor.
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-5 pt-4 border-t">
+                <button onclick="closeThresholdRequestModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
+                <button onclick="rejectThresholdRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
+                <button onclick="approveThresholdRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
             </div>
         </div>
     </div>
@@ -978,6 +1059,8 @@
         async function loadCommissionsPortal() {
             // Load vendor commission settings first
             await loadVendorCommissionSettings();
+            // Load threshold change requests
+            await loadThresholdChangeRequests();
 
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
@@ -1225,6 +1308,249 @@
 
         function closeVendorDetailsModal() {
             document.getElementById('vendor-details-modal').classList.add('hidden');
+        }
+
+        // --- THRESHOLD CHANGE REQUEST FUNCTIONS ---
+        let currentRequestId = null;
+
+        async function loadThresholdChangeRequests() {
+            try {
+                // Fetch all pending threshold change requests
+                const { data: requests, error: requestsError } = await db
+                    .from('threshold_change_requests')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (requestsError) {
+                    console.error('Error loading threshold requests:', requestsError);
+                    document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading requests</td></tr>';
+                    return;
+                }
+
+                // Update count
+                document.getElementById('pending-requests-count').textContent = requests.length + ' pending';
+
+                // If no requests, show empty state
+                if (!requests || requests.length === 0) {
+                    document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending threshold change requests</td></tr>';
+                    return;
+                }
+
+                // Fetch vendor names for display
+                let html = '';
+                for (const req of requests) {
+                    const { data: vendor } = await db
+                        .from('vendors')
+                        .select('id, first_name, last_name')
+                        .eq('id', req.vendor_id)
+                        .single();
+
+                    const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
+                    const vendorId = vendor ? vendor.id : req.vendor_id;
+                    const submittedDate = new Date(req.created_at).toLocaleDateString() + ' ' + new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const statusBadge = `<span class="text-xs px-2 py-1 rounded-full font-semibold ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>`;
+
+                    html += `<tr class="hover:bg-gray-50">
+                        <td class="p-2.5 font-medium text-gray-800">${vendorName}</td>
+                        <td class="p-2.5 text-blue-600 font-semibold">$${parseFloat(req.current_threshold).toFixed(2)}</td>
+                        <td class="p-2.5 text-amber-600 font-semibold">$${parseFloat(req.requested_threshold).toFixed(2)}</td>
+                        <td class="p-2.5 text-xs text-gray-600 max-w-xs truncate">${req.reason || '—'}</td>
+                        <td class="p-2.5 text-xs text-gray-500">${submittedDate}</td>
+                        <td class="p-2.5 text-center">${statusBadge}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="openThresholdRequestModal(${req.id})" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
+                        </td>
+                    </tr>`;
+                }
+
+                document.getElementById('threshold-requests-body').innerHTML = html;
+            } catch (err) {
+                console.error('Error in loadThresholdChangeRequests:', err);
+                document.getElementById('threshold-requests-body').innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading requests</td></tr>';
+            }
+        }
+
+        async function openThresholdRequestModal(requestId) {
+            try {
+                currentRequestId = requestId;
+
+                // Fetch the request details
+                const { data: request, error: reqError } = await db
+                    .from('threshold_change_requests')
+                    .select('*')
+                    .eq('id', requestId)
+                    .single();
+
+                if (reqError || !request) {
+                    alert('Error loading request details');
+                    return;
+                }
+
+                // Fetch vendor details
+                const { data: vendor, error: vendorError } = await db
+                    .from('vendors')
+                    .select('id, first_name, last_name')
+                    .eq('id', request.vendor_id)
+                    .single();
+
+                if (vendorError || !vendor) {
+                    alert('Error loading vendor details');
+                    return;
+                }
+
+                // Populate modal
+                const vendorName = `${vendor.first_name} ${vendor.last_name}`;
+                document.getElementById('req-modal-vendor-name').textContent = vendorName;
+                document.getElementById('req-modal-vendor-id').textContent = vendor.id;
+                document.getElementById('req-modal-current-threshold').textContent = '$' + parseFloat(request.current_threshold).toFixed(2);
+                document.getElementById('req-modal-requested-threshold').textContent = '$' + parseFloat(request.requested_threshold).toFixed(2);
+                document.getElementById('req-modal-reason').textContent = request.reason || 'No reason provided';
+                document.getElementById('req-modal-admin-notes').value = '';
+
+                // Show modal
+                document.getElementById('threshold-request-modal').classList.remove('hidden');
+            } catch (err) {
+                console.error('Error in openThresholdRequestModal:', err);
+                alert('Error opening request details');
+            }
+        }
+
+        function closeThresholdRequestModal() {
+            document.getElementById('threshold-request-modal').classList.add('hidden');
+            currentRequestId = null;
+        }
+
+        async function approveThresholdRequest() {
+            if (!currentRequestId) return;
+
+            try {
+                // Fetch the request to get vendor_id and requested_threshold
+                const { data: request, error: fetchError } = await db
+                    .from('threshold_change_requests')
+                    .select('vendor_id, requested_threshold')
+                    .eq('id', currentRequestId)
+                    .single();
+
+                if (fetchError || !request) {
+                    alert('Error fetching request details');
+                    return;
+                }
+
+                // Update vendor's commission_threshold
+                const { error: updateError } = await db
+                    .from('vendors')
+                    .update({ commission_threshold: request.requested_threshold })
+                    .eq('id', request.vendor_id);
+
+                if (updateError) {
+                    alert('Error updating vendor threshold: ' + updateError.message);
+                    return;
+                }
+
+                // Update request status to approved
+                const { error: statusError } = await db
+                    .from('threshold_change_requests')
+                    .update({ status: 'approved', updated_at: new Date().toISOString() })
+                    .eq('id', currentRequestId);
+
+                if (statusError) {
+                    alert('Error updating request status: ' + statusError.message);
+                    return;
+                }
+
+                // Create alert for vendor
+                const { data: vendor } = await db
+                    .from('vendors')
+                    .select('id, first_name, last_name')
+                    .eq('id', request.vendor_id)
+                    .single();
+
+                const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
+
+                await db.from('alerts').insert([{
+                    recipient_id: request.vendor_id,
+                    recipient_type: 'vendor',
+                    alert_type: 'threshold_approved',
+                    title: 'Payout Threshold Approved',
+                    message: `Your request to change your payout threshold to $${parseFloat(request.requested_threshold).toFixed(2)} has been approved and is now active.`,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                }]);
+
+                alert('✅ Threshold request approved! Vendor has been notified.');
+                closeThresholdRequestModal();
+                await loadThresholdChangeRequests();
+            } catch (err) {
+                console.error('Error approving threshold request:', err);
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function rejectThresholdRequest() {
+            if (!currentRequestId) return;
+
+            try {
+                const adminNotes = document.getElementById('req-modal-admin-notes').value.trim();
+
+                if (!adminNotes) {
+                    alert('Please provide a reason for rejection');
+                    return;
+                }
+
+                // Fetch the request to get vendor_id
+                const { data: request, error: fetchError } = await db
+                    .from('threshold_change_requests')
+                    .select('vendor_id')
+                    .eq('id', currentRequestId)
+                    .single();
+
+                if (fetchError || !request) {
+                    alert('Error fetching request details');
+                    return;
+                }
+
+                // Update request status to rejected
+                const { error: statusError } = await db
+                    .from('threshold_change_requests')
+                    .update({
+                        status: 'rejected',
+                        admin_notes: adminNotes,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentRequestId);
+
+                if (statusError) {
+                    alert('Error updating request status: ' + statusError.message);
+                    return;
+                }
+
+                // Create alert for vendor
+                const { data: vendor } = await db
+                    .from('vendors')
+                    .select('id, first_name, last_name')
+                    .eq('id', request.vendor_id)
+                    .single();
+
+                const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
+
+                await db.from('alerts').insert([{
+                    recipient_id: request.vendor_id,
+                    recipient_type: 'vendor',
+                    alert_type: 'threshold_rejected',
+                    title: 'Payout Threshold Request Rejected',
+                    message: `Your request to change your payout threshold has been rejected. Reason: ${adminNotes}`,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                }]);
+
+                alert('✅ Threshold request rejected! Vendor has been notified.');
+                closeThresholdRequestModal();
+                await loadThresholdChangeRequests();
+            } catch (err) {
+                console.error('Error rejecting threshold request:', err);
+                alert('Error: ' + err.message);
+            }
         }
     </script>
 </body>
