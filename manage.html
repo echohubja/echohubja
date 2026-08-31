@@ -1568,12 +1568,13 @@
 
             try {
                 const { error } = await sbClient.from('inquiries').insert([{
-                    product_id: parseInt(currentInquiry.id.split('-')[0]),
+                    product_id: currentInquiry.product_id,
                     buyer_id: null,
                     message: responseText,
                     message_type: 'vendor_response',
                     sender_type: 'vendor',
                     sender_id: currentVendor.id,
+                    vendor_id: currentVendor.id,
                     created_at: new Date().toISOString()
                 }]);
 
