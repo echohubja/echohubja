@@ -381,7 +381,7 @@
         let globalInquiriesData = [];
         let productMap = {};
         let vendorMap = {};
-        let adminRealtimeSubscription = null;
+        let pollingIntervals = {};
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -391,7 +391,7 @@
                 loadBuyersPortal();
                 loadInquiriesPortal();
                 loadCommissionsPortal();
-                await setupRealtimeSubscriptions();
+                await setupPolling();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -413,99 +413,108 @@
             else if (tabName === 'commissions') loadCommissionsPortal();
         }
 
-        async function setupRealtimeSubscriptions() {
+        async function setupPolling() {
             if (!db) return;
-
-            // Cleanup existing subscription
-            if (adminRealtimeSubscription) {
-                db.removeAllChannels();
-                adminRealtimeSubscription = null;
-            }
-
+            stopPolling();
             try {
-                // Create main subscription channel for admin portal
-                adminRealtimeSubscription = db
-                    .channel('public:admin-portal')
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'inquiries'
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
+                console.log('📋 Starting polling for admin portal');
 
-                            // For new feedback submissions
-                            if (payload.eventType === 'INSERT' && record.message_type === 'feedback') {
-                                console.log('📬 New feedback submitted:', record);
-                                loadInquiriesPortal();
-                            }
-                            // For status updates (verified, rejected, flagged)
-                            else if (payload.eventType === 'UPDATE' && ['verified', 'rejected', 'flagged', 'pending'].includes(record.status)) {
-                                console.log('✅ Inquiry status updated:', record);
-                                loadInquiriesPortal();
-                            }
+                let lastInquiriesHash = '';
+                let lastVendorsHash = '';
+                let lastThresholdHash = '';
+                let lastAlertsHash = '';
+
+                // Poll inquiries every 3 seconds
+                pollingIntervals.inquiries = setInterval(async () => {
+                    try {
+                        const { data: inquiries } = await db
+                            .from('inquiries')
+                            .select('*');
+
+                        const currentHash = JSON.stringify(inquiries || []);
+                        if (currentHash !== lastInquiriesHash) {
+                            console.log('📬 Inquiries changed - RELOADING');
+                            lastInquiriesHash = currentHash;
+                            loadInquiriesPortal();
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'vendors'
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
-                            // Update on commission or balance changes
-                            if (payload.eventType === 'UPDATE' && (record.commission || record.accumulated_balance || record.commission_threshold)) {
-                                console.log('💳 Vendor commission/balance updated:', record);
-                                loadVendorCommissionSettings();
-                            }
+                    } catch (err) {
+                        console.error('Polling error (inquiries):', err);
+                    }
+                }, 3000);
+
+                // Poll vendors every 4 seconds
+                pollingIntervals.vendors = setInterval(async () => {
+                    try {
+                        const { data: vendors } = await db
+                            .from('vendors')
+                            .select('*');
+
+                        const currentHash = JSON.stringify(vendors || []);
+                        if (currentHash !== lastVendorsHash) {
+                            console.log('💳 Vendors changed - RELOADING');
+                            lastVendorsHash = currentHash;
+                            loadCommissionsPortal();
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'threshold_change_requests'
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
-                            // New threshold change request
-                            if (payload.eventType === 'INSERT') {
-                                console.log('📊 New threshold change request:', record);
-                                loadThresholdChangeRequests();
-                            }
-                            // Request status update
-                            else if (payload.eventType === 'UPDATE') {
-                                console.log('📊 Threshold request updated:', record);
-                                loadThresholdChangeRequests();
-                            }
+                    } catch (err) {
+                        console.error('Polling error (vendors):', err);
+                    }
+                }, 4000);
+
+                // Poll threshold requests every 5 seconds
+                pollingIntervals.threshold = setInterval(async () => {
+                    try {
+                        const { data: requests } = await db
+                            .from('threshold_change_requests')
+                            .select('*');
+
+                        const currentHash = JSON.stringify(requests || []);
+                        if (currentHash !== lastThresholdHash) {
+                            console.log('📊 Threshold requests changed - RELOADING');
+                            lastThresholdHash = currentHash;
+                            loadThresholdChangeRequests();
                         }
-                    )
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'alerts',
-                            filter: `recipient_type=eq.admin`
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
-                            if (record && record.recipient_type === 'admin') {
-                                console.log('⚠️ Admin alert received:', record);
-                                // Show toast notification for critical alerts
-                                if (record.alert_type && ['commission_threshold', 'suspicious_activity', 'system_error'].includes(record.alert_type)) {
-                                    showAdminAlert(record);
+                    } catch (err) {
+                        console.error('Polling error (threshold):', err);
+                    }
+                }, 5000);
+
+                // Poll alerts every 4 seconds
+                pollingIntervals.alerts = setInterval(async () => {
+                    try {
+                        const { data: alerts } = await db
+                            .from('alerts')
+                            .select('*')
+                            .eq('recipient_type', 'admin')
+                            .eq('is_read', false);
+
+                        const currentHash = JSON.stringify(alerts || []);
+                        if (currentHash !== lastAlertsHash) {
+                            console.log('⚠️ Alerts changed - RELOADING');
+                            lastAlertsHash = currentHash;
+                            alerts.forEach(alert => {
+                                if (alert.alert_type && ['commission_threshold', 'suspicious_activity', 'system_error'].includes(alert.alert_type)) {
+                                    showAdminAlert(alert);
                                 }
-                            }
+                            });
                         }
-                    )
-                    .subscribe();
+                    } catch (err) {
+                        console.error('Polling error (alerts):', err);
+                    }
+                }, 4000);
 
-                console.log('🔔 Global real-time subscriptions set up for admin portal');
+                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds');
             } catch (err) {
-                console.error('Error setting up real-time subscriptions:', err);
+                console.error('Error setting up polling:', err);
             }
+        }
+
+        function stopPolling() {
+            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
+            if (pollingIntervals.vendors) clearInterval(pollingIntervals.vendors);
+            if (pollingIntervals.threshold) clearInterval(pollingIntervals.threshold);
+            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
+            pollingIntervals = {};
+            console.log('🛑 Polling stopped');
         }
 
         function showAdminAlert(alert) {
