@@ -1213,8 +1213,21 @@
                         (payload) => {
                             const record = payload.new || payload.old;
 
+                            // DIAGNOSTIC LOGGING
+                            console.log('🔍 INQUIRY EVENT FIRED:', {
+                                eventType: payload.eventType,
+                                product_id: record?.product_id,
+                                vendor_id: record?.vendor_id,
+                                message_type: record?.message_type,
+                                sender_type: record?.sender_type,
+                                isVendorProduct: record && productIds.includes(record.product_id),
+                                vendorProductIds: productIds
+                            });
+
                             // Only reload if change affects vendor's products
                             if (record && productIds.includes(record.product_id)) {
+                                console.log('✅ Product matches vendor');
+
                                 // For new messages from buyers (inquiry, feedback, followup)
                                 if (payload.eventType === 'INSERT' && ['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
                                     console.log('💬 New buyer message detected:', record);
@@ -1230,6 +1243,8 @@
                                     console.log('💬 Inquiry updated:', record);
                                     loadPendingInquiries();
                                 }
+                            } else {
+                                console.log('❌ No match - product_id not in vendor list or record missing');
                             }
                         }
                     )
@@ -1281,7 +1296,17 @@
                             }
                         }
                     )
-                    .subscribe();
+                    .subscribe((status, err) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ REALTIME CONNECTION ESTABLISHED');
+                        } else if (status === 'CLOSED') {
+                            console.log('❌ REALTIME CONNECTION CLOSED');
+                        } else if (status === 'CHANNEL_ERROR') {
+                            console.error('❌ REALTIME CHANNEL ERROR:', err);
+                        } else {
+                            console.log('🔄 Subscription status:', status, err);
+                        }
+                    });
 
                 console.log('🔔 Global real-time subscriptions set up for vendor:', currentVendor.id);
             } catch (err) {
