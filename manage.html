@@ -1439,7 +1439,7 @@
                         <td>
                             ${hasResponse
                                 ? '<span style="color: #15803d; font-weight: 600;">✓ Responded</span>'
-                                : `<button class="btn-action btn-edit" onclick="openResponseModal(${inq.id})">Respond</button>`
+                                : `<button class="btn-action btn-edit" onclick="openResponseModal('${inq.id}')">Respond</button>`
                             }
                         </td>
                     `;
@@ -1454,8 +1454,11 @@
 
         window.openResponseModal = async function(inquiryId) {
             try {
+                // Convert to number if string
+                const id = typeof inquiryId === 'string' ? parseInt(inquiryId, 10) : inquiryId;
+
                 // Fetch inquiry details from database
-                const { data: inquiry } = await sbClient.from('inquiries').select('*').eq('id', inquiryId).single();
+                const { data: inquiry } = await sbClient.from('inquiries').select('*').eq('id', id).single();
                 if (!inquiry) {
                     alert('Inquiry not found');
                     return;
@@ -1467,7 +1470,7 @@
                 // Fetch product details
                 const { data: product } = await sbClient.from('products').select('product_name').eq('id', inquiry.product_id).single();
 
-                currentInquiry = { id: inquiryId, ...inquiry, buyerName: buyer?.full_name || 'Unknown', productName: product?.product_name || 'Unknown' };
+                currentInquiry = { id, ...inquiry, buyerName: buyer?.full_name || 'Unknown', productName: product?.product_name || 'Unknown' };
 
                 document.getElementById('inqCustomer').textContent = buyer?.full_name || 'Unknown';
                 document.getElementById('inqProduct').textContent = product?.product_name || 'Unknown';
