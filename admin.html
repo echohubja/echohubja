@@ -379,6 +379,8 @@
         let db;
         let activeThresholdVendorId = null;
         let globalInquiriesData = [];
+        let productMap = {};
+        let vendorMap = {};
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -481,16 +483,23 @@
 
             try {
                 // Fetch all inquiries (includes pending conversations and feedback submissions)
+                console.log('🔍 Fetching all inquiries...');
                 const { data: inquiries, error: inqError } = await db
                     .from('inquiries')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (inqError) {
-                    console.error('Inquiry fetch error:', inqError);
+                    console.error('❌ Inquiry fetch error:', inqError);
                     container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
                     return;
                 }
+
+                console.log('✅ Inquiries fetched:', inquiries?.length || 0, 'records');
+
+                // Log feedback records specifically
+                const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
+                console.log('📸 Feedback submissions found:', feedbackRecords.length);
 
                 if (!inquiries || inquiries.length === 0) {
                     container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found yet.</div>`;
@@ -520,8 +529,9 @@
                     }
                 }
 
-                // Fetch product data
-                let productMap = {};
+                // Fetch product data (using global maps)
+                productMap = {};
+                vendorMap = {};
                 console.log('📦 productIds extracted:', productIds);
                 if (productIds.length > 0) {
                     try {
@@ -529,18 +539,39 @@
                             .from('products')
                             .select('*');
 
-                        console.log('📦 ALL products from DB:', products);
-                        console.log('📦 Product fetch error:', prodError);
+                        console.log('📦 Products fetched from DB:', products?.length || 0, 'records');
+                        if (prodError) console.log('📦 Product fetch error:', prodError.message);
 
                         if (products && products.length > 0) {
                             products.forEach(prod => {
                                 productMap[prod.id] = prod;
-                                console.log(`📦 Added product to map: ${prod.id} => ${prod.product_name}`);
                             });
+                            console.log(`📦 Added ${products.length} products to map`);
                         } else {
                             console.warn('📦 No products returned from database');
                         }
-                        console.log('📦 Final productMap:', productMap);
+
+                        // Fetch vendor names for all unique vendor IDs from products
+                        const vendorIds = [...new Set(products?.map(p => p.vendor_id).filter(Boolean) || [])];
+                        console.log('🏢 Vendor IDs to fetch:', vendorIds.length);
+
+                        if (vendorIds.length > 0) {
+                            try {
+                                const { data: vendors } = await db
+                                    .from('vendors')
+                                    .select('id, first_name, last_name')
+                                    .in('id', vendorIds);
+
+                                if (vendors) {
+                                    vendors.forEach(vendor => {
+                                        vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
+                                    });
+                                    console.log(`🏢 Added ${vendors.length} vendors to map`);
+                                }
+                            } catch (e) {
+                                console.error('Vendor fetch error:', e);
+                            }
+                        }
                     } catch (e) {
                         console.error('Product fetch error:', e);
                     }
@@ -556,10 +587,6 @@
                             .from('product-images')
                             .select('*');
 
-                        console.log('Product IDs to fetch:', productIds);
-                        console.log('Images fetched:', images);
-                        console.log('Image fetch error:', imgError);
-
                         if (images) {
                             images.forEach(img => {
                                 if (productIds.includes(img.product_id)) {
@@ -567,10 +594,10 @@
                                     imageMap[img.product_id].push(img.image_url);
                                 }
                             });
-                            console.log('Image map after processing:', imageMap);
+                            console.log('Product images loaded:', Object.keys(imageMap).length, 'products with images');
                         }
                     } catch (e) {
-                        console.error('Product images fetch error (table may not exist):', e);
+                        console.error('Product images fetch error (table may not exist):', e.message);
                     }
                 }
 
@@ -579,7 +606,6 @@
                     inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
                     inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
                     inq.product_images = imageMap[inq.product_id] || [inq.image_url].filter(Boolean);
-                    console.log(`📦 Inquiry ${inq.id}: product_id=${inq.product_id}, found=${!!productMap[inq.product_id]}, product_name=${inq.products.product_name}`);
                 });
 
                 globalInquiriesData = inquiries;
@@ -661,7 +687,7 @@
                 filtered = filtered.filter(inq => new Date(inq.created_at).getTime() <= toDate);
             }
 
-            console.log('After filters. Remaining:', filtered.length, filtered);
+            console.log('After filters. Remaining records:', filtered.length);
             renderInquiriesTree(filtered);
         }
 
@@ -738,8 +764,15 @@
                 messages.forEach(msg => {
                     const prodId = msg.product_id || 'unknown';
                     if (!groupedByProduct[prodId]) {
+                        const baseProduct = msg.products || productMap[prodId] || { id: prodId, product_name: `Product ${prodId}` };
+                        const vendorId = baseProduct.vendor_id;
+                        const vendorName = vendorId ? vendorMap[vendorId] || 'Unknown Vendor' : 'N/A';
+
                         groupedByProduct[prodId] = {
-                            product: msg.products || { id: prodId, product_name: `Product ${prodId}` },
+                            product: {
+                                ...baseProduct,
+                                vendor_name: vendorName
+                            },
                             productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
                             messages: []
                         };
@@ -751,6 +784,10 @@
                 for (const [prodId, prodData] of Object.entries(groupedByProduct)) {
                     const prodName = prodData.product?.product_name || `Product ${prodId}`;
                     const prodImage = prodData.productImage;
+
+                    // Get vendor info from product
+                    const vendorName = prodData.product?.vendor_name || 'Unknown Vendor';
+                    const vendorId = prodData.product?.vendor_id || 'N/A';
 
                     html += `
                         <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
@@ -764,6 +801,8 @@
                                 <div class="flex-1">
                                     <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
                                     <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
+                                    <div class="text-sm text-yellow-100 mt-2 font-semibold">🏢 Vendor: ${escapeHtml(vendorName)}</div>
+                                    <div class="text-xs text-blue-100 mt-0.5">ID: <span class="font-mono">${escapeHtml(vendorId)}</span></div>
                                     <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
                                 </div>
                             </div>
