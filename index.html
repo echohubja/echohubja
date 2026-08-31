@@ -431,6 +431,9 @@
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
+        let inquiriesRealtimeSubscription = null;
+        let globalBuyerSubscription = null;
+        let currentActiveCategory = 'All';
 
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -489,6 +492,9 @@
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.id || 'BUYER-00000';
                     console.log('  ✓ Buyer pill visible, name:', displayName, 'email:', displayEmail);
+
+                    // Start global real-time subscriptions for this buyer
+                    await setupGlobalBuyerSubscriptions(buyerData.id);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
                     // Buyer exists but not approved - show blocked message
@@ -531,11 +537,147 @@
         }
 
         async function logoutBuyer() {
+            // Clean up subscriptions
+            if (globalBuyerSubscription) {
+                db.removeAllChannels();
+                globalBuyerSubscription = null;
+            }
+            if (inquiriesRealtimeSubscription) {
+                db.removeAllChannels();
+                inquiriesRealtimeSubscription = null;
+            }
+
             await db.auth.signOut();
             localStorage.removeItem('buyer_id');
             localStorage.removeItem('buyer_email');
             localStorage.removeItem('user_email');
             window.location.reload();
+        }
+
+        async function setupGlobalBuyerSubscriptions(buyerId) {
+            if (!buyerId || !db) return;
+
+            // Cleanup existing subscription
+            if (globalBuyerSubscription) {
+                db.removeAllChannels();
+                globalBuyerSubscription = null;
+            }
+
+            try {
+                // Subscribe to multiple tables for real-time buyer updates
+                globalBuyerSubscription = db
+                    .channel('public:buyer-global')
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'inquiries'
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+
+                            // Vendor response to this buyer
+                            if (payload.eventType === 'INSERT' && record.buyer_id === buyerId && record.message_type === 'vendor_response') {
+                                console.log('🔔 Real-time: Vendor response received');
+                                loadBuyerInquiriesHistory(buyerId);
+                            }
+                            // Feedback status update (admin verified/rejected)
+                            else if (payload.eventType === 'UPDATE' && record.buyer_id === buyerId && record.message_type === 'feedback') {
+                                console.log('🔔 Real-time: Feedback status updated');
+                                loadBuyerInquiriesHistory(buyerId);
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'referral_ledger'
+                        },
+                        (payload) => {
+                            // New commission earned
+                            if (payload.new.referrer_id === buyerId) {
+                                console.log('💰 Real-time: New commission recorded');
+                                loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'referral_ledger'
+                        },
+                        (payload) => {
+                            // Commission status changed (pending → payable → paid)
+                            if (payload.new.referrer_id === buyerId) {
+                                console.log('💳 Real-time: Commission status updated');
+                                loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
+                            }
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'products'
+                        },
+                        (payload) => {
+                            // Product price or availability changed
+                            console.log('📦 Real-time: Product updated');
+                            loadProducts(currentActiveCategory, false);
+                        }
+                    )
+                    .on('postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'alerts'
+                        },
+                        (payload) => {
+                            // New alert for this buyer
+                            if (payload.new.recipient_id === buyerId && payload.new.recipient_type === 'buyer') {
+                                console.log('⚠️ Real-time: New alert received');
+                                showBuyerAlert(payload.new);
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                console.log('✅ Global real-time subscriptions active for buyer:', buyerId);
+            } catch (err) {
+                console.error('Error setting up global subscriptions:', err);
+            }
+        }
+
+        function showBuyerAlert(alert) {
+            // Show a temporary notification banner
+            const alertBanner = document.createElement('div');
+            alertBanner.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                z-index: 10000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            alertBanner.innerHTML = `
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${alert.title}</div>
+                <div style="font-size: 13px; opacity: 0.95;">${alert.message}</div>
+            `;
+            document.body.appendChild(alertBanner);
+
+            // Auto-remove after 6 seconds
+            setTimeout(() => {
+                alertBanner.style.opacity = '0';
+                alertBanner.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => alertBanner.remove(), 300);
+            }, 6000);
         }
 
         async function loadCategories() {
@@ -655,6 +797,7 @@
         }
 
         function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
+            currentActiveCategory = categoryQuery;
             document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
             buttonElement.classList.add('active');
             loadProducts(categoryQuery, isMainGroup);
@@ -751,16 +894,60 @@
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
             const overlay = document.getElementById('inquiries-drawer-overlay');
-            
+
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
                 overlay.style.display = 'none';
+                // Cleanup subscription when closing
+                if (inquiriesRealtimeSubscription) {
+                    db.removeAllChannels();
+                    inquiriesRealtimeSubscription = null;
+                }
             } else {
                 drawer.classList.add('open');
                 overlay.style.display = 'block';
                 document.getElementById('inquiry-search-input').value = '';
                 loadBuyerInquiriesHistory(currentBuyerId);
+                setupInquiriesRealtimeSubscription(currentBuyerId);
+            }
+        }
+
+        async function setupInquiriesRealtimeSubscription(buyerId) {
+            if (!buyerId || !db) return;
+
+            // Cleanup existing subscription
+            if (inquiriesRealtimeSubscription) {
+                db.removeAllChannels();
+                inquiriesRealtimeSubscription = null;
+            }
+
+            try {
+                // Subscribe to vendor responses for this buyer
+                inquiriesRealtimeSubscription = db
+                    .channel('public:inquiries')
+                    .on('postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'inquiries'
+                        },
+                        (payload) => {
+                            const record = payload.new || payload.old;
+
+                            // Reload if new vendor_response for this buyer
+                            if (payload.eventType === 'INSERT' && record.buyer_id === buyerId && record.message_type === 'vendor_response') {
+                                console.log('New vendor response detected for buyer:', buyerId);
+                                console.log('Payload:', record);
+                                loadBuyerInquiriesHistory(buyerId);
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                console.log('Real-time subscriptions set up for buyer inquiries:', buyerId);
+            } catch (err) {
+                console.error('Error setting up real-time subscriptions:', err);
             }
         }
 
@@ -1013,11 +1200,16 @@
                                 messageBorderColor = '#d8b4fe';
                             }
 
+                            // Determine if feedback is verified
+                            const isVerified = item.status === 'verified';
+                            const verificationBadge = isVerified ? `<span style="font-size: 10px; font-weight: 700; color: #059669; background: #d1fae5; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">✓ Verified</span>` : '';
+
                             html += `
                                 <div style="background: #f8fafc; border-left: 4px solid ${messageBorderColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                             <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
+                                            ${verificationBadge}
                                             <span style="font-size: 10px; color: #4a5568; font-weight: 600;">${buyerName}</span>
                                             ${buyerEmail ? `<span style="font-size: 9px; color: #718096; font-style: italic;">${buyerEmail}</span>` : ''}
                                         </div>
