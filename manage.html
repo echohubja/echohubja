@@ -1048,9 +1048,12 @@
                     <h3 style="color: #1e5aa8; font-size: 1.3em; margin-bottom: 16px;">Respond to Customer Inquiry</h3>
 
                     <div id="inqDetails" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                        <div style="margin-bottom: 12px;">
-                            <strong style="color: #475569;">Customer:</strong>
-                            <span id="inqCustomer" style="color: #64748b;">-</span>
+                        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #475569;">Customer:</strong>
+                                <span id="inqCustomer" style="color: #64748b;">-</span>
+                            </div>
+                            <span id="inqMessageTypeBadge" style="font-size: 0.8em; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">Initial Inquiry</span>
                         </div>
                         <div style="margin-bottom: 12px;">
                             <strong style="color: #475569;">Product:</strong>
@@ -1477,6 +1480,31 @@
                 document.getElementById('inqCustomer').textContent = buyer?.full_name || 'Unknown';
                 document.getElementById('inqProduct').textContent = product?.product_name || 'Unknown';
                 document.getElementById('inqMessage').textContent = inquiry.message || '[No message]';
+
+                // Set message type badge based on database message_type
+                const badgeEl = document.getElementById('inqMessageTypeBadge');
+                if (inquiry.message_type === 'inquiry') {
+                    badgeEl.textContent = 'Customer Inquiry';
+                    badgeEl.style.background = '#e0f2fe';
+                    badgeEl.style.color = '#0369a1';
+                } else if (inquiry.message_type === 'vendor_response') {
+                    badgeEl.textContent = 'Vendor Response';
+                    badgeEl.style.background = '#d1fae5';
+                    badgeEl.style.color = '#059669';
+                } else if (inquiry.message_type === 'feedback') {
+                    badgeEl.textContent = 'Feedback';
+                    badgeEl.style.background = '#fed7aa';
+                    badgeEl.style.color = '#ea580c';
+                } else if (inquiry.message_type === 'buyer_followup') {
+                    badgeEl.textContent = 'Buyer Follow-up';
+                    badgeEl.style.background = '#ede9fe';
+                    badgeEl.style.color = '#7c3aed';
+                } else {
+                    badgeEl.textContent = 'Message';
+                    badgeEl.style.background = '#e2e8f0';
+                    badgeEl.style.color = '#475569';
+                }
+
                 document.getElementById('responseText').value = '';
                 document.getElementById('responseModal').style.display = 'flex';
             } catch (err) {
