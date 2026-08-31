@@ -997,6 +997,7 @@
             if (existingFeedback && existingFeedback.id) {
                 const updatePayload = {
                     message: feedbackMessage,
+                    message_type: 'feedback',
                     created_at: new Date().toISOString()
                 };
                 if (imageUrl) {
@@ -1013,8 +1014,10 @@
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
+                        vendor_id: pKey === 'Echo Hub' || !pKey ? null : pKey,
                         message: feedbackMessage,
-                        image_url: imageUrl
+                        image_url: imageUrl,
+                        message_type: 'feedback'
                     }
                 ]);
                 dbError = insertErr;
