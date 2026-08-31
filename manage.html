@@ -1454,13 +1454,16 @@
 
         window.openResponseModal = async function(inquiryId) {
             try {
-                // Convert to number if string
-                const id = typeof inquiryId === 'string' ? parseInt(inquiryId, 10) : inquiryId;
+                // Keep UUID as-is (don't parse as number)
+                const id = inquiryId;
+                console.log('openResponseModal called with:', { inquiryId, id, type: typeof id });
 
                 // Fetch inquiry details from database
-                const { data: inquiry } = await sbClient.from('inquiries').select('*').eq('id', id).single();
+                const { data: inquiry, error: inquiryError } = await sbClient.from('inquiries').select('*').eq('id', id).single();
+                console.log('Query result:', { inquiry, inquiryError });
                 if (!inquiry) {
-                    alert('Inquiry not found');
+                    console.error('Inquiry not found for id:', id);
+                    alert('Inquiry not found: ' + id);
                     return;
                 }
 
