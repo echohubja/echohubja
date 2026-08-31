@@ -37,13 +37,90 @@
             gap: 15px;
         }
         .buyer-pill {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 12px 18px;
+            border-radius: 10px;
             display: none;
             align-items: center;
+            gap: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(30, 90, 168, 0.1);
+        }
+        .buyer-pill:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(30, 90, 168, 0.15);
+        }
+        .buyer-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .buyer-pill:hover .buyer-avatar {
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+        .buyer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .buyer-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .buyer-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 400;
+        }
+        .buyer-pill-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.25);
+            margin: 0 2px;
+        }
+        .btn-buyer-signout {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-buyer-signout:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-buyer-signout:active {
+            transform: translateY(0);
         }
         .btn-portal {
             background: white;
@@ -220,8 +297,13 @@
                 🎁 My Referrals
             </button>
             <div id="buyer-pill" class="buyer-pill">
-                Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
-                <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
+                <div class="buyer-avatar" id="buyer-avatar-initial">B</div>
+                <div class="buyer-info">
+                    <div class="buyer-name" id="current-buyer-name">Loading...</div>
+                    <div class="buyer-email" id="current-buyer-email"></div>
+                </div>
+                <div class="buyer-pill-divider"></div>
+                <button onclick="logoutBuyer()" class="btn-buyer-signout">Sign Out</button>
             </div>
             <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
@@ -377,10 +459,10 @@
 
             if (currentActiveBuyerId) {
                 console.log('[checkBuyerSession] Step 2: Buyer ID found, querying buyers table for ID:', currentActiveBuyerId);
-                // Query buyers table to verify approval status using numeric ID
+                // Query buyers table to verify approval status and get full name
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, approval_status')
+                    .select('id, approval_status, full_name, email')
                     .eq('id', currentActiveBuyerId)
                     .maybeSingle();
 
@@ -390,15 +472,23 @@
 
                 if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
                     console.log('[checkBuyerSession] Step 4: APPROVED - showing buyer pill');
-                    // Buyer is approved - show marketplace access
-                    buyerNameSpan.textContent = currentActiveEmail;
+                    // Buyer is approved - show marketplace access with full name and email
+                    const displayName = buyerData.full_name || 'Buyer';
+                    const displayEmail = buyerData.email || currentActiveEmail;
+                    const nameInitial = displayName.charAt(0).toUpperCase();
+
+                    // Update buyer pill fields
+                    buyerNameSpan.textContent = displayName;
+                    document.getElementById('current-buyer-email').textContent = displayEmail;
+                    document.getElementById('buyer-avatar-initial').textContent = nameInitial;
+
                     buyerPill.style.display = 'flex';
                     portalBtn.style.display = 'none';
                     btnOpenReferrals.style.display = 'flex';
                     btnOpenInquiries.style.display = 'flex';
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.id || 'BUYER-00000';
-                    console.log('  ✓ Buyer pill visible, email set to:', currentActiveEmail);
+                    console.log('  ✓ Buyer pill visible, name:', displayName, 'email:', displayEmail);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
                     // Buyer exists but not approved - show blocked message
