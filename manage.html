@@ -1215,9 +1215,9 @@
 
                             // Only reload if change affects vendor's products
                             if (record && productIds.includes(record.product_id)) {
-                                // For new inquiries from buyers
-                                if (payload.eventType === 'INSERT' && record.message_type === 'inquiry' && record.sender_type === 'buyer') {
-                                    console.log('New inquiry detected:', record);
+                                // For new messages from buyers (inquiry, feedback, followup)
+                                if (payload.eventType === 'INSERT' && ['inquiry', 'feedback', 'buyer_followup'].includes(record.message_type) && record.sender_type === 'buyer') {
+                                    console.log('New buyer message detected:', record);
                                     loadPendingInquiries();
                                 }
                                 // For vendor responses or status updates
@@ -1410,12 +1410,12 @@
 
                 const productIds = vendorProducts.map(p => p.id);
 
-                // Fetch inquiries (buyer inquiries that haven't received a vendor response yet)
+                // Fetch all buyer messages (inquiries, feedback, followups)
                 const { data: inquiries } = await sbClient
                     .from('inquiries')
                     .select('*')
                     .in('product_id', productIds)
-                    .eq('message_type', 'inquiry')
+                    .in('message_type', ['inquiry', 'feedback', 'buyer_followup'])
                     .eq('sender_type', 'buyer')
                     .order('created_at', { ascending: false });
 
