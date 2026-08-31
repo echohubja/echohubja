@@ -599,16 +599,10 @@
                     }
                 }
 
-                // Merge related data into inquiries - only serialize safe properties
+                // Merge related data into inquiries
                 inquiries.forEach(inq => {
                     inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
-                    const prod = productMap[inq.product_id];
-                    inq.products = prod ? {
-                        id: prod.id,
-                        product_name: prod.product_name,
-                        vendor_id: prod.vendor_id,
-                        product_images: prod.product_images
-                    } : { id: inq.product_id, product_name: `Product ${inq.product_id}` };
+                    inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
                     inq.product_images = imageMap[inq.product_id] || [inq.image_url].filter(Boolean);
                 });
 
