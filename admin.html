@@ -599,9 +599,20 @@
         }
 
         // --- TAB 2: INQUIRIES & FEEDBACK ---
+        // Track expanded accordion items to preserve state during real-time updates
+        let expandedAccordionIds = [];
+
         async function loadInquiriesPortal() {
             const container = document.getElementById('inquiries-container');
             if (!container) return;
+
+            // Save expanded accordions before re-rendering
+            expandedAccordionIds = [];
+            document.querySelectorAll('[id$="-content"]').forEach(content => {
+                if (!content.classList.contains('hidden')) {
+                    expandedAccordionIds.push(content.id);
+                }
+            });
 
             try {
                 // Fetch all inquiries (includes pending conversations and feedback submissions)
@@ -745,6 +756,19 @@
                 document.getElementById('date-from').value = '';
                 document.getElementById('date-to').value = '';
                 filterInquiriesTree();
+
+                // Re-expand accordions that were expanded before re-rendering
+                setTimeout(() => {
+                    expandedAccordionIds.forEach(contentId => {
+                        const content = document.getElementById(contentId);
+                        if (content && content.classList.contains('hidden')) {
+                            const iconId = contentId.replace('-content', '-icon');
+                            const icon = document.getElementById(iconId);
+                            content.classList.remove('hidden');
+                            if (icon) icon.style.transform = 'rotate(90deg)';
+                        }
+                    });
+                }, 0);
             } catch (e) {
                 console.error('Unexpected error in loadInquiriesPortal:', e);
                 container.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error loading feedback.</div>`;
