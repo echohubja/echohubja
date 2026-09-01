@@ -401,6 +401,28 @@
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
+        // FALLBACK: buildInquiryPayload - in case inquiry-validator.js fails to load
+        if (typeof buildInquiryPayload === 'undefined') {
+            window.buildInquiryPayload = function(params) {
+                return {
+                    product_id: params.product_id || null,
+                    buyer_id: params.buyer_id || null,
+                    vendor_id: params.vendor_id || null,
+                    message: params.message || '',
+                    status: params.status || 'pending',
+                    message_type: params.message_type || 'inquiry',
+                    sender_type: params.sender_type || 'buyer',
+                    sender_id: params.sender_id || null,
+                    image_url: params.image_url || '',
+                    created_at: params.created_at || new Date().toISOString(),
+                    updated_at: params.updated_at || new Date().toISOString()
+                };
+            };
+            console.warn('[FALLBACK] inquiry-validator.js failed to load - using inline buildInquiryPayload');
+        } else {
+            console.log('[SUCCESS] inquiry-validator.js loaded successfully');
+        }
+
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
             const refParam = urlParams.get('ref');
