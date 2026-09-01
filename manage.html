@@ -900,7 +900,16 @@
             font-weight: 600;
             font-size: 14px;
             color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .thread-customer-id {
+            font-size: 11px;
+            color: #9ca3af;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
             margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
 
         .thread-message-preview {
@@ -1367,6 +1376,89 @@
             .thread-commission,
             .thread-sla {
                 display: none;
+            }
+        }
+
+        /* Copy to Clipboard Styling */
+        .copyable-id {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .copyable-id:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            color: #0284c7;
+        }
+
+        .copyable-id:active {
+            background: #d1d5db;
+            transform: scale(0.98);
+        }
+
+        /* Copy Toast Notification */
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .copy-toast-content {
+            flex: 1;
+        }
+
+        .copy-toast-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .copy-toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
             }
         }
     </style>
@@ -2493,6 +2585,9 @@
                                 <div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div>
                                 <div class="thread-customer-info">
                                     <div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div>
+                                    <div class="copyable-id" onclick="copyToClipboard('${thread.buyer_id}', '${thread.buyer_id.substring(0, 8)}')" title="Click to copy buyer ID">
+                                        ID: ${thread.buyer_id.substring(0, 8)} 📋
+                                    </div>
                                     <div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div>
                                 </div>
                             </div>
@@ -2606,7 +2701,12 @@
                     <div class="product-context-card">
                         <div class="product-context-info">
                             <div class="product-context-name">${escapeHtml(product.product_name)}</div>
-                            <div class="product-context-category">${escapeHtml(product.category || 'Uncategorized')}</div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <div class="product-context-category">${escapeHtml(product.category || 'Uncategorized')}</div>
+                                <div class="copyable-id" onclick="copyToClipboard('${product.id}', '${product.id.substring(0, 8)}')" title="Click to copy product ID">
+                                    ID: ${product.id.substring(0, 8)} 📋
+                                </div>
+                            </div>
                             <div class="product-context-description">${escapeHtml(product.description ? product.description.substring(0, 100) : 'No description')}</div>
                             <div class="product-context-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
                         </div>
@@ -2774,6 +2874,32 @@
                 const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
                 return `<a href="${url}" target="_blank" style="color: #4f46e5; text-decoration: underline; cursor: pointer;">${displayUrl}</a>`;
             });
+        }
+
+        function copyToClipboard(text, label) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyToast(`✅ Copied: ${label}`);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                showCopyToast('❌ Copy failed');
+            });
+        }
+
+        function showCopyToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'copy-toast';
+            toast.innerHTML = `
+                <div class="copy-toast-content">
+                    ${message}
+                </div>
+                <button class="copy-toast-close" onclick="this.parentElement.remove()">✕</button>
+            `;
+            document.body.appendChild(toast);
+
+            // Auto-position if multiple toasts
+            const toasts = document.querySelectorAll('.copy-toast');
+            const index = toasts.length - 1;
+            toast.style.bottom = (20 + (index * 60)) + 'px';
         }
 
         async function uploadImageFile(fileInputId) {
