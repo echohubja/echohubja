@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Marketplace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
+    <!-- Messaging System Shared Libraries -->
+    <link rel="stylesheet" href="messaging-styles.css">
+    <script src="messaging-utils.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
         body { 
@@ -16,22 +19,18 @@
         header {
             background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
             color: white;
-            padding: 20px 16px;
+            padding: 30px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
-            flex-wrap: wrap;
-            gap: 12px;
-            position: relative;
-            z-index: 1400;
         }
         .header-left h1 {
-            font-size: 1.8em;
-            margin-bottom: 3px;
+            font-size: 2.5em;
+            margin-bottom: 5px;
         }
         .header-left p {
-            font-size: 0.85em;
+            font-size: 1.1em;
             opacity: 0.95;
             margin: 0;
         }
@@ -41,104 +40,24 @@
             gap: 15px;
         }
         .buyer-pill {
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            padding: 12px 18px;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
             display: none;
             align-items: center;
-            gap: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(30, 90, 168, 0.1);
-        }
-        .buyer-pill:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(30, 90, 168, 0.15);
-        }
-        .buyer-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 16px;
-            flex-shrink: 0;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            transition: all 0.3s ease;
-        }
-        .buyer-pill:hover .buyer-avatar {
-            background: rgba(255, 255, 255, 0.35);
-            border-color: rgba(255, 255, 255, 0.6);
-            transform: scale(1.05);
-        }
-        .buyer-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
-        }
-        .buyer-name {
-            font-size: 14px;
-            font-weight: 700;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .buyer-email {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.85);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 400;
-        }
-        .buyer-pill-divider {
-            width: 1px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.25);
-            margin: 0 2px;
-        }
-        .btn-buyer-signout {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            pointer-events: auto;
-            touch-action: manipulation;
-        }
-        .btn-buyer-signout:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-1px);
-        }
-        .btn-buyer-signout:active {
-            transform: translateY(0);
         }
         .btn-portal {
             background: white;
             color: #1e5aa8;
-            padding: 10px 16px;
+            padding: 12px 20px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
             box-shadow: 0 4px 12px rgba(0, 0, 10, 0.1);
             transition: all 0.2s ease;
-            white-space: nowrap;
         }
         .btn-portal:hover {
             background: #f8fbff;
@@ -186,7 +105,7 @@
             font-weight: 600; 
         }
         .content-area { display: flex; flex-direction: column; gap: 20px; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
         .product-box { 
             background: #fff; 
             border: 2px solid #e1e8ed; 
@@ -284,44 +203,10 @@
         }
 
         @media (max-width: 768px) {
-            .layout { grid-template-columns: 1fr; gap: 20px; padding: 0 12px; }
-            header { flex-direction: column; gap: 10px; text-align: center; padding: 16px 12px; }
-            .header-left h1 { font-size: 1.5em; }
-            .header-left p { font-size: 0.8em; }
-            .header-right { gap: 8px; width: 100%; justify-content: center; flex-wrap: wrap; }
-            .drawer-container { max-width: 100%; right: -100%; width: 100%; }
-            .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-            .product-box { padding: 14px; overflow: hidden; }
-            .product-box h5 { font-size: 14px; }
-            .product-box .cost { font-size: 16px; }
-            aside { padding: 16px; }
-            .filter-group h3 { font-size: 12px; }
-            .filter-link { font-size: 13px; padding: 8px 10px; }
-            /* Targeted fix: vendor ID text wrapping */
-            .product-box span[style*="font-size: 11px"] { word-break: break-word; }
+            .layout { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+            .drawer-container { max-width: 100%; right: -100%; }
         }
-
-        @media (max-width: 480px) {
-            header { padding: 12px 8px; }
-            .header-left h1 { font-size: 1.3em; margin-bottom: 2px; }
-            .header-left p { font-size: 0.75em; }
-            .header-right { gap: 6px; }
-            .buyer-pill { padding: 10px 14px; gap: 10px; }
-            .buyer-avatar { width: 32px; height: 32px; font-size: 14px; }
-            .btn-buyer-signout { padding: 8px 14px; font-size: 13px; min-width: 50px; min-height: 44px; display: flex; align-items: center; justify-content: center; pointer-events: auto; touch-action: manipulation; }
-            .layout { gap: 12px; padding: 0 8px; margin: 20px auto; }
-            .products-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-            .product-box { padding: 10px; overflow: hidden; }
-            .product-box h5 { font-size: 12px; margin-bottom: 4px; }
-            .product-box .cost { font-size: 14px; margin-bottom: 8px; }
-            .product-box button { padding: 8px; font-size: 12px; }
-            aside { display: none; }
-            .content-area { margin-top: -30px; }
-            /* Targeted fix: vendor ID text wrapping */
-            .product-box span[style*="font-size: 11px"] { word-break: break-word; word-wrap: break-word; }
-            .inquiry-card-item span[style*="font-size: 11px"] { word-break: break-word; word-wrap: break-word; }
-        }
-
     </style>
 </head>
 <body>
@@ -338,13 +223,8 @@
                 🎁 My Referrals
             </button>
             <div id="buyer-pill" class="buyer-pill">
-                <div class="buyer-avatar" id="buyer-avatar-initial">B</div>
-                <div class="buyer-info">
-                    <div class="buyer-name" id="current-buyer-name">Loading...</div>
-                    <div class="buyer-email" id="current-buyer-email"></div>
-                </div>
-                <div class="buyer-pill-divider"></div>
-                <button onclick="logoutBuyer()" class="btn-buyer-signout">Sign Out</button>
+                Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
+                <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
             </div>
             <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
@@ -410,7 +290,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                 <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
                     <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Referrals</span>
                     <h3 id="stat-total-referrals" style="font-size: 18px; color: #2d3748; margin-top: 4px;">0</h3>
@@ -472,9 +352,8 @@
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
-        let inquiriesRealtimeSubscription = null;
-        let pollingIntervals = {};
-        let currentActiveCategory = 'All';
+        let buyerInquiriesData = []; // Store buyer inquiries for real-time updates
+        let inquiriesSubscription = null; // Track real-time subscription
 
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -503,10 +382,10 @@
 
             if (currentActiveBuyerId) {
                 console.log('[checkBuyerSession] Step 2: Buyer ID found, querying buyers table for ID:', currentActiveBuyerId);
-                // Query buyers table to verify approval status and get full name
+                // Query buyers table to verify approval status using numeric ID
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, approval_status, full_name, email')
+                    .select('id, approval_status')
                     .eq('id', currentActiveBuyerId)
                     .maybeSingle();
 
@@ -516,26 +395,15 @@
 
                 if (buyerData && buyerData.approval_status?.toLowerCase() === 'approved') {
                     console.log('[checkBuyerSession] Step 4: APPROVED - showing buyer pill');
-                    // Buyer is approved - show marketplace access with full name and email
-                    const displayName = buyerData.full_name || 'Buyer';
-                    const displayEmail = buyerData.email || currentActiveEmail;
-                    const nameInitial = displayName.charAt(0).toUpperCase();
-
-                    // Update buyer pill fields
-                    buyerNameSpan.textContent = displayName;
-                    document.getElementById('current-buyer-email').textContent = displayEmail;
-                    document.getElementById('buyer-avatar-initial').textContent = nameInitial;
-
+                    // Buyer is approved - show marketplace access
+                    buyerNameSpan.textContent = currentActiveEmail;
                     buyerPill.style.display = 'flex';
                     portalBtn.style.display = 'none';
                     btnOpenReferrals.style.display = 'flex';
                     btnOpenInquiries.style.display = 'flex';
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.id || 'BUYER-00000';
-                    console.log('  ✓ Buyer pill visible, name:', displayName, 'email:', displayEmail);
-
-                    // Start global real-time subscriptions for this buyer
-                    await setupPolling(buyerData.id);
+                    console.log('  ✓ Buyer pill visible, email set to:', currentActiveEmail);
                 } else if (buyerData && buyerData.approval_status?.toLowerCase() !== 'approved') {
                     console.log('[checkBuyerSession] Step 4: NOT APPROVED (status=' + buyerData.approval_status + ') - showing blocked page');
                     // Buyer exists but not approved - show blocked message
@@ -578,174 +446,11 @@
         }
 
         async function logoutBuyer() {
-            try {
-                console.log('[logoutBuyer] Starting logout process');
-
-                // Clean up subscriptions
-                if (globalBuyerSubscription) {
-                    db.removeAllChannels();
-                    globalBuyerSubscription = null;
-                }
-                if (inquiriesRealtimeSubscription) {
-                    db.removeAllChannels();
-                    inquiriesRealtimeSubscription = null;
-                }
-
-                // Clear localStorage immediately
-                localStorage.removeItem('buyer_id');
-                localStorage.removeItem('buyer_email');
-                localStorage.removeItem('user_email');
-                localStorage.removeItem('echo_hub_buyer_email');
-                console.log('[logoutBuyer] LocalStorage cleared');
-
-                // Try to sign out, but don't wait if it takes too long
-                const signOutPromise = db.auth.signOut();
-                const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000));
-                await Promise.race([signOutPromise, timeoutPromise]);
-
-                console.log('[logoutBuyer] Signed out successfully, reloading page');
-            } catch (err) {
-                console.error('[logoutBuyer] Error during logout:', err);
-                // Still proceed with reload even if logout failed
-                console.log('[logoutBuyer] Proceeding to reload despite error');
-            }
-
-            // Force reload after a short delay to ensure localStorage changes are applied
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 500);
-        }
-
-        async function setupPolling(buyerId) {
-            if (!buyerId || !db) return;
-            stopPolling();
-            try {
-                console.log('📋 Starting polling for buyer:', buyerId);
-
-                let lastInquiriesHash = '';
-                let lastReferralHash = '';
-                let lastProductsHash = '';
-                let lastAlertsHash = '';
-
-                // Poll inquiries every 3 seconds
-                pollingIntervals.inquiries = setInterval(async () => {
-                    try {
-                        const { data: inquiries } = await db
-                            .from('inquiries')
-                            .select('*')
-                            .eq('buyer_id', buyerId);
-
-                        const currentHash = JSON.stringify(inquiries || []);
-                        if (currentHash !== lastInquiriesHash) {
-                            console.log('📬 Inquiries changed - RELOADING');
-                            lastInquiriesHash = currentHash;
-                            loadBuyerInquiriesHistory(buyerId);
-                        }
-                    } catch (err) {
-                        console.error('Polling error (inquiries):', err);
-                    }
-                }, 3000);
-
-                // Poll referral ledger every 4 seconds
-                pollingIntervals.referral = setInterval(async () => {
-                    try {
-                        const { data: referrals } = await db
-                            .from('referral_ledger')
-                            .select('*')
-                            .eq('referrer_id', buyerId);
-
-                        const currentHash = JSON.stringify(referrals || []);
-                        if (currentHash !== lastReferralHash) {
-                            console.log('💰 Referrals changed - RELOADING');
-                            lastReferralHash = currentHash;
-                            loadBuyerReferralDashboard(buyerId, currentBuyerStringId);
-                        }
-                    } catch (err) {
-                        console.error('Polling error (referrals):', err);
-                    }
-                }, 4000);
-
-                // Poll products every 4 seconds
-                pollingIntervals.products = setInterval(async () => {
-                    try {
-                        const { data: products } = await db
-                            .from('products')
-                            .select('*');
-
-                        const currentHash = JSON.stringify(products || []);
-                        if (currentHash !== lastProductsHash) {
-                            console.log('📦 Products changed - RELOADING');
-                            lastProductsHash = currentHash;
-                            loadProducts(currentActiveCategory, false);
-                        }
-                    } catch (err) {
-                        console.error('Polling error (products):', err);
-                    }
-                }, 4000);
-
-                // Poll alerts every 5 seconds
-                pollingIntervals.alerts = setInterval(async () => {
-                    try {
-                        const { data: alerts } = await db
-                            .from('alerts')
-                            .select('*')
-                            .eq('recipient_id', buyerId)
-                            .eq('recipient_type', 'buyer');
-
-                        const currentHash = JSON.stringify(alerts || []);
-                        if (currentHash !== lastAlertsHash) {
-                            console.log('⚠️ Alerts changed - RELOADING');
-                            lastAlertsHash = currentHash;
-                            alerts.forEach(alert => showBuyerAlert(alert));
-                        }
-                    } catch (err) {
-                        console.error('Polling error (alerts):', err);
-                    }
-                }, 5000);
-
-                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds for buyer:', buyerId);
-            } catch (err) {
-                console.error('Error setting up polling:', err);
-            }
-        }
-
-        function stopPolling() {
-            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
-            if (pollingIntervals.referral) clearInterval(pollingIntervals.referral);
-            if (pollingIntervals.products) clearInterval(pollingIntervals.products);
-            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
-            pollingIntervals = {};
-            console.log('🛑 Polling stopped');
-        }
-
-        function showBuyerAlert(alert) {
-            // Show a temporary notification banner
-            const alertBanner = document.createElement('div');
-            alertBanner.style.cssText = `
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-                color: white;
-                padding: 16px 24px;
-                border-radius: 8px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-                z-index: 10000;
-                max-width: 400px;
-                animation: slideIn 0.3s ease-out;
-            `;
-            alertBanner.innerHTML = `
-                <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${alert.title}</div>
-                <div style="font-size: 13px; opacity: 0.95;">${alert.message}</div>
-            `;
-            document.body.appendChild(alertBanner);
-
-            // Auto-remove after 6 seconds
-            setTimeout(() => {
-                alertBanner.style.opacity = '0';
-                alertBanner.style.transition = 'opacity 0.3s ease-out';
-                setTimeout(() => alertBanner.remove(), 300);
-            }, 6000);
+            await db.auth.signOut();
+            localStorage.removeItem('buyer_id');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('user_email');
+            window.location.reload();
         }
 
         async function loadCategories() {
@@ -816,12 +521,12 @@
 
             if (productsError) {
                 console.error('Error loading products:', productsError.message);
-                container.innerHTML = '<p style="color: #e74c3c;">Failed to load products.</p>';
+                container.innerHTML = renderEmptyState('⚠️', 'Failed to Load', 'Unable to fetch products. Please refresh and try again.');
                 return;
             }
 
             if (!products || products.length === 0) {
-                container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
+                container.innerHTML = '<div style="grid-column: 1 / -1;">' + renderEmptyState('📦', 'No Products Found', 'Try a different category or search term to find products.') + '</div>';
                 return;
             }
 
@@ -847,6 +552,15 @@
                 });
             }
 
+            // Fetch vendors for name lookups
+            const { data: vendors } = await db.from('vendors').select('id, first_name, last_name');
+            const vendorNames = {};
+            if (vendors) {
+                vendors.forEach(v => {
+                    vendorNames[v.id] = `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Vendor';
+                });
+            }
+
             // Render products grid
             container.innerHTML = products.map(product => {
                 const productImage = imageMap[product.id] ? imageMap[product.id][0] : null;
@@ -854,7 +568,7 @@
                     <div class="product-box">
                         <div>
                             ${productImage ? `<img src="${productImage}" alt="${product.product_name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
-                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600; margin-bottom: 8px;">Vendor: ${getAvatarCircle(vendorNames[product.vendor_id] || 'Echo Hub', 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} ${product.vendor_id || 'Echo Hub'}</div>
                             <h5 style="margin-top: 4px;">${product.product_name}</h5>
                             <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
                         </div>
@@ -865,7 +579,6 @@
         }
 
         function filterCategory(categoryQuery, buttonElement, isMainGroup = false) {
-            currentActiveCategory = categoryQuery;
             document.querySelectorAll('.filter-link').forEach(btn => btn.classList.remove('active'));
             buttonElement.classList.add('active');
             loadProducts(categoryQuery, isMainGroup);
@@ -901,6 +614,7 @@
 
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
+            const vendorId = document.getElementById('modal-vendor-id').value;
             const message = document.getElementById('inquiry-message').value.trim();
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
@@ -912,22 +626,11 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
-            // Get vendor_id from product table (not from modal which might be 'Echo Hub')
-            const { data: productData } = await db
-                .from('products')
-                .select('vendor_id')
-                .eq('id', productId)
-                .single();
-
-            const actualVendorId = productData?.vendor_id || null;
-
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
                     buyer_id: currentBuyerId,
-                    vendor_id: actualVendorId,
-                    message: message,
-                    message_type: 'inquiry'
+                    message: message
                 }
             ]);
 
@@ -962,87 +665,23 @@
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
             const overlay = document.getElementById('inquiries-drawer-overlay');
-
+            
             const isOpen = drawer.classList.contains('open');
             if (isOpen) {
                 drawer.classList.remove('open');
                 overlay.style.display = 'none';
-                // Cleanup subscription when closing
-                if (inquiriesRealtimeSubscription) {
-                    db.removeAllChannels();
-                    inquiriesRealtimeSubscription = null;
-                }
             } else {
                 drawer.classList.add('open');
                 overlay.style.display = 'block';
                 document.getElementById('inquiry-search-input').value = '';
                 loadBuyerInquiriesHistory(currentBuyerId);
-                setupInquiriesRealtimeSubscription(currentBuyerId);
             }
         }
-
-        async function setupInquiriesRealtimeSubscription(buyerId) {
-            if (!buyerId || !db) return;
-
-            // Cleanup existing subscription
-            if (inquiriesRealtimeSubscription) {
-                db.removeAllChannels();
-                inquiriesRealtimeSubscription = null;
-            }
-
-            try {
-                // Subscribe to vendor responses for this buyer
-                inquiriesRealtimeSubscription = db
-                    .channel('public:inquiries')
-                    .on('postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'inquiries'
-                        },
-                        (payload) => {
-                            const record = payload.new || payload.old;
-
-                            // Reload if new vendor_response for this buyer
-                            if (payload.eventType === 'INSERT' && record.buyer_id === buyerId && record.message_type === 'vendor_response') {
-                                console.log('New vendor response detected for buyer:', buyerId);
-                                console.log('Payload:', record);
-                                loadBuyerInquiriesHistory(buyerId);
-                            }
-                        }
-                    )
-                    .subscribe();
-
-                console.log('Real-time subscriptions set up for buyer inquiries:', buyerId);
-            } catch (err) {
-                console.error('Error setting up real-time subscriptions:', err);
-            }
-        }
-
-        // Track expanded inquiry/vendor groups to preserve state during polling
-        let expandedInquiryGroupId = null;
-        let expandedVendorGroupIds = [];
 
         async function loadBuyerInquiriesHistory(buyerId) {
             if (!buyerId) return;
 
             const container = document.getElementById('buyer-inquiries-body');
-
-            // Save expanded groups before re-rendering
-            expandedInquiryGroupId = null;
-            expandedVendorGroupIds = [];
-            document.querySelectorAll('.inquiry-card-item').forEach(card => {
-                const inquiryContent = card.querySelector('[style*="display: flex"]');
-                if (inquiryContent && inquiryContent.style.display === 'flex') {
-                    expandedInquiryGroupId = inquiryContent.id;
-                    // Also track expanded vendor groups within this inquiry
-                    inquiryContent.querySelectorAll('[id^="vendor-accordion-"]').forEach(vendorDiv => {
-                        if (vendorDiv.style.display === 'flex') {
-                            expandedVendorGroupIds.push(vendorDiv.id);
-                        }
-                    });
-                }
-            });
 
             // Fetch inquiries with product details (including vendor_id from products)
             const { data: inquiries, error } = await db
@@ -1053,9 +692,21 @@
 
             if (error) {
                 console.error('Error loading inquiry history:', error.message);
-                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your inquiries.</p>';
+                container.innerHTML = renderEmptyState('⚠️', 'Failed to Load', 'Unable to fetch your inquiries. Please refresh and try again.');
                 return;
             }
+
+            // Fetch vendors for name lookups
+            const { data: vendors } = await db.from('vendors').select('id, first_name, last_name');
+            const vendorNames = {};
+            if (vendors) {
+                vendors.forEach(v => {
+                    vendorNames[v.id] = `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Vendor';
+                });
+            }
+
+            // Store inquiries for real-time updates
+            buyerInquiriesData = inquiries || [];
 
             if (inquiries && inquiries.length > 0) {
                 // Get all product IDs to fetch images
@@ -1076,53 +727,6 @@
                                 imageMap[img.product_id] = [];
                             }
                             imageMap[img.product_id].push(img.image_url);
-                        });
-                    }
-                }
-
-                // Fetch vendor names for all unique vendor IDs
-                let vendorMap = {};
-                const vendorIds = [
-                    ...new Set(
-                        inquiries
-                            .map(item => item.products?.vendor_id)
-                            .filter(id => id && id !== 'Echo Hub')
-                    )
-                ];
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await db
-                        .from('vendors')
-                        .select('id, first_name, last_name')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
-                        });
-                    }
-                }
-
-                // Fetch buyer names for all inquiries
-                let buyerMap = {};
-                const buyerIds = [
-                    ...new Set(
-                        inquiries
-                            .map(item => item.buyer_id)
-                            .filter(id => id)
-                    )
-                ];
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db
-                        .from('buyers')
-                        .select('id, full_name, email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyerMap[buyer.id] = {
-                                full_name: `${buyer.full_name || 'Unknown Buyer'}`,
-                                email: buyer.email || ''
-                            };
                         });
                     }
                 }
@@ -1223,11 +827,10 @@
                         html += `
                             <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                                 <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
                                         <span style="font-size: 12px;">🏢</span>
-                                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                                            ${vendorMap[vendorId] ? `<span style="font-size: 13px; font-weight: 700; color: #2d3748;">${vendorMap[vendorId]}</span><span style="font-size: 11px; color: #718096; font-weight: 500;">ID: ${vendorId}</span>` : `<span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>`}
-                                        </div>
+                                        ${getAvatarCircle(vendorNames[vendorId] || 'Vendor', 'linear-gradient(135deg, #059669 0%, #10b981 100%)')}
+                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>
                                         <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
                                     </div>
                                     <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
@@ -1237,46 +840,15 @@
                         `;
 
                         vItems.forEach(item => {
-                            const timestampFormatted = new Date(item.created_at).toLocaleString(undefined, {
-                                year: 'numeric',
-                                month: 'numeric',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                hour12: true,
-                                timeZoneName: 'short'
-                            });
+                            const timestampFormatted = formatMessageTimestamp(item.created_at, 'full');
 
-                            // Get buyer name for easy reference
-                            const buyerName = buyerMap[item.buyer_id]?.full_name || 'Unknown Buyer';
-                            const buyerEmail = buyerMap[item.buyer_id]?.email || '';
-
-                            // Determine message type and color - CHECK DATABASE FIELD FIRST
+                            // Determine message type and color
                             let messageType = 'Initial Inquiry';
                             let badgeColor = '#2563eb';
                             let badgeBg = '#dbeafe';
                             let messageBorderColor = '#93c5fd';
 
-                            // Priority 1: Check actual message_type from database
-                            if (item.message_type === 'vendor_response') {
-                                messageType = 'Vendor Response';
-                                badgeColor = '#059669';
-                                badgeBg = '#d1fae5';
-                                messageBorderColor = '#6ee7b7';
-                            } else if (item.message_type === 'feedback') {
-                                messageType = 'Feedback Submitted';
-                                badgeColor = '#ea580c';
-                                badgeBg = '#fed7aa';
-                                messageBorderColor = '#fdba74';
-                            } else if (item.message_type === 'buyer_followup') {
-                                messageType = 'Buyer Follow-up';
-                                badgeColor = '#7c3aed';
-                                badgeBg = '#ede9fe';
-                                messageBorderColor = '#d8b4fe';
-                            }
-                            // Priority 2: Fallback to pattern matching for legacy messages
-                            else if (item.message.includes('[Post-Receipt Product Feedback]')) {
+                            if (item.message.includes('[Post-Receipt Product Feedback]')) {
                                 messageType = 'Feedback Submitted';
                                 badgeColor = '#ea580c';
                                 badgeBg = '#fed7aa';
@@ -1288,19 +860,10 @@
                                 messageBorderColor = '#d8b4fe';
                             }
 
-                            // Determine if feedback is verified
-                            const isVerified = item.status === 'verified';
-                            const verificationBadge = isVerified ? `<span style="font-size: 10px; font-weight: 700; color: #059669; background: #d1fae5; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">✓ Verified</span>` : '';
-
                             html += `
                                 <div style="background: #f8fafc; border-left: 4px solid ${messageBorderColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7;">
-                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                            <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
-                                            ${verificationBadge}
-                                            <span style="font-size: 10px; color: #4a5568; font-weight: 600;">${buyerName}</span>
-                                            ${buyerEmail ? `<span style="font-size: 9px; color: #718096; font-style: italic;">${buyerEmail}</span>` : ''}
-                                        </div>
+                                        <span style="font-size: 11px; font-weight: 700; color: white; background: ${badgeColor}; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; background-color: ${badgeColor};">${messageType}</span>
                                         <span style="font-size: 10px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
 
@@ -1331,33 +894,12 @@
                 }
 
                 container.innerHTML = html;
-
-                // Re-expand the inquiry group that was expanded before polling
-                if (expandedInquiryGroupId) {
-                    const inquiryContent = document.getElementById(expandedInquiryGroupId);
-                    if (inquiryContent) {
-                        inquiryContent.style.display = 'flex';
-                        const icon = document.getElementById(`icon-${expandedInquiryGroupId}`);
-                        if (icon) icon.style.transform = 'rotate(180deg)';
-                        const header = inquiryContent.previousElementSibling;
-                        if (header) header.style.background = '#edf2f7';
-                    }
-                }
-
-                // Re-expand vendor groups that were expanded before polling
-                expandedVendorGroupIds.forEach(vendorGroupId => {
-                    const vendorContent = document.getElementById(vendorGroupId);
-                    if (vendorContent) {
-                        vendorContent.style.display = 'flex';
-                        const icon = document.getElementById(`icon-${vendorGroupId}`);
-                        if (icon) icon.style.transform = 'rotate(180deg)';
-                        const header = vendorContent.previousElementSibling;
-                        if (header) header.style.background = '#e2e8f0';
-                    }
-                });
             } else {
-                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">You haven\'t sent any inquiries yet.</p>';
+                container.innerHTML = renderEmptyState('❓', 'No Inquiries Yet', 'Start by asking vendors questions about their products!');
             }
+
+            // Setup real-time subscription for this buyer's inquiries
+            setupBuyerInquiriesSubscription(buyerId);
         }
 
         function filterInquiriesList() {
@@ -1392,7 +934,7 @@
         function toggleVendorGroup(vendorAccordionId, headerElement) {
             const bodyDiv = document.getElementById(vendorAccordionId);
             const iconSpan = document.getElementById(`icon-${vendorAccordionId}`);
-            
+
             if (bodyDiv.style.display === 'none' || bodyDiv.style.display === '') {
                 bodyDiv.style.display = 'flex';
                 iconSpan.style.transform = 'rotate(180deg)';
@@ -1402,6 +944,67 @@
                 iconSpan.style.transform = 'rotate(0deg)';
                 headerElement.style.background = '#edf2f7';
             }
+        }
+
+        /**
+         * Setup real-time subscription for buyer's inquiries
+         * Updates inquiry status when vendor approves/rejects feedback
+         */
+        function setupBuyerInquiriesSubscription(buyerId) {
+            if (!buyerId || !db) return;
+
+            // Unsubscribe from previous subscription if it exists
+            if (inquiriesSubscription) {
+                db.removeAllChannels();
+                inquiriesSubscription = null;
+            }
+
+            // Subscribe to realtime changes on inquiries table for this buyer
+            inquiriesSubscription = db
+                .channel(`buyer-inquiries-${buyerId}`)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'inquiries' }, (payload) => {
+                    // Check if this update is for the current buyer's inquiry
+                    if (payload.new.buyer_id === buyerId) {
+                        console.log('📨 Real-time inquiry update received:', payload.new.id);
+
+                        // Find and update the inquiry in our local data
+                        const inquiryIndex = buyerInquiriesData.findIndex(inq => inq.id === payload.new.id);
+                        if (inquiryIndex !== -1) {
+                            // Preserve relationships when updating
+                            buyerInquiriesData[inquiryIndex] = {
+                                ...buyerInquiriesData[inquiryIndex],
+                                ...payload.new
+                            };
+                            console.log('✓ Updated inquiry in buyerInquiriesData:', buyerInquiriesData[inquiryIndex]);
+
+                            // Re-render the inquiries list to show updated status
+                            loadBuyerInquiriesHistory(buyerId);
+                        }
+                    }
+                })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
+                    // Check if this new inquiry is for the current buyer
+                    if (payload.new.buyer_id === buyerId) {
+                        console.log('📨 New inquiry received:', payload.new.id);
+                        // Add to top of buyerInquiriesData
+                        buyerInquiriesData.unshift(payload.new);
+                        // Re-render to show new inquiry
+                        loadBuyerInquiriesHistory(buyerId);
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'inquiries' }, (payload) => {
+                    // Check if this deleted inquiry was for the current buyer
+                    if (payload.old.buyer_id === buyerId) {
+                        console.log('📨 Inquiry deleted:', payload.old.id);
+                        // Remove from buyerInquiriesData
+                        buyerInquiriesData = buyerInquiriesData.filter(inq => inq.id !== payload.old.id);
+                        // Re-render
+                        loadBuyerInquiriesHistory(buyerId);
+                    }
+                })
+                .subscribe();
+
+            console.log('✓ Real-time subscription established for buyer inquiries:', buyerId);
         }
 
         async function uploadProductFeedbackImage(productId, pKey) {
@@ -1423,42 +1026,22 @@
                 const fileName = `feedback_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
                 const filePath = `feedback/${fileName}`;
 
-                console.log('📸 Uploading feedback image:', { fileName, filePath, fileSize: file.size });
-
                 const { error: uploadError } = await db.storage
                     .from('product-images')
                     .upload(filePath, file);
 
                 if (uploadError) {
-                    console.error('❌ Error uploading feedback image:', uploadError);
-                    alert(`Failed to upload feedback image: ${uploadError.message}`);
+                    console.error('Error uploading feedback image:', uploadError.message);
+                    alert('Failed to upload feedback image.');
                     return;
                 }
-
-                console.log('✅ Image uploaded successfully');
 
                 const { data: publicUrlData } = db.storage
                     .from('product-images')
                     .getPublicUrl(filePath);
 
                 imageUrl = publicUrlData.publicUrl;
-                console.log('🖼️ Public URL generated:', imageUrl);
-
-                if (!imageUrl) {
-                    console.error('❌ Failed to generate public URL');
-                    alert('Failed to generate image URL.');
-                    return;
-                }
             }
-
-            // Get vendor_id from product (not from pKey which might be 'Echo Hub')
-            const { data: productData } = await db
-                .from('products')
-                .select('vendor_id')
-                .eq('id', productId)
-                .single();
-
-            const actualVendorId = productData?.vendor_id || null;
 
             const { data: existingFeedback, error: fetchErr } = await db
                 .from('inquiries')
@@ -1478,8 +1061,6 @@
             if (existingFeedback && existingFeedback.id) {
                 const updatePayload = {
                     message: feedbackMessage,
-                    message_type: 'feedback',
-                    status: 'pending',
                     created_at: new Date().toISOString()
                 };
                 if (imageUrl) {
@@ -1496,11 +1077,8 @@
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
-                        vendor_id: actualVendorId,
                         message: feedbackMessage,
-                        image_url: imageUrl,
-                        message_type: 'feedback',
-                        status: 'pending'
+                        image_url: imageUrl
                     }
                 ]);
                 dbError = insertErr;
@@ -1531,7 +1109,6 @@
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: `[Follow-up]: ${messageText}`,
-                    message_type: 'buyer_followup',
                     image_url: null
                 }
             ]);
@@ -1577,7 +1154,7 @@
 
                     return `
                         <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${formatMessageTimestamp(row.created_at, 'short')}</td>
                             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${parseFloat(row.net_commission || 0).toFixed(2)}</td>
                             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #2b6cb0;">$${amt.toFixed(2)}</td>
                             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${row.status === 'pending' ? '#feebc8; color: #c05621;' : '#c6f6d5; color: #22543d;'}">${row.status.toUpperCase()}</span></td>
@@ -1585,7 +1162,7 @@
                     `;
                 }).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;"><div style="text-align: center; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b;"><div style="font-size: 2em; margin-bottom: 10px;">💰</div><div style="font-weight: 600; margin-bottom: 5px;">No Referral Earnings Yet</div><div style="font-size: 0.9em; color: #94a3b8;">Share your referral link to start earning!</div></div></td></tr>`;
             }
 
             document.getElementById('stat-total-referrals').innerText = totalReferrals;
