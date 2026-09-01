@@ -869,10 +869,16 @@
                     const contentId = `inquiry-group-${pKey}-${index}`;
 
                     const latestMsg = group.items[0];
-                    const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
-                    const statusBadge = isPending 
-                        ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
-                        : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
+                    const vendorApproved = latestMsg.vendor_status?.toLowerCase() === 'approved' || latestMsg.vendor_status?.toLowerCase() === 'accepted';
+                    const isPending = (latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback')) && !vendorApproved;
+                    let statusBadge;
+                    if (vendorApproved) {
+                        statusBadge = `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">✅ APPROVED</span>`;
+                    } else if (isPending) {
+                        statusBadge = `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`;
+                    } else {
+                        statusBadge = `<span style="font-size: 10px; background: #bfdbfe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
+                    }
 
                     const vendorGroups = {};
                     group.items.forEach(item => {
@@ -951,6 +957,7 @@
 
                         vItems.forEach(item => {
                             const timestampFormatted = formatMessageTimestamp(item.created_at, 'full');
+                            const vendorApprovedItem = item.vendor_status?.toLowerCase() === 'approved' || item.vendor_status?.toLowerCase() === 'accepted';
 
                             // Determine message type and color
                             let messageType = 'Initial Inquiry';
@@ -978,9 +985,21 @@
                                     </div>
 
                                     <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
-                                    
+
                                     ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
-                                    
+
+                                    ${vendorApprovedItem ? `
+                                        <div style="background: #dcfce7; border-left: 4px solid #16a34a; border-top: 1px solid #86efac; border-right: 1px solid #86efac; border-bottom: 1px solid #86efac; border-radius: 6px; padding: 10px; margin-top: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 18px;">✅</span>
+                                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                                    <span style="font-size: 11px; font-weight: 700; color: #15803d; text-transform: uppercase;">Vendor Approved</span>
+                                                    <span style="font-size: 12px; color: #166534;">Your feedback has been reviewed and approved by the vendor.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
                                     <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
                                         <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
                                         <textarea id="followup-msg-${item.id}" placeholder="Write follow-up text..." style="width: 100%; height: 40px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; resize: vertical;"></textarea>
