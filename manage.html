@@ -2559,12 +2559,12 @@
             ` : '';
 
             // Show buyer info only for first message (idx === 0) to avoid repetition
+            // PRIVACY: Vendors see only buyer name and ID, not email or personal contact info
             const buyerInfo = idx === 0 && isBuyer ? `
                 <div class="message-meta-row">
                     <div class="message-buyer-info">
                         <strong>👤 ${escapeHtml(thread.buyer_name)}</strong>
-                        ${thread.buyer_email ? `<span>• ${escapeHtml(thread.buyer_email)}</span>` : ''}
-                        <button class="copy-btn" title="Copy ID" onclick="copyToClipboard('${thread.buyer_id}', this)">📋 ID</button>
+                        <button class="copy-btn" title="Copy Buyer ID" onclick="copyToClipboard('${thread.buyer_id}', this)">📋 ID</button>
                     </div>
                     <div class="message-product">
                         📦 ${escapeHtml(productName)} <span style="color: #999;">(${msg.product_id.substring(0, 8)})</span>
