@@ -1239,12 +1239,12 @@
                 // Fetch inquiry details
                 const { data: inquiry, error: inqError } = await db
                     .from('inquiries')
-                    .select('id, buyer_id, product_id, overall_status')
+                    .select('id, buyer_id, product_id, admin_status')
                     .eq('id', inquiryId)
                     .single();
 
                 // === DUPLICATE PREVENTION ===
-                if (inquiry?.overall_status === 'verified') {
+                if (inquiry?.admin_status === 'verified') {
                     alert('✓ This feedback is already verified.\n\nPayables records exist.\n\nNo duplicate records will be created.');
                     // Real-time subscription will refresh the UI automatically
                     return;
@@ -1271,7 +1271,7 @@
                 // Update inquiry status to verified
                 const { error: updateError } = await db
                     .from('inquiries')
-                    .update({ status: 'verified' })
+                    .update({ admin_status: 'verified' })
                     .eq('id', inquiryId);
 
                 if (updateError) {
@@ -1370,7 +1370,7 @@
                 // Update inquiry status to rejected
                 const { error: updateError } = await db
                     .from('inquiries')
-                    .update({ status: 'rejected' })
+                    .update({ admin_status: 'rejected' })
                     .eq('id', inquiryId);
 
                 if (updateError) {
