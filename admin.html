@@ -501,9 +501,6 @@
                 const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
-                loadInquiriesPortal();
-                loadCommissionsPortal();
-                loadPaymentProofsPortal();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -702,10 +699,17 @@
 
                 globalInquiriesData = inquiries;
                 // Reset filters to default (actionable only)
-                document.getElementById('inquiry-search').value = '';
-                document.getElementById('status-filter').value = 'actionable';
-                document.getElementById('date-from').value = '';
-                document.getElementById('date-to').value = '';
+                const searchEl = document.getElementById('inquiry-search');
+                const statusEl = document.getElementById('status-filter');
+                const dateFromEl = document.getElementById('date-from');
+                const dateToEl = document.getElementById('date-to');
+
+                if (searchEl && statusEl && dateFromEl && dateToEl) {
+                    searchEl.value = '';
+                    statusEl.value = 'actionable';
+                    dateFromEl.value = '';
+                    dateToEl.value = '';
+                }
                 filterInquiriesTree();
             } catch (e) {
                 console.error('Unexpected error in loadInquiriesPortal:', e);
@@ -714,10 +718,21 @@
         }
 
         function filterInquiriesTree() {
-            const searchQuery = document.getElementById('inquiry-search').value.toLowerCase().trim();
-            const statusFilterValue = document.getElementById('status-filter').value;
-            const dateFrom = document.getElementById('date-from').value;
-            const dateTo = document.getElementById('date-to').value;
+            // Add null checks for DOM elements
+            const searchEl = document.getElementById('inquiry-search');
+            const statusEl = document.getElementById('status-filter');
+            const dateFromEl = document.getElementById('date-from');
+            const dateToEl = document.getElementById('date-to');
+
+            if (!searchEl || !statusEl || !dateFromEl || !dateToEl) {
+                console.error('Missing required DOM elements for filter');
+                return;
+            }
+
+            const searchQuery = searchEl.value.toLowerCase().trim();
+            const statusFilterValue = statusEl.value;
+            const dateFrom = dateFromEl.value;
+            const dateTo = dateToEl.value;
 
 
             let filtered = globalInquiriesData;
