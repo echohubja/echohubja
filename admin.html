@@ -1344,8 +1344,12 @@
                 // === END FIX ===
 
                 alert('✓ Feedback verified! Buyer and vendor notified.');
-                // Real-time subscription will refresh the UI automatically
-                // No need to call loadInquiriesPortal() - it would interrupt the admin workflow
+
+                // Refresh inquiries list to show updated status (polling-based refresh)
+                // Don't wait for real-time subscription since plan doesn't support it
+                setTimeout(() => {
+                    loadInquiriesPortal();
+                }, 500);
             } catch (err) {
                 console.error('Error in verifyInquiry:', err);
                 alert('Unexpected error: ' + err.message);
@@ -1393,7 +1397,11 @@
                 await db.from('alerts').insert([buyerAlertData]);
 
                 alert('✓ Feedback rejected. Buyer notified.');
-                // Real-time subscription will refresh the UI automatically
+
+                // Refresh inquiries list to show updated status (polling-based refresh)
+                setTimeout(() => {
+                    loadInquiriesPortal();
+                }, 500);
             } catch (err) {
                 console.error('Error in rejectInquiry:', err);
                 alert('Unexpected error: ' + err.message);
@@ -1406,7 +1414,7 @@
             const { error } = await db.from('inquiries').update({ status: 'flagged', flag_reason: reason }).eq('id', inquiryId);
             if (error) { alert('Error flagging feedback: ' + error.message); return; }
             alert('Feedback flagged for manual review.');
-            // Real-time subscription will refresh the UI automatically
+            setTimeout(() => { loadInquiriesPortal(); }, 500);
         }
 
         async function unflagInquiry(inquiryId) {
@@ -1414,7 +1422,7 @@
             const { error } = await db.from('inquiries').update({ status: 'pending', flag_reason: null }).eq('id', inquiryId);
             if (error) { alert('Error removing flag: ' + error.message); return; }
             alert('Flag removed. Feedback back to pending.');
-            // Real-time subscription will refresh the UI automatically
+            setTimeout(() => { loadInquiriesPortal(); }, 500);
         }
 
         // --- TAB 3: COMMISSIONS ---
