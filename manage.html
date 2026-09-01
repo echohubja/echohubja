@@ -1203,6 +1203,32 @@
             color: #9ca3af;
         }
 
+        .message-inquiry-id {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            color: #1e40af;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .message-inquiry-id:hover {
+            background: #e0f2fe;
+            border-color: #0284c7;
+            color: #0284c7;
+        }
+
+        .message-inquiry-id:active {
+            transform: scale(0.98);
+        }
+
         .message-product {
             display: inline-flex;
             align-items: center;
@@ -2676,7 +2702,12 @@
                     <div class="message-avatar ${avatarClass}">${avatar}</div>
                     <div class="message-body">
                         <div class="message-header">
-                            <span class="message-sender">${senderName}</span>
+                            <div>
+                                <span class="message-sender">${senderName}</span>
+                                <span class="message-inquiry-id" onclick="copyToClipboard('${msg.id}', '${msg.id.substring(0, 8)}')" title="Click to copy inquiry ID">
+                                    [${msg.id.substring(0, 8)}] 📋
+                                </span>
+                            </div>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
                         <div class="message-text">${linkifyText(msg.message || '[No message]')}</div>
@@ -2701,10 +2732,13 @@
                     <div class="product-context-card">
                         <div class="product-context-info">
                             <div class="product-context-name">${escapeHtml(product.product_name)}</div>
-                            <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                 <div class="product-context-category">${escapeHtml(product.category || 'Uncategorized')}</div>
                                 <div class="copyable-id" onclick="copyToClipboard('${product.id}', '${product.id.substring(0, 8)}')" title="Click to copy product ID">
-                                    ID: ${product.id.substring(0, 8)} 📋
+                                    Prod: ${product.id.substring(0, 8)} 📋
+                                </div>
+                                <div class="copyable-id" onclick="copyToClipboard('${firstMsg.id}', '${firstMsg.id.substring(0, 8)}')" title="Click to copy inquiry ID">
+                                    Inq: ${firstMsg.id.substring(0, 8)} 📋
                                 </div>
                             </div>
                             <div class="product-context-description">${escapeHtml(product.description ? product.description.substring(0, 100) : 'No description')}</div>
