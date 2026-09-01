@@ -680,6 +680,30 @@
             overlay.style.display = 'none';
         }
 
+        // Check if inquiry thread is locked (vendor approved feedback)
+        async function checkInquiryLocked(productId, buyerId) {
+            try {
+                const { data, error } = await db
+                    .from('inquiries')
+                    .select('id, vendor_status')
+                    .eq('buyer_id', buyerId)
+                    .eq('product_id', productId)
+                    .eq('message_type', 'feedback')
+                    .eq('vendor_status', 'approved')
+                    .limit(1);
+
+                if (error) {
+                    console.error('Error checking inquiry lock:', error.message);
+                    return false; // Allow on error
+                }
+
+                return data && data.length > 0; // True if locked (approved exists)
+            } catch (err) {
+                console.error('Unexpected error checking inquiry lock:', err);
+                return false; // Allow on error
+            }
+        }
+
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
@@ -688,6 +712,14 @@
 
             if (!message) {
                 alert('Please enter a message or question.');
+                return;
+            }
+
+            // Check if inquiry thread is locked (approved feedback exists)
+            const isLocked = await checkInquiryLocked(productId, currentBuyerId);
+            if (isLocked) {
+                alert('✅ This inquiry is complete (approved feedback exists). Create a new inquiry if you'd like to continue discussing this product.');
+                closeInquiryDrawer();
                 return;
             }
 
@@ -1220,6 +1252,14 @@
 
             if (!messageText) {
                 alert('Please enter a reply message.');
+                return;
+            }
+
+            // Check if inquiry thread is locked (approved feedback exists)
+            const isLocked = await checkInquiryLocked(productId, currentBuyerId);
+            if (isLocked) {
+                alert('✅ This inquiry is complete (approved feedback exists). Create a new inquiry if you'd like to continue discussing this product.');
+                loadBuyerInquiriesHistory(currentBuyerId);
                 return;
             }
 
