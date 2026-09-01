@@ -562,6 +562,7 @@
         let db;
         let activeThresholdVendorId = null;
         let globalInquiriesData = [];
+        let inquiriesSubscription = null;
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
 
         let currentPaymentProofId = null;
@@ -775,6 +776,101 @@
                 console.error('Unexpected error in loadInquiriesPortal:', e);
                 container.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error loading feedback.</div>`;
             }
+
+            // Setup real-time subscriptions after initial load
+            setupInquiriesSubscription();
+        }
+
+        /**
+         * Setup real-time Supabase subscription for inquiries table
+         * Preserves UI state and updates only the affected inquiry
+         */
+        function setupInquiriesSubscription() {
+            if (!db) return;
+
+            // Unsubscribe from previous subscription if it exists
+            if (inquiriesSubscription) {
+                db.removeAllChannels();
+                inquiriesSubscription = null;
+            }
+
+            // Subscribe to realtime changes on inquiries table
+            inquiriesSubscription = db
+                .channel('inquiries-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'inquiries' }, async (payload) => {
+                    console.log('📨 Real-time update received for inquiry:', payload.new.id);
+
+                    // Find the inquiry in globalInquiriesData by ID
+                    const inquiryIndex = globalInquiriesData.findIndex(inq => inq.id === payload.new.id);
+
+                    if (inquiryIndex !== -1) {
+                        // Update the inquiry with new data
+                        const oldInquiry = globalInquiriesData[inquiryIndex];
+                        globalInquiriesData[inquiryIndex] = {
+                            ...oldInquiry,
+                            ...payload.new,
+                            // Preserve buyer and product info if already loaded
+                            buyers: oldInquiry.buyers,
+                            products: oldInquiry.products,
+                            product_images: oldInquiry.product_images
+                        };
+
+                        console.log('✓ Updated inquiry in globalInquiriesData:', globalInquiriesData[inquiryIndex]);
+
+                        // Trigger a filtered re-render (applies current filters)
+                        filterInquiriesTree();
+                    }
+                })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, async (payload) => {
+                    console.log('📨 New inquiry received:', payload.new.id);
+
+                    // Fetch full inquiry details including buyer and product info
+                    try {
+                        const { data: inquiry } = await db.from('inquiries').select('*').eq('id', payload.new.id).single();
+
+                        if (inquiry) {
+                            // Fetch buyer info
+                            const { data: buyer } = await db.from('buyers').select('id, full_name, email').eq('id', inquiry.buyer_id).single();
+
+                            // Fetch product info
+                            const { data: product } = await db.from('products').select('*').eq('id', inquiry.product_id).single();
+
+                            // Fetch product images
+                            let images = [];
+                            try {
+                                const { data: imgData } = await db.from('product-images').select('*').eq('product_id', inquiry.product_id);
+                                images = imgData ? imgData.map(img => img.image_url) : [];
+                            } catch (e) {
+                                console.log('Product images not available');
+                            }
+
+                            // Add to top of globalInquiriesData
+                            globalInquiriesData.unshift({
+                                ...inquiry,
+                                buyers: buyer || { id: inquiry.buyer_id, full_name: 'Unknown', email: 'No email' },
+                                products: product || { id: inquiry.product_id, product_name: `Product ${inquiry.product_id}` },
+                                product_images: images
+                            });
+
+                            // Re-render with current filters
+                            filterInquiriesTree();
+                        }
+                    } catch (e) {
+                        console.error('Error fetching new inquiry details:', e);
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'inquiries' }, (payload) => {
+                    console.log('📨 Inquiry deleted:', payload.old.id);
+
+                    // Remove from globalInquiriesData
+                    globalInquiriesData = globalInquiriesData.filter(inq => inq.id !== payload.old.id);
+
+                    // Re-render with current filters
+                    filterInquiriesTree();
+                })
+                .subscribe();
+
+            console.log('✓ Real-time subscription established for inquiries');
         }
 
         function filterInquiriesTree() {
@@ -1126,7 +1222,7 @@
                 // === DUPLICATE PREVENTION ===
                 if (inquiry?.overall_status === 'verified') {
                     alert('✓ This feedback is already verified.\n\nPayables records exist.\n\nNo duplicate records will be created.');
-                    loadInquiriesPortal();
+                    // Real-time subscription will refresh the UI automatically
                     return;
                 }
                 // === END DUPLICATE CHECK ===
@@ -1223,8 +1319,8 @@
                 // === END FIX ===
 
                 alert('✓ Feedback verified! Buyer and vendor notified.');
-                loadInquiriesPortal();
-                loadCommissionsPortal();
+                // Real-time subscription will refresh the UI automatically
+                // No need to call loadInquiriesPortal() - it would interrupt the admin workflow
             } catch (err) {
                 console.error('Error in verifyInquiry:', err);
                 alert('Unexpected error: ' + err.message);
@@ -1272,7 +1368,7 @@
                 await db.from('alerts').insert([buyerAlertData]);
 
                 alert('✓ Feedback rejected. Buyer notified.');
-                loadInquiriesPortal();
+                // Real-time subscription will refresh the UI automatically
             } catch (err) {
                 console.error('Error in rejectInquiry:', err);
                 alert('Unexpected error: ' + err.message);
@@ -1285,7 +1381,7 @@
             const { error } = await db.from('inquiries').update({ status: 'flagged', flag_reason: reason }).eq('id', inquiryId);
             if (error) { alert('Error flagging feedback: ' + error.message); return; }
             alert('Feedback flagged for manual review.');
-            loadInquiriesPortal();
+            // Real-time subscription will refresh the UI automatically
         }
 
         async function unflagInquiry(inquiryId) {
@@ -1293,7 +1389,7 @@
             const { error } = await db.from('inquiries').update({ status: 'pending', flag_reason: null }).eq('id', inquiryId);
             if (error) { alert('Error removing flag: ' + error.message); return; }
             alert('Flag removed. Feedback back to pending.');
-            loadInquiriesPortal();
+            // Real-time subscription will refresh the UI automatically
         }
 
         // --- TAB 3: COMMISSIONS ---
