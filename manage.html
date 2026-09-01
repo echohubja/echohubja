@@ -1167,20 +1167,31 @@
         .message-image-link {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 4px;
-            padding: 6px 12px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 4px;
+            padding: 4px;
+            background: transparent;
+            border: 2px solid #bfdbfe;
+            border-radius: 6px;
             color: #0284c7;
             font-size: 12px;
             text-decoration: none;
             transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .message-image-link img {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: 4px;
+            object-fit: cover;
+            display: block;
         }
 
         .message-image-link:hover {
-            background: #0284c7;
-            color: white;
+            border-color: #0284c7;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.3);
+            transform: scale(1.05);
         }
 
         /* Approval Buttons */
@@ -1246,52 +1257,6 @@
         .inquiry-respond-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-
-        /* Buyer Info Display */
-        .message-buyer-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 10px;
-            background: #f0f9ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #0284c7;
-            margin-right: 8px;
-            margin-top: 4px;
-        }
-
-        .message-buyer-info strong {
-            color: #0c4a6e;
-            font-weight: 600;
-        }
-
-        .message-buyer-info .copy-btn {
-            background: none;
-            border: none;
-            color: #0284c7;
-            cursor: pointer;
-            padding: 0 4px;
-            font-size: 10px;
-            transition: color 0.2s;
-        }
-
-        .message-buyer-info .copy-btn:hover {
-            color: #0c4a6e;
-        }
-
-        .message-buyer-info .copy-btn.copied {
-            color: #10b981;
-        }
-
-        .message-meta-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 11px;
         }
 
         /* Empty State */
@@ -1783,7 +1748,6 @@
         let currentSort = 'date-newest';
         let currentProductFilter = '';
         let searchQuery = '';
-        let productMap = {};
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -2180,21 +2144,21 @@
                     return;
                 }
 
-                // Fetch buyer names and emails
+                // Fetch buyer names
                 let buyerMap = {};
                 const buyerIds = [...new Set(inquiries.map(i => i.buyer_id).filter(Boolean))];
                 if (buyerIds.length > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
-                        .select('id, full_name, email')
+                        .select('id, full_name')
                         .in('id', buyerIds);
                     if (buyers) {
                         buyers.forEach(b => buyerMap[b.id] = b);
                     }
                 }
 
-                // Create product map (global for access in renderInquiries)
-                productMap = {};
+                // Create product map
+                let productMap = {};
                 products.forEach(p => productMap[p.id] = p);
 
                 // Group inquiries by buyer_id (conversation threads)
@@ -2205,7 +2169,6 @@
                         threadsMap[buyerId] = {
                             buyer_id: buyerId,
                             buyer_name: buyerMap[buyerId]?.full_name || buyerId,
-                            buyer_email: buyerMap[buyerId]?.email || '',
                             messages: [],
                             lastMessage: null,
                             lastMessageTime: null,
@@ -2493,7 +2456,7 @@
 
                         <div class="inquiry-thread-content">
                             <div class="thread-messages">
-                                ${thread.messages.map((msg, idx) => renderMessage(msg, thread, idx, productMap)).join('')}
+                                ${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}
                             </div>
                         </div>
                     </div>
@@ -2522,14 +2485,11 @@
             }
         };
 
-        function renderMessage(msg, thread, idx, productMap) {
+        function renderMessage(msg, buyerName, idx) {
             const isBuyer = msg.message_type !== 'vendor_response';
             const avatar = isBuyer ? 'B' : 'V';
             const senderName = isBuyer ? 'Buyer' : 'You';
             const avatarClass = isBuyer ? 'buyer' : 'vendor';
-
-            // Get product name from productMap
-            const productName = productMap && productMap[msg.product_id] ? productMap[msg.product_id].product_name : 'Product';
 
             const feedbackStatus = msg.message_type === 'feedback' ? `
                 <div class="inquiry-feedback-status">
@@ -2540,8 +2500,8 @@
 
             const imageLinks = msg.image_url_1 || msg.image_url_2 ? `
                 <div class="message-images">
-                    ${msg.image_url_1 ? `<a href="${msg.image_url_1}" target="_blank" class="message-image-link">🖼️ Image 1</a>` : ''}
-                    ${msg.image_url_2 ? `<a href="${msg.image_url_2}" target="_blank" class="message-image-link">🖼️ Image 2</a>` : ''}
+                    ${msg.image_url_1 ? `<a href="${msg.image_url_1}" target="_blank" class="message-image-link" title="Click to view full image"><img src="${msg.image_url_1}" alt="Feedback Image 1" style="max-width: 120px; max-height: 120px; border-radius: 4px; object-fit: cover;"/></a>` : ''}
+                    ${msg.image_url_2 ? `<a href="${msg.image_url_2}" target="_blank" class="message-image-link" title="Click to view full image"><img src="${msg.image_url_2}" alt="Feedback Image 2" style="max-width: 120px; max-height: 120px; border-radius: 4px; object-fit: cover;"/></a>` : ''}
                 </div>
             ` : '';
 
@@ -2558,20 +2518,6 @@
                 </div>
             ` : '';
 
-            // Show buyer info only for first message (idx === 0) to avoid repetition
-            // PRIVACY: Vendors see only buyer name and ID, not email or personal contact info
-            const buyerInfo = idx === 0 && isBuyer ? `
-                <div class="message-meta-row">
-                    <div class="message-buyer-info">
-                        <strong>👤 ${escapeHtml(thread.buyer_name)}</strong>
-                        <button class="copy-btn" title="Copy Buyer ID" onclick="copyToClipboard('${thread.buyer_id}', this)">📋 ID</button>
-                    </div>
-                    <div class="message-product">
-                        📦 ${escapeHtml(productName)} <span style="color: #999;">(${msg.product_id.substring(0, 8)})</span>
-                    </div>
-                </div>
-            ` : '';
-
             return `
                 <div class="inquiry-message">
                     <div class="message-avatar ${avatarClass}">${avatar}</div>
@@ -2580,8 +2526,7 @@
                             <span class="message-sender">${senderName}</span>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
-                        ${buyerInfo}
-                        <div class="message-text">${escapeHtml(msg.message || '[No message]')}</div>
+                        <div class="message-text">${linkifyText(msg.message || '[No message]')}</div>
                         ${imageLinks}
                         ${feedbackStatus}
                         ${approvalButtons}
@@ -2742,19 +2687,15 @@
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
-        window.copyToClipboard = function(text, buttonElement) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = buttonElement.textContent;
-                buttonElement.textContent = '✅ Copied!';
-                buttonElement.classList.add('copied');
-                setTimeout(() => {
-                    buttonElement.textContent = originalText;
-                    buttonElement.classList.remove('copied');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
+        function linkifyText(text) {
+            if (!text) return '';
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const escaped = escapeHtml(text);
+            return escaped.replace(urlRegex, url => {
+                const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
+                return `<a href="${url}" target="_blank" style="color: #4f46e5; text-decoration: underline; cursor: pointer;">${displayUrl}</a>`;
             });
-        };
+        }
 
         async function uploadImageFile(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
