@@ -1915,15 +1915,6 @@
                             </div>
     `;
 
-                    // Add feedback image preview if present
-                    if (hasFeedbackImage) {
-                        messageCard += `
-                            <div style="margin-bottom: 10px;">
-                                <img src="${message.image_url}" alt="Feedback" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #e1e8ed; cursor: pointer;" onclick="openLightbox('${message.image_url}')" title="Click to view full size">
-                            </div>
-                        `;
-                    }
-
                     // Message content
                     messageCard += `
                             <div style="color: #334155; font-size: 0.9em; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; background: #f8fafc; padding: 10px; border-radius: 4px;">${escapeHtml(message.message || '[No message]')}</div>
@@ -2667,31 +2658,7 @@
         });
 
         initPortal();
-
-        // Lightbox for feedback image preview
-        window.openLightbox = function(imageUrl) {
-            const lightbox = document.getElementById('image-lightbox');
-            const imgEl = document.getElementById('lightbox-img-element');
-            if (lightbox && imgEl) {
-                imgEl.src = imageUrl;
-                lightbox.classList.remove('hidden');
-            }
-        };
-
-        window.closeLightbox = function() {
-            const lightbox = document.getElementById('image-lightbox');
-            if (lightbox) {
-                lightbox.classList.add('hidden');
-            }
-        };
     </script>
 
-    <!-- Lightbox Modal for Image Preview -->
-    <div id="image-lightbox" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;" onclick="closeLightbox()">
-        <div style="position: relative; background: white; border-radius: 8px; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation();">
-            <img id="lightbox-img-element" src="" alt="Feedback Preview" style="max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 8px;">
-            <button onclick="closeLightbox()" style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-weight: bold; color: #333;">×</button>
-        </div>
-    </div>
 </body>
 </html>
