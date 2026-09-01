@@ -657,6 +657,33 @@
             overlay.style.display = 'none';
         }
 
+        async function checkInquiryLocked(productId, buyerId) {
+            // Check if an inquiry exists for this product/buyer with accepted/approved vendor feedback
+            const { data: inquiries, error } = await db
+                .from('inquiries')
+                .select('id, vendor_status')
+                .eq('product_id', productId)
+                .eq('buyer_id', buyerId);
+
+            if (error) {
+                console.error('Error checking inquiry lock:', error.message);
+                return false;
+            }
+
+            // If any inquiry has accepted/approved vendor feedback, inquiry is locked
+            if (inquiries && inquiries.length > 0) {
+                const lockedInquiry = inquiries.find(inq => {
+                    const status = inq.vendor_status?.toLowerCase();
+                    return status === 'accepted' || status === 'approved';
+                });
+                if (lockedInquiry) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
@@ -665,6 +692,14 @@
 
             if (!message) {
                 alert('Please enter a message or question.');
+                return;
+            }
+
+            // Check if inquiry is locked before submission
+            const isLocked = await checkInquiryLocked(productId, currentBuyerId);
+            if (isLocked) {
+                alert('✅ This inquiry is complete (approved feedback exists). Create a new inquiry if you\'d like to continue discussing this product.');
+                document.getElementById('inquiry-message').value = '';
                 return;
             }
 
