@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Marketplace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
+    <script src="inquiry-validator.js"></script>
     <!-- Messaging System Shared Libraries -->
     <link rel="stylesheet" href="messaging-styles.css">
     <script src="messaging-utils.js"></script>
@@ -1133,6 +1134,17 @@
             const feedbackMessage = `[Post-Receipt Product Feedback]\nAmazon Link: ${amazonLink || 'None provided'}`;
             let dbError = null;
 
+            // Fetch vendor_id from product (required for inquiries table)
+            let vendorId = null;
+            if (productId && productId !== 'null') {
+                const { data: product } = await db
+                    .from('products')
+                    .select('vendor_id')
+                    .eq('id', productId)
+                    .single();
+                if (product) vendorId = product.vendor_id;
+            }
+
             if (existingFeedback && existingFeedback.id) {
                 const updatePayload = {
                     message: feedbackMessage,
@@ -1148,15 +1160,26 @@
                     .eq('id', existingFeedback.id);
                 dbError = updateErr;
             } else {
-                const { error: insertErr } = await db.from('inquiries').insert([
-                    {
+                try {
+                    const validatedPayload = buildInquiryPayload({
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
+                        vendor_id: vendorId,
                         message: feedbackMessage,
-                        image_url: imageUrl
-                    }
-                ]);
-                dbError = insertErr;
+                        image_url: imageUrl,
+                        message_type: 'feedback',
+                        sender_type: 'buyer',
+                        sender_id: currentBuyerId,
+                        status: 'pending'
+                    });
+
+                    const { error: insertErr } = await db.from('inquiries').insert([validatedPayload]);
+                    dbError = insertErr;
+                } catch (validationErr) {
+                    console.error('Validation error:', validationErr.message);
+                    alert(validationErr.message);
+                    return;
+                }
             }
 
             if (dbError) {
@@ -1178,19 +1201,28 @@
                 return;
             }
 
-            const { error } = await db.from('inquiries').insert([
-                {
+            try {
+                const validatedPayload = buildInquiryPayload({
                     product_id: productId === 'null' || !productId ? null : productId,
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: `[Follow-up]: ${messageText}`,
-                    image_url: null
-                }
-            ]);
+                    sender_id: currentBuyerId,
+                    sender_type: 'buyer',
+                    message_type: 'followup',
+                    status: 'pending'
+                });
 
-            if (error) {
-                console.error('Error submitting follow-up:', error.message);
-                alert('Failed to submit follow-up message.');
+                const { error } = await db.from('inquiries').insert([validatedPayload]);
+
+                if (error) {
+                    console.error('Error submitting follow-up:', error.message);
+                    alert('Failed to submit follow-up message.');
+                    return;
+                }
+            } catch (validationErr) {
+                console.error('Validation error:', validationErr.message);
+                alert(validationErr.message);
                 return;
             }
 
