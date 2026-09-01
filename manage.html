@@ -6,6 +6,9 @@
     <title>Echo Hub - Vendor Product Management Portal</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
+    <!-- Messaging System Shared Libraries -->
+    <link rel="stylesheet" href="messaging-styles.css">
+    <script src="messaging-utils.js"></script>
     <style>
         * {
             margin: 0;
@@ -142,14 +145,6 @@
         @media (max-width: 480px) {
             .metrics-grid {
                 grid-template-columns: 1fr;
-            }
-
-            span[style*="font-size: 11px"],
-            span[style*="font-size: 12px"],
-            div[style*="font-size: 11px"],
-            div[style*="font-size: 12px"] {
-                word-break: break-word;
-                overflow-wrap: break-word;
             }
         }
 
@@ -405,6 +400,270 @@
             height: 100%;
             background: linear-gradient(90deg, #4ade80 0%, #fbbf24 50%, #ef4444 100%);
             border-radius: 4px;
+
+        /* ========== CARD-BASED EMAIL INTERFACE STYLES ========== */
+        .interaction-card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            border-left: 5px solid #cbd5e1;
+        }
+
+        .interaction-card.inquiry {
+            border-left-color: #1e40af;
+        }
+
+        .interaction-card.feedback {
+            border-left-color: #b45309;
+        }
+
+        .interaction-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            border-color: #cbd5e1;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 16px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .card-header-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-buyer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .buyer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        .buyer-name-email {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .buyer-name {
+            font-weight: 700;
+            font-size: 0.95em;
+            color: #1e293b;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        .buyer-email {
+            font-size: 0.8em;
+            color: #64748b;
+            word-break: break-word;
+        }
+
+        .buyer-id-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f9ff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            margin-top: 8px;
+        }
+
+        .buyer-id-label {
+            color: #1e5aa8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .buyer-id-value {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #0f172a;
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+            word-break: break-all;
+        }
+
+        .copy-id-btn {
+            background: #1e5aa8;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .copy-id-btn:hover {
+            background: #164a8a;
+            transform: scale(1.05);
+        }
+
+        .copy-id-btn.copied {
+            background: #10b981;
+        }
+
+        .message-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .badge-inquiry {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-feedback {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .card-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .product-reference {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border-left: 3px solid #1e5aa8;
+        }
+
+        .product-icon {
+            font-size: 1.1em;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #1e5aa8;
+            font-size: 0.9em;
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .message-content {
+            background: #fafbfc;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #cbd5e1;
+            color: #334155;
+            font-size: 0.9em;
+            line-height: 1.5;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .message-timestamp {
+            font-size: 0.8em;
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        .card-footer {
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e1e8ed;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .respond-btn {
+            background: #1e5aa8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .respond-btn:hover {
+            background: #164a8a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3);
+        }
+
+        .status-responded {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .empty-message-section {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .empty-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .empty-subtitle {
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
             transition: width 0.3s ease;
         }
 
@@ -680,590 +939,6 @@
             background: #cbd5e1;
         }
 
-        /* ==================== OPTION 2B PHASE 1 STYLES ==================== */
-
-        /* Folder Navigation Tabs */
-        .inquiry-folder-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e5e7eb;
-            overflow-x: auto;
-        }
-
-        .folder-tab {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            color: #6b7280;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .folder-tab:hover {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-        }
-
-        .folder-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-        }
-
-        .folder-icon {
-            font-size: 16px;
-        }
-
-        .folder-name {
-            font-weight: 600;
-        }
-
-        .folder-count {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .folder-tab.active .folder-count {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Search & Sort Controls */
-        .inquiry-controls {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 16px 10px 40px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-            transition: all 0.2s ease;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 16px;
-            color: #9ca3af;
-        }
-
-        .sort-controls,
-        .filter-box {
-            flex: 0 0 auto;
-        }
-
-        .sort-select,
-        .filter-select {
-            padding: 10px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .sort-select:focus,
-        .filter-select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        /* Thread List Container */
-        .inquiry-thread-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* Individual Thread */
-        .inquiry-thread {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .inquiry-thread:hover {
-            border-color: #d1d5db;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .inquiry-thread.vendor-approved {
-            animation: pulse-green 2s ease-in-out infinite;
-        }
-
-        .inquiry-thread.both-approved {
-            animation: pulse-gold 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-green {
-            0%, 100% {
-                border-color: #10b981;
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3);
-            }
-            50% {
-                border-color: #10b981;
-                box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-            }
-        }
-
-        @keyframes pulse-gold {
-            0%, 100% {
-                border-color: #f59e0b;
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
-            }
-            50% {
-                border-color: #f59e0b;
-                box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
-            }
-        }
-
-        /* Thread Header */
-        .inquiry-thread-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-
-        .inquiry-thread:hover .inquiry-thread-header {
-            background: #f3f4f6;
-        }
-
-        .thread-header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .thread-customer-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .thread-customer-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .thread-customer-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: #111827;
-            margin-bottom: 4px;
-        }
-
-        .thread-message-preview {
-            font-size: 12px;
-            color: #6b7280;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .thread-meta-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .message-type-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            font-size: 14px;
-            background: #f3f4f6;
-        }
-
-        .message-type-badge.feedback {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .message-type-badge.inquiry {
-            background: #dbeafe;
-            color: #0284c7;
-        }
-
-        .message-type-badge.followup {
-            background: #e0e7ff;
-            color: #4338ca;
-        }
-
-        /* Commission Display */
-        .thread-commission {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 2px;
-            padding: 0 8px;
-            border-right: 1px solid #e5e7eb;
-            margin-right: 8px;
-        }
-
-        .commission-amount {
-            font-weight: 700;
-            font-size: 14px;
-            color: #059669;
-        }
-
-        .commission-status {
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        /* Time Waiting SLA */
-        .thread-sla {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            padding: 0 8px;
-            min-width: 50px;
-        }
-
-        .sla-time {
-            font-size: 12px;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .sla-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #10b981;
-        }
-
-        .sla-indicator.warning {
-            background: #f59e0b;
-        }
-
-        .sla-indicator.critical {
-            background: #ef4444;
-        }
-
-        /* Approval Badges */
-        .inquiry-feedback-status {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .status-badge-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-badge-pill.vendor {
-            background: #dbeafe;
-            color: #0284c7;
-        }
-
-        .status-badge-pill.vendor.approved {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-badge-pill.vendor.rejected {
-            background: #fee2e2;
-            color: #7f1d1d;
-        }
-
-        .status-badge-pill.admin {
-            background: #f3e8ff;
-            color: #6b21a8;
-        }
-
-        .status-badge-pill.admin.verified {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .status-badge-pill.admin.rejected {
-            background: #fee2e2;
-            color: #7f1d1d;
-        }
-
-        /* Thread Expand Arrow */
-        .thread-expand-arrow {
-            font-size: 18px;
-            color: #9ca3af;
-            transition: transform 0.2s ease;
-            margin-left: 8px;
-        }
-
-        .inquiry-thread.expanded .thread-expand-arrow {
-            transform: rotate(180deg);
-        }
-
-        /* Thread Content (Messages) */
-        .inquiry-thread-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .inquiry-thread.expanded .inquiry-thread-content {
-            max-height: 1200px;
-        }
-
-        .thread-messages {
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .inquiry-message {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 8px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .message-avatar.buyer {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .message-avatar.vendor {
-            background: #10b981;
-            color: white;
-        }
-
-        .message-body {
-            flex: 1;
-        }
-
-        .message-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-            font-size: 12px;
-        }
-
-        .message-sender {
-            font-weight: 600;
-            color: #111827;
-        }
-
-        .message-timestamp {
-            color: #9ca3af;
-        }
-
-        .message-product {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            background: #f3f4f6;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        .message-text {
-            font-size: 14px;
-            color: #374151;
-            line-height: 1.5;
-            margin-top: 6px;
-            word-wrap: break-word;
-        }
-
-        .message-images {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-        }
-
-        .message-image-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 6px 12px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 4px;
-            color: #0284c7;
-            font-size: 12px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .message-image-link:hover {
-            background: #0284c7;
-            color: white;
-        }
-
-        /* Approval Buttons */
-        .message-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .inquiry-approve-btn, .inquiry-reject-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .inquiry-approve-btn {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .inquiry-approve-btn:hover {
-            background: #10b981;
-            color: white;
-        }
-
-        .inquiry-reject-btn {
-            background: #fee2e2;
-            color: #7f1d1d;
-        }
-
-        .inquiry-reject-btn:hover {
-            background: #ef4444;
-            color: white;
-        }
-
-        .inquiry-approve-btn:disabled,
-        .inquiry-reject-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .inquiry-respond-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .inquiry-respond-btn:hover {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .inquiry-respond-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Empty State */
-        .inquiry-empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #9ca3af;
-        }
-
-        .inquiry-empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .inquiry-empty-state-text {
-            font-size: 14px;
-        }
-
         .alert-msg {
             padding: 10px 14px;
             border-radius: 6px;
@@ -1280,27 +955,6 @@
         .alert-error {
             background: #fee2e2;
             color: #b91c1c;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .inquiry-controls {
-                flex-direction: column;
-            }
-
-            .search-box {
-                min-width: 100%;
-            }
-
-            .thread-meta-info {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .thread-commission,
-            .thread-sla {
-                display: none;
-            }
         }
     </style>
 </head>
@@ -1512,16 +1166,15 @@
                                         <th>Feedback ID</th>
                                         <th>Commission Fee (Due)</th>
                                         <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="earnings-body">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="earnings-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     </div>
                 </div>
             </div>
@@ -1529,15 +1182,16 @@
             <!-- Product Creation & Management Section -->
             <div style="margin-top: 28px;">
             <div class="panel">
+
                 <!-- Left Column: Products Inventory Table -->
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Your Products Inventory</h2>
-                        <span class="badge" id="itemCountBadge2">0 items</span>
+                        <span class="badge" id="itemCountBadge">0 items</span>
                     </div>
 
                     <div class="table-responsive">
-                        <table id="inventoryTable2">
+                        <table id="inventoryTable">
                             <thead>
                                 <tr>
                                     <th>Image</th>
@@ -1547,13 +1201,17 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventoryBody2">
+                            <tbody id="inventoryBody">
                                 <!-- Dynamic rows inserted here -->
                             </tbody>
                         </table>
 
-                        <div id="emptyInventory2" class="empty-inventory" style="display: none;">
+                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
+                            <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
                             <p>You haven't listed any products yet.</p>
+                            <p style="font-size: 0.8em; color: #cbd5e1;">Use the form on the right to add your first item!</p>
                         </div>
                     </div>
                 </div>
@@ -1616,71 +1274,59 @@
 
             </div>
 
-            <!-- Pending Inquiries Section - OPTION 2B PHASE 1 -->
+            <!-- Customer Interactions Section (Inquiries + Feedback) -->
             <div class="panel" style="margin-top: 24px;">
                 <div class="panel-header">
-                    <h2>📬 Pending Customer Inquiries</h2>
-                    <span class="badge" id="inquiryCountBadge">0 inquiries</span>
-                </div>
-
-                <!-- Folder Navigation Tabs -->
-                <div class="inquiry-folder-tabs">
-                    <button class="folder-tab active" data-folder="all">
-                        <span class="folder-icon">📋</span>
-                        <span class="folder-name">All Messages</span>
-                        <span class="folder-count" id="count-all">0</span>
-                    </button>
-                    <button class="folder-tab" data-folder="feedback-pending">
-                        <span class="folder-icon">📋</span>
-                        <span class="folder-name">Feedback Pending</span>
-                        <span class="folder-count" id="count-feedback-pending">0</span>
-                    </button>
-                    <button class="folder-tab" data-folder="inquiries">
-                        <span class="folder-icon">❓</span>
-                        <span class="folder-name">Inquiries</span>
-                        <span class="folder-count" id="count-inquiries">0</span>
-                    </button>
-                    <button class="folder-tab" data-folder="responded">
-                        <span class="folder-icon">✅</span>
-                        <span class="folder-name">Responded</span>
-                        <span class="folder-count" id="count-responded">0</span>
-                    </button>
-                    <button class="folder-tab" data-folder="flagged">
-                        <span class="folder-icon">🚩</span>
-                        <span class="folder-name">Flagged</span>
-                        <span class="folder-count" id="count-flagged">0</span>
-                    </button>
-                </div>
-
-                <!-- Search & Sort Controls -->
-                <div class="inquiry-controls">
-                    <div class="search-box">
-                        <input type="text" id="inquirySearch" placeholder="Search by customer name, ID, product..." class="search-input">
-                        <span class="search-icon">🔍</span>
-                    </div>
-
-                    <div class="sort-controls">
-                        <select id="inquirySortBy" class="sort-select">
-                            <option value="date-newest">📅 Newest First</option>
-                            <option value="date-oldest">📅 Oldest First</option>
-                            <option value="commission-high">💰 Highest Commission</option>
-                            <option value="commission-low">💰 Lowest Commission</option>
-                            <option value="status-urgent">⚠️ Urgent (Waiting)</option>
-                            <option value="unread">🔔 Unread First</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-box">
-                        <select id="productFilterDropdown" class="filter-select">
-                            <option value="">All Products</option>
-                        </select>
+                    <h2>Customer Interactions</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <span class="badge" id="inquiryCountBadge" style="background: #dbeafe; color: #1e40af;">0 questions</span>
+                        <span class="badge" id="feedbackCountBadge" style="background: #fef3c7; color: #92400e;">0 feedback</span>
                     </div>
                 </div>
 
-                <!-- Thread List -->
-                <div class="inquiry-thread-list" id="inquiriesThreadList">
-                    <!-- Dynamically populated by JavaScript -->
+                <!-- Tab Navigation -->
+                <div style="display: flex; gap: 0; border-bottom: 2px solid #e1e8ed; margin-bottom: 20px;">
+                    <button id="tabInquiries" class="tab-btn" onclick="switchInteractionTab('inquiries')" style="flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 3px solid #1e5aa8; color: #1e5aa8; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        ❓ Questions
+                    </button>
+                    <button id="tabFeedback" class="tab-btn" onclick="switchInteractionTab('feedback')" style="flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        ⭐ Feedback Submissions
+                    </button>
                 </div>
+
+                <!-- Search Box -->
+                <div style="margin-bottom: 20px;">
+                    <input type="text" id="interactionSearch" class="messaging-search" placeholder="Search by buyer name or email..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;" oninput="filterInteractionCards()">
+                </div>
+
+                <!-- Inquiries Tab Content -->
+                <div id="inquiriesTab" style="display: block;">
+                    <div id="inquiriesContainer" style="display: grid; gap: 16px;">
+                        <!-- Dynamic inquiry cards inserted here -->
+                    </div>
+                    <div id="emptyInquiries" class="empty-inventory" style="display: none;">
+                        <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>No pending questions.</p>
+                        <p style="font-size: 0.8em; color: #cbd5e1;">Customers will ask you questions here!</p>
+                    </div>
+                </div>
+
+                <!-- Feedback Tab Content -->
+                <div id="feedbackTab" style="display: none;">
+                    <div id="feedbackContainer" style="display: grid; gap: 16px;">
+                        <!-- Dynamic feedback cards inserted here -->
+                    </div>
+                    <div id="emptyFeedback" class="empty-inventory" style="display: none;">
+                        <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto; display: block;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m0 0l-2-1m2 1v2.5M14 4l-2 1m0 0L10 4m2 1V6m6 0l-2 1m0 0l-2-1m2 1v2.5"></path>
+                        </svg>
+                        <p>No pending feedback.</p>
+                        <p style="font-size: 0.8em; color: #cbd5e1;">Buyers will submit feedback and ratings here!</p>
+                    </div>
+                </div>
+            </div>
             </div>
             </div>
 
@@ -1723,20 +1369,10 @@
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         let sbClient = null;
-        const db = null;
 
         let currentVendor = null;
         let editingProductId = null;
         let cachedProducts = [];
-        let pollingIntervals = {};
-
-        // OPTION 2B Phase 1 State Variables
-        let inquiriesCache = [];
-        let filteredInquiries = [];
-        let currentFolder = 'all';
-        let currentSort = 'date-newest';
-        let currentProductFilter = '';
-        let searchQuery = '';
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -1747,6 +1383,7 @@
         const profileEmail = document.getElementById('profileEmail');
         const profileType = document.getElementById('profileType');
 
+        const inventoryTable = document.getElementById('inventoryTable');
         const inventoryBody = document.getElementById('inventoryBody');
         const emptyInventory = document.getElementById('emptyInventory');
         const itemCountBadge = document.getElementById('itemCountBadge');
@@ -1766,7 +1403,6 @@
                     if (window.supabase) {
                         clearInterval(checkInterval);
                         sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        window.db = sbClient;
                         resolve();
                     }
                 }, 10);
@@ -1823,7 +1459,6 @@
                 await loadCommissionSettings();
                 await loadEarningsData();
                 await loadVendorAlerts();
-                await setupPolling();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -1831,124 +1466,6 @@
                 console.error('Portal initialization error:', err);
                 showError();
             }
-        }
-
-        async function setupPolling() {
-            if (!currentVendor || !sbClient) return;
-
-            stopPolling();
-
-            try {
-                const { data: vendorProducts } = await sbClient
-                    .from('products')
-                    .select('id')
-                    .eq('vendor_id', currentVendor.id);
-
-                const productIds = vendorProducts ? vendorProducts.map(p => p.id) : [];
-                if (productIds.length === 0) return;
-
-                console.log('📋 Starting polling for vendor:', currentVendor.id);
-
-                let lastInquiriesHash = '';
-                let lastVendorHash = '';
-                let lastAlertsHash = '';
-                let lastProductsHash = '';
-
-                // Poll inquiries every 3 seconds
-                pollingIntervals.inquiries = setInterval(async () => {
-                    try {
-                        const { data: inquiries } = await sbClient
-                            .from('inquiries')
-                            .select('*')
-                            .in('product_id', productIds)
-                            .in('message_type', ['inquiry', 'feedback', 'buyer_followup'])
-                            .eq('sender_type', 'buyer');
-
-                        const currentHash = JSON.stringify(inquiries || []);
-                        if (currentHash !== lastInquiriesHash) {
-                            console.log('💬 Inquiries changed - RELOADING');
-                            lastInquiriesHash = currentHash;
-                            loadPendingInquiries();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (inquiries):', err);
-                    }
-                }, 3000);
-
-                // Poll vendor data every 4 seconds
-                pollingIntervals.vendor = setInterval(async () => {
-                    try {
-                        const { data: vendor } = await sbClient
-                            .from('vendors')
-                            .select('*')
-                            .eq('id', currentVendor.id)
-                            .single();
-
-                        const currentHash = JSON.stringify(vendor || {});
-                        if (currentHash !== lastVendorHash) {
-                            console.log('💰 Vendor data changed - RELOADING');
-                            lastVendorHash = currentHash;
-                            if (vendor) currentVendor = vendor;
-                            loadCommissionSettings();
-                            loadEarningsData();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (vendor):', err);
-                    }
-                }, 4000);
-
-                // Poll alerts every 5 seconds
-                pollingIntervals.alerts = setInterval(async () => {
-                    try {
-                        const { data: alerts } = await sbClient
-                            .from('alerts')
-                            .select('*')
-                            .eq('recipient_id', currentVendor.id)
-                            .eq('is_read', false);
-
-                        const currentHash = JSON.stringify(alerts || []);
-                        if (currentHash !== lastAlertsHash) {
-                            console.log('⚠️ Alerts changed - RELOADING');
-                            lastAlertsHash = currentHash;
-                            loadVendorAlerts();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (alerts):', err);
-                    }
-                }, 5000);
-
-                // Poll products every 4 seconds
-                pollingIntervals.products = setInterval(async () => {
-                    try {
-                        const { data: products } = await sbClient
-                            .from('products')
-                            .select('*')
-                            .eq('vendor_id', currentVendor.id);
-
-                        const currentHash = JSON.stringify(products || []);
-                        if (currentHash !== lastProductsHash) {
-                            console.log('📦 Products changed - RELOADING');
-                            lastProductsHash = currentHash;
-                            loadVendorProducts();
-                        }
-                    } catch (err) {
-                        console.error('Polling error (products):', err);
-                    }
-                }, 4000);
-
-                console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds');
-            } catch (err) {
-                console.error('Error setting up polling:', err);
-            }
-        }
-
-        function stopPolling() {
-            if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
-            if (pollingIntervals.vendor) clearInterval(pollingIntervals.vendor);
-            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
-            if (pollingIntervals.products) clearInterval(pollingIntervals.products);
-            pollingIntervals = {};
-            console.log('🛑 Polling stopped');
         }
 
         async function loadVendorProducts() {
@@ -1963,7 +1480,7 @@
 
             if (error || !products || products.length === 0) {
                 cachedProducts = [];
-                document.getElementById('inventoryTable').style.display = 'none';
+                inventoryTable.style.display = 'none';
                 emptyInventory.style.display = 'block';
                 itemCountBadge.textContent = '0 items';
                 return;
@@ -1986,7 +1503,7 @@
             }
 
             cachedProducts = products;
-            document.getElementById('inventoryTable').style.display = 'table';
+            inventoryTable.style.display = 'table';
             emptyInventory.style.display = 'none';
             itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
 
@@ -2101,510 +1618,425 @@
 
         let currentInquiry = null;
 
-        // ==================== OPTION 2B PHASE 1 IMPLEMENTATION ====================
+        // Global data storage for filtering
+        let globalInteractionData = {
+            inquiries: [],
+            feedbacks: [],
+            buyerMap: {},
+            productMap: {}
+        };
 
-        async function loadPendingInquiries() {
+        // Tab switching function
+        window.switchInteractionTab = function(tab) {
+            const inquiriesTab = document.getElementById('inquiriesTab');
+            const feedbackTab = document.getElementById('feedbackTab');
+            const tabInquiries = document.getElementById('tabInquiries');
+            const tabFeedback = document.getElementById('tabFeedback');
+
+            // Clear search box when switching tabs
+            document.getElementById('interactionSearch').value = '';
+
+            if (tab === 'inquiries') {
+                inquiriesTab.style.display = 'block';
+                feedbackTab.style.display = 'none';
+                tabInquiries.style.borderBottomColor = '#1e5aa8';
+                tabInquiries.style.color = '#1e5aa8';
+                tabFeedback.style.borderBottomColor = 'transparent';
+                tabFeedback.style.color = '#64748b';
+                // Re-render all inquiries (grouped, no filter) with response tracking
+                renderGroupedInteractionCards(globalInteractionData.inquiries, globalInteractionData.buyerMap, globalInteractionData.productMap, 'inquiries', globalInteractionData.responseMap);
+            } else if (tab === 'feedback') {
+                inquiriesTab.style.display = 'none';
+                feedbackTab.style.display = 'block';
+                tabInquiries.style.borderBottomColor = 'transparent';
+                tabInquiries.style.color = '#64748b';
+                tabFeedback.style.borderBottomColor = '#1e5aa8';
+                tabFeedback.style.color = '#1e5aa8';
+                // Re-render all feedbacks (grouped, no filter) with response tracking
+                renderGroupedInteractionCards(globalInteractionData.feedbacks, globalInteractionData.buyerMap, globalInteractionData.productMap, 'feedback', globalInteractionData.responseMap);
+            }
+        };
+
+        // Load all interactions (inquiries + feedback)
+        async function loadInteractionsData() {
             if (!currentVendor) return;
 
             try {
-                // Fetch vendor's products
-                const { data: products } = await sbClient
+                // Fetch vendor products
+                const { data: vendorProducts } = await sbClient
                     .from('products')
                     .select('id, product_name')
                     .eq('vendor_id', currentVendor.id);
 
-                if (!products || products.length === 0) {
-                    document.getElementById('inquiriesThreadList').innerHTML =
-                        '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No products found. Add a product to receive inquiries.</p></div>';
+                if (!vendorProducts || vendorProducts.length === 0) {
+                    document.getElementById('emptyInquiries').style.display = 'block';
+                    document.getElementById('emptyFeedback').style.display = 'block';
+                    document.getElementById('inquiryCountBadge').textContent = '0 questions';
+                    document.getElementById('feedbackCountBadge').textContent = '0 feedback';
                     return;
                 }
 
-                // Fetch all inquiries for vendor's products
-                const productIds = products.map(p => p.id);
-                const { data: inquiries } = await sbClient
+                const productIds = vendorProducts.map(p => p.id);
+                const productMap = {};
+                vendorProducts.forEach(prod => {
+                    productMap[prod.id] = prod;
+                });
+
+                // Fetch BOTH inquiry AND feedback messages
+                const { data: allMessages } = await sbClient
                     .from('inquiries')
                     .select('*')
                     .in('product_id', productIds)
+                    .in('message_type', ['inquiry', 'feedback'])
                     .order('created_at', { ascending: false });
 
-                if (!inquiries) {
-                    document.getElementById('inquiriesThreadList').innerHTML =
-                        '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No inquiries yet.</p></div>';
+                if (!allMessages || allMessages.length === 0) {
+                    document.getElementById('emptyInquiries').style.display = 'block';
+                    document.getElementById('emptyFeedback').style.display = 'block';
+                    document.getElementById('inquiryCountBadge').textContent = '0 questions';
+                    document.getElementById('feedbackCountBadge').textContent = '0 feedback';
                     return;
                 }
 
-                // Fetch buyer names
-                let buyerMap = {};
-                const buyerIds = [...new Set(inquiries.map(i => i.buyer_id).filter(Boolean))];
+                // Fetch vendor responses to track which messages have been answered
+                const messageIds = allMessages.map(m => m.id);
+                const { data: responses } = await sbClient
+                    .from('inquiries')
+                    .select('id')
+                    .in('product_id', productIds)
+                    .eq('message_type', 'vendor_response')
+                    .order('created_at', { ascending: false });
+
+                // Build response tracking map (parent_message_id -> has_response)
+                const responseMap = {};
+                if (responses && responses.length > 0) {
+                    responses.forEach(resp => {
+                        // Assuming vendor_response links to original message via a relation field
+                        // For now, we'll use the vendor_status field from inquiries table
+                    });
+                }
+
+                // Separate inquiries and feedback
+                const inquiries = allMessages.filter(m => m.message_type === 'inquiry');
+                const feedbacks = allMessages.filter(m => m.message_type === 'feedback');
+
+                // Fetch buyer details
+                const buyerIds = [...new Set(allMessages.map(msg => msg.buyer_id).filter(Boolean))];
+                const buyerMap = {};
                 if (buyerIds.length > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
-                        .select('id, full_name')
+                        .select('id, full_name, email')
                         .in('id', buyerIds);
+
                     if (buyers) {
-                        buyers.forEach(b => buyerMap[b.id] = b);
+                        buyers.forEach(buyer => {
+                            buyerMap[buyer.id] = buyer;
+                        });
                     }
                 }
 
-                // Create product map
-                let productMap = {};
-                products.forEach(p => productMap[p.id] = p);
+                // Store data globally for filtering
+                globalInteractionData = {
+                    inquiries: inquiries,
+                    feedbacks: feedbacks,
+                    buyerMap: buyerMap,
+                    productMap: productMap,
+                    responseMap: responseMap
+                };
 
-                // Group inquiries by buyer_id (conversation threads)
-                const threadsMap = {};
-                inquiries.forEach(inquiry => {
-                    const buyerId = inquiry.buyer_id;
-                    if (!threadsMap[buyerId]) {
-                        threadsMap[buyerId] = {
-                            buyer_id: buyerId,
-                            buyer_name: buyerMap[buyerId]?.full_name || buyerId,
-                            messages: [],
-                            lastMessage: null,
-                            lastMessageTime: null,
-                            commissionValue: 0,
-                            folder: 'inquiries'
-                        };
-                    }
-                    threadsMap[buyerId].messages.push(inquiry);
+                // Render grouped cards (grouped by buyer) with response tracking
+                renderGroupedInteractionCards(inquiries, buyerMap, productMap, 'inquiries', responseMap);
+                renderGroupedInteractionCards(feedbacks, buyerMap, productMap, 'feedback', responseMap);
 
-                    // Track most recent message
-                    if (!threadsMap[buyerId].lastMessageTime || new Date(inquiry.created_at) > new Date(threadsMap[buyerId].lastMessageTime)) {
-                        threadsMap[buyerId].lastMessage = inquiry.message;
-                        threadsMap[buyerId].lastMessageTime = inquiry.created_at;
-                    }
+                // Clear search box when data loads
+                document.getElementById('interactionSearch').value = '';
 
-                    // Calculate commission if feedback and approved
-                    if (inquiry.message_type === 'feedback' && inquiry.status === 'verified' && inquiry.vendor_status === 'approved') {
-                        threadsMap[buyerId].commissionValue += 2.5;
-                    }
-                });
+                // Update counts
+                document.getElementById('inquiryCountBadge').textContent = `${inquiries.length} question${inquiries.length !== 1 ? 's' : ''}`;
+                document.getElementById('feedbackCountBadge').textContent = `${feedbacks.length} feedback submission${feedbacks.length !== 1 ? 's' : ''}`;
 
-                // Categorize threads into folders
-                const threads = Object.values(threadsMap);
-                threads.forEach(thread => {
-                    const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
-                    const hasUnverifiedFeedback = feedbackMessages.some(m => !m.vendor_status);
-                    const hasVendorApproved = feedbackMessages.some(m => m.vendor_status === 'approved');
-                    const hasResponse = thread.messages.some(m => m.message_type === 'vendor_response');
+                // Show/hide empty states
+                document.getElementById('emptyInquiries').style.display = inquiries.length === 0 ? 'block' : 'none';
+                document.getElementById('emptyFeedback').style.display = feedbacks.length === 0 ? 'block' : 'none';
 
-                    if (hasUnverifiedFeedback) {
-                        thread.folder = 'feedback-pending';
-                    } else if (hasVendorApproved && thread.messages.some(m => m.message_type === 'feedback')) {
-                        thread.folder = 'feedback-pending';
-                    } else if (hasResponse) {
-                        thread.folder = 'responded';
-                    } else {
-                        thread.folder = 'inquiries';
-                    }
-                });
-
-                inquiriesCache = threads;
-                populateProductFilter(products);
-                setupInquiryEventListeners();
-                renderInquiries();
-                updateFolderCounts();
-
-            } catch (error) {
-                console.error('❌ Error loading inquiries:', error);
+            } catch (err) {
+                console.error('Error loading interactions:', err);
+                document.getElementById('emptyInquiries').style.display = 'block';
+                document.getElementById('emptyFeedback').style.display = 'block';
             }
         }
 
-        function populateProductFilter(products) {
-            const filterSelect = document.getElementById('productFilterDropdown');
-            const currentValue = filterSelect.value;
+        // Render interaction cards
+        function renderInteractionCards(messages, buyerMap, productMap, type) {
+            const containerId = type === 'inquiries' ? 'inquiriesContainer' : 'feedbackContainer';
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
 
-            filterSelect.innerHTML = '<option value="">All Products</option>';
-            products.forEach(product => {
-                const option = document.createElement('option');
-                option.value = product.id;
-                option.textContent = product.product_name;
-                filterSelect.appendChild(option);
-            });
-
-            filterSelect.value = currentValue;
-        }
-
-        function setupInquiryEventListeners() {
-            // Folder tabs
-            document.querySelectorAll('.folder-tab').forEach(tab => {
-                tab.removeEventListener('click', folderTabClickHandler);
-                tab.addEventListener('click', folderTabClickHandler);
-            });
-
-            // Search
-            const searchInput = document.getElementById('inquirySearch');
-            if (searchInput) {
-                searchInput.removeEventListener('input', searchInputHandler);
-                searchInput.addEventListener('input', searchInputHandler);
-            }
-
-            // Sort
-            const sortSelect = document.getElementById('inquirySortBy');
-            if (sortSelect) {
-                sortSelect.removeEventListener('change', sortSelectHandler);
-                sortSelect.addEventListener('change', sortSelectHandler);
-            }
-
-            // Product filter
-            const filterSelect = document.getElementById('productFilterDropdown');
-            if (filterSelect) {
-                filterSelect.removeEventListener('change', filterSelectHandler);
-                filterSelect.addEventListener('change', filterSelectHandler);
-            }
-        }
-
-        const folderTabClickHandler = (e) => {
-            document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            currentFolder = e.currentTarget.dataset.folder;
-            renderInquiries();
-        };
-
-        const searchInputHandler = (e) => {
-            searchQuery = e.target.value.toLowerCase();
-            renderInquiries();
-        };
-
-        const sortSelectHandler = (e) => {
-            currentSort = e.target.value;
-            renderInquiries();
-        };
-
-        const filterSelectHandler = (e) => {
-            currentProductFilter = e.target.value;
-            renderInquiries();
-        };
-
-        function filterInquiries() {
-            let filtered = inquiriesCache;
-
-            // Folder filter
-            if (currentFolder !== 'all') {
-                filtered = filtered.filter(t => t.folder === currentFolder);
-            }
-
-            // Product filter
-            if (currentProductFilter) {
-                filtered = filtered.filter(thread =>
-                    thread.messages.some(m => m.product_id === currentProductFilter)
-                );
-            }
-
-            // Search filter
-            if (searchQuery) {
-                filtered = filtered.filter(thread => {
-                    const buyerId = thread.buyer_id;
-                    const buyerName = thread.buyer_name.toLowerCase();
-                    const buyerIdMatch = buyerId.toLowerCase().includes(searchQuery);
-                    const buyerNameMatch = buyerName.includes(searchQuery);
-                    const messageMatches = thread.messages.some(m =>
-                        m.message.toLowerCase().includes(searchQuery)
-                    );
-                    return buyerIdMatch || buyerNameMatch || messageMatches;
-                });
-            }
-
-            return filtered;
-        }
-
-        function sortInquiries(threads) {
-            const sorted = [...threads];
-
-            switch(currentSort) {
-                case 'date-newest':
-                    sorted.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-                    break;
-                case 'date-oldest':
-                    sorted.sort((a, b) => new Date(a.lastMessageTime) - new Date(b.lastMessageTime));
-                    break;
-                case 'commission-high':
-                    sorted.sort((a, b) => b.commissionValue - a.commissionValue);
-                    break;
-                case 'commission-low':
-                    sorted.sort((a, b) => a.commissionValue - b.commissionValue);
-                    break;
-                case 'status-urgent':
-                    sorted.sort((a, b) => {
-                        const aWait = calculateWaitTime(a.lastMessageTime);
-                        const bWait = calculateWaitTime(b.lastMessageTime);
-                        return bWait - aWait;
-                    });
-                    break;
-                case 'unread':
-                    sorted.sort((a, b) => {
-                        const aUnread = a.messages.filter(m => m.message_type !== 'vendor_response').length;
-                        const bUnread = b.messages.filter(m => m.message_type !== 'vendor_response').length;
-                        return bUnread - aUnread;
-                    });
-                    break;
-            }
-
-            return sorted;
-        }
-
-        function calculateWaitTime(lastMessageTime) {
-            const now = new Date();
-            const last = new Date(lastMessageTime);
-            return Math.floor((now - last) / 1000 / 60);
-        }
-
-        function formatThreadTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const seconds = Math.floor((now - date) / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (seconds < 60) return 'now';
-            if (minutes < 60) return `${minutes}m ago`;
-            if (hours < 24) return `${hours}h ago`;
-            if (days < 7) return `${days}d ago`;
-
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-
-        function getSLAStatus(lastMessageTime) {
-            const waitMinutes = calculateWaitTime(lastMessageTime);
-            if (waitMinutes > 120) return { status: 'critical', label: '>2h', indicator: 'critical' };
-            if (waitMinutes > 60) return { status: 'warning', label: '>1h', indicator: 'warning' };
-            return { status: 'ok', label: '<1h', indicator: 'ok' };
-        }
-
-        // Track expanded thread to preserve state during polling
-        let expandedThreadId = null;
-
-        function renderInquiries() {
-            const threadList = document.getElementById('inquiriesThreadList');
-
-            // Save expanded thread before re-rendering
-            const expandedThread = document.querySelector('.inquiry-thread.expanded');
-            if (expandedThread) {
-                const firstMsg = expandedThread.querySelector('.inquiry-message');
-                if (firstMsg) {
-                    expandedThreadId = expandedThread.getAttribute('data-thread-id');
-                }
-            }
-
-            if (!inquiriesCache || inquiriesCache.length === 0) {
-                threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">📭</div><p class="inquiry-empty-state-text">No inquiries yet.</p></div>';
-                expandedThreadId = null;
+            if (!messages || messages.length === 0) {
                 return;
             }
 
-            filteredInquiries = filterInquiries();
-            filteredInquiries = sortInquiries(filteredInquiries);
+            messages.forEach(message => {
+                const buyer = buyerMap[message.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: message.buyer_id };
+                const product = productMap[message.product_id] || { product_name: 'Unknown', id: message.product_id };
+                const timestamp = formatMessageTimestamp(message.created_at, 'long');
+                const buyerInitial = (buyer.full_name || 'U').charAt(0).toUpperCase();
+                const messageTypeClass = type === 'inquiries' ? 'inquiry' : 'feedback';
 
-            if (filteredInquiries.length === 0) {
-                threadList.innerHTML = '<div class="inquiry-empty-state"><div class="inquiry-empty-state-icon">🔍</div><p class="inquiry-empty-state-text">No inquiries match your filters.</p></div>';
-                expandedThreadId = null;
-                return;
-            }
-
-            threadList.innerHTML = filteredInquiries.map(thread => {
-                const lastMsg = thread.messages[thread.messages.length - 1];
-                const messageType = lastMsg.message_type;
-                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
-
-                const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
-                const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
-                const adminVerified = feedbackMessages.filter(m => m.status === 'verified').length > 0;
-
-                const sla = getSLAStatus(thread.lastMessageTime);
-
-                const threadClass = `inquiry-thread ${
-                    vendorApproved && adminVerified ? 'both-approved' :
-                    vendorApproved ? 'vendor-approved' : ''
-                }`;
-
-                const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
-                return `
-                    <div class="${threadClass}" data-thread-id="${threadId}">
-                        <div class="inquiry-thread-header">
-                            <div class="thread-header-left">
-                                <div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div>
-                                <div class="thread-customer-info">
-                                    <div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div>
-                                    <div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div>
+                const card = document.createElement('div');
+                card.className = `interaction-card ${messageTypeClass}`;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-buyer-info">
+                                <div class="buyer-avatar">${buyerInitial}</div>
+                                <div class="buyer-name-email">
+                                    <div class="buyer-name">${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                                    <div class="buyer-email">${escapeHtml(buyer.email || 'N/A')}</div>
                                 </div>
                             </div>
-
-                            <div class="thread-meta-info">
-                                <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
-                                <div class="thread-commission">
-                                    <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
-                                    <div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div>
-                                </div>
-                                <div class="thread-sla">
-                                    <div class="sla-time">${sla.label}</div>
-                                    <div class="sla-indicator ${sla.indicator}"></div>
-                                </div>
-                                <div class="thread-expand-arrow">▼</div>
+                            <div class="buyer-id-section">
+                                <span class="buyer-id-label">ID:</span>
+                                <span class="buyer-id-value" id="buyer-id-${message.id}">${escapeHtml(buyer.id || 'N/A')}</span>
+                                <button class="copy-id-btn" onclick="copyBuyerId('${message.id}', '${buyer.id}')">📋 Copy</button>
                             </div>
                         </div>
+                        <span class="message-type-badge ${type === 'inquiries' ? 'badge-inquiry' : 'badge-feedback'}">
+                            ${type === 'inquiries' ? '❓ Question' : '⭐ Feedback'}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="product-reference">
+                            <span class="product-icon">📦</span>
+                            <span class="product-name">${escapeHtml(product.product_name || 'Unknown Product')}</span>
+                        </div>
+                        <div class="message-content">${escapeHtml(message.message || '[No message]')}</div>
+                        <div class="message-timestamp">📅 ${timestamp}</div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="respond-btn" onclick="openResponseModal('${message.id}')">💬 Respond</button>
+                    </div>
+                `;
 
-                        <div class="inquiry-thread-content">
-                            <div class="thread-messages">
-                                ${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}
+                container.appendChild(card);
+            });
+        }
+
+        // Render grouped interaction cards (messages grouped by buyer)
+        function renderGroupedInteractionCards(messages, buyerMap, productMap, type, responseMap = {}) {
+            const containerId = type === 'inquiries' ? 'inquiriesContainer' : 'feedbackContainer';
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (!messages || messages.length === 0) {
+                return;
+            }
+
+            // Group messages by buyer using groupMessagesByField from messaging-utils.js
+            const groupedByBuyer = groupMessagesByField(messages, 'buyer_id');
+
+            // Render each buyer group
+            for (const [buyerId, buyerMessages] of Object.entries(groupedByBuyer)) {
+                const buyer = buyerMap[buyerId] || { full_name: 'Unknown', email: 'N/A', id: buyerId };
+                const buyerInitial = (buyer.full_name || 'U').charAt(0).toUpperCase();
+                const groupId = `buyer-group-${buyerId}`;
+                const groupContentId = `buyer-content-${buyerId}`;
+                const groupIconId = `buyer-icon-${buyerId}`;
+                const respondedCount = buyerMessages.filter(m => m.vendor_status === 'responded').length;
+
+                // Create buyer group container
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'interaction-card';
+                groupContainer.id = groupId;
+                groupContainer.innerHTML = `
+                    <div class="card-header" onclick="toggleBuyerGroup('${groupContentId}', '${groupIconId}')" style="cursor: pointer;">
+                        <div class="card-header-left" style="flex: 1;">
+                            <div class="card-buyer-info">
+                                <div class="buyer-avatar">${buyerInitial}</div>
+                                <div class="buyer-name-email">
+                                    <div class="buyer-name">${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                                    <div class="buyer-email">${escapeHtml(buyer.email || 'N/A')}</div>
+                                </div>
                             </div>
+                            <div class="buyer-id-section">
+                                <span class="buyer-id-label">ID:</span>
+                                <span class="buyer-id-value">${escapeHtml(buyer.id || 'N/A')}</span>
+                                <button class="copy-id-btn" onclick="event.stopPropagation(); copyBuyerId('', '${buyer.id}')">📋 Copy</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                            <span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;">${buyerMessages.length} message${buyerMessages.length !== 1 ? 's' : ''}</span>
+                            ${respondedCount > 0 ? `<span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;">✓ ${respondedCount} replied</span>` : ''}
+                            <span id="${groupIconId}" style="font-size: 1.2em; transition: transform 0.2s;">▼</span>
+                        </div>
+                    </div>
+                    <div id="${groupContentId}" class="group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                        <div style="padding: 16px; background: #f8fafc; border-top: 1px solid #e1e8ed; display: grid; gap: 12px;">
+                `;
+
+                // Render messages in this group
+                buyerMessages.forEach(message => {
+                    const product = productMap[message.product_id] || { product_name: 'Unknown', id: message.product_id };
+                    const timestamp = formatMessageTimestamp(message.created_at, 'long');
+                    const messageTypeClass = type === 'inquiries' ? 'inquiry' : 'feedback';
+                    const isResponded = message.vendor_status === 'responded';
+                    const hasFeedbackImage = message.image_url && type === 'feedback';
+
+                    let messageCard = `
+                        <div style="background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 14px; border-left: 4px solid ${isResponded ? '#10b981' : (type === 'inquiries' ? '#1e40af' : '#b45309')};">
+                            <!-- Message Header: Type & Timestamp -->
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <span style="background: ${type === 'inquiries' ? '#dbeafe' : '#fef3c7'}; color: ${type === 'inquiries' ? '#1e40af' : '#92400e'}; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: 600;">
+                                        ${type === 'inquiries' ? '❓ Question' : '⭐ Feedback'}
+                                    </span>
+                                    ${isResponded ? '<span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: 600;">✓ Responded</span>' : ''}
+                                </div>
+                                <span style="font-size: 0.8em; color: #94a3b8; flex-shrink: 0;">📅 ${timestamp}</span>
+                            </div>
+
+                            <!-- Buyer Info at Message Level -->
+                            <div style="background: #f0f9ff; border-left: 3px solid #1e5aa8; padding: 8px 10px; border-radius: 4px; margin-bottom: 10px; font-size: 0.85em;">
+                                <div style="color: #1e5aa8; font-weight: 600; margin-bottom: 2px;">👤 ${escapeHtml(buyer.full_name || 'Unknown')}</div>
+                                <div style="color: #64748b; font-size: 0.8em; margin-bottom: 2px;">📧 ${escapeHtml(buyer.email || 'N/A')}</div>
+                                <div style="display: flex; align-items: center; gap: 6px; color: #475569;">
+                                    <span style="font-family: monospace; font-weight: 600;">${escapeHtml(buyer.id || 'N/A')}</span>
+                                    <button class="copy-id-btn" onclick="event.stopPropagation(); copyBuyerId('', '${buyer.id}')" style="background: none; border: none; cursor: pointer; padding: 0; color: #1e5aa8; font-weight: 600; font-size: 0.9em;">📋 Copy</button>
+                                </div>
+                            </div>
+
+                            <!-- Product Info at Message Level -->
+                            <div style="background: #f0fdf4; border-left: 3px solid #059669; padding: 8px 10px; border-radius: 4px; margin-bottom: 10px; font-size: 0.85em;">
+                                <div style="color: #059669; font-weight: 600; margin-bottom: 2px;">📦 ${escapeHtml(product.product_name || 'Unknown Product')}</div>
+                                <div style="display: flex; align-items: center; gap: 6px; color: #475569;">
+                                    <span style="font-family: monospace; font-weight: 600;">${escapeHtml(product.id || 'N/A')}</span>
+                                </div>
+                            </div>
+    `;
+
+                    // Add feedback image preview if present
+                    if (hasFeedbackImage) {
+                        messageCard += `
+                            <div style="margin-bottom: 10px;">
+                                <img src="${message.image_url}" alt="Feedback" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #e1e8ed; cursor: pointer;" onclick="openLightbox('${message.image_url}')" title="Click to view full size">
+                            </div>
+                        `;
+                    }
+
+                    // Message content
+                    messageCard += `
+                            <div style="color: #334155; font-size: 0.9em; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; background: #f8fafc; padding: 10px; border-radius: 4px;">${escapeHtml(message.message || '[No message]')}</div>
+
+                            <!-- Action Footer -->
+                            <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
+                                ${isResponded ? '<span style="color: #10b981; font-size: 0.85em; font-weight: 600; align-self: center;">✓ Your response sent</span>' : '<button class="respond-btn" onclick="openResponseModal(\'' + message.id + '\')" style="padding: 8px 14px; background: #1e5aa8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: background 0.2s;">💬 Respond</button>'}
+                            </div>
+                        </div>
+                    `;
+
+                    groupContainer.innerHTML += messageCard;
+                });
+
+                groupContainer.innerHTML += `
                         </div>
                     </div>
                 `;
-            }).join('');
 
-            document.querySelectorAll('.inquiry-thread').forEach(thread => {
-                thread.removeEventListener('click', threadClickHandler);
-                thread.addEventListener('click', threadClickHandler);
-            });
-
-            // Re-expand the thread that was expanded before polling
-            if (expandedThreadId) {
-                const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
-                if (threadToExpand) {
-                    threadToExpand.classList.add('expanded');
-                }
+                container.appendChild(groupContainer);
             }
         }
 
-        const threadClickHandler = (e) => {
-            if (!e.target.closest('.inquiry-approve-btn') &&
-                !e.target.closest('.inquiry-reject-btn') &&
-                !e.target.closest('.inquiry-respond-btn')) {
-                e.currentTarget.classList.toggle('expanded');
+        // Toggle buyer group visibility
+        window.toggleBuyerGroup = function(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            if (!content || !icon) return;
+
+            if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
+                content.style.maxHeight = '2000px';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.maxHeight = '0px';
+                icon.style.transform = 'rotate(0deg)';
             }
         };
 
-        function renderMessage(msg, buyerName, idx) {
-            const isBuyer = msg.message_type !== 'vendor_response';
-            const avatar = isBuyer ? 'B' : 'V';
-            const senderName = isBuyer ? 'Buyer' : 'You';
-            const avatarClass = isBuyer ? 'buyer' : 'vendor';
+        // Filter and re-render interaction cards based on search query
+        window.filterInteractionCards = function() {
+            const searchQuery = document.getElementById('interactionSearch').value;
+            const activeTab = document.getElementById('inquiriesTab').style.display === 'block' ? 'inquiries' : 'feedback';
 
-            const feedbackStatus = msg.message_type === 'feedback' ? `
-                <div class="inquiry-feedback-status">
-                    ${msg.vendor_status ? `<span class="status-badge-pill vendor ${msg.vendor_status}">You: ${msg.vendor_status === 'approved' ? '✅' : '❌'}</span>` : ''}
-                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending'}</span>` : ''}
-                </div>
-            ` : '';
+            // Determine which messages to filter
+            const messagesToFilter = activeTab === 'inquiries' ? globalInteractionData.inquiries : globalInteractionData.feedbacks;
 
-            const imageLinks = msg.image_url_1 || msg.image_url_2 ? `
-                <div class="message-images">
-                    ${msg.image_url_1 ? `<a href="${msg.image_url_1}" target="_blank" class="message-image-link">🖼️ Image 1</a>` : ''}
-                    ${msg.image_url_2 ? `<a href="${msg.image_url_2}" target="_blank" class="message-image-link">🖼️ Image 2</a>` : ''}
-                </div>
-            ` : '';
+            // Use filterByQuery from messaging-utils.js
+            const filteredMessages = filterByQuery(messagesToFilter, searchQuery, ['buyer_id', 'message', 'product_id']);
 
-            const approvalButtons = msg.message_type === 'feedback' && !msg.vendor_status ? `
-                <div class="message-actions">
-                    <button class="inquiry-approve-btn" onclick="approveVendorFeedback('${msg.id}', this)">Approve</button>
-                    <button class="inquiry-reject-btn" onclick="rejectVendorFeedback('${msg.id}', this)">Reject</button>
-                </div>
-            ` : '';
+            // Enhance filtered messages with buyer info for better filtering
+            const enhancedMessages = filteredMessages.filter(msg => {
+                const buyer = globalInteractionData.buyerMap[msg.buyer_id];
+                const product = globalInteractionData.productMap[msg.product_id];
 
-            const respondButton = isBuyer ? `
-                <div class="message-actions">
-                    <button class="inquiry-respond-btn" onclick="event.stopPropagation(); openResponseModal('${msg.id}')">↩️ Respond</button>
-                </div>
-            ` : '';
+                if (!buyer || !product) return false;
 
-            return `
-                <div class="inquiry-message">
-                    <div class="message-avatar ${avatarClass}">${avatar}</div>
-                    <div class="message-body">
-                        <div class="message-header">
-                            <span class="message-sender">${senderName}</span>
-                            <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
-                        </div>
-                        <div class="message-text">${escapeHtml(msg.message || '[No message]')}</div>
-                        ${imageLinks}
-                        ${feedbackStatus}
-                        ${approvalButtons}
-                        ${respondButton}
-                    </div>
-                </div>
-            `;
-        }
+                // If search query is empty, show all
+                if (!searchQuery || searchQuery.trim() === '') return true;
 
-        async function approveVendorFeedback(inquiryId, buttonElement) {
-            try {
-                buttonElement.disabled = true;
-                buttonElement.textContent = 'Approving...';
+                const query = searchQuery.toLowerCase().trim();
+                const buyerName = (buyer.full_name || '').toLowerCase();
+                const buyerEmail = (buyer.email || '').toLowerCase();
 
-                const { error } = await sbClient
-                    .from('inquiries')
-                    .update({ vendor_status: 'approved' })
-                    .eq('id', inquiryId);
-
-                if (error) throw error;
-
-                console.log('✅ Feedback approved');
-                loadPendingInquiries();
-            } catch (error) {
-                console.error('❌ Error approving feedback:', error);
-                buttonElement.disabled = false;
-                buttonElement.textContent = 'Approve';
-            }
-        }
-
-        async function rejectVendorFeedback(inquiryId, buttonElement) {
-            try {
-                buttonElement.disabled = true;
-                buttonElement.textContent = 'Rejecting...';
-
-                const { error } = await sbClient
-                    .from('inquiries')
-                    .update({ vendor_status: 'rejected' })
-                    .eq('id', inquiryId);
-
-                if (error) throw error;
-
-                console.log('✅ Feedback rejected');
-                loadPendingInquiries();
-            } catch (error) {
-                console.error('❌ Error rejecting feedback:', error);
-                buttonElement.disabled = false;
-                buttonElement.textContent = 'Reject';
-            }
-        }
-
-        function updateFolderCounts() {
-            const folders = ['all', 'feedback-pending', 'inquiries', 'responded', 'flagged'];
-            folders.forEach(folder => {
-                let count = inquiriesCache.length;
-                if (folder !== 'all') {
-                    count = inquiriesCache.filter(t => t.folder === folder).length;
-                }
-                const countEl = document.getElementById(`count-${folder}`);
-                if (countEl) countEl.textContent = count;
+                return buyerName.includes(query) || buyerEmail.includes(query);
             });
+
+            // Re-render with filtered results (grouped by buyer) with response tracking
+            renderGroupedInteractionCards(enhancedMessages, globalInteractionData.buyerMap, globalInteractionData.productMap, activeTab, globalInteractionData.responseMap);
+        };
+
+        // Copy buyer ID to clipboard
+        window.copyBuyerId = function(messageId, buyerId) {
+            navigator.clipboard.writeText(buyerId).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy Buyer ID');
+            });
+        };
+
+        async function loadPendingInquiries() {
+            // Call the new comprehensive function
+            await loadInteractionsData();
         }
 
         window.openResponseModal = async function(inquiryId) {
             try {
+                // Keep UUID as-is (don't parse as number)
                 const id = inquiryId;
+                console.log('openResponseModal called with:', { inquiryId, id, type: typeof id });
 
-                const { data: inquiry, error: inquiryError } = await sbClient
-                    .from('inquiries')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
+                // Fetch inquiry details from database
+                const { data: inquiry, error: inquiryError } = await sbClient.from('inquiries').select('*').eq('id', id).single();
+                console.log('Query result:', { inquiry, inquiryError });
 
                 if (!inquiry) {
+                    console.error('Inquiry not found for id:', id);
                     alert('Inquiry not found: ' + id);
                     return;
                 }
 
-                const { data: buyer } = await sbClient
-                    .from('buyers')
-                    .select('full_name, email')
-                    .eq('id', inquiry.buyer_id)
-                    .single();
+                // Fetch buyer details
+                const { data: buyer } = await sbClient.from('buyers').select('full_name, email').eq('id', inquiry.buyer_id).single();
 
-                const { data: product } = await sbClient
-                    .from('products')
-                    .select('product_name')
-                    .eq('id', inquiry.product_id)
-                    .single();
+                // Fetch product details
+                const { data: product } = await sbClient.from('products').select('product_name').eq('id', inquiry.product_id).single();
 
                 currentInquiry = { id, ...inquiry, buyerName: buyer?.full_name || 'Unknown', productName: product?.product_name || 'Unknown' };
 
@@ -2642,11 +2074,9 @@
                 const { error } = await sbClient.from('inquiries').insert([{
                     product_id: currentInquiry.product_id,
                     buyer_id: currentInquiry.buyer_id,
+                    vendor_id: currentVendor.id,
                     message: responseText,
                     message_type: 'vendor_response',
-                    sender_type: 'vendor',
-                    sender_id: currentVendor.id,
-                    vendor_id: currentVendor.id,
                     created_at: new Date().toISOString()
                 }]);
 
@@ -2728,6 +2158,7 @@
 
                     if (updateError) throw updateError;
 
+                    // Delete old images and insert new ones
                     await sbClient.from('product-images').delete().eq('product_id', editingProductId);
 
                     const imagesToInsert = [];
@@ -2760,6 +2191,7 @@
 
                     const productId = insertedProduct[0].id;
 
+                    // Insert images
                     const imagesToInsert = [];
                     if (uploadedPrimary) imagesToInsert.push({ product_id: productId, image_url: uploadedPrimary });
                     if (uploadedSecondary) imagesToInsert.push({ product_id: productId, image_url: uploadedSecondary });
@@ -2799,11 +2231,12 @@
             errorState.style.display = 'block';
         }
 
-        // Alert Functions
+        // --- ALERT FUNCTIONS ---
         async function loadVendorAlerts() {
             try {
                 if (!currentVendor) return;
 
+                // Fetch unread alerts for this vendor
                 const { data: alerts, error } = await sbClient
                     .from('alerts')
                     .select('*')
@@ -2822,6 +2255,7 @@
                     return;
                 }
 
+                // Display alerts banner
                 const alertsContent = document.getElementById('alerts-content');
                 let html = '';
 
@@ -2855,6 +2289,7 @@
                     return;
                 }
 
+                // Reload alerts to refresh the banner
                 await loadVendorAlerts();
             } catch (err) {
                 console.error('Error updating alert:', err);
@@ -2865,17 +2300,18 @@
             document.getElementById('alerts-banner').style.display = 'none';
         }
 
-        // Collapsible Sections
+        // --- COLLAPSIBLE SECTIONS ---
         function toggleCollapsible(headerElement) {
             const section = headerElement.parentElement;
             section.classList.toggle('open');
         }
 
-        // Commission Settings Functions
+        // --- COMMISSION SETTINGS FUNCTIONS ---
         async function loadCommissionSettings() {
             try {
                 if (!currentVendor) return;
 
+                // Fetch current commission amount and threshold
                 const { data: vendor, error } = await sbClient
                     .from('vendors')
                     .select('commission, commission_threshold')
@@ -2890,6 +2326,7 @@
                 if (vendor) {
                     document.getElementById('commission-amount').value = parseFloat(vendor.commission || 0).toFixed(2);
                     document.getElementById('current-threshold-display').value = '$' + parseFloat(vendor.commission_threshold || 0).toFixed(2);
+                    // Update currentVendor object to reflect current threshold
                     currentVendor.commission_threshold = vendor.commission_threshold;
                 }
             } catch (err) {
@@ -2928,31 +2365,37 @@
             }
         }
 
-        // Threshold Change Request Functions
+        // --- THRESHOLD CHANGE REQUEST FUNCTIONS ---
         async function submitThresholdChangeRequest() {
             try {
                 const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
                 const reason = document.getElementById('threshold-reason').value.trim();
                 const statusDiv = document.getElementById('threshold-request-status');
 
+                // Validation
                 if (isNaN(requestedThreshold) || requestedThreshold < 0) {
                     statusDiv.textContent = '❌ Please enter a valid threshold amount (must be 0 or greater)';
                     statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
                     return;
                 }
 
                 if (!currentVendor || !currentVendor.commission_threshold) {
                     statusDiv.textContent = '❌ Could not load current threshold. Please refresh the page.';
                     statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
                     return;
                 }
 
+                // Check if requested threshold is the same as current
                 if (Math.abs(requestedThreshold - currentVendor.commission_threshold) < 0.01) {
                     statusDiv.textContent = '⚠️ Requested threshold is the same as current. No change needed.';
                     statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-warning';
                     return;
                 }
 
+                // Check for existing pending request
                 const { data: existingRequest, error: checkError } = await sbClient
                     .from('threshold_change_requests')
                     .select('id, status')
@@ -2963,9 +2406,11 @@
                 if (!checkError && existingRequest) {
                     statusDiv.textContent = '⚠️ You already have a pending threshold change request. Please wait for admin approval.';
                     statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-warning';
                     return;
                 }
 
+                // Submit the threshold change request
                 const { data, error } = await sbClient
                     .from('threshold_change_requests')
                     .insert([{
@@ -2981,17 +2426,22 @@
                     console.error('Error submitting request:', error);
                     statusDiv.textContent = '❌ Error submitting request: ' + error.message;
                     statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert-error';
                     return;
                 }
 
+                // Success
                 statusDiv.textContent = '✅ Request submitted successfully! The admin will review your request shortly.';
                 statusDiv.style.display = 'block';
+                statusDiv.className = 'alert-success';
                 statusDiv.style.background = '#dcfce7';
                 statusDiv.style.color = '#166534';
 
+                // Clear form
                 document.getElementById('requested-threshold').value = '';
                 document.getElementById('threshold-reason').value = '';
 
+                // Reload to show updated status
                 setTimeout(() => {
                     loadCommissionSettings();
                 }, 2000);
@@ -3001,12 +2451,14 @@
                 const statusDiv = document.getElementById('threshold-request-status');
                 statusDiv.textContent = '❌ Unexpected error: ' + err.message;
                 statusDiv.style.display = 'block';
+                statusDiv.className = 'alert-error';
             }
         }
 
-        // Earnings Functions
+        // --- COMMISSION PAYABLE FUNCTIONS ---
         async function loadEarningsData() {
             try {
+                // Fetch current vendor's commission payable data
                 const { data: vendor, error: vendorError } = await sbClient
                     .from('vendors')
                     .select('id, accumulated_balance, commission_threshold, commission')
@@ -3023,11 +2475,13 @@
                     return;
                 }
 
+                // Calculate earnings data
                 const accumulated = parseFloat(vendor.accumulated_balance || 0);
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
                 const capped_percent = Math.min(progressPercent, 100);
 
+                // Update metrics grid
                 document.getElementById('metrics-commission-due').textContent = `$${accumulated.toFixed(2)}`;
                 document.getElementById('metrics-threshold').textContent = `$${threshold.toFixed(2)}`;
                 document.getElementById('metrics-percent').textContent = `${capped_percent}%`;
@@ -3044,6 +2498,7 @@
                     statusElement.className = 'metric-status active';
                 }
 
+                // Update commission sidebar
                 document.getElementById('sidebar-balance').textContent = `$${accumulated.toFixed(2)}`;
                 document.getElementById('sidebar-threshold').textContent = `$${threshold.toFixed(2)}`;
                 document.getElementById('sidebar-percent').textContent = `${capped_percent}%`;
@@ -3051,6 +2506,7 @@
                 const sidebarProgress = document.getElementById('sidebar-progress');
                 sidebarProgress.style.width = `${capped_percent}%`;
 
+                // Update progress bar colors based on status
                 if (capped_percent >= 100) {
                     sidebarProgress.style.background = '#ef4444';
                 } else if (capped_percent >= 80) {
@@ -3059,6 +2515,7 @@
                     sidebarProgress.style.background = '#10b981';
                 }
 
+                // Enable payment button if balance >= threshold
                 const payoutBtn = document.getElementById('payout-btn');
                 payoutBtn.disabled = accumulated < threshold;
                 if (accumulated >= threshold) {
@@ -3067,6 +2524,7 @@
                     payoutBtn.textContent = `💳 Pay Commission Due (${progressPercent}% of threshold)`;
                 }
 
+                // Load commission payment history
                 await loadEarningsHistory();
 
             } catch (err) {
@@ -3076,6 +2534,7 @@
 
         async function loadEarningsHistory() {
             try {
+                // Fetch inquiries with feedback for this vendor (joined via products)
                 const { data: products } = await sbClient
                     .from('products')
                     .select('id')
@@ -3093,6 +2552,7 @@
 
                 const productIds = products.map(p => p.id);
 
+                // Fetch feedback (inquiries with message_type='feedback')
                 const { data: feedbackInquiries, error: inquiryError } = await sbClient
                     .from('inquiries')
                     .select('id, created_at, product_id, status, message')
@@ -3120,6 +2580,7 @@
                     return;
                 }
 
+                // Get commission amount from current vendor
                 const { data: vendorData } = await sbClient
                     .from('vendors')
                     .select('commission')
@@ -3128,8 +2589,9 @@
 
                 const commissionAmount = parseFloat(vendorData?.commission || 0);
 
+                // Render earnings history table
                 const rows = feedbackInquiries.map(feedback => {
-                    const date = new Date(feedback.created_at).toLocaleDateString();
+                    const date = formatMessageTimestamp(feedback.created_at, 'short');
                     const status = (feedback.status || 'pending').toLowerCase();
                     let statusBadge = `<span class="status-badge status-pending">PENDING</span>`;
                     if (status === 'verified') {
@@ -3163,15 +2625,18 @@
         }
 
         function initiatePayoutProcess() {
-            const balance = parseFloat(document.getElementById('sidebar-balance').textContent.replace('$', ''));
+            const balanceText = document.getElementById('earnings-balance').textContent;
+            const balance = parseFloat(balanceText.replace('$', ''));
 
             if (balance <= 0) {
                 alert('Your balance is zero. No payout to process.');
                 return;
             }
 
-            alert(`Payout Process Initiated\n\n💳 Balance to Payout: $${balance.toFixed(2)}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
+            alert(`Payout Process Initiated\n\n💳 Balance to Payout: ${balanceText}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
 
+            // In production, this would redirect to a secure PayPal payment flow
+            // For now, we just show an alert
             console.log('Payout initiated for balance:', balance);
         }
 
@@ -3180,19 +2645,19 @@
             console.log('Viewing feedback:', feedbackId);
         }
 
-        // Logout Handler
+        // Guaranteed DOM-safe event listener for logout
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async () => {
                     try {
-                        stopPolling();
                         if (sbClient) {
                             await sbClient.auth.signOut();
                         }
                     } catch (err) {
                         console.error("Sign out error:", err);
                     } finally {
+                        // Clear vendor session from localStorage
                         localStorage.removeItem('vendor_id');
                         localStorage.removeItem('vendor_email');
                         window.location.href = 'login.html';
@@ -3202,6 +2667,31 @@
         });
 
         initPortal();
+
+        // Lightbox for feedback image preview
+        window.openLightbox = function(imageUrl) {
+            const lightbox = document.getElementById('image-lightbox');
+            const imgEl = document.getElementById('lightbox-img-element');
+            if (lightbox && imgEl) {
+                imgEl.src = imageUrl;
+                lightbox.classList.remove('hidden');
+            }
+        };
+
+        window.closeLightbox = function() {
+            const lightbox = document.getElementById('image-lightbox');
+            if (lightbox) {
+                lightbox.classList.add('hidden');
+            }
+        };
     </script>
+
+    <!-- Lightbox Modal for Image Preview -->
+    <div id="image-lightbox" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;" onclick="closeLightbox()">
+        <div style="position: relative; background: white; border-radius: 8px; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation();">
+            <img id="lightbox-img-element" src="" alt="Feedback Preview" style="max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 8px;">
+            <button onclick="closeLightbox()" style="position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-weight: bold; color: #333;">×</button>
+        </div>
+    </div>
 </body>
 </html>
