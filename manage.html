@@ -1799,6 +1799,7 @@
 
         // OPTION 2B Phase 1 State Variables
         let inquiriesCache = [];
+        let productMapCache = {};
         let filteredInquiries = [];
         let currentFolder = 'all';
         let currentSort = 'date-newest';
@@ -2213,9 +2214,9 @@
                     }
                 }
 
-                // Create product map
-                let productMap = {};
-                products.forEach(p => productMap[p.id] = p);
+                // Create product map (global cache)
+                productMapCache = {};
+                products.forEach(p => productMapCache[p.id] = p);
 
                 // Group inquiries by buyer_id (conversation threads)
                 const threadsMap = {};
@@ -2268,7 +2269,7 @@
                 inquiriesCache = threads;
                 populateProductFilter(products);
                 setupInquiryEventListeners();
-                renderInquiries();
+                renderInquiries(productMapCache);
                 updateFolderCounts();
 
             } catch (error) {
@@ -2324,22 +2325,22 @@
             document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
             e.currentTarget.classList.add('active');
             currentFolder = e.currentTarget.dataset.folder;
-            renderInquiries();
+            renderInquiries(productMapCache);
         };
 
         const searchInputHandler = (e) => {
             searchQuery = e.target.value.toLowerCase();
-            renderInquiries();
+            renderInquiries(productMapCache);
         };
 
         const sortSelectHandler = (e) => {
             currentSort = e.target.value;
-            renderInquiries();
+            renderInquiries(productMapCache);
         };
 
         const filterSelectHandler = (e) => {
             currentProductFilter = e.target.value;
-            renderInquiries();
+            renderInquiries(productMapCache);
         };
 
         function filterInquiries() {
@@ -2441,7 +2442,7 @@
         // Track expanded thread to preserve state during polling
         let expandedThreadId = null;
 
-        function renderInquiries() {
+        function renderInquiries(productMap = {}) {
             const threadList = document.getElementById('inquiriesThreadList');
 
             // Save expanded thread before re-rendering
