@@ -6,6 +6,9 @@
     <title>Echo Hub - Unified Admin Management Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Messaging System Shared Libraries -->
+    <link rel="stylesheet" href="messaging-styles.css">
+    <script src="messaging-utils.js"></script>
     <style>
         body { 
             background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
@@ -834,6 +837,7 @@
                                         <div class="text-sm font-bold text-gray-800">👤 ${escapeHtml(buyerName)}</div>
                                         <div class="text-[11px] text-gray-600">${escapeHtml(buyerEmail)}</div>
                                         <div class="text-[11px] text-gray-500 mt-1">${messageCount} message${messageCount === 1 ? '' : 's'}</div>
+                                        <div class="text-[11px] text-gray-500 mt-1 flex items-center gap-2">Buyer ID: ${getAvatarCircle(buyerName, 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')} <span class="font-mono text-gray-700">${escapeHtml(buyerId)}</span> <button onclick="copyValueToClipboard('${escapeHtml(buyerId)}', event.target)" class="copy-btn" title="Copy Buyer ID">📋</button></div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -878,7 +882,7 @@
                                 <!-- Product Info -->
                                 <div class="flex-1">
                                     <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
-                                    <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
+                                    <div class="text-sm text-blue-100 mt-1 flex items-center gap-2">Product ID: ${getAvatarCircle(prodName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} <span class="font-mono font-bold">${escapeHtml(prodId)}</span> <button onclick="copyValueToClipboard('${escapeHtml(prodId)}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.7em;" title="Copy Product ID">📋</button></div>
                                     <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
                                 </div>
                             </div>
@@ -902,32 +906,25 @@
                             msgColor = 'bg-green-50 border-green-200';
                         }
 
-                        const timestamp = new Date(msg.created_at).toLocaleString();
-                        let msgTypeLabel = 'Inquiry';
-                        let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
+                        const timestamp = formatMessageTimestamp(msg.created_at, 'long');
 
-                        if (msgType === 'vendor_response') {
-                            msgTypeLabel = 'Vendor Response';
-                            msgTypeBadgeColor = 'bg-green-100 text-green-700';
-                        } else if (msgType === 'buyer_followup') {
-                            msgTypeLabel = 'Buyer Follow-up';
-                            msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
-                        } else if (msgType === 'feedback') {
-                            msgTypeLabel = 'Feedback Submission';
-                            msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
-                        }
+                        // Map message_type to badge type
+                        let badgeType = 'inquiry';
+                        if (msgType === 'vendor_response') badgeType = 'response';
+                        else if (msgType === 'buyer_followup') badgeType = 'followup';
+                        else if (msgType === 'feedback') badgeType = 'feedback';
 
+                        const msgTypeBadge = getMessageTypeBadge(badgeType);
                         const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
-                        const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
 
                         html += `
                             <div class="border-l-4 ${msgType === 'feedback' ? 'border-l-orange-500 bg-orange-50' : msgColor} rounded-lg p-4 space-y-2 shadow-sm hover:shadow-md transition">
                                 <div class="flex justify-between items-start gap-3">
                                     <div class="flex-1">
-                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${msgTypeLabel}</div>
+                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${MESSAGE_TYPE_THEMES[badgeType].label}</div>
                                         <div class="text-[11px] text-gray-500 mt-0.5">${timestamp}</div>
                                     </div>
-                                    <span class="${msgTypeBadgeColor} px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
+                                    ${msgTypeBadge}
                                 </div>
 
                                 <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
@@ -1096,6 +1093,43 @@
 
                 await db.from('alerts').insert([vendorAlertData]);
 
+                // === FIX: CREATE FINANCIAL PAYABLES RECORDS ===
+                // Fetch vendor commission amount
+                const { data: vendor, error: vendorError } = await db
+                    .from('vendors')
+                    .select('commission')
+                    .eq('id', product.vendor_id)
+                    .single();
+
+                if (!vendorError && vendor) {
+                    const commissionAmount = parseFloat(vendor.commission || 5.00);
+
+                    // Rule 2 (Non-referred): Both admin AND buyer get full commission amount
+                    // admin_payables tracks both admin_portion and buyer_portion
+                    await db.from('admin_payables').insert([{
+                        vendor_id: product.vendor_id,
+                        admin_id: 'admin_system',
+                        amount_owed: commissionAmount * 2, // Total owed by vendor
+                        payable_reason: 'Feedback Commission - Split to Admin & Buyer',
+                        related_feedback_id: inquiryId,
+                        admin_portion: commissionAmount, // $5 to admin
+                        buyer_portion: commissionAmount, // $5 to buyer (via buyer_payables)
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                    // buyer_payables tracks buyer earnings from feedback
+                    await db.from('buyer_payables').insert([{
+                        buyer_id: inquiry.buyer_id,
+                        vendor_id: product.vendor_id,
+                        amount_owed: commissionAmount, // $5 earned
+                        related_feedback_ids: [inquiryId],
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+                }
+                // === END FIX ===
+
                 alert('✓ Feedback verified! Buyer and vendor notified.');
                 loadInquiriesPortal();
                 loadCommissionsPortal();
@@ -1180,6 +1214,25 @@
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
 
+            // Fetch vendors and buyers for name lookups
+            const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name');
+            const { data: buyers, error: buyerError } = await db.from('buyers').select('id, full_name');
+
+            // Build lookup maps
+            const vendorNames = {};
+            const buyerNames = {};
+
+            if (vendors) {
+                vendors.forEach(v => {
+                    vendorNames[v.id] = `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Vendor';
+                });
+            }
+            if (buyers) {
+                buyers.forEach(b => {
+                    buyerNames[b.id] = b.full_name || 'Buyer';
+                });
+            }
+
             const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
             if (error) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
@@ -1226,10 +1279,13 @@
                     targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
                 }
 
+                const referrerName = vendorNames[comm.referrer_id] || buyerNames[comm.referrer_id] || 'Unknown';
+                const referredName = vendorNames[comm.referred_id] || buyerNames[comm.referred_id] || 'Unknown';
+
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
-                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referrerName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} ${escapeHtml(comm.referrer_id)} <button onclick="copyValueToClipboard('${escapeHtml(comm.referrer_id)}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referrer ID">📋</button></td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referredName, 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')} ${targetDisplay} <button onclick="copyValueToClipboard('${escapeHtml(comm.referred_id || '')}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referred ID">📋</button></td>
                         <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
                         <td class="p-2.5">${badge}</td>
                         <td class="p-2.5 text-center">${actionBtn}</td>
@@ -1416,7 +1472,7 @@
         function openVendorDetailsModal(vendorId, vendorName, vendorEmail, event) {
             event.stopPropagation();
             document.getElementById('modal-vendor-fullname').textContent = vendorName;
-            document.getElementById('modal-vendor-id').textContent = vendorId;
+            document.getElementById('modal-vendor-id').innerHTML = `<div style="display: flex; align-items: center; gap: 8px;">${getAvatarCircle(vendorName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} <span class="font-mono">${escapeHtml(vendorId)}</span></div>`;
             document.getElementById('modal-vendor-email').textContent = vendorEmail || 'No email on file';
             document.getElementById('vendor-details-modal').classList.remove('hidden');
         }
@@ -1463,7 +1519,7 @@
 
                     const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
                     const vendorId = vendor ? vendor.id : req.vendor_id;
-                    const submittedDate = new Date(req.created_at).toLocaleDateString() + ' ' + new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const submittedDate = formatMessageTimestamp(req.created_at, 'long');
                     const statusBadge = `<span class="text-xs px-2 py-1 rounded-full font-semibold ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>`;
 
                     html += `<tr class="hover:bg-gray-50">
@@ -1797,7 +1853,7 @@
                 document.getElementById('payment-payer-name').textContent = escapeHtml(payerName);
                 document.getElementById('payment-amount').textContent = `$${parseFloat(proof.payable_amount || 0).toFixed(2)}`;
                 document.getElementById('payment-method').textContent = escapeHtml(proof.payment_method || 'Not specified');
-                document.getElementById('payment-date').textContent = new Date(proof.created_at).toLocaleDateString() + ' ' + new Date(proof.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('payment-date').textContent = formatMessageTimestamp(proof.created_at, 'long');
                 document.getElementById('payment-admin-notes').value = '';
 
                 // Display payment proof (image or link)
