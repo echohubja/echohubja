@@ -1783,6 +1783,7 @@
         let currentSort = 'date-newest';
         let currentProductFilter = '';
         let searchQuery = '';
+        let productMap = {};
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -2192,8 +2193,8 @@
                     }
                 }
 
-                // Create product map
-                let productMap = {};
+                // Create product map (global for access in renderInquiries)
+                productMap = {};
                 products.forEach(p => productMap[p.id] = p);
 
                 // Group inquiries by buyer_id (conversation threads)
