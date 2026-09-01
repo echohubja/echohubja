@@ -6,9 +6,6 @@
     <title>Echo Hub - Unified Admin Management Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Messaging System Shared Libraries -->
-    <link rel="stylesheet" href="messaging-styles.css">
-    <script src="messaging-utils.js"></script>
     <style>
         body { 
             background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%) !important;
@@ -50,7 +47,6 @@
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
-        <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Payment Verification</button>
     </div>
 
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
@@ -235,57 +231,6 @@
         </div>
     </div>
 
-    <div id="section-payments" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Payment Proof Verification</h2>
-            <span id="payment-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
-        </div>
-
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Vendor Payment Proofs</h3>
-            <p class="text-xs text-gray-500 mb-4">Review and verify payment proof documents submitted by vendors.</p>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor Details</th>
-                            <th class="p-2.5">Amount</th>
-                            <th class="p-2.5">Payment Method</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vendor-payments-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading vendor payment proofs...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div>
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Buyer Payment Proofs</h3>
-            <p class="text-xs text-gray-500 mb-4">Review and verify payment proof documents submitted by buyers.</p>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Buyer Details</th>
-                            <th class="p-2.5">Amount</th>
-                            <th class="p-2.5">Payment Method</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="buyer-payments-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading buyer payment proofs...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- Floating Product Image Tooltip Box -->
     <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
         <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
@@ -430,77 +375,21 @@
         </div>
     </div>
 
-    <!-- Payment Proof Review Modal -->
-    <div id="payment-proof-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">Payment Proof Verification</h3>
-                <button onclick="closePaymentProofModal()" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
-            </div>
-
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Payer Name</label>
-                        <div id="payment-payer-name" class="bg-gray-100 p-2 rounded text-sm font-medium text-gray-800">-</div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Amount</label>
-                        <div id="payment-amount" class="bg-gray-100 p-2 rounded text-sm font-bold text-green-700">$0.00</div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Payment Method</label>
-                        <div id="payment-method" class="bg-gray-100 p-2 rounded text-sm text-gray-800">-</div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Submitted Date</label>
-                        <div id="payment-date" class="bg-gray-100 p-2 rounded text-sm text-gray-800">-</div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-2">Payment Proof Document</label>
-                    <div id="payment-proof-container" class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50 min-h-48 flex items-center justify-center">
-                        <img id="payment-proof-img" src="" alt="Payment Proof" class="max-w-full max-h-96 object-contain rounded" style="display:none;">
-                        <a id="payment-proof-link" href="" target="_blank" class="text-blue-600 hover:underline font-semibold">View Proof Document</a>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Admin Notes (Required if Rejecting)</label>
-                    <textarea id="payment-admin-notes" placeholder="Enter rejection reason or verification notes..." class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
-                    ℹ️ Approving confirms the payment proof and marks it as verified. Rejecting requires a reason to be sent to the payer.
-                </div>
-            </div>
-
-            <div class="flex gap-2 mt-5 pt-4 border-t">
-                <button onclick="closePaymentProofModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="rejectPaymentProof()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
-                <button onclick="approvePaymentProof()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let db;
         let activeThresholdVendorId = null;
         let globalInquiriesData = [];
+        let productMap = {};
+        let vendorMap = {};
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
-
-        let currentPaymentProofId = null;
-        let currentPaymentProofType = null; // 'vendor' or 'buyer'
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
                 const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
+                loadInquiriesPortal();
+                loadCommissionsPortal();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -513,7 +402,6 @@
             document.getElementById('section-buyers').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
-            document.getElementById('section-payments').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -521,7 +409,6 @@
             if (tabName === 'buyers') loadBuyersPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
-            else if (tabName === 'payments') loadPaymentProofsPortal();
         }
 
         // --- TAB 1: BUYERS ---
@@ -596,16 +483,23 @@
 
             try {
                 // Fetch all inquiries (includes pending conversations and feedback submissions)
+                console.log('🔍 Fetching all inquiries...');
                 const { data: inquiries, error: inqError } = await db
                     .from('inquiries')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (inqError) {
-                    console.error('Inquiry fetch error:', inqError);
+                    console.error('❌ Inquiry fetch error:', inqError);
                     container.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(inqError.message)}</div>`;
                     return;
                 }
+
+                console.log('✅ Inquiries fetched:', inquiries?.length || 0, 'records');
+
+                // Log feedback records specifically
+                const feedbackRecords = inquiries?.filter(i => i.message_type === 'feedback') || [];
+                console.log('📸 Feedback submissions found:', feedbackRecords.length);
 
                 if (!inquiries || inquiries.length === 0) {
                     container.innerHTML = `<div class="p-4 text-center text-gray-500">No feedback submissions found yet.</div>`;
@@ -635,8 +529,9 @@
                     }
                 }
 
-                // Fetch product data
-                let productMap = {};
+                // Fetch product data (using global maps)
+                productMap = {};
+                vendorMap = {};
                 console.log('📦 productIds extracted:', productIds);
                 if (productIds.length > 0) {
                     try {
@@ -644,18 +539,39 @@
                             .from('products')
                             .select('*');
 
-                        console.log('📦 ALL products from DB:', products);
-                        console.log('📦 Product fetch error:', prodError);
+                        console.log('📦 Products fetched from DB:', products?.length || 0, 'records');
+                        if (prodError) console.log('📦 Product fetch error:', prodError.message);
 
                         if (products && products.length > 0) {
                             products.forEach(prod => {
                                 productMap[prod.id] = prod;
-                                console.log(`📦 Added product to map: ${prod.id} => ${prod.product_name}`);
                             });
+                            console.log(`📦 Added ${products.length} products to map`);
                         } else {
                             console.warn('📦 No products returned from database');
                         }
-                        console.log('📦 Final productMap:', productMap);
+
+                        // Fetch vendor names for all unique vendor IDs from products
+                        const vendorIds = [...new Set(products?.map(p => p.vendor_id).filter(Boolean) || [])];
+                        console.log('🏢 Vendor IDs to fetch:', vendorIds.length);
+
+                        if (vendorIds.length > 0) {
+                            try {
+                                const { data: vendors } = await db
+                                    .from('vendors')
+                                    .select('id, first_name, last_name')
+                                    .in('id', vendorIds);
+
+                                if (vendors) {
+                                    vendors.forEach(vendor => {
+                                        vendorMap[vendor.id] = `${vendor.first_name} ${vendor.last_name}`.trim() || 'Unknown Vendor';
+                                    });
+                                    console.log(`🏢 Added ${vendors.length} vendors to map`);
+                                }
+                            } catch (e) {
+                                console.error('Vendor fetch error:', e);
+                            }
+                        }
                     } catch (e) {
                         console.error('Product fetch error:', e);
                     }
@@ -671,10 +587,6 @@
                             .from('product-images')
                             .select('*');
 
-                        console.log('Product IDs to fetch:', productIds);
-                        console.log('Images fetched:', images);
-                        console.log('Image fetch error:', imgError);
-
                         if (images) {
                             images.forEach(img => {
                                 if (productIds.includes(img.product_id)) {
@@ -682,10 +594,10 @@
                                     imageMap[img.product_id].push(img.image_url);
                                 }
                             });
-                            console.log('Image map after processing:', imageMap);
+                            console.log('Product images loaded:', Object.keys(imageMap).length, 'products with images');
                         }
                     } catch (e) {
-                        console.error('Product images fetch error (table may not exist):', e);
+                        console.error('Product images fetch error (table may not exist):', e.message);
                     }
                 }
 
@@ -694,22 +606,14 @@
                     inq.buyers = buyerMap[inq.buyer_id] || { id: inq.buyer_id, full_name: 'Unknown', email: 'No email' };
                     inq.products = productMap[inq.product_id] || { id: inq.product_id, product_name: `Product ${inq.product_id}` };
                     inq.product_images = imageMap[inq.product_id] || [inq.image_url].filter(Boolean);
-                    console.log(`📦 Inquiry ${inq.id}: product_id=${inq.product_id}, found=${!!productMap[inq.product_id]}, product_name=${inq.products.product_name}`);
                 });
 
                 globalInquiriesData = inquiries;
                 // Reset filters to default (actionable only)
-                const searchEl = document.getElementById('inquiry-search');
-                const statusEl = document.getElementById('status-filter');
-                const dateFromEl = document.getElementById('date-from');
-                const dateToEl = document.getElementById('date-to');
-
-                if (searchEl && statusEl && dateFromEl && dateToEl) {
-                    searchEl.value = '';
-                    statusEl.value = 'actionable';
-                    dateFromEl.value = '';
-                    dateToEl.value = '';
-                }
+                document.getElementById('inquiry-search').value = '';
+                document.getElementById('status-filter').value = 'actionable';
+                document.getElementById('date-from').value = '';
+                document.getElementById('date-to').value = '';
                 filterInquiriesTree();
             } catch (e) {
                 console.error('Unexpected error in loadInquiriesPortal:', e);
@@ -718,21 +622,10 @@
         }
 
         function filterInquiriesTree() {
-            // Add null checks for DOM elements
-            const searchEl = document.getElementById('inquiry-search');
-            const statusEl = document.getElementById('status-filter');
-            const dateFromEl = document.getElementById('date-from');
-            const dateToEl = document.getElementById('date-to');
-
-            if (!searchEl || !statusEl || !dateFromEl || !dateToEl) {
-                console.error('Missing required DOM elements for filter');
-                return;
-            }
-
-            const searchQuery = searchEl.value.toLowerCase().trim();
-            const statusFilterValue = statusEl.value;
-            const dateFrom = dateFromEl.value;
-            const dateTo = dateToEl.value;
+            const searchQuery = document.getElementById('inquiry-search').value.toLowerCase().trim();
+            const statusFilterValue = document.getElementById('status-filter').value;
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
 
 
             let filtered = globalInquiriesData;
@@ -794,7 +687,7 @@
                 filtered = filtered.filter(inq => new Date(inq.created_at).getTime() <= toDate);
             }
 
-            console.log('After filters. Remaining:', filtered.length, filtered);
+            console.log('After filters. Remaining records:', filtered.length);
             renderInquiriesTree(filtered);
         }
 
@@ -852,7 +745,6 @@
                                         <div class="text-sm font-bold text-gray-800">👤 ${escapeHtml(buyerName)}</div>
                                         <div class="text-[11px] text-gray-600">${escapeHtml(buyerEmail)}</div>
                                         <div class="text-[11px] text-gray-500 mt-1">${messageCount} message${messageCount === 1 ? '' : 's'}</div>
-                                        <div class="text-[11px] text-gray-500 mt-1 flex items-center gap-2">Buyer ID: ${getAvatarCircle(buyerName, 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')} <span class="font-mono text-gray-700">${escapeHtml(buyerId)}</span> <button onclick="copyValueToClipboard('${escapeHtml(buyerId)}', event.target)" class="copy-btn" title="Copy Buyer ID">📋</button></div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -872,8 +764,15 @@
                 messages.forEach(msg => {
                     const prodId = msg.product_id || 'unknown';
                     if (!groupedByProduct[prodId]) {
+                        const baseProduct = msg.products || productMap[prodId] || { id: prodId, product_name: `Product ${prodId}` };
+                        const vendorId = baseProduct.vendor_id;
+                        const vendorName = vendorId ? vendorMap[vendorId] || 'Unknown Vendor' : 'N/A';
+
                         groupedByProduct[prodId] = {
-                            product: msg.products || { id: prodId, product_name: `Product ${prodId}` },
+                            product: {
+                                ...baseProduct,
+                                vendor_name: vendorName
+                            },
                             productImage: msg.product_images?.[0] || msg.products?.product_images?.[0] || null,
                             messages: []
                         };
@@ -886,6 +785,10 @@
                     const prodName = prodData.product?.product_name || `Product ${prodId}`;
                     const prodImage = prodData.productImage;
 
+                    // Get vendor info from product
+                    const vendorName = prodData.product?.vendor_name || 'Unknown Vendor';
+                    const vendorId = prodData.product?.vendor_id || 'N/A';
+
                     html += `
                         <div class="mb-4 rounded-lg overflow-hidden border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
                             <!-- Product Header -->
@@ -897,7 +800,9 @@
                                 <!-- Product Info -->
                                 <div class="flex-1">
                                     <div class="text-lg font-bold text-white drop-shadow-sm">${escapeHtml(prodName)}</div>
-                                    <div class="text-sm text-blue-100 mt-1 flex items-center gap-2">Product ID: ${getAvatarCircle(prodName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} <span class="font-mono font-bold">${escapeHtml(prodId)}</span> <button onclick="copyValueToClipboard('${escapeHtml(prodId)}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.7em;" title="Copy Product ID">📋</button></div>
+                                    <div class="text-sm text-blue-100 mt-1">Product ID: <span class="font-mono font-bold">${escapeHtml(prodId)}</span></div>
+                                    <div class="text-sm text-yellow-100 mt-2 font-semibold">🏢 Vendor: ${escapeHtml(vendorName)}</div>
+                                    <div class="text-xs text-blue-100 mt-0.5">ID: <span class="font-mono">${escapeHtml(vendorId)}</span></div>
                                     <div class="text-sm text-blue-100 mt-1">📊 ${prodData.messages.length} message${prodData.messages.length !== 1 ? 's' : ''}</div>
                                 </div>
                             </div>
@@ -921,25 +826,32 @@
                             msgColor = 'bg-green-50 border-green-200';
                         }
 
-                        const timestamp = formatMessageTimestamp(msg.created_at, 'long');
+                        const timestamp = new Date(msg.created_at).toLocaleString();
+                        let msgTypeLabel = 'Inquiry';
+                        let msgTypeBadgeColor = 'bg-blue-100 text-blue-700';
 
-                        // Map message_type to badge type
-                        let badgeType = 'inquiry';
-                        if (msgType === 'vendor_response') badgeType = 'response';
-                        else if (msgType === 'buyer_followup') badgeType = 'followup';
-                        else if (msgType === 'feedback') badgeType = 'feedback';
+                        if (msgType === 'vendor_response') {
+                            msgTypeLabel = 'Vendor Response';
+                            msgTypeBadgeColor = 'bg-green-100 text-green-700';
+                        } else if (msgType === 'buyer_followup') {
+                            msgTypeLabel = 'Buyer Follow-up';
+                            msgTypeBadgeColor = 'bg-purple-100 text-purple-700';
+                        } else if (msgType === 'feedback') {
+                            msgTypeLabel = 'Feedback Submission';
+                            msgTypeBadgeColor = 'bg-orange-100 text-orange-700';
+                        }
 
-                        const msgTypeBadge = getMessageTypeBadge(badgeType);
                         const hasFeedbackImage = msg.image_url && msg.message_type === 'feedback';
+                        const feedbackHighlight = hasFeedbackImage ? 'border-l-4 border-l-orange-500 bg-orange-50' : '';
 
                         html += `
                             <div class="border-l-4 ${msgType === 'feedback' ? 'border-l-orange-500 bg-orange-50' : msgColor} rounded-lg p-4 space-y-2 shadow-sm hover:shadow-md transition">
                                 <div class="flex justify-between items-start gap-3">
                                     <div class="flex-1">
-                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${MESSAGE_TYPE_THEMES[badgeType].label}</div>
+                                        <div class="text-xs font-bold text-gray-800">${senderIcon} ${msgTypeLabel}</div>
                                         <div class="text-[11px] text-gray-500 mt-0.5">${timestamp}</div>
                                     </div>
-                                    ${msgTypeBadge}
+                                    <span class="${msgTypeBadgeColor} px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap flex-shrink-0">${msgTypeLabel}</span>
                                 </div>
 
                                 <div class="text-xs text-gray-700 bg-gray-50 rounded p-2">
@@ -1050,17 +962,9 @@
                 // Fetch inquiry details
                 const { data: inquiry, error: inqError } = await db
                     .from('inquiries')
-                    .select('id, buyer_id, product_id, overall_status')
+                    .select('id, buyer_id, product_id')
                     .eq('id', inquiryId)
                     .single();
-
-                // === DUPLICATE PREVENTION ===
-                if (inquiry?.overall_status === 'verified') {
-                    alert('✓ This feedback is already verified.\n\nPayables records exist.\n\nNo duplicate records will be created.');
-                    loadInquiriesPortal();
-                    return;
-                }
-                // === END DUPLICATE CHECK ===
 
                 if (inqError || !inquiry) {
                     alert('Error fetching inquiry details');
@@ -1115,43 +1019,6 @@
                 };
 
                 await db.from('alerts').insert([vendorAlertData]);
-
-                // === FIX: CREATE FINANCIAL PAYABLES RECORDS ===
-                // Fetch vendor commission amount
-                const { data: vendor, error: vendorError } = await db
-                    .from('vendors')
-                    .select('commission')
-                    .eq('id', product.vendor_id)
-                    .single();
-
-                if (!vendorError && vendor) {
-                    const commissionAmount = parseFloat(vendor.commission || 5.00);
-
-                    // Rule 2 (Non-referred): Both admin AND buyer get full commission amount
-                    // admin_payables tracks both admin_portion and buyer_portion
-                    await db.from('admin_payables').insert([{
-                        vendor_id: product.vendor_id,
-                        admin_id: 'admin_system',
-                        amount_owed: commissionAmount * 2, // Total owed by vendor
-                        payable_reason: 'Feedback Commission - Split to Admin & Buyer',
-                        related_feedback_id: inquiryId,
-                        admin_portion: commissionAmount, // $5 to admin
-                        buyer_portion: commissionAmount, // $5 to buyer (via buyer_payables)
-                        status: 'pending',
-                        created_at: new Date().toISOString()
-                    }]);
-
-                    // buyer_payables tracks buyer earnings from feedback
-                    await db.from('buyer_payables').insert([{
-                        buyer_id: inquiry.buyer_id,
-                        vendor_id: product.vendor_id,
-                        amount_owed: commissionAmount, // $5 earned
-                        related_feedback_ids: [inquiryId],
-                        status: 'pending',
-                        created_at: new Date().toISOString()
-                    }]);
-                }
-                // === END FIX ===
 
                 alert('✓ Feedback verified! Buyer and vendor notified.');
                 loadInquiriesPortal();
@@ -1237,25 +1104,6 @@
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
 
-            // Fetch vendors and buyers for name lookups
-            const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name');
-            const { data: buyers, error: buyerError } = await db.from('buyers').select('id, full_name');
-
-            // Build lookup maps
-            const vendorNames = {};
-            const buyerNames = {};
-
-            if (vendors) {
-                vendors.forEach(v => {
-                    vendorNames[v.id] = `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Vendor';
-                });
-            }
-            if (buyers) {
-                buyers.forEach(b => {
-                    buyerNames[b.id] = b.full_name || 'Buyer';
-                });
-            }
-
             const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
             if (error) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
@@ -1302,13 +1150,10 @@
                     targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
                 }
 
-                const referrerName = vendorNames[comm.referrer_id] || buyerNames[comm.referrer_id] || 'Unknown';
-                const referredName = vendorNames[comm.referred_id] || buyerNames[comm.referred_id] || 'Unknown';
-
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referrerName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} ${escapeHtml(comm.referrer_id)} <button onclick="copyValueToClipboard('${escapeHtml(comm.referrer_id)}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referrer ID">📋</button></td>
-                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referredName, 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')} ${targetDisplay} <button onclick="copyValueToClipboard('${escapeHtml(comm.referred_id || '')}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referred ID">📋</button></td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${escapeHtml(comm.referrer_id)}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">${targetDisplay}</td>
                         <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
                         <td class="p-2.5">${badge}</td>
                         <td class="p-2.5 text-center">${actionBtn}</td>
@@ -1495,7 +1340,7 @@
         function openVendorDetailsModal(vendorId, vendorName, vendorEmail, event) {
             event.stopPropagation();
             document.getElementById('modal-vendor-fullname').textContent = vendorName;
-            document.getElementById('modal-vendor-id').innerHTML = `<div style="display: flex; align-items: center; gap: 8px;">${getAvatarCircle(vendorName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} <span class="font-mono">${escapeHtml(vendorId)}</span></div>`;
+            document.getElementById('modal-vendor-id').textContent = vendorId;
             document.getElementById('modal-vendor-email').textContent = vendorEmail || 'No email on file';
             document.getElementById('vendor-details-modal').classList.remove('hidden');
         }
@@ -1542,7 +1387,7 @@
 
                     const vendorName = vendor ? `${vendor.first_name} ${vendor.last_name}` : 'Unknown Vendor';
                     const vendorId = vendor ? vendor.id : req.vendor_id;
-                    const submittedDate = formatMessageTimestamp(req.created_at, 'long');
+                    const submittedDate = new Date(req.created_at).toLocaleDateString() + ' ' + new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     const statusBadge = `<span class="text-xs px-2 py-1 rounded-full font-semibold ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>`;
 
                     html += `<tr class="hover:bg-gray-50">
@@ -1743,293 +1588,6 @@
                 await loadThresholdChangeRequests();
             } catch (err) {
                 console.error('Error rejecting threshold request:', err);
-                alert('Error: ' + err.message);
-            }
-        }
-
-        // --- PAYMENT PROOF VERIFICATION ---
-        async function loadPaymentProofsPortal() {
-            try {
-                // Load vendor payment proofs pending admin review
-                const { data: vendorProofs, error: vendorError } = await db
-                    .from('vendor_payables')
-                    .select('*')
-                    .eq('payment_proof_status', 'pending_admin_review')
-                    .order('created_at', { ascending: false });
-
-                if (vendorError) {
-                    console.error('Error loading vendor proofs:', vendorError);
-                    document.getElementById('vendor-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading vendor proofs</td></tr>`;
-                } else {
-                    renderVendorPaymentProofs(vendorProofs || []);
-                }
-
-                // Load buyer payment proofs pending admin review
-                const { data: buyerProofs, error: buyerError } = await db
-                    .from('buyer_payables')
-                    .select('*')
-                    .eq('payment_proof_status', 'pending_admin_review')
-                    .order('created_at', { ascending: false });
-
-                if (buyerError) {
-                    console.error('Error loading buyer proofs:', buyerError);
-                    document.getElementById('buyer-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading buyer proofs</td></tr>`;
-                } else {
-                    renderBuyerPaymentProofs(buyerProofs || []);
-                }
-
-                // Update total count
-                const totalPending = (vendorProofs?.length || 0) + (buyerProofs?.length || 0);
-                document.getElementById('payment-count').textContent = `${totalPending} pending`;
-            } catch (err) {
-                console.error('Error in loadPaymentProofsPortal:', err);
-                alert('Error loading payment proofs: ' + err.message);
-            }
-        }
-
-        function renderVendorPaymentProofs(proofs) {
-            if (!proofs || proofs.length === 0) {
-                document.getElementById('vendor-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vendor payment proofs pending review</td></tr>`;
-                return;
-            }
-
-            let html = '';
-            proofs.forEach(proof => {
-                const statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
-                const amount = parseFloat(proof.payable_amount || 0).toFixed(2);
-                const method = proof.payment_method || 'Not specified';
-                const vendorName = proof.vendor_name || 'Unknown Vendor';
-                const vendorEmail = proof.vendor_email || 'No email';
-
-                html += `
-                    <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5">
-                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(vendorName)}</div>
-                            <div class="text-[11px] text-gray-500">${escapeHtml(vendorEmail)}</div>
-                        </td>
-                        <td class="p-2.5 font-bold text-gray-800">$${amount}</td>
-                        <td class="p-2.5 text-sm text-gray-600">${escapeHtml(method)}</td>
-                        <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="openPaymentProofModal('${proof.id}', 'vendor')" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('vendor-payments-body').innerHTML = html;
-        }
-
-        function renderBuyerPaymentProofs(proofs) {
-            if (!proofs || proofs.length === 0) {
-                document.getElementById('buyer-payments-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No buyer payment proofs pending review</td></tr>`;
-                return;
-            }
-
-            let html = '';
-            proofs.forEach(proof => {
-                const statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
-                const amount = parseFloat(proof.payable_amount || 0).toFixed(2);
-                const method = proof.payment_method || 'Not specified';
-                const buyerName = proof.buyer_name || 'Unknown Buyer';
-                const buyerEmail = proof.buyer_email || 'No email';
-
-                html += `
-                    <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5">
-                            <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyerName)}</div>
-                            <div class="text-[11px] text-gray-500">${escapeHtml(buyerEmail)}</div>
-                        </td>
-                        <td class="p-2.5 font-bold text-gray-800">$${amount}</td>
-                        <td class="p-2.5 text-sm text-gray-600">${escapeHtml(method)}</td>
-                        <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="openPaymentProofModal('${proof.id}', 'buyer')" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Review</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('buyer-payments-body').innerHTML = html;
-        }
-
-        async function openPaymentProofModal(proofId, proofType) {
-            try {
-                currentPaymentProofId = proofId;
-                currentPaymentProofType = proofType;
-
-                const table = proofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
-                const { data: proof, error: fetchError } = await db
-                    .from(table)
-                    .select('*')
-                    .eq('id', proofId)
-                    .single();
-
-                if (fetchError || !proof) {
-                    alert('Error loading payment proof details');
-                    return;
-                }
-
-                // Set modal fields
-                const payerName = proofType === 'vendor'
-                    ? (proof.vendor_name || 'Unknown Vendor')
-                    : (proof.buyer_name || 'Unknown Buyer');
-
-                document.getElementById('payment-payer-name').textContent = escapeHtml(payerName);
-                document.getElementById('payment-amount').textContent = `$${parseFloat(proof.payable_amount || 0).toFixed(2)}`;
-                document.getElementById('payment-method').textContent = escapeHtml(proof.payment_method || 'Not specified');
-                document.getElementById('payment-date').textContent = formatMessageTimestamp(proof.created_at, 'long');
-                document.getElementById('payment-admin-notes').value = '';
-
-                // Display payment proof (image or link)
-                const proofContainer = document.getElementById('payment-proof-container');
-                const proofImg = document.getElementById('payment-proof-img');
-                const proofLink = document.getElementById('payment-proof-link');
-
-                if (proof.payment_proof_url) {
-                    if (proof.payment_proof_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                        proofImg.src = proof.payment_proof_url;
-                        proofImg.style.display = 'block';
-                        proofLink.style.display = 'none';
-                    } else {
-                        proofLink.href = proof.payment_proof_url;
-                        proofLink.textContent = 'View Proof Document';
-                        proofLink.style.display = 'block';
-                        proofImg.style.display = 'none';
-                    }
-                } else {
-                    proofContainer.innerHTML = '<span class="text-gray-500">No proof document provided</span>';
-                }
-
-                document.getElementById('payment-proof-modal').classList.remove('hidden');
-            } catch (err) {
-                console.error('Error opening payment proof modal:', err);
-                alert('Error: ' + err.message);
-            }
-        }
-
-        function closePaymentProofModal() {
-            document.getElementById('payment-proof-modal').classList.add('hidden');
-            currentPaymentProofId = null;
-            currentPaymentProofType = null;
-        }
-
-        async function approvePaymentProof() {
-            if (!currentPaymentProofId || !currentPaymentProofType) return;
-
-            try {
-                const table = currentPaymentProofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
-
-                // Fetch proof to get payer details
-                const { data: proof, error: fetchError } = await db
-                    .from(table)
-                    .select('*')
-                    .eq('id', currentPaymentProofId)
-                    .single();
-
-                if (fetchError || !proof) {
-                    alert('Error fetching proof details');
-                    return;
-                }
-
-                // Update payment proof status
-                const { error: updateError } = await db
-                    .from(table)
-                    .update({
-                        payment_proof_status: 'confirmed',
-                        admin_verified_date: new Date().toISOString(),
-                        admin_verified_by: 'admin'
-                    })
-                    .eq('id', currentPaymentProofId);
-
-                if (updateError) {
-                    alert('Error updating payment status: ' + updateError.message);
-                    return;
-                }
-
-                // Create alert for payer
-                const recipientId = currentPaymentProofType === 'vendor' ? proof.vendor_id : proof.buyer_id;
-                const recipientType = currentPaymentProofType === 'vendor' ? 'vendor' : 'buyer';
-                const payerName = currentPaymentProofType === 'vendor' ? proof.vendor_name : proof.buyer_name;
-
-                await db.from('alerts').insert([{
-                    recipient_id: recipientId,
-                    recipient_type: recipientType,
-                    alert_type: 'payment_approved',
-                    title: 'Payment Proof Verified',
-                    message: `Your payment proof of $${parseFloat(proof.payable_amount).toFixed(2)} has been verified and approved by the admin.`,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                }]);
-
-                alert('✅ Payment proof approved! ' + payerName + ' has been notified.');
-                closePaymentProofModal();
-                await loadPaymentProofsPortal();
-            } catch (err) {
-                console.error('Error approving payment proof:', err);
-                alert('Error: ' + err.message);
-            }
-        }
-
-        async function rejectPaymentProof() {
-            if (!currentPaymentProofId || !currentPaymentProofType) return;
-
-            try {
-                const adminNotes = document.getElementById('payment-admin-notes').value.trim();
-
-                if (!adminNotes) {
-                    alert('Please provide a reason for rejection');
-                    return;
-                }
-
-                const table = currentPaymentProofType === 'vendor' ? 'vendor_payables' : 'buyer_payables';
-
-                // Fetch proof to get payer details
-                const { data: proof, error: fetchError } = await db
-                    .from(table)
-                    .select('*')
-                    .eq('id', currentPaymentProofId)
-                    .single();
-
-                if (fetchError || !proof) {
-                    alert('Error fetching proof details');
-                    return;
-                }
-
-                // Update payment proof status to rejected
-                const { error: updateError } = await db
-                    .from(table)
-                    .update({
-                        payment_proof_status: 'rejected',
-                        admin_verified_date: new Date().toISOString(),
-                        admin_verified_by: 'admin',
-                        admin_notes: adminNotes
-                    })
-                    .eq('id', currentPaymentProofId);
-
-                if (updateError) {
-                    alert('Error updating payment status: ' + updateError.message);
-                    return;
-                }
-
-                // Create alert for payer
-                const recipientId = currentPaymentProofType === 'vendor' ? proof.vendor_id : proof.buyer_id;
-                const recipientType = currentPaymentProofType === 'vendor' ? 'vendor' : 'buyer';
-                const payerName = currentPaymentProofType === 'vendor' ? proof.vendor_name : proof.buyer_name;
-
-                await db.from('alerts').insert([{
-                    recipient_id: recipientId,
-                    recipient_type: recipientType,
-                    alert_type: 'payment_rejected',
-                    title: 'Payment Proof Rejected',
-                    message: `Your payment proof of $${parseFloat(proof.payable_amount).toFixed(2)} was rejected. Reason: ${adminNotes}. Please resubmit with valid documentation.`,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                }]);
-
-                alert('✅ Payment proof rejected. ' + payerName + ' has been notified to resubmit.');
-                closePaymentProofModal();
-                await loadPaymentProofsPortal();
-            } catch (err) {
-                console.error('Error rejecting payment proof:', err);
                 alert('Error: ' + err.message);
             }
         }
