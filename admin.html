@@ -1309,12 +1309,12 @@
                 // Fetch vendor commission amount
                 const { data: vendor, error: vendorError } = await db
                     .from('vendors')
-                    .select('commission')
+                    .select('commission_amount_per_feedback')
                     .eq('id', product.vendor_id)
                     .single();
 
                 if (!vendorError && vendor) {
-                    const commissionAmount = parseFloat(vendor.commission || 5.00);
+                    const commissionAmount = parseFloat(vendor.commission_amount_per_feedback || 5.00);
 
                     // Rule 2 (Non-referred): Both admin AND buyer get full commission amount
                     // admin_payables tracks both admin_portion and buyer_portion
