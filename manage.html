@@ -1069,6 +1069,62 @@
             max-height: 1200px;
         }
 
+        .product-context-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .product-context-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .product-context-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .product-context-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .product-context-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.4;
+        }
+
+        .product-context-category {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .product-context-description {
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.3;
+        }
+
+        .product-context-price {
+            font-size: 13px;
+            font-weight: 700;
+            color: #059669;
+            margin-top: 4px;
+        }
+
         .thread-messages {
             padding: 16px;
             display: flex;
@@ -2118,10 +2174,10 @@
             if (!currentVendor) return;
 
             try {
-                // Fetch vendor's products
+                // Fetch vendor's products with full details
                 const { data: products } = await sbClient
                     .from('products')
-                    .select('id, product_name')
+                    .select('id, product_name, description, price, category')
                     .eq('vendor_id', currentVendor.id);
 
                 if (!products || products.length === 0) {
@@ -2198,9 +2254,9 @@
                     const hasVendorApproved = feedbackMessages.some(m => m.vendor_status === 'approved');
                     const hasResponse = thread.messages.some(m => m.message_type === 'vendor_response');
 
-                    if (hasUnverifiedFeedback) {
-                        thread.folder = 'feedback-pending';
-                    } else if (hasVendorApproved && thread.messages.some(m => m.message_type === 'feedback')) {
+                    if (hasVendorApproved) {
+                        thread.folder = 'responded';
+                    } else if (hasUnverifiedFeedback) {
                         thread.folder = 'feedback-pending';
                     } else if (hasResponse) {
                         thread.folder = 'responded';
@@ -2455,6 +2511,7 @@
                         </div>
 
                         <div class="inquiry-thread-content">
+                            ${getProductContextHtml(thread, productMap)}
                             <div class="thread-messages">
                                 ${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}
                             </div>
@@ -2531,6 +2588,27 @@
                         ${feedbackStatus}
                         ${approvalButtons}
                         ${respondButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getProductContextHtml(thread, productMap) {
+            if (!thread.messages || thread.messages.length === 0) return '';
+            const firstMsg = thread.messages[0];
+            const product = productMap[firstMsg.product_id];
+            if (!product) return '';
+
+            return `
+                <div class="product-context-header">
+                    <div class="product-context-title">Product Being Reviewed</div>
+                    <div class="product-context-card">
+                        <div class="product-context-info">
+                            <div class="product-context-name">${escapeHtml(product.product_name)}</div>
+                            <div class="product-context-category">${escapeHtml(product.category || 'Uncategorized')}</div>
+                            <div class="product-context-description">${escapeHtml(product.description ? product.description.substring(0, 100) : 'No description')}</div>
+                            <div class="product-context-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
+                        </div>
                     </div>
                 </div>
             `;
