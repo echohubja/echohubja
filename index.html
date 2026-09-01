@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Marketplace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
-    <!-- External validator files removed - using inline implementations -->
+    <!-- Messaging System Shared Libraries -->
+    <link rel="stylesheet" href="messaging-styles.css">
+    <script src="messaging-utils.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
         body { 
@@ -398,48 +400,6 @@
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        function groupMessagesByField(messages, fieldName) {
-            return messages.reduce((groups, msg) => {
-                const key = msg[fieldName];
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(msg);
-                return groups;
-            }, {});
-        }
-
-        function filterByQuery(items, query, searchFields) {
-            if (!query.trim()) return items;
-            const lowerQuery = query.toLowerCase();
-            return items.filter(item =>
-                searchFields.some(field => {
-                    const value = String(item[field] || '').toLowerCase();
-                    return value.includes(lowerQuery);
-                })
-            );
-        }
-
-        // FALLBACK: buildInquiryPayload - in case inquiry-validator.js fails to load
-        if (typeof buildInquiryPayload === 'undefined') {
-            window.buildInquiryPayload = function(params) {
-                return {
-                    product_id: params.product_id || null,
-                    buyer_id: params.buyer_id || null,
-                    vendor_id: params.vendor_id || null,
-                    message: params.message || '',
-                    status: params.status || 'pending',
-                    message_type: params.message_type || 'inquiry',
-                    sender_type: params.sender_type || 'buyer',
-                    sender_id: params.sender_id || null,
-                    image_url: params.image_url || '',
-                    created_at: params.created_at || new Date().toISOString(),
-                    updated_at: params.updated_at || new Date().toISOString()
-                };
-            };
-            console.warn('[FALLBACK] inquiry-validator.js failed to load - using inline buildInquiryPayload');
-        } else {
-            console.log('[SUCCESS] inquiry-validator.js loaded successfully');
-        }
-
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
             const refParam = urlParams.get('ref');
@@ -456,13 +416,11 @@
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             const { data: { session } } = await db.auth.getSession();
-            const buyerIdFromStorage = localStorage.getItem('buyer_id');
-            const currentActiveBuyerId = buyerIdFromStorage ? parseInt(buyerIdFromStorage, 10) : null;
+            const currentActiveBuyerId = localStorage.getItem('buyer_id');
             currentActiveEmail = localStorage.getItem('buyer_email') || session?.user?.email || localStorage.getItem('user_email');
 
             console.log('[checkBuyerSession] Step 1: Checking session');
-            console.log('  localStorage buyer_id (raw):', buyerIdFromStorage || 'null');
-            console.log('  localStorage buyer_id (parsed):', currentActiveBuyerId || 'null');
+            console.log('  localStorage buyer_id:', currentActiveBuyerId || 'null');
             console.log('  localStorage buyer_email:', currentActiveEmail || 'null');
             console.log('  Session email:', session?.user?.email || 'null');
             console.log('  All localStorage keys:', Object.keys(localStorage));
@@ -699,30 +657,6 @@
             overlay.style.display = 'none';
         }
 
-        // Check if inquiry thread is locked (vendor approved feedback)
-        async function checkInquiryLocked(productId, buyerId) {
-            try {
-                const { data, error } = await db
-                    .from('inquiries')
-                    .select('id, vendor_status')
-                    .eq('buyer_id', buyerId)
-                    .eq('product_id', productId)
-                    .eq('message_type', 'feedback')
-                    .eq('vendor_status', 'approved')
-                    .limit(1);
-
-                if (error) {
-                    console.error('Error checking inquiry lock:', error.message);
-                    return false; // Allow on error
-                }
-
-                return data && data.length > 0; // True if locked (approved exists)
-            } catch (err) {
-                console.error('Unexpected error checking inquiry lock:', err);
-                return false; // Allow on error
-            }
-        }
-
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
@@ -734,48 +668,28 @@
                 return;
             }
 
-            // Check if inquiry thread is locked (approved feedback exists)
-            const isLocked = await checkInquiryLocked(productId, currentBuyerId);
-            if (isLocked) {
-                alert('✅ This inquiry is complete (approved feedback exists). Create a new inquiry if you'd like to continue discussing this product.');
-                closeInquiryDrawer();
-                return;
-            }
-
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
-            try {
-                const validatedPayload = buildInquiryPayload({
+            const { error } = await db.from('inquiries').insert([
+                {
                     product_id: productId,
-                    vendor_id: vendorId,
                     buyer_id: currentBuyerId,
-                    message: message,
-                    sender_id: currentBuyerId,
-                    sender_type: 'buyer',
-                    message_type: 'inquiry',
-                    status: 'pending'
-                });
-
-                const { error } = await db.from('inquiries').insert([validatedPayload]);
-
-                if (error) {
-                    console.error('Error submitting inquiry:', error.message);
-                    alert('Failed to send inquiry. Please try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Send Inquiry';
-                    return;
+                    message: message
                 }
+            ]);
 
-                alert('Inquiry submitted successfully!');
-                closeInquiryDrawer();
-            } catch (validationErr) {
-                console.error('Validation error:', validationErr.message);
-                alert(validationErr.message);
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Inquiry';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Inquiry';
+
+            if (error) {
+                console.error('Error submitting inquiry:', error.message);
+                alert('Failed to send inquiry. Please try again.');
                 return;
             }
+
+            alert('Inquiry submitted successfully!');
+            closeInquiryDrawer();
         }
 
         function toggleReferralDrawer() {
@@ -1219,17 +1133,6 @@
             const feedbackMessage = `[Post-Receipt Product Feedback]\nAmazon Link: ${amazonLink || 'None provided'}`;
             let dbError = null;
 
-            // Fetch vendor_id from product (required for inquiries table)
-            let vendorId = null;
-            if (productId && productId !== 'null') {
-                const { data: product } = await db
-                    .from('products')
-                    .select('vendor_id')
-                    .eq('id', productId)
-                    .single();
-                if (product) vendorId = product.vendor_id;
-            }
-
             if (existingFeedback && existingFeedback.id) {
                 const updatePayload = {
                     message: feedbackMessage,
@@ -1245,26 +1148,15 @@
                     .eq('id', existingFeedback.id);
                 dbError = updateErr;
             } else {
-                try {
-                    const validatedPayload = buildInquiryPayload({
+                const { error: insertErr } = await db.from('inquiries').insert([
+                    {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
-                        vendor_id: vendorId,
                         message: feedbackMessage,
-                        image_url: imageUrl,
-                        message_type: 'feedback',
-                        sender_type: 'buyer',
-                        sender_id: currentBuyerId,
-                        status: 'pending'
-                    });
-
-                    const { error: insertErr } = await db.from('inquiries').insert([validatedPayload]);
-                    dbError = insertErr;
-                } catch (validationErr) {
-                    console.error('Validation error:', validationErr.message);
-                    alert(validationErr.message);
-                    return;
-                }
+                        image_url: imageUrl
+                    }
+                ]);
+                dbError = insertErr;
             }
 
             if (dbError) {
@@ -1286,36 +1178,19 @@
                 return;
             }
 
-            // Check if inquiry thread is locked (approved feedback exists)
-            const isLocked = await checkInquiryLocked(productId, currentBuyerId);
-            if (isLocked) {
-                alert('✅ This inquiry is complete (approved feedback exists). Create a new inquiry if you'd like to continue discussing this product.');
-                loadBuyerInquiriesHistory(currentBuyerId);
-                return;
-            }
-
-            try {
-                const validatedPayload = buildInquiryPayload({
+            const { error } = await db.from('inquiries').insert([
+                {
                     product_id: productId === 'null' || !productId ? null : productId,
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: `[Follow-up]: ${messageText}`,
-                    sender_id: currentBuyerId,
-                    sender_type: 'buyer',
-                    message_type: 'followup',
-                    status: 'pending'
-                });
-
-                const { error } = await db.from('inquiries').insert([validatedPayload]);
-
-                if (error) {
-                    console.error('Error submitting follow-up:', error.message);
-                    alert('Failed to submit follow-up message.');
-                    return;
+                    image_url: null
                 }
-            } catch (validationErr) {
-                console.error('Validation error:', validationErr.message);
-                alert(validationErr.message);
+            ]);
+
+            if (error) {
+                console.error('Error submitting follow-up:', error.message);
+                alert('Failed to submit follow-up message.');
                 return;
             }
 
