@@ -1035,9 +1035,17 @@
                 // Fetch inquiry details
                 const { data: inquiry, error: inqError } = await db
                     .from('inquiries')
-                    .select('id, buyer_id, product_id')
+                    .select('id, buyer_id, product_id, overall_status')
                     .eq('id', inquiryId)
                     .single();
+
+                // === DUPLICATE PREVENTION ===
+                if (inquiry?.overall_status === 'verified') {
+                    alert('✓ This feedback is already verified.\n\nPayables records exist.\n\nNo duplicate records will be created.');
+                    loadInquiriesPortal();
+                    return;
+                }
+                // === END DUPLICATE CHECK ===
 
                 if (inqError || !inquiry) {
                     alert('Error fetching inquiry details');
