@@ -754,6 +754,13 @@
             buyerInquiriesData = inquiries || [];
 
             if (inquiries && inquiries.length > 0) {
+                // Fetch current buyer details for display
+                const { data: currentBuyer } = await db
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .eq('id', buyerId)
+                    .single();
+
                 // Get all product IDs to fetch images
                 const productIds = inquiries
                     .map(item => item.product_id)
@@ -799,6 +806,26 @@
                 const sortedGroups = Object.entries(grouped).sort((a, b) => new Date(b[1].latestTimestamp) - new Date(a[1].latestTimestamp));
 
                 let html = '';
+
+                // Add buyer info header
+                if (currentBuyer) {
+                    html += `
+                        <div style="background: #e6f2ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
+                            ${getAvatarCircle(currentBuyer.full_name || 'Buyer', 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')}
+                            <div style="flex: 1;">
+                                <div style="font-size: 12px; font-weight: 700; color: #1e40af;">YOUR PROFILE</div>
+                                <div style="font-size: 13px; color: #1e5aa8; margin-top: 2px;">${currentBuyer.full_name || 'Buyer'}</div>
+                                <div style="font-size: 11px; color: #0f172a; margin-top: 2px;">${currentBuyer.email}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; color: #4a5568; margin-bottom: 4px;">Buyer ID</div>
+                                <button onclick="navigator.clipboard.writeText('${currentBuyer.id}'); this.textContent='✓ Copied'; setTimeout(() => {this.textContent='📋 Copy';}, 2000);" style="background: white; border: 1px solid #cbd5e0; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">📋 Copy</button>
+                                <div style="font-size: 9px; color: #718096; margin-top: 4px; word-break: break-all;">${currentBuyer.id}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 let index = 0;
 
                 for (const [pKey, group] of sortedGroups) {
@@ -872,11 +899,14 @@
                         html += `
                             <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                                 <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="font-size: 12px;">🏢</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 12px;">🏪</span>
                                         ${getAvatarCircle(vendorNames[vendorId] || 'Vendor', 'linear-gradient(135deg, #059669 0%, #10b981 100%)')}
-                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>
-                                        <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
+                                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                                            <span style="font-size: 13px; font-weight: 700; color: #2d3748;">${vendorNames[vendorId] || 'Vendor'}</span>
+                                            <span style="font-size: 10px; color: #718096;">ID: ${vendorId}</span>
+                                        </div>
+                                        <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600; margin-left: auto;">${vItems.length}</span>
                                     </div>
                                     <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
                                 </div>
