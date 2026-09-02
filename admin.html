@@ -50,7 +50,8 @@
     <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
-        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
+        <button onclick="switchTab('collection')" id="tab-btn-collection" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Commission Collection</button>
+        <button onclick="switchTab('distribution')" id="tab-btn-distribution" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Commission Distribution</button>
         <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Payment Verification</button>
     </div>
 
@@ -129,9 +130,50 @@
         </div>
     </div>
 
-    <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+    <!-- Commission Collection Section -->
+    <div id="section-collection" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Commission Collection</h2>
+            <span id="collection-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div class="text-[10px] text-amber-600 font-bold uppercase">Total Collected</div>
+                <div id="metric-collection-total" class="text-2xl font-bold text-amber-700">$0.00</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[10px] text-blue-600 font-bold uppercase">Awaiting Distribution</div>
+                <div id="metric-collection-pending" class="text-2xl font-bold text-blue-700">$0.00</div>
+            </div>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div class="text-[10px] text-green-600 font-bold uppercase">Distributed</div>
+                <div id="metric-collection-distributed" class="text-2xl font-bold text-green-700">$0.00</div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Vendor</th>
+                        <th class="p-2.5">Commission Amount</th>
+                        <th class="p-2.5">Reason</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5">Collected Date</th>
+                    </tr>
+                </thead>
+                <tbody id="collection-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commission collections...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Commission Distribution Section -->
+    <div id="section-distribution" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Commission Distribution</h2>
             <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
         </div>
 
@@ -221,15 +263,16 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Referrer ID</th>
-                            <th class="p-2.5">Referral Target</th>
-                            <th class="p-2.5">Split Amount (20%)</th>
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Distribution To</th>
+                            <th class="p-2.5">Amount</th>
                             <th class="p-2.5">Status</th>
-                            <th class="p-2.5 text-center">Action</th>
+                            <th class="p-2.5">Source Collection</th>
+                            <th class="p-2.5">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="commissions-table-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading commissions...</td></tr>
+                    <tbody id="distribution-table-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading distributions...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -575,6 +618,7 @@
                 const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
                 db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
+                loadCollectionPortal(); // Preload collection tab
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -1425,21 +1469,102 @@
             setTimeout(() => { loadInquiriesPortal(); }, 500);
         }
 
-        // --- TAB 3: COMMISSIONS ---
-        async function loadCommissionsPortal() {
+        // --- TAB 3: COMMISSION COLLECTION & DISTRIBUTION ---
+        async function loadCollectionPortal() {
+            const tableBody = document.getElementById('collection-table-body');
+            if (!tableBody) return;
+
+            // Fetch vendors for name lookups
+            const { data: vendors } = await db.from('vendors').select('id, first_name, last_name');
+            const vendorNames = {};
+            if (vendors) {
+                vendors.forEach(v => {
+                    vendorNames[v.id] = `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Vendor';
+                });
+            }
+
+            // Fetch facility_payables records
+            const { data, error } = await db
+                .from('facility_payables')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commission collections recorded yet.</td></tr>`;
+                document.getElementById('collection-count').textContent = '0 records';
+                document.getElementById('metric-collection-total').textContent = '$0.00';
+                document.getElementById('metric-collection-pending').textContent = '$0.00';
+                document.getElementById('metric-collection-distributed').textContent = '$0.00';
+                return;
+            }
+
+            let totalCollected = 0;
+            let totalPending = 0;
+            let totalDistributed = 0;
+
+            data.forEach(record => {
+                const amt = parseFloat(record.total_commission_amount || 0);
+                totalCollected += amt;
+                const status = (record.status || 'collected').toLowerCase();
+                if (status === 'pending' || status === 'collected') {
+                    totalPending += amt;
+                } else if (status === 'distributed') {
+                    totalDistributed += amt;
+                }
+            });
+
+            document.getElementById('collection-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+            document.getElementById('metric-collection-total').textContent = `$${totalCollected.toFixed(2)}`;
+            document.getElementById('metric-collection-pending').textContent = `$${totalPending.toFixed(2)}`;
+            document.getElementById('metric-collection-distributed').textContent = `$${totalDistributed.toFixed(2)}`;
+
+            tableBody.innerHTML = data.map(record => {
+                const vendorName = vendorNames[record.vendor_id] || 'Unknown Vendor';
+                const status = (record.status || 'collected').toLowerCase();
+                let badge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[11px] font-semibold">COLLECTED</span>`;
+
+                if (status === 'distributed') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">DISTRIBUTED</span>`;
+                }
+
+                const collectedDate = new Date(record.collected_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <tr class="hover:bg-gray-50/50 transition border-b">
+                        <td class="p-2.5 font-medium text-gray-800 text-xs">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5 text-xs font-mono text-gray-600">$${parseFloat(record.total_commission_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-2.5 text-xs text-gray-600">${escapeHtml(record.commission_reason || 'facility_commission')}</td>
+                        <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-xs text-gray-500">${collectedDate}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadDistributionPortal() {
             // Load vendor commission settings first
             await loadVendorCommissionSettings();
             // Load threshold change requests
             await loadThresholdChangeRequests();
 
-            const tableBody = document.getElementById('commissions-table-body');
+            const tableBody = document.getElementById('distribution-table-body');
             if (!tableBody) return;
 
             // Fetch vendors and buyers for name lookups
-            const { data: vendors, error: vendorError } = await db.from('vendors').select('id, first_name, last_name');
-            const { data: buyers, error: buyerError } = await db.from('buyers').select('id, full_name');
+            const { data: vendors } = await db.from('vendors').select('id, first_name, last_name');
+            const { data: buyers } = await db.from('buyers').select('id, full_name');
 
-            // Build lookup maps
             const vendorNames = {};
             const buyerNames = {};
 
@@ -1454,26 +1579,33 @@
                 });
             }
 
-            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
+            // Fetch admin_payables records WITH facility_payables relationship
+            const { data, error } = await db
+                .from('admin_payables')
+                .select('*, facility_payables(id, total_commission_amount, collected_date)')
+                .order('created_at', { ascending: false });
+
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
             }
+
             if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No commissions recorded yet.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No commission distributions recorded yet.</td></tr>`;
                 document.getElementById('commission-count').textContent = '0 records';
-                document.getElementById('metric-total-paid').textContent = '$0.00 USD';
-                document.getElementById('metric-total-payable').textContent = '$0.00 USD';
-                document.getElementById('metric-total-records').textContent = '0';
+                document.getElementById('metric-distribution-paid').textContent = '$0.00 USD';
+                document.getElementById('metric-distribution-payable').textContent = '$0.00 USD';
+                document.getElementById('metric-distribution-records').textContent = '0';
                 return;
             }
 
             let totalPaid = 0;
             let totalPayable = 0;
-            data.forEach(comm => {
-                const amt = parseFloat(comm.split_amount || 0);
-                const status = (comm.status || 'payable').toLowerCase();
-                if (status === 'paid') {
+
+            data.forEach(dist => {
+                const amt = parseFloat(dist.amount_owed || 0);
+                const status = (dist.status || 'pending').toLowerCase();
+                if (status === 'paid' || status === 'distributed') {
                     totalPaid += amt;
                 } else {
                     totalPayable += amt;
@@ -1481,46 +1613,56 @@
             });
 
             document.getElementById('commission-count').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
-            document.getElementById('metric-total-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
-            document.getElementById('metric-total-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
-            document.getElementById('metric-total-records').textContent = data.length;
+            document.getElementById('metric-distribution-paid').textContent = `$${totalPaid.toFixed(2)} USD`;
+            document.getElementById('metric-distribution-payable').textContent = `$${totalPayable.toFixed(2)} USD`;
+            document.getElementById('metric-distribution-records').textContent = data.length;
 
-            tableBody.innerHTML = data.map(comm => {
-                const status = (comm.status || 'payable').toLowerCase();
-                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
-                let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
+            tableBody.innerHTML = data.map(dist => {
+                const status = (dist.status || 'pending').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
+                let actionBtn = `<button onclick="markDistributionPaid('${dist.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
 
-                if (status === 'paid') {
-                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`;
+                if (status === 'paid' || status === 'distributed') {
+                    badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">DISTRIBUTED</span>`;
                     actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
                 }
 
-                let targetDisplay = comm.referred_id;
-                if (comm.referred_role) {
-                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
-                }
+                const vendorName = vendorNames[dist.vendor_id] || 'Unknown Vendor';
+                const distributionTo = dist.split_with_buyer_id ?
+                    (buyerNames[dist.split_with_buyer_id] || 'Unknown Buyer') :
+                    'Admin/Facility';
 
-                const referrerName = vendorNames[comm.referrer_id] || buyerNames[comm.referrer_id] || 'Unknown';
-                const referredName = vendorNames[comm.referred_id] || buyerNames[comm.referred_id] || 'Unknown';
+                const sourceCollection = dist.facility_payables ?
+                    `$${parseFloat(dist.facility_payables.total_commission_amount).toFixed(2)}` :
+                    'N/A';
 
                 return `
                     <tr class="hover:bg-gray-50/50 transition border-b">
-                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referrerName, 'linear-gradient(135deg, #059669 0%, #10b981 100%)')} ${escapeHtml(comm.referrer_id)} <button onclick="copyValueToClipboard('${escapeHtml(comm.referrer_id)}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referrer ID">📋</button></td>
-                        <td class="p-2.5 text-xs font-mono text-gray-600 flex items-center gap-2">${getAvatarCircle(referredName, 'linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%)')} ${targetDisplay} <button onclick="copyValueToClipboard('${escapeHtml(comm.referred_id || '')}', event.target)" class="copy-btn" style="padding: 2px 6px; font-size: 0.65em;" title="Copy Referred ID">📋</button></td>
-                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(comm.split_amount || 0).toFixed(2)} USD</td>
+                        <td class="p-2.5 text-xs font-medium text-gray-800">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5 text-xs text-gray-600">${escapeHtml(distributionTo)}</td>
+                        <td class="p-2.5 font-bold text-gray-800 text-xs">$${parseFloat(dist.amount_owed || 0).toFixed(2)} USD</td>
                         <td class="p-2.5">${badge}</td>
+                        <td class="p-2.5 text-xs text-gray-500">Source: ${sourceCollection}</td>
                         <td class="p-2.5 text-center">${actionBtn}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        async function markCommissionPaid(commissionId) {
-            if (!confirm("Mark this referral commission payout as PAID?")) return;
-            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
-            if (error) { alert('Error updating payout status: ' + error.message); return; }
-            alert('Commission marked as paid!');
-            loadCommissionsPortal();
+        async function markDistributionPaid(distributionId) {
+            if (!confirm("Mark this commission distribution as PAID?")) return;
+            const { error } = await db
+                .from('admin_payables')
+                .update({ status: 'distributed' })
+                .eq('id', distributionId);
+
+            if (error) {
+                alert('Error updating distribution status: ' + error.message);
+                return;
+            }
+
+            alert('Distribution marked as paid!');
+            loadDistributionPortal();
         }
 
         function switchTab(tabName) {
@@ -1541,9 +1683,11 @@
             if (activeButton) activeButton.classList.add('active');
 
             // Load data for the active tab
-            if (tabName === 'buyers') loadBuyersPortal();
+            if (tabName === 'collection') loadCollectionPortal();
+            else if (tabName === 'distribution') loadDistributionPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
-            else if (tabName === 'commissions') loadCommissionsPortal();
+            else if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'payments') loadPaymentProofPortal();
         }
 
         function escapeHtml(str) {
