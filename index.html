@@ -737,7 +737,8 @@
             const { error } = await db.from('inquiries').insert([
                 {
                     product_id: productId,
-                    buyer_id: currentBuyerId,
+                    sender_id: currentBuyerId,
+                    receiver_id: vendorId,
                     message: message
                 }
             ]);
