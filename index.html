@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Marketplace</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
@@ -737,17 +738,23 @@
             }
 
             if (data && data.length > 0) {
-                container.innerHTML = data.map(product => `
+                container.innerHTML = data.map(product => {
+                    const productName = product.name || 'Unnamed Product';
+                    const productId = product.id || '';
+                    const vendorId = product.vendor_id || 'Echo Hub';
+                    const price = parseFloat(product.price || 0);
+                    return `
                     <div class="product-box">
                         <div>
-                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${product.name}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
-                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${product.vendor_id || 'Echo Hub'}</span>
-                            <h5 style="margin-top: 4px;">${product.name}</h5>
-                            <div class="cost">$${parseFloat(product.price).toFixed(2)}</div>
+                            ${product.image_url_1 ? `<img src="${product.image_url_1}" alt="${productName}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : ''}
+                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${vendorId}</span>
+                            <h5 style="margin-top: 4px;">${productName}</h5>
+                            <div class="cost">$${price.toFixed(2)}</div>
                         </div>
-                        <button onclick="openInquiryDrawer('${product.id}', '${product.name.replace(/'/g, "\\'")}', '${product.vendor_id || 'Echo Hub'}')">Inquire Product</button>
+                        <button onclick="openInquiryDrawer('${productId}', '${productName.replace(/'/g, "\\'")}', '${vendorId}')">Inquire Product</button>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             } else {
                 container.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center; padding: 40px;">No products found in this selection.</p>';
             }
