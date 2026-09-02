@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Vendor Portal</title>
-    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
     <style>
         * {
@@ -30,6 +29,10 @@
             --neutral-700: #374151;
             --neutral-800: #1f2937;
             --neutral-900: #111827;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --bg-body: #f9fafb;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -50,19 +53,23 @@
                 --neutral-700: #d1d5db;
                 --neutral-800: #e5e7eb;
                 --neutral-900: #f9fafb;
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --border: #374151;
+                --bg-body: #111827;
             }
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #eef3f8;
+            background: var(--bg-body);
             min-height: 100vh;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
 
-        /* Top Header */
+        /* HEADER */
         header {
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 25px 40px;
             display: flex;
@@ -72,15 +79,17 @@
         }
 
         header h1 {
-            font-size: 2.2em;
+            font-size: 1.8em;
             font-weight: 700;
-            letter-spacing: -0.5px;
         }
 
         header p {
-            font-size: 0.95em;
+            font-size: 0.9em;
             opacity: 0.9;
-            margin-top: 2px;
+        }
+
+        .header-left h1 {
+            margin-bottom: 4px;
         }
 
         .btn-logout {
@@ -100,191 +109,40 @@
             border-color: white;
         }
 
-        /* Main Container */
-        .container {
+        /* TABS */
+        .tab-container {
             max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        /* States */
-        .loading-state, .error-state {
-            text-align: center;
-            padding: 60px 20px;
-            font-size: 1.1em;
-            color: #718096;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .error-state {
-            color: #c0392b;
-        }
-
-        /* Profile Banner Bar */
-        .profile-bar {
-            background: white;
-            border-radius: 12px;
-            padding: 18px 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
-
-        .profile-bar .welcome-text h2 {
-            font-size: 1.2em;
-            color: #1e5aa8;
-        }
-
-        .profile-bar .welcome-text p {
-            font-size: 0.88em;
-            color: #64748b;
-        }
-
-        .profile-tags {
-            display: flex;
-            gap: 15px;
-        }
-
-        .tag {
-            background: #f1f5f9;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: #475569;
-            font-weight: 500;
-        }
-
-        .tag strong {
-            color: #1e293b;
-        }
-
-        /* Metrics Grid (Three Columns) */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        @media (max-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .metric-card {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 18px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            transition: all 0.2s ease;
-        }
-
-        .metric-card:hover {
-            border-color: #1e5aa8;
-            box-shadow: 0 4px 16px rgba(30, 90, 168, 0.08);
-        }
-
-        .metric-label {
-            font-size: 0.85em;
-            color: #64748b;
-            font-weight: 500;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-value {
-            font-size: 1.8em;
-            font-weight: 700;
-            color: #1e5aa8;
-            margin-bottom: 6px;
-        }
-
-        .metric-subtext {
-            font-size: 0.8em;
-            color: #94a3b8;
-        }
-
-        .metric-status {
-            font-size: 0.75em;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-top: 8px;
-            display: inline-block;
-        }
-
-        .metric-status.active {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .metric-status.warning {
-            background: #fed7aa;
-            color: #92400e;
-        }
-
-        .metric-status.critical {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Main Content Grid */
-        .main-content-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            margin-bottom: 28px;
-        }
-
-        /* Tabs Navigation */
         .tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #e1e8ed;
-            overflow-x: auto;
-            background: white;
-            border-radius: 12px 12px 0 0;
-            padding: 0 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
         }
 
-        .tab {
-            padding: 12px 16px;
-            cursor: pointer;
-            border: none;
+        .tab-btn {
+            padding: 12px 24px;
             background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
             font-size: 14px;
-            font-weight: 500;
-            color: #64748b;
+            color: var(--text-secondary);
             border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
+            transition: all 0.2s ease;
+            margin-bottom: -2px;
         }
 
-        .tab:hover {
-            color: #1e5aa8;
+        .tab-btn:hover {
+            color: var(--text-primary);
         }
 
-        .tab.active {
-            color: #1e5aa8;
-            border-bottom-color: #1e5aa8;
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
         .tab-content {
@@ -295,1574 +153,1281 @@
             display: block;
         }
 
-        /* Collapsible Sections */
-        .collapsible-section {
+        /* CONTENT SECTIONS */
+        .section {
             background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .section:not([data-theme="light"]) {
+                background: var(--neutral-800);
+            }
+        }
+
+        .section h2 {
+            font-size: 1.3em;
             margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            overflow: hidden;
+            color: var(--text-primary);
         }
 
-        .collapsible-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
+        .section h3 {
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        /* METRICS GRID */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--neutral-50);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .metric-card:not([data-theme="light"]) {
+                background: var(--neutral-900);
+            }
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* PRODUCTS GRID */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .product-card {
+            background: var(--neutral-50);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
             cursor: pointer;
-            background: #f8fafc;
-            border-bottom: 1px solid #e1e8ed;
-            transition: background 0.2s;
-            user-select: none;
+            transition: all 0.2s ease;
         }
 
-        .collapsible-header:hover {
-            background: #f1f5f9;
+        @media (prefers-color-scheme: dark) {
+            .product-card:not([data-theme="light"]) {
+                background: var(--neutral-900);
+            }
         }
 
-        .collapsible-header h3 {
-            font-size: 1em;
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 140px;
+            background: var(--neutral-200);
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 12px;
+        }
+
+        .product-name {
             font-weight: 600;
-            color: #1e293b;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .collapsible-icon {
-            font-size: 1.2em;
-            transition: transform 0.2s;
-            color: #1e5aa8;
-        }
-
-        .collapsible-section.open .collapsible-icon {
-            transform: rotate(180deg);
-        }
-
-        .collapsible-content {
-            max-height: 0;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+            color: var(--text-primary);
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .collapsible-section.open .collapsible-content {
-            max-height: 2000px;
-            transition: max-height 0.4s ease-in;
+        .product-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.9em;
         }
 
-        .collapsible-body {
-            padding: 20px;
+        /* INQUIRIES LIST */
+        .inquiry-list {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        /* Form Elements */
+        .inquiry-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .inquiry-item:last-child {
+            border-bottom: none;
+        }
+
+        .inquiry-item:hover {
+            background: var(--neutral-50);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .inquiry-item:hover:not([data-theme="light"]) {
+                background: var(--neutral-900);
+            }
+        }
+
+        .inquiry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .inquiry-buyer {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .inquiry-time {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .inquiry-product {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .inquiry-message {
+            font-size: 0.9em;
+            color: var(--text-primary);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .inquiry-badge {
+            display: inline-block;
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+            font-weight: 600;
+        }
+
+        .badge-inquiry {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-feedback {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .badge-followup {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        /* FORMS */
         .form-group {
             margin-bottom: 16px;
         }
 
-        .form-group label {
+        label {
             display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
-            font-size: 14px;
-            color: #1e293b;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #e1e8ed;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
-        }
-
-        /* Panel */
-        .panel {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .panel-header h2 {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0;
-        }
-
-        /* Product Form */
-        .product-form-container {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .form-row.full {
-            grid-template-columns: 1fr;
-        }
-
-        /* Alert Message */
-        .alert-msg {
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin-bottom: 16px;
+            font-weight: 600;
             font-size: 0.9em;
-            display: none;
+            margin-bottom: 6px;
+            color: var(--text-primary);
         }
 
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #86efac;
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-family: inherit;
+            background: white;
+            color: var(--text-primary);
+            transition: border-color 0.2s ease;
         }
 
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
+        @media (prefers-color-scheme: dark) {
+            input:not([data-theme="light"]), textarea:not([data-theme="light"]), select:not([data-theme="light"]) {
+                background: var(--neutral-800);
+                color: var(--text-primary);
+            }
         }
 
-        /* Button Styles */
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* BUTTONS */
         .btn {
-            padding: 8px 16px;
+            padding: 10px 16px;
             border: none;
             border-radius: 6px;
-            font-size: 14px;
             font-weight: 600;
+            font-size: 0.9em;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .btn-primary {
-            background: #1e5aa8;
+            background: var(--primary);
             color: white;
         }
 
         .btn-primary:hover {
-            background: #1e40af;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3);
+            background: var(--primary-dark);
         }
 
         .btn-secondary {
-            background: #e1e8ed;
-            color: #1e293b;
+            background: var(--neutral-200);
+            color: var(--text-primary);
         }
 
         .btn-secondary:hover {
-            background: #cbd5e1;
+            background: var(--neutral-300);
         }
 
-        .btn-danger {
-            background: #ef4444;
+        .btn-success {
+            background: var(--success);
             color: white;
         }
 
-        .btn-danger:hover {
-            background: #dc2626;
+        .btn-danger {
+            background: var(--error);
+            color: white;
         }
 
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
-        /* Table Styles */
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            border: 1px solid #e1e8ed;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        table thead {
-            background: #f1f5f9;
-            border-bottom: 2px solid #e1e8ed;
-        }
-
-        table th {
-            padding: 12px;
-            text-align: left;
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.85em;
-            text-transform: uppercase;
-        }
-
-        table td {
-            padding: 12px;
-            border-bottom: 1px solid #e1e8ed;
-            color: #475569;
-        }
-
-        table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        /* Status Badge */
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 600;
-        }
-
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-verified {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-approved {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-rejected {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Modal */
+        /* MODALS */
         .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             z-index: 1000;
-            align-items: center;
             justify-content: center;
+            align-items: center;
         }
 
-        .modal.active {
+        .modal.open {
             display: flex;
         }
 
         .modal-content {
             background: white;
             border-radius: 12px;
-            padding: 24px;
+            max-width: 600px;
             width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-height: 90vh;
+            max-height: 80vh;
             overflow-y: auto;
-            position: relative;
+            box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .modal-content:not([data-theme="light"]) {
+                background: var(--neutral-800);
+            }
         }
 
         .modal-header {
-            margin-bottom: 20px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .modal-header h2 {
+        .modal-title {
             font-size: 1.3em;
             font-weight: 700;
-            margin-bottom: 4px;
-            color: #1e293b;
+            color: var(--text-primary);
         }
 
-        .modal-header p {
-            font-size: 0.9em;
-            color: #64748b;
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-secondary);
         }
 
         .modal-body {
-            margin-bottom: 20px;
+            padding: 20px;
         }
 
         .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 8px;
             justify-content: flex-end;
         }
 
-        .close-modal {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #64748b;
-        }
-
-        .close-modal:hover {
-            color: #1e293b;
-        }
-
-        /* Inquiry Styles */
-        .inquiry-folder-tabs {
-            display: flex;
-            gap: 8px;
+        /* PRODUCT IMAGES GALLERY */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
             margin-bottom: 16px;
-            border-bottom: 1px solid #e1e8ed;
         }
 
-        .inquiry-tab {
-            padding: 8px 12px;
+        .gallery-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 6px;
             cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 14px;
-            font-weight: 500;
-            color: #64748b;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease;
         }
 
-        .inquiry-tab:hover {
-            color: #1e5aa8;
+        .gallery-image:hover {
+            transform: scale(1.05);
         }
 
-        .inquiry-tab.active {
-            color: #1e5aa8;
-            border-bottom-color: #1e5aa8;
-        }
-
-        /* Inquiry Thread */
-        .inquiry-thread {
-            background: white;
-            border: 1px solid #e1e8ed;
+        /* BUYER INFO CARD */
+        .buyer-info-card {
+            background: var(--neutral-50);
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 16px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            margin-bottom: 16px;
         }
 
-        .inquiry-thread:hover {
-            border-color: #1e5aa8;
-            box-shadow: 0 2px 8px rgba(30, 90, 168, 0.1);
+        @media (prefers-color-scheme: dark) {
+            .buyer-info-card:not([data-theme="light"]) {
+                background: var(--neutral-900);
+            }
         }
 
-        .inquiry-header {
+        .buyer-info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .inquiry-from {
+        .buyer-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .buyer-info-label {
             font-weight: 600;
-            color: #1e293b;
-        }
-
-        .inquiry-date {
+            color: var(--text-secondary);
             font-size: 0.85em;
-            color: #94a3b8;
         }
 
-        .inquiry-subject {
-            margin-bottom: 8px;
-            color: #475569;
-        }
-
-        .inquiry-preview {
-            font-size: 0.9em;
-            color: #64748b;
-            max-height: 40px;
-            overflow: hidden;
-        }
-
-        /* Commission Sidebar */
-        .commission-sidebar {
-            background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
-            border: 2px solid #dbeafe;
-            border-radius: 12px;
-            padding: 20px;
-            height: fit-content;
-            position: sticky;
-            top: 20px;
-        }
-
-        .sidebar-section {
-            margin-bottom: 16px;
-        }
-
-        .sidebar-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .sidebar-label {
-            font-size: 0.75em;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #64748b;
-            margin-bottom: 6px;
-        }
-
-        .sidebar-value {
-            font-size: 1.6em;
-            font-weight: 700;
-            color: #1e5aa8;
-            margin-bottom: 4px;
-        }
-
-        .sidebar-subtext {
-            font-size: 0.8em;
-            color: #94a3b8;
-        }
-
-        /* Commission Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .stat-label {
-            font-size: 12px;
+        .buyer-info-value {
+            color: var(--text-primary);
             font-weight: 600;
-            text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
         }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1e5aa8;
-            margin-bottom: 4px;
-        }
-
-        .stat-detail {
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        /* Alert Banner */
-        #alerts-banner {
-            display: none;
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .alert-close-btn {
-            float: right;
-            background: none;
+        .copy-btn {
+            background: var(--primary);
+            color: white;
             border: none;
-            font-size: 20px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
             cursor: pointer;
-            color: #92400e;
+            margin-left: 8px;
         }
 
-        /* Empty State */
+        .copy-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* LOADING STATE */
+        .loading {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* EMPTY STATE */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #64748b;
+            color: var(--text-secondary);
         }
 
         .empty-state p {
-            margin-bottom: 16px;
+            font-size: 0.95em;
+            line-height: 1.6;
         }
 
-        /* Progress Bar */
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e1e8ed;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 8px 0;
+        /* COMMISSION CONTEXT SWITCHER */
+        .context-switcher {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4ade80 0%, #fbbf24 50%, #ef4444 100%);
-            border-radius: 4px;
-            transition: width 0.3s ease;
+        .context-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
         }
 
-        /* Badge Styles */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
+        @media (prefers-color-scheme: dark) {
+            .context-btn:not([data-theme="light"]) {
+                background: var(--neutral-800);
+            }
+        }
+
+        .context-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .context-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* AGREEMENT CARDS */
+        .agreement-card {
+            background: var(--neutral-50);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .agreement-card:not([data-theme="light"]) {
+                background: var(--neutral-900);
+            }
+        }
+
+        .agreement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .agreement-buyer {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .agreement-rate {
+            font-size: 1.1em;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .agreement-status {
+            font-size: 0.85em;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 12px;
+            background: var(--success-light);
+            color: var(--success);
             font-weight: 600;
         }
 
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Info Box */
-        .info-box {
-            background: #dbeafe;
-            border: 1px solid #1e5aa8;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: #1e40af;
-        }
-
-        /* Divider */
-        .divider {
-            height: 1px;
-            background: #e1e8ed;
-            margin: 16px 0;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-
-            .container {
-                padding: 0 10px;
-            }
-
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .tabs {
-                flex-wrap: wrap;
-            }
-        }
+        /* UTILITY */
+        .mt-16 { margin-top: 16px; }
+        .mb-16 { margin-bottom: 16px; }
+        .gap-8 { gap: 8px; }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- HEADER -->
     <header>
-        <div>
-            <h1>🎯 Echo Hub</h1>
-            <p>Vendor Commission & Product Management Portal</p>
+        <div class="header-left">
+            <h1>Echo Hub</h1>
+            <p id="vendor-greeting">Welcome, Vendor</p>
         </div>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </header>
 
-    <div class="container">
-        <!-- Loading State -->
-        <div id="loading-state" class="loading-state" style="display: none;">
-            ⏳ Loading your portal...
+    <!-- TABS NAVIGATION -->
+    <div class="tab-container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('inventory')">📦 Inventory</button>
+            <button class="tab-btn" onclick="switchTab('inquiries')">💬 Customer Inquiries</button>
+            <button class="tab-btn" onclick="switchTab('commissions')">💰 Commission Management</button>
         </div>
 
-        <!-- Error State -->
-        <div id="error-state" class="error-state" style="display: none;">
-            ⚠️ Unable to load portal. Please refresh or contact support.
+        <!-- TAB 1: INVENTORY -->
+        <div id="inventory" class="tab-content active">
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Products</h2>
+                    <button class="btn btn-primary" onclick="openAddProductModal()">+ Add Product</button>
+                </div>
+                <div id="products-container" class="products-grid">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
         </div>
 
-        <!-- Portal Content -->
-        <div id="portal-content" style="display: none;">
-            <!-- Alert Banner -->
-            <div id="alerts-banner">
-                <button class="alert-close-btn" onclick="closeAlertsBanner()">×</button>
-                <div id="alerts-content"></div>
-            </div>
-
-            <!-- Profile Bar -->
-            <div class="profile-bar">
-                <div class="welcome-text">
-                    <h2 id="vendor-name">Welcome, Vendor</h2>
-                    <p id="vendor-info">Loading...</p>
+        <!-- TAB 2: CUSTOMER INQUIRIES -->
+        <div id="inquiries" class="tab-content">
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Customer Inquiries</h2>
+                    <input type="text" id="inquiry-search" placeholder="Search by buyer, product, or message..." style="max-width: 300px; flex: 1; margin-left: 16px;">
                 </div>
-                <div class="profile-tags">
-                    <div class="tag"><strong>ID:</strong> <span id="vendor-id">--</span></div>
-                    <div class="tag"><strong>Email:</strong> <span id="vendor-email">--</span></div>
+                <div id="inquiries-container">
+                    <div class="loading"><div class="spinner"></div></div>
                 </div>
             </div>
+        </div>
 
-            <!-- Metrics Grid -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">Commission Due</div>
-                    <div class="metric-value" id="metric-due">$0.00</div>
-                    <div class="metric-subtext">From pending feedback</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Threshold</div>
-                    <div class="metric-value" id="metric-threshold">$0.00</div>
-                    <div class="metric-subtext">Payment threshold</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Progress to Payout</div>
-                    <div id="payout-progress-display">--</div>
-                    <div class="progress-bar">
-                        <div id="payout-progress-fill" class="progress-fill" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
+        <!-- TAB 3: COMMISSIONS -->
+        <div id="commissions" class="tab-content">
+            <div class="section">
+                <h2>Commission Management</h2>
 
-            <!-- Tabs Navigation -->
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab(event, 'products')">📦 Inventory</button>
-                <button class="tab" onclick="switchTab(event, 'commissions')">💰 Commission Management</button>
-                <button class="tab" onclick="switchTab(event, 'inquiries')">💬 Customer Inquiries</button>
-            </div>
-
-            <!-- Tab 1: Products/Inventory -->
-            <div id="products" class="tab-content active">
-                <div class="main-content-grid">
-                    <!-- Product Form -->
-                    <div class="product-form-container">
-                        <h3 style="margin-bottom: 16px; color: #1e293b;">Create New Product</h3>
-                        <div id="form-alert" class="alert-msg"></div>
-                        <form id="productForm">
-                            <input type="hidden" id="vendorIdInput" value="">
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="productName">Product Name *</label>
-                                    <input type="text" id="productName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="category">Category *</label>
-                                    <select id="category" required>
-                                        <option value="">-- Select --</option>
-                                        <option value="electronics">Electronics</option>
-                                        <option value="clothing">Clothing</option>
-                                        <option value="home">Home & Garden</option>
-                                        <option value="food">Food & Beverages</option>
-                                        <option value="beauty">Beauty & Personal Care</option>
-                                        <option value="sports">Sports & Outdoors</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="price">Price ($) *</label>
-                                    <input type="number" id="price" step="0.01" min="0" required>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="imageFile1">Primary Image *</label>
-                                    <input type="file" id="imageFile1" accept="image/*" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="imageFile2">Secondary Image</label>
-                                    <input type="file" id="imageFile2" accept="image/*">
-                                </div>
-                            </div>
-
-                            <div class="form-row full">
-                                <button type="submit" id="submitProductBtn" class="btn btn-primary">Publish Listing</button>
-                                <button type="button" onclick="resetFormMode()" style="margin-left: 8px;" class="btn btn-secondary">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Product Inventory Table -->
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h2>Your Products</h2>
+                <div style="margin-bottom: 24px;">
+                    <h3>Overview</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Earned</div>
+                            <div class="metric-value" id="total-earned">$0.00</div>
                         </div>
-                        <div id="products-loading" style="text-align: center; padding: 20px; color: #64748b;">Loading products...</div>
-                        <div id="products-list" style="display: none;">
-                            <div class="table-container">
-                                <table id="productsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>Category</th>
-                                            <th>Price</th>
-                                            <th>Images</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="productsTbody">
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Pending Payout</div>
+                            <div class="metric-value" id="pending-payout">$0.00</div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 2: Commission Management -->
-            <div id="commissions" class="tab-content">
-                <!-- Commission Stats -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Current Rate</div>
-                        <div class="stat-value" id="current-rate">$5.00</div>
-                        <div class="stat-detail">Per feedback</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Pending Payouts</div>
-                        <div class="stat-value" id="pending-payouts">$0.00</div>
-                        <div class="stat-detail">Awaiting threshold</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Paid This Month</div>
-                        <div class="stat-value" id="paid-month">$0.00</div>
-                        <div class="stat-detail">Commission processed</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Active Agreements</div>
-                        <div class="stat-value" id="active-agreements">0</div>
-                        <div class="stat-detail">Vendor-buyer agreements</div>
-                    </div>
-                </div>
-
-                <!-- Commission Sub-Tabs -->
-                <div style="border-bottom: 1px solid #e1e8ed; margin-bottom: 20px;">
-                    <div style="display: flex; gap: 8px;">
-                        <button class="tab active" onclick="switchCommissionTab(event, 'dashboard')" style="flex: 0;">Dashboard</button>
-                        <button class="tab" onclick="switchCommissionTab(event, 'rate-requests')" style="flex: 0;">Rate Requests</button>
-                        <button class="tab" onclick="switchCommissionTab(event, 'thresholds')" style="flex: 0;">Thresholds</button>
-                        <button class="tab" onclick="switchCommissionTab(event, 'history')" style="flex: 0;">Payment History</button>
-                    </div>
-                </div>
-
-                <!-- Dashboard Sub-Tab -->
-                <div id="dashboard" class="tab-content active" style="padding: 20px; background: white; border-radius: 8px;">
-                    <h3 style="margin-bottom: 16px;">Commission Overview</h3>
-                    <div class="collapsible-section open">
-                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                            <h3>⚙️ Rate Settings</h3>
-                            <span class="collapsible-icon">▼</span>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Paid</div>
+                            <div class="metric-value" id="total-paid">$0.00</div>
                         </div>
-                        <div class="collapsible-content">
-                            <div class="collapsible-body">
-                                <div class="info-box">Current rate: <strong id="display-current-rate">$5.00</strong> per feedback</div>
-                                <button class="btn btn-primary" onclick="openModal('rate-increase-modal')" style="width: 100%;">Request Rate Increase</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="collapsible-section">
-                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                            <h3>📊 Payment Threshold</h3>
-                            <span class="collapsible-icon">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div class="collapsible-body">
-                                <p style="margin-bottom: 12px; color: #64748b;">Set minimum earnings before automatic payout.</p>
-                                <button class="btn btn-primary" onclick="openModal('threshold-modal')" style="width: 100%;">Configure Threshold</button>
-                            </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Active Buyers</div>
+                            <div class="metric-value" id="active-buyers">0</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Rate Requests Sub-Tab -->
-                <div id="rate-requests" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
-                    <div class="panel-header">
-                        <h2>Rate Change Requests</h2>
-                        <button class="btn btn-primary" onclick="openModal('rate-increase-modal')">+ New Request</button>
-                    </div>
-                    <div id="rate-requests-list">
-                        <div class="empty-state">No rate requests yet</div>
-                    </div>
-                </div>
-
-                <!-- Thresholds Sub-Tab -->
-                <div id="thresholds" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
-                    <div class="panel-header">
-                        <h2>Vendor-Buyer Agreements</h2>
-                        <button class="btn btn-primary" onclick="openModal('threshold-modal')">+ New Agreement</button>
-                    </div>
-                    <div id="thresholds-list">
-                        <div class="empty-state">No agreements established</div>
-                    </div>
-                </div>
-
-                <!-- Payment History Sub-Tab -->
-                <div id="history" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
-                    <div class="panel-header">
-                        <h2>Payment History</h2>
-                    </div>
-                    <div class="table-container">
-                        <table id="payment-history-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Related To</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="payment-history-body">
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No payment history yet</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Customer Inquiries -->
-            <div id="inquiries" class="tab-content">
-                <div class="panel">
-                    <!-- Inquiry Folders -->
-                    <div class="inquiry-folder-tabs">
-                        <button class="inquiry-tab active" onclick="switchInquiryFolder(event, 'all')">📬 All</button>
-                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'pending')">⏳ Feedback Pending</button>
-                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'new')">💬 Inquiries</button>
-                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'responded')">✅ Responded</button>
-                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'flagged')">🚩 Flagged</button>
-                    </div>
-
-                    <!-- Search and Filters -->
-                    <div style="margin-bottom: 16px; display: flex; gap: 8px;">
-                        <input type="text" id="inquiry-search" placeholder="Search inquiries..." style="flex: 1; padding: 8px 12px; border: 1px solid #e1e8ed; border-radius: 6px;">
-                        <select id="inquiry-sort" style="padding: 8px 12px; border: 1px solid #e1e8ed; border-radius: 6px;">
-                            <option value="newest">Newest</option>
-                            <option value="oldest">Oldest</option>
-                            <option value="unread">Unread First</option>
-                        </select>
-                    </div>
-
-                    <!-- Inquiries List -->
-                    <div id="inquiries-loading" style="text-align: center; padding: 20px; color: #64748b;">Loading inquiries...</div>
-                    <div id="inquiries-list" style="display: none;">
-                        <!-- Inquiry threads will be populated here -->
-                    </div>
-
-                    <!-- Inquiry Detail View -->
-                    <div id="inquiry-detail" style="display: none; margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: 8px;">
-                        <button onclick="closeInquiryDetail()" class="btn btn-secondary" style="margin-bottom: 16px;">← Back to List</button>
-                        <div id="inquiry-detail-content"></div>
+                <div>
+                    <h3>Commission by Buyer</h3>
+                    <div class="context-switcher" id="buyer-switcher"></div>
+                    <div id="buyer-commissions-container">
+                        <div class="empty-state"><p>Select a buyer to see commission details</p></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
-    <!-- Rate Increase Modal -->
-    <div id="rate-increase-modal" class="modal">
+    <!-- PRODUCT DETAIL MODAL -->
+    <div id="product-modal" class="modal">
         <div class="modal-content">
-            <button class="close-modal" onclick="closeModal('rate-increase-modal')">×</button>
             <div class="modal-header">
-                <h2>Request Rate Increase</h2>
-                <p>Submit a request to increase your per-feedback commission rate</p>
+                <h2 class="modal-title" id="product-modal-name">Product Name</h2>
+                <button class="modal-close" onclick="closeModal('product-modal')">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="image-gallery" id="product-gallery"></div>
                 <div class="form-group">
-                    <label>Current Rate</label>
-                    <input type="text" id="modal-current-rate" readonly style="background: #f1f5f9;">
+                    <label>Description</label>
+                    <p id="product-modal-description" style="color: var(--text-secondary); line-height: 1.6;"></p>
                 </div>
                 <div class="form-group">
-                    <label for="modal-new-rate">Requested Rate ($) *</label>
-                    <input type="number" id="modal-new-rate" step="0.01" min="0" required>
+                    <label>Price</label>
+                    <p id="product-modal-price" style="font-size: 1.2em; font-weight: 700; color: var(--primary);"></p>
                 </div>
                 <div class="form-group">
-                    <label for="modal-rate-justification">Justification *</label>
-                    <textarea id="modal-rate-justification" rows="4" required placeholder="Explain why you deserve a rate increase..."></textarea>
+                    <label>Category</label>
+                    <p id="product-modal-category"></p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('rate-increase-modal')" class="btn btn-secondary">Cancel</button>
-                <button onclick="submitRateRequest()" class="btn btn-primary">Submit Request</button>
+                <button class="btn btn-secondary" onclick="closeModal('product-modal')">Close</button>
+                <button class="btn btn-primary" onclick="editProduct()">Edit Product</button>
             </div>
         </div>
     </div>
 
-    <!-- Threshold Modal -->
-    <div id="threshold-modal" class="modal">
+    <!-- INQUIRY DETAIL MODAL -->
+    <div id="inquiry-modal" class="modal">
         <div class="modal-content">
-            <button class="close-modal" onclick="closeModal('threshold-modal')">×</button>
             <div class="modal-header">
-                <h2>Configure Payment Threshold</h2>
-                <p>Set earnings threshold for automatic vendor payouts</p>
+                <h2 class="modal-title">Inquiry Details</h2>
+                <button class="modal-close" onclick="closeModal('inquiry-modal')">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="buyer-info-card" id="inquiry-buyer-info"></div>
+
                 <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="threshold-enable"> Enable automatic payout when threshold is reached
-                    </label>
+                    <label>Product</label>
+                    <p id="inquiry-product-name" style="color: var(--text-primary); font-weight: 600;"></p>
                 </div>
-                <div class="form-group" id="threshold-amount-group" style="display: none;">
-                    <label for="threshold-amount">Threshold Amount ($) *</label>
-                    <input type="number" id="threshold-amount" step="0.01" min="0">
+
+                <div class="form-group">
+                    <label>Message Type</label>
+                    <p><span id="inquiry-message-badge" class="inquiry-badge"></span></p>
+                </div>
+
+                <div class="form-group">
+                    <label>Message</label>
+                    <p id="inquiry-message-text" style="color: var(--text-primary); line-height: 1.6; padding: 12px; background: var(--neutral-50); border-radius: 6px;"></p>
+                </div>
+
+                <div id="inquiry-attachments" style="margin-bottom: 16px; display: none;">
+                    <label>Attachments</label>
+                    <div id="inquiry-attachments-list"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="inquiry-status">
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Your Reply</label>
+                    <textarea id="inquiry-reply" placeholder="Type your response here..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('threshold-modal')" class="btn btn-secondary">Cancel</button>
-                <button onclick="submitThresholdConfig()" class="btn btn-primary">Save Configuration</button>
+                <button class="btn btn-secondary" onclick="closeModal('inquiry-modal')">Close</button>
+                <button class="btn btn-success" onclick="submitInquiryReply()">Send Reply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD PRODUCT MODAL -->
+    <div id="add-product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Product</h2>
+                <button class="modal-close" onclick="closeModal('add-product-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="new-product-name" placeholder="Enter product name">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="new-product-description" placeholder="Describe your product..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price</label>
+                    <input type="number" id="new-product-price" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="new-product-category">
+                        <option value="">Select a category</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('add-product-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewProduct()">Create Product</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Supabase Configuration
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let sbClient = null;
-        let currentVendor = null;
-        let vendorId = null;
-        let pollIntervals = {};
-
-        // Initialize Supabase
-        async function initSupabaseClient() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 50;
-
-                const check = setInterval(() => {
-                    if (window.supabase) {
-                        clearInterval(check);
-                        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        resolve(sbClient);
-                    } else if (++attempts >= maxAttempts) {
-                        clearInterval(check);
-                        reject(new Error('Supabase SDK failed to load'));
-                    }
-                }, 100);
-            });
+        // For testing: set a default vendor ID if none exists
+        if (!localStorage.getItem('vendor_id')) {
+            // You should set your actual vendor UUID here for testing
+            // Format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+            // Comment out the line below to see the login redirect
+            // localStorage.setItem('vendor_id', 'TEST_VENDOR_UUID_HERE');
+            // localStorage.setItem('vendor_email', 'test@vendor.com');
         }
 
-        // Portal Initialization
+        let currentVendorId = localStorage.getItem('vendor_id');
+        let currentVendorEmail = localStorage.getItem('vendor_email');
+        let selectedInquiry = null;
+        let selectedBuyerForCommissions = null;
+
+        // INITIALIZATION
         async function initPortal() {
-            try {
-                document.getElementById('loading-state').style.display = 'block';
-
-                if (!sbClient) {
-                    sbClient = await initSupabaseClient();
-                }
-
-                vendorId = localStorage.getItem('vendor_id');
-                if (!vendorId) {
-                    throw new Error('Vendor ID not found in session');
-                }
-
-                await loadVendorData();
-                await loadEarningsData();
-                await loadCommissionSettings();
-                await loadVendorProducts();
-                await loadPendingInquiries();
-                await loadVendorAlerts();
-                await loadRateRequests();
-                await loadThresholds();
-                await loadPaymentHistory();
-
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('portal-content').style.display = 'block';
-
-                setupPolling();
-            } catch (err) {
-                console.error('Portal initialization error:', err);
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('error-state').style.display = 'block';
+            if (!currentVendorId) {
+                document.body.innerHTML = '<div style="padding: 40px; text-align: center; font-family: Arial;"><h2>Setup Required</h2><p>Please set your vendor_id in localStorage or login first.</p><p><code>localStorage.setItem("vendor_id", "YOUR_UUID_HERE")</code></p></div>';
+                return;
             }
+
+            await loadVendorData();
+            await loadProducts();
+            await loadInquiries();
+            await loadCommissionData();
         }
 
-        // Load Vendor Data
+        // ===== VENDOR DATA =====
         async function loadVendorData() {
             try {
-                const { data: vendor, error } = await sbClient
+                const { data: vendor, error } = await supabase
                     .from('vendors')
-                    .select('*')
-                    .eq('id', vendorId)
-                    .single();
-
-                if (error) throw error;
-
-                currentVendor = vendor;
-                document.getElementById('vendor-id').textContent = vendorId.substring(0, 8);
-                document.getElementById('vendor-email').textContent = vendor.email || '--';
-                document.getElementById('vendor-name').textContent = `Welcome, ${vendor.business_name || 'Vendor'}`;
-                document.getElementById('vendor-info').textContent = vendor.email || 'Loading...';
-                document.getElementById('vendorIdInput').value = vendorId;
-
-                // Set current rate display
-                const rate = vendor.current_per_feedback_rate || 5.00;
-                document.getElementById('current-rate').textContent = '$' + parseFloat(rate).toFixed(2);
-                document.getElementById('display-current-rate').textContent = '$' + parseFloat(rate).toFixed(2);
-                document.getElementById('modal-current-rate').value = '$' + parseFloat(rate).toFixed(2);
-            } catch (err) {
-                console.error('Error loading vendor data:', err);
-            }
-        }
-
-        // Load Earnings Data
-        async function loadEarningsData() {
-            try {
-                const { data: earnings, error } = await sbClient
-                    .from('admin_payables')
-                    .select('*')
-                    .eq('vendor_id', vendorId);
-
-                if (error) throw error;
-
-                let totalDue = 0;
-                earnings?.forEach(e => {
-                    totalDue += parseFloat(e.amount || 0);
-                });
-
-                const threshold = currentVendor?.commission_threshold || 100;
-                const percentage = threshold > 0 ? (totalDue / threshold) * 100 : 0;
-
-                document.getElementById('metric-due').textContent = '$' + totalDue.toFixed(2);
-                document.getElementById('metric-threshold').textContent = '$' + threshold.toFixed(2);
-                document.getElementById('payout-progress-fill').style.width = Math.min(percentage, 100) + '%';
-                document.getElementById('payout-progress-display').textContent = Math.round(percentage) + '%';
-                document.getElementById('pending-payouts').textContent = '$' + totalDue.toFixed(2);
-            } catch (err) {
-                console.error('Error loading earnings:', err);
-            }
-        }
-
-        // Load Commission Settings
-        async function loadCommissionSettings() {
-            try {
-                const { data: vendor, error } = await sbClient
-                    .from('vendors')
-                    .select('current_per_feedback_rate, commission_threshold')
-                    .eq('id', vendorId)
+                    .select('business_name, id')
+                    .eq('id', currentVendorId)
                     .single();
 
                 if (error) throw error;
 
                 if (vendor) {
-                    currentVendor.commission_threshold = vendor.commission_threshold || 100;
+                    document.getElementById('vendor-greeting').textContent = `Welcome, ${vendor.business_name}`;
                 }
-            } catch (err) {
-                console.error('Error loading commission settings:', err);
+            } catch (error) {
+                console.error('Error loading vendor data:', error);
             }
         }
 
-        // Load Vendor Products
-        async function loadVendorProducts() {
+        // ===== PRODUCTS =====
+        async function loadProducts() {
             try {
-                const { data: products, error } = await sbClient
+                const { data: products, error } = await supabase
                     .from('products')
-                    .select('*')
-                    .eq('vendor_id', vendorId);
+                    .select(`
+                        id,
+                        product_name,
+                        description,
+                        price,
+                        category,
+                        created_at
+                    `)
+                    .eq('vendor_id', currentVendorId)
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                const tbody = document.getElementById('productsTbody');
-                tbody.innerHTML = '';
+                const container = document.getElementById('products-container');
 
                 if (!products || products.length === 0) {
-                    document.getElementById('products-loading').style.display = 'block';
-                    document.getElementById('products-list').style.display = 'none';
+                    container.innerHTML = '<div class="empty-state"><p>No products yet. Create your first product!</p></div>';
                     return;
                 }
 
-                for (const product of products) {
-                    const { data: images } = await sbClient
-                        .from('product-images')
-                        .select('image_url')
-                        .eq('product_id', product.id);
+                // Fetch images for each product
+                const productsWithImages = await Promise.all(
+                    products.map(async (product) => {
+                        const { data: images } = await supabase
+                            .from('product-images')
+                            .select('image_url')
+                            .eq('product_id', product.id)
+                            .limit(1);
 
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><strong>${escapeHtml(product.product_name)}</strong></td>
-                        <td>${escapeHtml(product.category || '--')}</td>
-                        <td>$${parseFloat(product.price).toFixed(2)}</td>
-                        <td>${images?.length || 0} image(s)</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick="editProduct('${product.id}')">Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.id}')">Delete</button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                }
+                        return {
+                            ...product,
+                            image_url: images?.[0]?.image_url || null
+                        };
+                    })
+                );
 
-                document.getElementById('products-loading').style.display = 'none';
-                document.getElementById('products-list').style.display = 'block';
-            } catch (err) {
-                console.error('Error loading products:', err);
+                container.innerHTML = productsWithImages.map(product => `
+                    <div class="product-card" onclick="openProductModal('${product.id}')">
+                        <img src="${product.image_url || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 140%22%3E%3Crect fill=%22%23e5e7eb%22 width=%22200%22 height=%22140%22/%3E%3C/svg%3E'}" alt="${product.product_name}" class="product-image">
+                        <div class="product-info">
+                            <div class="product-name">${product.product_name}</div>
+                            <div class="product-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('products-container').innerHTML = '<div class="empty-state"><p>Error loading products</p></div>';
             }
         }
 
-        // Load Pending Inquiries
-        async function loadPendingInquiries() {
+        async function openProductModal(productId) {
             try {
-                const { data: inquiries, error } = await sbClient
-                    .from('inquiries')
+                const { data: product, error } = await supabase
+                    .from('products')
                     .select('*')
-                    .eq('vendor_id', vendorId)
+                    .eq('id', productId)
+                    .single();
+
+                if (error) throw error;
+
+                const { data: images } = await supabase
+                    .from('product-images')
+                    .select('image_url')
+                    .eq('product_id', productId);
+
+                document.getElementById('product-modal-name').textContent = product.product_name;
+                document.getElementById('product-modal-description').textContent = product.description || 'No description';
+                document.getElementById('product-modal-price').textContent = `$${parseFloat(product.price || 0).toFixed(2)}`;
+                document.getElementById('product-modal-category').textContent = product.category || 'Uncategorized';
+
+                const gallery = document.getElementById('product-gallery');
+                if (images && images.length > 0) {
+                    gallery.innerHTML = images.map(img =>
+                        `<img src="${img.image_url}" class="gallery-image" onclick="event.stopPropagation(); viewImageFull('${img.image_url}')">`
+                    ).join('');
+                } else {
+                    gallery.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-secondary);">No images</p>';
+                }
+
+                document.getElementById('product-modal').classList.add('open');
+            } catch (error) {
+                console.error('Error opening product modal:', error);
+            }
+        }
+
+        // ===== INQUIRIES =====
+        async function loadInquiries() {
+            try {
+                const { data: inquiries, error } = await supabase
+                    .from('inquiries')
+                    .select(`
+                        id,
+                        message,
+                        created_at,
+                        vendor_status,
+                        message_type,
+                        sender_type,
+                        product_id,
+                        products(product_name),
+                        buyer_id,
+                        buyers(full_name, id)
+                    `)
+                    .eq('vendor_id', currentVendorId)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                const inquiriesList = document.getElementById('inquiries-list');
-                inquiriesList.innerHTML = '';
+                const container = document.getElementById('inquiries-container');
 
                 if (!inquiries || inquiries.length === 0) {
-                    inquiriesList.innerHTML = '<div class="empty-state">No inquiries yet</div>';
+                    container.innerHTML = '<div class="empty-state"><p>No inquiries yet</p></div>';
                     return;
                 }
 
-                inquiries.forEach(inq => {
-                    const div = document.createElement('div');
-                    div.className = 'inquiry-thread';
-                    div.onclick = () => viewInquiryDetail(inq.id);
-                    div.innerHTML = `
-                        <div class="inquiry-header">
-                            <div class="inquiry-from">${escapeHtml(inq.buyer_name || 'Unknown')}</div>
-                            <div class="inquiry-date">${new Date(inq.created_at).toLocaleDateString()}</div>
-                        </div>
-                        <div class="inquiry-subject" style="font-weight: 500;">${escapeHtml(inq.subject || 'Inquiry')}</div>
-                        <div class="inquiry-preview">${escapeHtml((inq.message || '').substring(0, 100))}</div>
-                    `;
-                    inquiriesList.appendChild(div);
-                });
+                container.innerHTML = inquiries.map(inquiry => {
+                    const buyerName = inquiry.buyers?.full_name || 'Unknown';
+                    const productName = inquiry.products?.product_name || 'Unknown Product';
+                    const messageType = inquiry.message_type || 'inquiry';
+                    const badge = {
+                        'inquiry': 'inquiry',
+                        'feedback': 'feedback',
+                        'followup': 'followup'
+                    }[messageType] || 'inquiry';
 
-                document.getElementById('inquiries-loading').style.display = 'none';
-                document.getElementById('inquiries-list').style.display = 'block';
-            } catch (err) {
-                console.error('Error loading inquiries:', err);
-            }
-        }
-
-        // Load Rate Requests
-        async function loadRateRequests() {
-            try {
-                const { data: requests, error } = await sbClient
-                    .from('rate_change_requests')
-                    .select('*')
-                    .eq('vendor_id', vendorId)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                const list = document.getElementById('rate-requests-list');
-                list.innerHTML = '';
-
-                if (!requests || requests.length === 0) {
-                    list.innerHTML = '<div class="empty-state">No rate requests yet</div>';
-                    return;
-                }
-
-                requests.forEach(req => {
-                    const div = document.createElement('div');
-                    div.className = 'collapsible-section';
-                    div.innerHTML = `
-                        <div class="collapsible-header">
-                            <h3>${req.change_type === 'increase' ? '📈' : '📉'} ${req.requested_rate ? '$' + parseFloat(req.requested_rate).toFixed(2) : '--'} (${req.status})</h3>
-                            <span class="collapsible-icon">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div class="collapsible-body">
-                                <p><strong>Reason:</strong> ${escapeHtml(req.reason || '--')}</p>
-                                <p style="margin-top: 8px;"><strong>Status:</strong> <span class="badge badge-${req.status === 'approved' ? 'success' : req.status === 'rejected' ? 'error' : 'warning'}">${req.status}</span></p>
+                    return `
+                        <div class="inquiry-item" onclick="openInquiryModal('${inquiry.id}')">
+                            <div class="inquiry-header">
+                                <span class="inquiry-buyer">${buyerName}</span>
+                                <span class="inquiry-time">${formatDate(inquiry.created_at)}</span>
                             </div>
+                            <div class="inquiry-product">📦 ${productName}</div>
+                            <div style="margin-bottom: 6px;">
+                                <span class="inquiry-badge badge-${badge}">${messageType.toUpperCase()}</span>
+                            </div>
+                            <div class="inquiry-message">${inquiry.message}</div>
                         </div>
                     `;
-                    list.appendChild(div);
-                });
-            } catch (err) {
-                console.error('Error loading rate requests:', err);
+                }).join('');
+            } catch (error) {
+                console.error('Error loading inquiries:', error);
+                document.getElementById('inquiries-container').innerHTML = '<div class="empty-state"><p>Error loading inquiries</p></div>';
             }
         }
 
-        // Load Thresholds
-        async function loadThresholds() {
+        async function openInquiryModal(inquiryId) {
             try {
-                const { data: agreements, error } = await sbClient
-                    .from('vendor_buyer_agreements')
-                    .select('*')
-                    .eq('vendor_id', vendorId);
+                const { data: inquiry, error } = await supabase
+                    .from('inquiries')
+                    .select(`
+                        id,
+                        message,
+                        created_at,
+                        vendor_status,
+                        message_type,
+                        product_id,
+                        products(product_name),
+                        buyer_id,
+                        buyers(full_name, id)
+                    `)
+                    .eq('id', inquiryId)
+                    .single();
 
                 if (error) throw error;
 
-                const list = document.getElementById('thresholds-list');
-                list.innerHTML = '';
+                selectedInquiry = inquiry;
+
+                // Buyer info card
+                const buyerInfo = inquiry.buyers || {};
+                const buyerInfoHtml = `
+                    <div class="buyer-info-row">
+                        <span class="buyer-info-label">Name</span>
+                        <span>
+                            <span class="buyer-info-value">${buyerInfo.full_name || 'Unknown'}</span>
+                            <button class="copy-btn" onclick="copyToClipboard('${buyerInfo.full_name || ''}')">Copy</button>
+                        </span>
+                    </div>
+                    <div class="buyer-info-row">
+                        <span class="buyer-info-label">Buyer ID</span>
+                        <span>
+                            <span class="buyer-info-value">${buyerInfo.id || 'N/A'}</span>
+                            <button class="copy-btn" onclick="copyToClipboard('${buyerInfo.id || ''}')">Copy</button>
+                        </span>
+                    </div>
+                `;
+                document.getElementById('inquiry-buyer-info').innerHTML = buyerInfoHtml;
+
+                // Product and message
+                document.getElementById('inquiry-product-name').textContent = inquiry.products?.product_name || 'Unknown Product';
+                document.getElementById('inquiry-message-text').textContent = inquiry.message;
+                document.getElementById('inquiry-status').value = inquiry.vendor_status || 'pending';
+
+                // Message type badge
+                const badgeType = {
+                    'inquiry': 'inquiry',
+                    'feedback': 'feedback',
+                    'followup': 'followup'
+                }[inquiry.message_type] || 'inquiry';
+                const badgeEl = document.getElementById('inquiry-message-badge');
+                badgeEl.textContent = inquiry.message_type?.toUpperCase() || 'INQUIRY';
+                badgeEl.className = `inquiry-badge badge-${badgeType}`;
+
+                // Check for feedback/attachments
+                const { data: feedback } = await supabase
+                    .from('feedback')
+                    .select('proof_images, proof_document')
+                    .eq('inquiry_id', inquiryId);
+
+                if (feedback && feedback.length > 0) {
+                    const attachmentsList = document.getElementById('inquiry-attachments-list');
+                    let attachmentsHtml = '';
+
+                    feedback.forEach(f => {
+                        if (f.proof_images && Array.isArray(f.proof_images)) {
+                            attachmentsHtml += f.proof_images.map(img =>
+                                `<div style="margin-bottom: 8px;"><img src="${img}" style="max-width: 100%; border-radius: 6px; cursor: pointer;" onclick="viewImageFull('${img}')"></div>`
+                            ).join('');
+                        }
+                        if (f.proof_document) {
+                            attachmentsHtml += `<div style="margin-bottom: 8px;"><a href="${f.proof_document}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">📎 ${f.proof_document}</a> <button class="copy-btn" onclick="copyToClipboard('${f.proof_document}')">Copy Link</button></div>`;
+                        }
+                    });
+
+                    if (attachmentsHtml) {
+                        document.getElementById('inquiry-attachments').style.display = 'block';
+                        attachmentsList.innerHTML = attachmentsHtml;
+                    }
+                }
+
+                document.getElementById('inquiry-modal').classList.add('open');
+            } catch (error) {
+                console.error('Error opening inquiry modal:', error);
+            }
+        }
+
+        async function submitInquiryReply() {
+            if (!selectedInquiry) return;
+
+            const reply = document.getElementById('inquiry-reply').value.trim();
+            const status = document.getElementById('inquiry-status').value;
+
+            if (!reply) {
+                alert('Please type a reply');
+                return;
+            }
+
+            try {
+                // Update inquiry status
+                await supabase
+                    .from('inquiries')
+                    .update({ vendor_status: status })
+                    .eq('id', selectedInquiry.id);
+
+                // Create follow-up message
+                await supabase
+                    .from('inquiries')
+                    .insert({
+                        product_id: selectedInquiry.product_id,
+                        buyer_id: selectedInquiry.buyer_id,
+                        vendor_id: currentVendorId,
+                        message: reply,
+                        message_type: 'followup',
+                        sender_type: 'vendor',
+                        sender_id: currentVendorId,
+                        status: 'active'
+                    });
+
+                closeModal('inquiry-modal');
+                await loadInquiries();
+                alert('Reply sent successfully!');
+            } catch (error) {
+                console.error('Error submitting reply:', error);
+                alert('Error sending reply');
+            }
+        }
+
+        // ===== COMMISSIONS =====
+        async function loadCommissionData() {
+            try {
+                // Load agreements to show buyer contexts
+                const { data: agreements, error } = await supabase
+                    .from('vendor_buyer_agreements')
+                    .select(`
+                        id,
+                        buyer_id,
+                        commission_rate,
+                        status,
+                        buyers(full_name)
+                    `)
+                    .eq('vendor_id', currentVendorId);
+
+                if (error) throw error;
+
+                // Build buyer switcher
+                const switcher = document.getElementById('buyer-switcher');
+                let switcherHtml = '<button class="context-btn active" onclick="selectBuyerForCommissions(null)">All Buyers</button>';
+
+                if (agreements && agreements.length > 0) {
+                    switcherHtml += agreements.map(ag =>
+                        `<button class="context-btn" onclick="selectBuyerForCommissions('${ag.buyer_id}')">${ag.buyers?.full_name || 'Unknown'}</button>`
+                    ).join('');
+                }
+                switcher.innerHTML = switcherHtml;
+
+                // Load payables for overview
+                const { data: vendorPayables } = await supabase
+                    .from('vendor_payables')
+                    .select('amount, status')
+                    .eq('vendor_id', currentVendorId);
+
+                let totalEarned = 0;
+                let pendingPayout = 0;
+
+                if (vendorPayables) {
+                    vendorPayables.forEach(p => {
+                        totalEarned += parseFloat(p.amount || 0);
+                        if (p.status === 'pending') {
+                            pendingPayout += parseFloat(p.amount || 0);
+                        }
+                    });
+                }
+
+                document.getElementById('total-earned').textContent = `$${totalEarned.toFixed(2)}`;
+                document.getElementById('pending-payout').textContent = `$${pendingPayout.toFixed(2)}`;
+                document.getElementById('total-paid').textContent = `$${(totalEarned - pendingPayout).toFixed(2)}`;
+                document.getElementById('active-buyers').textContent = (agreements || []).length;
+            } catch (error) {
+                console.error('Error loading commission data:', error);
+            }
+        }
+
+        async function selectBuyerForCommissions(buyerId) {
+            selectedBuyerForCommissions = buyerId;
+
+            // Update button states
+            document.querySelectorAll('.context-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            try {
+                let query = supabase
+                    .from('vendor_buyer_agreements')
+                    .select(`
+                        id,
+                        buyer_id,
+                        commission_rate,
+                        status,
+                        buyers(full_name)
+                    `)
+                    .eq('vendor_id', currentVendorId);
+
+                if (buyerId) {
+                    query = query.eq('buyer_id', buyerId);
+                }
+
+                const { data: agreements, error } = await query;
+
+                if (error) throw error;
+
+                const container = document.getElementById('buyer-commissions-container');
 
                 if (!agreements || agreements.length === 0) {
-                    list.innerHTML = '<div class="empty-state">No agreements established</div>';
-                    document.getElementById('active-agreements').textContent = '0';
+                    container.innerHTML = '<div class="empty-state"><p>No agreements found</p></div>';
                     return;
                 }
 
-                document.getElementById('active-agreements').textContent = agreements.length;
-
-                agreements.forEach(agree => {
-                    const div = document.createElement('div');
-                    div.className = 'collapsible-section';
-                    div.innerHTML = `
-                        <div class="collapsible-header">
-                            <h3>${escapeHtml(agree.buyer_name || 'Buyer')} - $${parseFloat(agree.per_feedback_amount || 0).toFixed(2)}</h3>
-                            <span class="collapsible-icon">▼</span>
-                        </div>
-                        <div class="collapsible-content">
-                            <div class="collapsible-body">
-                                <p><strong>Per Feedback Rate:</strong> $${parseFloat(agree.per_feedback_amount).toFixed(2)}</p>
-                                <p><strong>Threshold:</strong> $${parseFloat(agree.threshold_amount || 0).toFixed(2)}</p>
-                                <p><strong>Status:</strong> <span class="badge badge-${agree.agreement_status === 'active' ? 'success' : 'warning'}">${agree.agreement_status}</span></p>
+                container.innerHTML = agreements.map(ag => {
+                    const ratePercent = parseFloat(ag.commission_rate || 0) * 100;
+                    return `
+                        <div class="agreement-card">
+                            <div class="agreement-header">
+                                <span class="agreement-buyer">${ag.buyers?.full_name || 'Unknown Buyer'}</span>
+                                <div>
+                                    <span class="agreement-rate">${ratePercent}%</span>
+                                    <span class="agreement-status">${ag.status || 'Active'}</span>
+                                </div>
                             </div>
                         </div>
                     `;
-                    list.appendChild(div);
-                });
-            } catch (err) {
-                console.error('Error loading thresholds:', err);
+                }).join('');
+            } catch (error) {
+                console.error('Error loading buyer commissions:', error);
             }
         }
 
-        // Load Payment History
-        async function loadPaymentHistory() {
-            try {
-                const { data: history, error } = await sbClient
-                    .from('payment_history')
-                    .select('*')
-                    .eq('vendor_id', vendorId)
-                    .order('created_at', { ascending: false })
-                    .limit(20);
-
-                if (error) throw error;
-
-                const tbody = document.getElementById('payment-history-body');
-                tbody.innerHTML = '';
-
-                if (!history || history.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No payment history</td></tr>';
-                    return;
-                }
-
-                history.forEach(payment => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${new Date(payment.created_at).toLocaleDateString()}</td>
-                        <td>${escapeHtml(payment.from_type || '--')}</td>
-                        <td>$${parseFloat(payment.amount).toFixed(2)}</td>
-                        <td>${payment.payment_reason || '--'}</td>
-                        <td><span class="badge badge-${payment.payment_date ? 'success' : 'warning'}">${payment.payment_date ? 'Paid' : 'Pending'}</span></td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } catch (err) {
-                console.error('Error loading payment history:', err);
-            }
+        // ===== MODALS & UTILITIES =====
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
         }
 
-        // Load Vendor Alerts
-        async function loadVendorAlerts() {
-            try {
-                const { data: alerts, error } = await sbClient
-                    .from('alerts')
-                    .select('*')
-                    .eq('recipient_id', vendorId)
-                    .eq('recipient_type', 'vendor')
-                    .eq('is_read', false)
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    console.error('Error loading alerts:', error);
-                    return;
-                }
-
-                if (!alerts || alerts.length === 0) {
-                    document.getElementById('alerts-banner').style.display = 'none';
-                    return;
-                }
-
-                const alertsContent = document.getElementById('alerts-content');
-                let html = '';
-
-                alerts.forEach((alert, idx) => {
-                    html += `
-                        <div style="margin-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; padding-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; border-bottom: ${idx < alerts.length - 1 ? '1px solid #fcd34d' : 'none'};">
-                            <div style="font-weight: 600; color: #92400e; font-size: 0.95em;">🔔 ${escapeHtml(alert.title)}</div>
-                            <div style="color: #b45309; font-size: 0.9em; margin-top: 4px;">${escapeHtml(alert.message)}</div>
-                            <button onclick="markAlertAsRead('${alert.id}')" style="background: #fbbf24; color: #78350f; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
-                        </div>
-                    `;
-                });
-
-                alertsContent.innerHTML = html;
-                document.getElementById('alerts-banner').style.display = 'block';
-            } catch (err) {
-                console.error('Unexpected error loading alerts:', err);
-            }
+        function openAddProductModal() {
+            document.getElementById('add-product-modal').classList.add('open');
         }
 
-        // Polling Setup
-        function setupPolling() {
-            // Clear existing intervals
-            Object.values(pollIntervals).forEach(id => clearInterval(id));
-            pollIntervals = {};
+        async function submitNewProduct() {
+            const name = document.getElementById('new-product-name').value.trim();
+            const description = document.getElementById('new-product-description').value.trim();
+            const price = parseFloat(document.getElementById('new-product-price').value || 0);
+            const category = document.getElementById('new-product-category').value;
 
-            pollIntervals.earnings = setInterval(loadEarningsData, 4000);
-            pollIntervals.inquiries = setInterval(loadPendingInquiries, 3000);
-            pollIntervals.alerts = setInterval(loadVendorAlerts, 5000);
-            pollIntervals.products = setInterval(loadVendorProducts, 4000);
-            pollIntervals.rates = setInterval(loadRateRequests, 6000);
-            pollIntervals.thresholds = setInterval(loadThresholds, 6000);
-        }
-
-        // Modal Functions
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-
-        // Submit Rate Request
-        async function submitRateRequest() {
-            const newRate = document.getElementById('modal-new-rate').value;
-            const justification = document.getElementById('modal-rate-justification').value;
-
-            if (!newRate || !justification) {
-                alert('Please fill in all fields');
+            if (!name) {
+                alert('Please enter product name');
                 return;
             }
 
             try {
-                const { error } = await sbClient
-                    .from('rate_change_requests')
-                    .insert([{
-                        vendor_id: vendorId,
-                        current_rate: currentVendor.current_per_feedback_rate || 5.00,
-                        requested_rate: parseFloat(newRate),
-                        change_type: 'increase',
-                        reason: justification,
-                        status: 'pending'
-                    }]);
-
-                if (error) throw error;
-                alert('Rate increase request submitted!');
-                closeModal('rate-increase-modal');
-                document.getElementById('modal-new-rate').value = '';
-                document.getElementById('modal-rate-justification').value = '';
-                await loadRateRequests();
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
-        }
-
-        // Submit Threshold Config
-        async function submitThresholdConfig() {
-            const isEnabled = document.getElementById('threshold-enable').checked;
-            const amount = document.getElementById('threshold-amount').value;
-
-            if (isEnabled && !amount) {
-                alert('Please enter a threshold amount');
-                return;
-            }
-
-            try {
-                const updateData = {
-                    commission_threshold: isEnabled ? parseFloat(amount) : 0
-                };
-
-                const { error } = await sbClient
-                    .from('vendors')
-                    .update(updateData)
-                    .eq('id', vendorId);
-
-                if (error) throw error;
-                alert('Threshold configuration saved!');
-                closeModal('threshold-modal');
-                await loadCommissionSettings();
-                await loadEarningsData();
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
-        }
-
-        // Tab Switching
-        function switchTab(event, tabId) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(el => {
-                el.classList.remove('active');
-            });
-            // Remove active from all tab buttons
-            document.querySelectorAll('.tabs > .tab').forEach(el => {
-                el.classList.remove('active');
-            });
-
-            // Show selected tab
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // Commission Tab Switching
-        function switchCommissionTab(event, tabId) {
-            const contentDivs = ['dashboard', 'rate-requests', 'thresholds', 'history'];
-            contentDivs.forEach(id => {
-                document.getElementById(id).classList.remove('active');
-            });
-            document.querySelectorAll('[onclick*="switchCommissionTab"]').forEach(el => {
-                el.classList.remove('active');
-            });
-
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // Inquiry Folder Switching
-        function switchInquiryFolder(event, folder) {
-            document.querySelectorAll('.inquiry-tab').forEach(el => {
-                el.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            // TODO: Filter inquiries by folder
-        }
-
-        // Collapsible Toggle
-        function toggleCollapsible(headerElement) {
-            const section = headerElement.parentElement;
-            section.classList.toggle('open');
-        }
-
-        // Mark Alert as Read
-        async function markAlertAsRead(alertId) {
-            try {
-                const { error } = await sbClient
-                    .from('alerts')
-                    .update({ is_read: true })
-                    .eq('id', alertId);
-
-                if (error) throw error;
-                await loadVendorAlerts();
-            } catch (err) {
-                console.error('Error marking alert as read:', err);
-            }
-        }
-
-        function closeAlertsBanner() {
-            document.getElementById('alerts-banner').style.display = 'none';
-        }
-
-        // Product Functions
-        function resetFormMode() {
-            document.getElementById('productForm').reset();
-            document.getElementById('vendorIdInput').value = vendorId;
-        }
-
-        async function deleteProduct(productId) {
-            if (!confirm('Delete this product?')) return;
-
-            try {
-                const { error } = await sbClient
+                const { error } = await supabase
                     .from('products')
-                    .delete()
-                    .eq('id', productId);
+                    .insert({
+                        vendor_id: currentVendorId,
+                        product_name: name,
+                        description: description,
+                        price: price,
+                        category: category || null
+                    });
 
                 if (error) throw error;
-                await loadVendorProducts();
-            } catch (err) {
-                alert('Error deleting product: ' + err.message);
+
+                closeModal('add-product-modal');
+                document.getElementById('new-product-name').value = '';
+                document.getElementById('new-product-description').value = '';
+                document.getElementById('new-product-price').value = '';
+                document.getElementById('new-product-category').value = '';
+
+                await loadProducts();
+                alert('Product created successfully!');
+            } catch (error) {
+                console.error('Error creating product:', error);
+                alert('Error creating product');
             }
         }
 
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('open');
         }
 
-        // Logout
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('open');
+        }
+
+        function viewImageFull(src) {
+            window.open(src, '_blank');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
         function handleLogout() {
             localStorage.removeItem('vendor_id');
             localStorage.removeItem('vendor_email');
             window.location.href = 'login.html';
         }
 
-        // View Inquiry Detail
-        function viewInquiryDetail(inquiryId) {
-            document.getElementById('inquiries-list').style.display = 'none';
-            document.getElementById('inquiry-detail').style.display = 'block';
-            // TODO: Load and display inquiry details
-        }
-
-        function closeInquiryDetail() {
-            document.getElementById('inquiry-detail').style.display = 'none';
-            document.getElementById('inquiries-list').style.display = 'block';
-        }
-
-        // Product Form Handler
-        const productForm = document.getElementById('productForm');
-        productForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            alert('Product submission functionality implemented');
-        });
-
-        // Threshold Config
-        document.getElementById('threshold-enable')?.addEventListener('change', (e) => {
-            document.getElementById('threshold-amount-group').style.display = e.target.checked ? 'block' : 'none';
-        });
-
         // Initialize on load
-        window.addEventListener('load', initPortal);
+        initPortal();
     </script>
 </body>
 </html>
