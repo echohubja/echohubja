@@ -3,15 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Vendor Product Management Portal</title>
+    <title>Echo Hub - Vendor Portal</title>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
-    <!-- External messaging libraries removed - using inline implementations -->
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e5aa8;
+            --primary-dark: #1e40af;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-300: #d1d5db;
+            --neutral-700: #374151;
+            --neutral-800: #1f2937;
+            --neutral-900: #111827;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --primary: #60a5fa;
+                --primary-dark: #3b82f6;
+                --primary-light: #1e3a8a;
+                --success: #34d399;
+                --success-light: #064e3b;
+                --warning: #fbbf24;
+                --warning-light: #78350f;
+                --error: #f87171;
+                --error-light: #7f1d1d;
+                --neutral-50: #111827;
+                --neutral-100: #1f2937;
+                --neutral-200: #374151;
+                --neutral-300: #4b5563;
+                --neutral-700: #d1d5db;
+                --neutral-800: #e5e7eb;
+                --neutral-900: #f9fafb;
+            }
         }
 
         body {
@@ -63,7 +102,7 @@
 
         /* Main Container */
         .container {
-            max-width: 1280px;
+            max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
         }
@@ -206,25 +245,54 @@
             color: #991b1b;
         }
 
-        /* Main Content Grid (Inventory Priority 70/30) */
+        /* Main Content Grid */
         .main-content-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr;
             gap: 24px;
-            align-items: start;
             margin-bottom: 28px;
         }
 
-        @media (max-width: 1024px) {
-            .main-content-grid {
-                grid-template-columns: 1.5fr 1fr;
-            }
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e1e8ed;
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            padding: 0 20px;
         }
 
-        @media (max-width: 768px) {
-            .main-content-grid {
-                grid-template-columns: 1fr;
-            }
+        .tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: #1e5aa8;
+        }
+
+        .tab.active {
+            color: #1e5aa8;
+            border-bottom-color: #1e5aa8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         /* Collapsible Sections */
@@ -288,6 +356,358 @@
             padding: 20px;
         }
 
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e1e8ed;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1e5aa8;
+            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
+        }
+
+        /* Panel */
+        .panel {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .panel-header h2 {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        /* Product Form */
+        .product-form-container {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Alert Message */
+        .alert-msg {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #1e5aa8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e1e8ed;
+            color: #1e293b;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        table thead {
+            background: #f1f5f9;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        table th {
+            padding: 12px;
+            text-align: left;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e1e8ed;
+            color: #475569;
+        }
+
+        table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-verified {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+
+        .modal-header p {
+            font-size: 0.9em;
+            color: #64748b;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .close-modal:hover {
+            color: #1e293b;
+        }
+
+        /* Inquiry Styles */
+        .inquiry-folder-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .inquiry-tab {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .inquiry-tab:hover {
+            color: #1e5aa8;
+        }
+
+        .inquiry-tab.active {
+            color: #1e5aa8;
+            border-bottom-color: #1e5aa8;
+        }
+
+        /* Inquiry Thread */
+        .inquiry-thread {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .inquiry-thread:hover {
+            border-color: #1e5aa8;
+            box-shadow: 0 2px 8px rgba(30, 90, 168, 0.1);
+        }
+
+        .inquiry-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .inquiry-from {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .inquiry-date {
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+
+        .inquiry-subject {
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        .inquiry-preview {
+            font-size: 0.9em;
+            color: #64748b;
+            max-height: 40px;
+            overflow: hidden;
+        }
+
         /* Commission Sidebar */
         .commission-sidebar {
             background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
@@ -328,70 +748,81 @@
             color: #94a3b8;
         }
 
-        /* Earnings Drawer (Compact Header) */
-        .earnings-drawer {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            display: none;
+        /* Commission Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .earnings-drawer h3 {
-            font-size: 0.95em;
+        .stat-card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
             font-weight: 600;
-            opacity: 0.95;
-            margin-bottom: 16px;
             text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 8px;
             letter-spacing: 0.5px;
         }
 
-        .balance-card {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e5aa8;
+            margin-bottom: 4px;
+        }
+
+        .stat-detail {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Alert Banner */
+        #alerts-banner {
+            display: none;
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
             border-radius: 8px;
             padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .alert-close-btn {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #92400e;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+
+        .empty-state p {
             margin-bottom: 16px;
         }
 
-        .balance-label {
-            font-size: 0.85em;
-            opacity: 0.85;
-            margin-bottom: 6px;
-        }
-
-        .balance-amount {
-            font-size: 1.8em;
-            font-weight: 700;
-            letter-spacing: -1px;
-        }
-
-        .threshold-info {
-            font-size: 0.8em;
-            opacity: 0.8;
-            margin-top: 8px;
-        }
-
-        .progress-container {
-            margin: 16px 0;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85em;
-            margin-bottom: 8px;
-            opacity: 0.9;
-        }
-
+        /* Progress Bar */
         .progress-bar {
             width: 100%;
             height: 8px;
-            background: rgba(255, 255, 255, 0.2);
+            background: #e1e8ed;
             border-radius: 4px;
             overflow: hidden;
+            margin: 8px 0;
         }
 
         .progress-fill {
@@ -401,1090 +832,994 @@
             transition: width 0.3s ease;
         }
 
-        .payout-btn {
-            width: 100%;
-            background: white;
-            color: #1e5aa8;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95em;
-            cursor: pointer;
-            margin-top: 16px;
-            transition: all 0.2s ease;
-        }
-
-        .payout-btn:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .payout-btn:disabled {
-            background: rgba(255, 255, 255, 0.3);
-            color: rgba(255, 255, 255, 0.6);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .earnings-history {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e1e8ed;
-            padding: 24px;
-            margin-top: 24px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        }
-
-        .earnings-history .panel-header {
-            margin-bottom: 16px;
-        }
-
-        .earnings-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        .earnings-table thead {
-            background: #f1f5f9;
-            border-bottom: 2px solid #e1e8ed;
-        }
-
-        .earnings-table th {
-            padding: 12px;
-            text-align: left;
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.85em;
-            text-transform: uppercase;
-        }
-
-        .earnings-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e1e8ed;
-            color: #475569;
-        }
-
-        .earnings-table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .status-badge {
+        /* Badge Styles */
+        .badge {
             display: inline-block;
             padding: 4px 10px;
             border-radius: 4px;
-            font-size: 0.8em;
+            font-size: 12px;
             font-weight: 600;
         }
 
-        .status-pending {
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
             background: #fef3c7;
             color: #92400e;
         }
 
-        .status-verified {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        /* Cards */
-        .panel {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e1e8ed;
-            padding: 24px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f0f4f8;
-        }
-
-        .panel-header h2 {
-            font-size: 1.25em;
-            color: #1e5aa8;
-            font-weight: 700;
-        }
-
-        .badge {
-            background: #e8f0fe;
-            color: #1e5aa8;
-            font-size: 0.8em;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 12px;
-            text-transform: uppercase;
-        }
-
-        .badge-edit {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        /* Inventory Table */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        th {
-            background: #f8fafc;
-            color: #64748b;
-            text-align: left;
-            padding: 10px 12px;
-            font-weight: 600;
-            font-size: 0.85em;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .product-img {
-            width: 42px;
-            height: 42px;
-            object-fit: contain;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-        }
-
-        .btn-action {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            margin-right: 4px;
-        }
-
-        .btn-edit {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .btn-edit:hover {
-            background: #bae6fd;
-        }
-
-        .btn-delete {
-            background: #ffe4e6;
-            color: #be123c;
-        }
-
-        .btn-delete:hover {
-            background: #fecdd3;
-        }
-
-        .empty-inventory {
-            text-align: center;
-            padding: 40px 20px;
-            color: #94a3b8;
-        }
-
-        .empty-inventory p {
-            margin-top: 8px;
-            font-size: 0.9em;
-        }
-
-        /* Form Controls */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        input[type="file"],
-        select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-            color: #1e293b;
-            transition: border-color 0.2s;
-            background: white;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            background: #f8fafc;
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: #1e5aa8;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95em;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 8px;
-        }
-
-        .btn-submit:hover {
-            background: #174887;
-        }
-
-        .btn-cancel {
-            width: 100%;
-            background: #e2e8f0;
-            color: #475569;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9em;
-            cursor: pointer;
-            margin-top: 8px;
-            display: none;
-        }
-
-        .btn-cancel:hover {
-            background: #cbd5e1;
-        }
-
-        .alert-msg {
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .alert-error {
+        .badge-error {
             background: #fee2e2;
-            color: #b91c1c;
+            color: #991b1b;
         }
 
-        /* FEEDBACK MODAL STYLES */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            color: #1e5aa8;
-            font-size: 1.3em;
-            margin: 0;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-        }
-
-        .modal-close:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .feedback-detail {
-            margin: 12px 0;
-            padding: 10px;
-            background: #f8fafc;
+        /* Info Box */
+        .info-box {
+            background: #dbeafe;
+            border: 1px solid #1e5aa8;
             border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #1e40af;
         }
 
-        .feedback-detail-label {
-            font-weight: 600;
-            color: #1e5aa8;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #e1e8ed;
+            margin: 16px 0;
         }
 
-        .feedback-detail-value {
-            color: #333;
-            font-size: 0.95em;
-        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
 
-        .feedback-image {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            margin: 12px 0;
-            border: 1px solid #e1e8ed;
-        }
+            .container {
+                padding: 0 10px;
+            }
 
-        .interaction-card {
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
 
-        .interaction-card:hover {
-            border-color: #1e5aa8;
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.15);
-        }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
 
-        .interaction-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .interaction-card-title {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .interaction-card-subtitle {
-            font-size: 0.85em;
-            color: #999;
-            margin-top: 5px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
+            .tabs {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 <body>
-
+    <!-- Header -->
     <header>
         <div>
-            <h1>Echo Hub</h1>
-            <p>Vendor Product Management Portal</p>
+            <h1>🎯 Echo Hub</h1>
+            <p>Vendor Commission & Product Management Portal</p>
         </div>
-        <button id="logoutBtn" class="btn-logout">Sign Out</button>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </header>
 
     <div class="container">
-        <!-- Loading & Error States -->
-        <div id="loadingState" class="loading-state">
-            Authenticating vendor portal session...
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state" style="display: none;">
+            ⏳ Loading your portal...
         </div>
 
-        <div id="errorState" class="error-state" style="display: none;">
-            Session expired or unauthorized access. Please <a href="login.html" style="color: #1e5aa8;">sign in here</a>.
+        <!-- Error State -->
+        <div id="error-state" class="error-state" style="display: none;">
+            ⚠️ Unable to load portal. Please refresh or contact support.
         </div>
 
-        <!-- Main Portal Workspace -->
-        <div id="portalContent" style="display: none;">
+        <!-- Portal Content -->
+        <div id="portal-content" style="display: none;">
+            <!-- Alert Banner -->
+            <div id="alerts-banner">
+                <button class="alert-close-btn" onclick="closeAlertsBanner()">×</button>
+                <div id="alerts-content"></div>
+            </div>
 
-            <!-- Vendor Info Bar -->
+            <!-- Profile Bar -->
             <div class="profile-bar">
                 <div class="welcome-text">
-                    <h2 id="welcomeHeading">Welcome back!</h2>
-                    <p>Manage your product listings and marketplace store sync.</p>
+                    <h2 id="vendor-name">Welcome, Vendor</h2>
+                    <p id="vendor-info">Loading...</p>
                 </div>
                 <div class="profile-tags">
-                    <div class="tag">ID: <strong id="profileVendorId">-</strong></div>
-                    <div class="tag">Email: <strong id="profileEmail">-</strong></div>
-                    <div class="tag">Type: <strong id="profileType">-</strong></div>
+                    <div class="tag"><strong>ID:</strong> <span id="vendor-id">--</span></div>
+                    <div class="tag"><strong>Email:</strong> <span id="vendor-email">--</span></div>
                 </div>
             </div>
 
-            <!-- Alerts Banner Section -->
-            <div id="alerts-banner" style="display: none; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
-                    <div id="alerts-content" style="flex: 1;"></div>
-                    <button onclick="closeAlertsBanner()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #92400e;">×</button>
-                </div>
-            </div>
-
-            <!-- Metrics Grid (3 Cards) -->
+            <!-- Metrics Grid -->
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-label">💳 Commission Due</div>
-                    <div class="metric-value" id="metrics-commission-due">$0.00</div>
-                    <div class="metric-subtext" id="metrics-commission-subtext">Total accumulated balance</div>
+                    <div class="metric-label">Commission Due</div>
+                    <div class="metric-value" id="metric-due">$0.00</div>
+                    <div class="metric-subtext">From pending feedback</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">📊 Threshold</div>
-                    <div class="metric-value" id="metrics-threshold">$0.00</div>
-                    <div class="metric-subtext" id="metrics-threshold-subtext">Payout trigger amount</div>
+                    <div class="metric-label">Threshold</div>
+                    <div class="metric-value" id="metric-threshold">$0.00</div>
+                    <div class="metric-subtext">Payment threshold</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">⚡ Progress to Payout</div>
-                    <div class="metric-value" id="metrics-percent">0%</div>
-                    <div id="metrics-status" class="metric-status active">Ready to Review</div>
+                    <div class="metric-label">Progress to Payout</div>
+                    <div id="payout-progress-display">--</div>
+                    <div class="progress-bar">
+                        <div id="payout-progress-fill" class="progress-fill" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Main Content Grid (Inventory 70% | Commission Sidebar 30%) -->
-            <div class="main-content-grid">
-                <!-- LEFT: Inventory Management (Priority) -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>📦 Your Product Inventory</h2>
-                        <span class="badge" id="itemCountBadge">0 items</span>
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(event, 'products')">📦 Inventory</button>
+                <button class="tab" onclick="switchTab(event, 'commissions')">💰 Commission Management</button>
+                <button class="tab" onclick="switchTab(event, 'inquiries')">💬 Customer Inquiries</button>
+            </div>
+
+            <!-- Tab 1: Products/Inventory -->
+            <div id="products" class="tab-content active">
+                <div class="main-content-grid">
+                    <!-- Product Form -->
+                    <div class="product-form-container">
+                        <h3 style="margin-bottom: 16px; color: #1e293b;">Create New Product</h3>
+                        <div id="form-alert" class="alert-msg"></div>
+                        <form id="productForm">
+                            <input type="hidden" id="vendorIdInput" value="">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="productName">Product Name *</label>
+                                    <input type="text" id="productName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="category">Category *</label>
+                                    <select id="category" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="electronics">Electronics</option>
+                                        <option value="clothing">Clothing</option>
+                                        <option value="home">Home & Garden</option>
+                                        <option value="food">Food & Beverages</option>
+                                        <option value="beauty">Beauty & Personal Care</option>
+                                        <option value="sports">Sports & Outdoors</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="price">Price ($) *</label>
+                                    <input type="number" id="price" step="0.01" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="imageFile1">Primary Image *</label>
+                                    <input type="file" id="imageFile1" accept="image/*" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="imageFile2">Secondary Image</label>
+                                    <input type="file" id="imageFile2" accept="image/*">
+                                </div>
+                            </div>
+
+                            <div class="form-row full">
+                                <button type="submit" id="submitProductBtn" class="btn btn-primary">Publish Listing</button>
+                                <button type="button" onclick="resetFormMode()" style="margin-left: 8px;" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="table-responsive">
-                        <table id="inventoryTable">
+
+                    <!-- Product Inventory Table -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2>Your Products</h2>
+                        </div>
+                        <div id="products-loading" style="text-align: center; padding: 20px; color: #64748b;">Loading products...</div>
+                        <div id="products-list" style="display: none;">
+                            <div class="table-container">
+                                <table id="productsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Category</th>
+                                            <th>Price</th>
+                                            <th>Images</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsTbody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Commission Management -->
+            <div id="commissions" class="tab-content">
+                <!-- Commission Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Current Rate</div>
+                        <div class="stat-value" id="current-rate">$5.00</div>
+                        <div class="stat-detail">Per feedback</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Pending Payouts</div>
+                        <div class="stat-value" id="pending-payouts">$0.00</div>
+                        <div class="stat-detail">Awaiting threshold</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Paid This Month</div>
+                        <div class="stat-value" id="paid-month">$0.00</div>
+                        <div class="stat-detail">Commission processed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Agreements</div>
+                        <div class="stat-value" id="active-agreements">0</div>
+                        <div class="stat-detail">Vendor-buyer agreements</div>
+                    </div>
+                </div>
+
+                <!-- Commission Sub-Tabs -->
+                <div style="border-bottom: 1px solid #e1e8ed; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="tab active" onclick="switchCommissionTab(event, 'dashboard')" style="flex: 0;">Dashboard</button>
+                        <button class="tab" onclick="switchCommissionTab(event, 'rate-requests')" style="flex: 0;">Rate Requests</button>
+                        <button class="tab" onclick="switchCommissionTab(event, 'thresholds')" style="flex: 0;">Thresholds</button>
+                        <button class="tab" onclick="switchCommissionTab(event, 'history')" style="flex: 0;">Payment History</button>
+                    </div>
+                </div>
+
+                <!-- Dashboard Sub-Tab -->
+                <div id="dashboard" class="tab-content active" style="padding: 20px; background: white; border-radius: 8px;">
+                    <h3 style="margin-bottom: 16px;">Commission Overview</h3>
+                    <div class="collapsible-section open">
+                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                            <h3>⚙️ Rate Settings</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <div class="info-box">Current rate: <strong id="display-current-rate">$5.00</strong> per feedback</div>
+                                <button class="btn btn-primary" onclick="openModal('rate-increase-modal')" style="width: 100%;">Request Rate Increase</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                            <h3>📊 Payment Threshold</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <p style="margin-bottom: 12px; color: #64748b;">Set minimum earnings before automatic payout.</p>
+                                <button class="btn btn-primary" onclick="openModal('threshold-modal')" style="width: 100%;">Configure Threshold</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rate Requests Sub-Tab -->
+                <div id="rate-requests" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div class="panel-header">
+                        <h2>Rate Change Requests</h2>
+                        <button class="btn btn-primary" onclick="openModal('rate-increase-modal')">+ New Request</button>
+                    </div>
+                    <div id="rate-requests-list">
+                        <div class="empty-state">No rate requests yet</div>
+                    </div>
+                </div>
+
+                <!-- Thresholds Sub-Tab -->
+                <div id="thresholds" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div class="panel-header">
+                        <h2>Vendor-Buyer Agreements</h2>
+                        <button class="btn btn-primary" onclick="openModal('threshold-modal')">+ New Agreement</button>
+                    </div>
+                    <div id="thresholds-list">
+                        <div class="empty-state">No agreements established</div>
+                    </div>
+                </div>
+
+                <!-- Payment History Sub-Tab -->
+                <div id="history" class="tab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div class="panel-header">
+                        <h2>Payment History</h2>
+                    </div>
+                    <div class="table-container">
+                        <table id="payment-history-table">
                             <thead>
                                 <tr>
-                                    <th>Product Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Related To</th>
                                     <th>Status</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventoryBody">
-                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #94a3b8;">Loading inventory...</td></tr>
+                            <tbody id="payment-history-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No payment history yet</td>
+                                </tr>
                             </tbody>
                         </table>
-                        <div id="emptyInventory" class="empty-inventory" style="display: none;">
-                            <p>No products listed yet. Create your first product using the form below.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RIGHT: Commission Sidebar -->
-                <div class="commission-sidebar">
-                    <div class="sidebar-section">
-                        <div class="sidebar-label">Commission Due Now</div>
-                        <div class="sidebar-value" id="sidebar-balance">$0.00</div>
-                        <div class="sidebar-subtext">Waiting for threshold</div>
-                    </div>
-
-                    <div class="sidebar-section">
-                        <div class="sidebar-label">Threshold</div>
-                        <div class="sidebar-value" id="sidebar-threshold">$0.00</div>
-                    </div>
-
-                    <div class="sidebar-section">
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span>Progress</span>
-                                <span id="sidebar-percent">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="sidebar-progress" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-section">
-                        <button id="payout-btn" class="payout-btn" onclick="initiatePayoutProcess()" disabled style="width: 100%;">
-                            💳 Pay Commission Due
-                        </button>
-                        <div style="font-size: 0.75em; color: #94a3b8; margin-top: 8px; text-align: center;">
-                            Enable when threshold reached
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Collapsible Sections Below Main Content -->
-            <!-- Commission Settings Section -->
-            <div class="collapsible-section open">
-                <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                    <h3><span class="collapsible-icon">▼</span> ⚙️ Commission Settings</h3>
-                </div>
-                <div class="collapsible-content">
-                    <div class="collapsible-body">
-                        <!-- Update Commission Amount -->
-                        <div style="margin-bottom: 24px;">
-                            <h4 style="font-size: 0.95em; font-weight: 600; color: #1e293b; margin-bottom: 12px;">Update Commission Per Feedback</h4>
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-                                <div class="form-group">
-                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 8px; display: block;">Commission Amount ($)</label>
-                                    <div style="display: flex; gap: 10px; align-items: end;">
-                                        <div style="flex: 1;">
-                                            <input type="number" id="commission-amount" step="0.01" min="0" placeholder="e.g., 5.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
-                                        </div>
-                                        <button onclick="updateCommissionAmount()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s; white-space: nowrap;">
-                                            Save
-                                        </button>
-                                    </div>
-                                    <div style="font-size: 0.8em; color: #64748b; margin-top: 8px;">
-                                        ℹ️ Amount you pay per verified feedback submission
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Tab 3: Customer Inquiries -->
+            <div id="inquiries" class="tab-content">
+                <div class="panel">
+                    <!-- Inquiry Folders -->
+                    <div class="inquiry-folder-tabs">
+                        <button class="inquiry-tab active" onclick="switchInquiryFolder(event, 'all')">📬 All</button>
+                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'pending')">⏳ Feedback Pending</button>
+                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'new')">💬 Inquiries</button>
+                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'responded')">✅ Responded</button>
+                        <button class="inquiry-tab" onclick="switchInquiryFolder(event, 'flagged')">🚩 Flagged</button>
+                    </div>
 
-                        <!-- Threshold Change Request -->
-                        <div>
-                            <h4 style="font-size: 0.95em; font-weight: 600; color: #1e293b; margin-bottom: 12px;">Request Payout Threshold Change</h4>
-                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px;">
-                                <div class="form-group" style="margin-bottom: 12px;">
-                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Current Threshold</label>
-                                    <input type="text" id="current-threshold-display" readonly style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
-                                </div>
+                    <!-- Search and Filters -->
+                    <div style="margin-bottom: 16px; display: flex; gap: 8px;">
+                        <input type="text" id="inquiry-search" placeholder="Search inquiries..." style="flex: 1; padding: 8px 12px; border: 1px solid #e1e8ed; border-radius: 6px;">
+                        <select id="inquiry-sort" style="padding: 8px 12px; border: 1px solid #e1e8ed; border-radius: 6px;">
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="unread">Unread First</option>
+                        </select>
+                    </div>
 
-                                <div class="form-group" style="margin-bottom: 12px;">
-                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Requested Threshold ($)</label>
-                                    <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
-                                </div>
+                    <!-- Inquiries List -->
+                    <div id="inquiries-loading" style="text-align: center; padding: 20px; color: #64748b;">Loading inquiries...</div>
+                    <div id="inquiries-list" style="display: none;">
+                        <!-- Inquiry threads will be populated here -->
+                    </div>
 
-                                <div class="form-group" style="margin-bottom: 12px;">
-                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Reason (Optional)</label>
-                                    <textarea id="threshold-reason" placeholder="e.g., Business growing, want less frequent payouts" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; min-height: 70px; resize: vertical;"></textarea>
-                                </div>
-
-                                <div id="threshold-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
-
-                                <button onclick="submitThresholdChangeRequest()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
-                                    Submit Request
-                                </button>
-                                <div style="font-size: 0.8em; color: #64748b; margin-top: 10px;">
-                                    ℹ️ Admin will review and approve your threshold change request
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Inquiry Detail View -->
+                    <div id="inquiry-detail" style="display: none; margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: 8px;">
+                        <button onclick="closeInquiryDetail()" class="btn btn-secondary" style="margin-bottom: 16px;">← Back to List</button>
+                        <div id="inquiry-detail-content"></div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Commission Payment History Section -->
-            <div class="collapsible-section">
-                <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                    <h3><span class="collapsible-icon">▼</span> 📋 Commission Payment History</h3>
+    <!-- Modals -->
+    <!-- Rate Increase Modal -->
+    <div id="rate-increase-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('rate-increase-modal')">×</button>
+            <div class="modal-header">
+                <h2>Request Rate Increase</h2>
+                <p>Submit a request to increase your per-feedback commission rate</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Current Rate</label>
+                    <input type="text" id="modal-current-rate" readonly style="background: #f1f5f9;">
                 </div>
-                <div class="collapsible-content">
-                    <div class="collapsible-body">
-                        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9em; color: #64748b;"><strong id="earnings-count">0</strong> payment records</span>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="earnings-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Feedback ID</th>
-                                        <th>Commission Fee (Due)</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="earnings-body">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; color: #94a3b8;">Loading earnings history...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="modal-new-rate">Requested Rate ($) *</label>
+                    <input type="number" id="modal-new-rate" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="modal-rate-justification">Justification *</label>
+                    <textarea id="modal-rate-justification" rows="4" required placeholder="Explain why you deserve a rate increase..."></textarea>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('rate-increase-modal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="submitRateRequest()" class="btn btn-primary">Submit Request</button>
+            </div>
+        </div>
+    </div>
 
-            <!-- Customer Interactions Section (Inquiries + Feedback) -->
-            <div class="panel" style="margin-top: 24px;">
-                <div class="panel-header">
-                    <h2>Customer Interactions</h2>
-                    <div style="display: flex; gap: 10px;">
-                        <span class="badge" id="inquiryCountBadge" style="background: #dbeafe; color: #1e40af;">0 questions</span>
-                        <span class="badge" id="feedbackCountBadge" style="background: #fef3c7; color: #92400e;">0 feedback</span>
-                    </div>
+    <!-- Threshold Modal -->
+    <div id="threshold-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('threshold-modal')">×</button>
+            <div class="modal-header">
+                <h2>Configure Payment Threshold</h2>
+                <p>Set earnings threshold for automatic vendor payouts</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="threshold-enable"> Enable automatic payout when threshold is reached
+                    </label>
                 </div>
-
-                <!-- Tab Navigation -->
-                <div style="display: flex; gap: 0; border-bottom: 2px solid #e1e8ed; margin-bottom: 20px;">
-                    <button id="tabInquiries" class="tab-btn" onclick="switchInteractionTab('inquiries')" style="flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 3px solid #1e5aa8; color: #1e5aa8; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                        ❓ Questions
-                    </button>
-                    <button id="tabFeedback" class="tab-btn" onclick="switchInteractionTab('feedback')" style="flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                        ⭐ Feedback Submissions
-                    </button>
-                </div>
-
-                <!-- Search Box -->
-                <div style="margin-bottom: 20px;">
-                    <input type="text" id="interactionSearch" class="messaging-search" placeholder="Search by buyer name or email..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;" oninput="filterInteractionCards()">
-                </div>
-
-                <!-- Inquiries Tab Content -->
-                <div id="inquiriesTab" style="display: block;">
-                    <div id="inquiriesContainer" style="display: grid; gap: 16px;">
-                        <!-- Dynamic inquiry cards inserted here -->
-                    </div>
-                    <div id="emptyInquiries" class="empty-inventory" style="display: none;">
-                        <p>No pending questions.</p>
-                    </div>
-                </div>
-
-                <!-- Feedback Tab Content -->
-                <div id="feedbackTab" style="display: none;">
-                    <div id="feedbackContainer" style="display: grid; gap: 16px;">
-                        <!-- Dynamic feedback cards inserted here -->
-                    </div>
-                    <div id="emptyFeedback" class="empty-inventory" style="display: none;">
-                        <p>No pending feedback.</p>
-                    </div>
+                <div class="form-group" id="threshold-amount-group" style="display: none;">
+                    <label for="threshold-amount">Threshold Amount ($) *</label>
+                    <input type="number" id="threshold-amount" step="0.01" min="0">
                 </div>
             </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('threshold-modal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="submitThresholdConfig()" class="btn btn-primary">Save Configuration</button>
             </div>
-
-            <!-- Response Modal -->
-            <div id="responseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; flex-direction: column;">
-                <div style="background: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto;">
-                    <h3 style="color: #1e5aa8; font-size: 1.3em; margin-bottom: 16px;">Respond to Customer Inquiry</h3>
-
-                    <div id="inqDetails" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                        <div style="margin-bottom: 12px;">
-                            <strong style="color: #475569;">Customer:</strong>
-                            <span id="inqCustomer" style="color: #64748b;">-</span>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <strong style="color: #475569;">Product:</strong>
-                            <span id="inqProduct" style="color: #64748b;">-</span>
-                        </div>
-                        <div>
-                            <strong style="color: #475569;">Their Message:</strong>
-                            <div id="inqMessage" style="color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 6px; max-height: 100px; overflow-y: auto;">-</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="responseText">Your Response</label>
-                        <textarea id="responseText" required placeholder="Type your response to the customer..." style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; min-height: 120px; resize: vertical;"></textarea>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" class="btn-cancel" id="closeResponseBtn" style="display: block; width: auto; margin: 0;">Cancel</button>
-                        <button type="button" id="submitResponseBtn" class="btn-submit" style="width: auto; margin: 0;">Send Response</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Feedback Approval Modal -->
-            <div id="feedbackModal" class="modal-overlay">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Feedback Details</h3>
-                        <button class="modal-close" onclick="closeFeedbackModal()">&times;</button>
-                    </div>
-                    <div class="modal-body" id="feedbackModalBody">
-                        <!-- Content populated dynamically -->
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn-cancel" onclick="closeFeedbackModal()" style="width: auto; margin: 0; display: block;">Cancel</button>
-                        <button class="btn-cancel" id="rejectFeedbackBtn" onclick="rejectFeedbackAction()" style="width: auto; margin: 0; display: block; background: #ff6b6b; color: white;">Reject</button>
-                        <button class="btn-submit" id="approveFeedbackBtn" onclick="approveFeedbackAction()" style="width: auto; margin: 0;">Approve</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Confirmation Modal -->
-            <div id="confirmationModal" class="modal-overlay">
-                <div class="modal-content" style="max-width: 400px;">
-                    <div class="modal-header">
-                        <h3 id="confirmationTitle">Confirm Action</h3>
-                    </div>
-                    <div class="modal-body">
-                        <p id="confirmationMessage"></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn-cancel" onclick="closeConfirmation()" style="width: auto; margin: 0; display: block;">Cancel</button>
-                        <button class="btn-submit" id="confirmActionBtn" onclick="confirmAction()" style="width: auto; margin: 0;">Confirm</button>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://your-supabase-url.supabase.co';
+        const SUPABASE_ANON_KEY = 'your-supabase-anon-key';
+
         let sbClient = null;
-
         let currentVendor = null;
-        let editingProductId = null;
-        let cachedProducts = [];
+        let vendorId = null;
+        let pollIntervals = {};
 
-        // Global feedback approval state
-        let currentFeedbackData = null;
-        let pendingAction = null;
-
-        // DOM Elements
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const portalContent = document.getElementById('portalContent');
-
-        const welcomeHeading = document.getElementById('welcomeHeading');
-        const profileEmail = document.getElementById('profileEmail');
-        const profileType = document.getElementById('profileType');
-
-        const inventoryTable = document.getElementById('inventoryTable');
-        const inventoryBody = document.getElementById('inventoryBody');
-        const emptyInventory = document.getElementById('emptyInventory');
-        const itemCountBadge = document.getElementById('itemCountBadge');
-
-        const productForm = document.getElementById('productForm');
-        const formTitle = document.getElementById('formTitle');
-        const formModeBadge = document.getElementById('formModeBadge');
-        const vendorIdInput = document.getElementById('vendorId');
-        const submitProductBtn = document.getElementById('submitProductBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const formAlert = document.getElementById('formAlert');
-
-        // Wait for Supabase SDK to load before initializing the client
+        // Initialize Supabase
         async function initSupabaseClient() {
-            return new Promise((resolve) => {
-                const checkInterval = setInterval(() => {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50;
+
+                const check = setInterval(() => {
                     if (window.supabase) {
-                        clearInterval(checkInterval);
+                        clearInterval(check);
                         sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        resolve();
+                        resolve(sbClient);
+                    } else if (++attempts >= maxAttempts) {
+                        clearInterval(check);
+                        reject(new Error('Supabase SDK failed to load'));
                     }
-                }, 10);
-                // Timeout after 5 seconds to prevent infinite wait
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    resolve();
-                }, 5000);
+                }, 100);
             });
         }
 
+        // Portal Initialization
         async function initPortal() {
-            // Ensure Supabase client is initialized
-            if (!sbClient) {
-                await initSupabaseClient();
-            }
-
-            if (!sbClient) {
-                showError();
-                return;
-            }
-
-            // Get vendor ID from localStorage (custom session)
-            const vendorId = localStorage.getItem('vendor_id');
-            const vendorEmail = localStorage.getItem('vendor_email');
-
-            if (!vendorId || !vendorEmail) {
-                showError();
-                return;
-            }
-
             try {
-                const { data: vendorData, error: vendorError } = await sbClient
+                document.getElementById('loading-state').style.display = 'block';
+
+                if (!sbClient) {
+                    sbClient = await initSupabaseClient();
+                }
+
+                vendorId = localStorage.getItem('vendor_id');
+                if (!vendorId) {
+                    throw new Error('Vendor ID not found in session');
+                }
+
+                await loadVendorData();
+                await loadEarningsData();
+                await loadCommissionSettings();
+                await loadVendorProducts();
+                await loadPendingInquiries();
+                await loadVendorAlerts();
+                await loadRateRequests();
+                await loadThresholds();
+                await loadPaymentHistory();
+
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('portal-content').style.display = 'block';
+
+                setupPolling();
+            } catch (err) {
+                console.error('Portal initialization error:', err);
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('error-state').style.display = 'block';
+            }
+        }
+
+        // Load Vendor Data
+        async function loadVendorData() {
+            try {
+                const { data: vendor, error } = await sbClient
                     .from('vendors')
                     .select('*')
                     .eq('id', vendorId)
                     .single();
 
-                if (vendorError || !vendorData) {
-                    showError();
+                if (error) throw error;
+
+                currentVendor = vendor;
+                document.getElementById('vendor-id').textContent = vendorId.substring(0, 8);
+                document.getElementById('vendor-email').textContent = vendor.email || '--';
+                document.getElementById('vendor-name').textContent = `Welcome, ${vendor.business_name || 'Vendor'}`;
+                document.getElementById('vendor-info').textContent = vendor.email || 'Loading...';
+                document.getElementById('vendorIdInput').value = vendorId;
+
+                // Set current rate display
+                const rate = vendor.current_per_feedback_rate || 5.00;
+                document.getElementById('current-rate').textContent = '$' + parseFloat(rate).toFixed(2);
+                document.getElementById('display-current-rate').textContent = '$' + parseFloat(rate).toFixed(2);
+                document.getElementById('modal-current-rate').value = '$' + parseFloat(rate).toFixed(2);
+            } catch (err) {
+                console.error('Error loading vendor data:', err);
+            }
+        }
+
+        // Load Earnings Data
+        async function loadEarningsData() {
+            try {
+                const { data: earnings, error } = await sbClient
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('vendor_id', vendorId);
+
+                if (error) throw error;
+
+                let totalDue = 0;
+                earnings?.forEach(e => {
+                    totalDue += parseFloat(e.amount || 0);
+                });
+
+                const threshold = currentVendor?.commission_threshold || 100;
+                const percentage = threshold > 0 ? (totalDue / threshold) * 100 : 0;
+
+                document.getElementById('metric-due').textContent = '$' + totalDue.toFixed(2);
+                document.getElementById('metric-threshold').textContent = '$' + threshold.toFixed(2);
+                document.getElementById('payout-progress-fill').style.width = Math.min(percentage, 100) + '%';
+                document.getElementById('payout-progress-display').textContent = Math.round(percentage) + '%';
+                document.getElementById('pending-payouts').textContent = '$' + totalDue.toFixed(2);
+            } catch (err) {
+                console.error('Error loading earnings:', err);
+            }
+        }
+
+        // Load Commission Settings
+        async function loadCommissionSettings() {
+            try {
+                const { data: vendor, error } = await sbClient
+                    .from('vendors')
+                    .select('current_per_feedback_rate, commission_threshold')
+                    .eq('id', vendorId)
+                    .single();
+
+                if (error) throw error;
+
+                if (vendor) {
+                    currentVendor.commission_threshold = vendor.commission_threshold || 100;
+                }
+            } catch (err) {
+                console.error('Error loading commission settings:', err);
+            }
+        }
+
+        // Load Vendor Products
+        async function loadVendorProducts() {
+            try {
+                const { data: products, error } = await sbClient
+                    .from('products')
+                    .select('*')
+                    .eq('vendor_id', vendorId);
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('productsTbody');
+                tbody.innerHTML = '';
+
+                if (!products || products.length === 0) {
+                    document.getElementById('products-loading').style.display = 'block';
+                    document.getElementById('products-list').style.display = 'none';
                     return;
                 }
 
-                currentVendor = vendorData;
+                for (const product of products) {
+                    const { data: images } = await sbClient
+                        .from('product-images')
+                        .select('image_url')
+                        .eq('product_id', product.id);
 
-                welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
-                document.getElementById('profileVendorId').textContent = vendorData.id;
-                profileEmail.textContent = vendorEmail;
-                profileType.textContent = vendorData.vendor_type || 'STANDARD';
-                vendorIdInput.value = vendorData.id;
-
-                await loadVendorProducts();
-                await loadPendingInquiries();
-                await loadCommissionSettings();
-                await loadEarningsData();
-                await loadVendorAlerts();
-
-                loadingState.style.display = 'none';
-                portalContent.style.display = 'block';
-            } catch (err) {
-                console.error('Portal initialization error:', err);
-                showError();
-            }
-        }
-
-        function showError() {
-            loadingState.style.display = 'none';
-            errorState.style.display = 'block';
-        }
-
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('vendor_id');
-            localStorage.removeItem('vendor_email');
-            window.location.href = 'login.html';
-        });
-
-        // FEEDBACK APPROVAL SYSTEM
-        function closeFeedbackModal() {
-            document.getElementById('feedbackModal').classList.remove('show');
-            currentFeedbackData = null;
-        }
-
-        function approveFeedbackAction() {
-            if (!currentFeedbackData) return;
-            pendingAction = 'approve';
-            showConfirmation(
-                'Approve Feedback',
-                `Are you sure you want to approve this feedback? This will trigger the commission calculation.`,
-                confirmAction
-            );
-        }
-
-        function rejectFeedbackAction() {
-            if (!currentFeedbackData) return;
-            pendingAction = 'reject';
-            showConfirmation(
-                'Reject Feedback',
-                `Are you sure you want to reject this feedback? The buyer will need to resubmit.`,
-                confirmAction
-            );
-        }
-
-        function showConfirmation(title, message, onConfirm) {
-            document.getElementById('confirmationTitle').textContent = title;
-            document.getElementById('confirmationMessage').textContent = message;
-            document.getElementById('confirmationModal').classList.add('show');
-        }
-
-        function closeConfirmation() {
-            document.getElementById('confirmationModal').classList.remove('show');
-            pendingAction = null;
-        }
-
-        async function confirmAction() {
-            if (!currentFeedbackData || !pendingAction) {
-                closeConfirmation();
-                return;
-            }
-
-            try {
-                if (pendingAction === 'approve') {
-                    // Update feedback status to approved
-                    const { error: updateError } = await sbClient
-                        .from('customer_feedback')
-                        .update({ status: 'approved' })
-                        .eq('id', currentFeedbackData.id);
-
-                    if (updateError) {
-                        alert('Error approving feedback: ' + updateError.message);
-                        closeConfirmation();
-                        return;
-                    }
-
-                    // Send admin notification
-                    await sendAdminNotification(
-                        `Feedback Approved`,
-                        `Vendor ${currentVendor.first_name} approved feedback from buyer. Commission calculation triggered.`
-                    );
-
-                    alert('✓ Feedback approved successfully!');
-                } else if (pendingAction === 'reject') {
-                    // Update feedback status to rejected
-                    const { error: updateError } = await sbClient
-                        .from('customer_feedback')
-                        .update({ status: 'rejected' })
-                        .eq('id', currentFeedbackData.id);
-
-                    if (updateError) {
-                        alert('Error rejecting feedback: ' + updateError.message);
-                        closeConfirmation();
-                        return;
-                    }
-
-                    // Send admin notification
-                    await sendAdminNotification(
-                        `Feedback Rejected`,
-                        `Vendor ${currentVendor.first_name} rejected feedback. Buyer notified to resubmit.`
-                    );
-
-                    alert('✓ Feedback rejected. Buyer notified.');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${escapeHtml(product.product_name)}</strong></td>
+                        <td>${escapeHtml(product.category || '--')}</td>
+                        <td>$${parseFloat(product.price).toFixed(2)}</td>
+                        <td>${images?.length || 0} image(s)</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="editProduct('${product.id}')">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.id}')">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
                 }
 
-                closeConfirmation();
-                closeFeedbackModal();
-                await loadPendingInquiries();
+                document.getElementById('products-loading').style.display = 'none';
+                document.getElementById('products-list').style.display = 'block';
             } catch (err) {
-                console.error('Error in confirmAction:', err);
-                alert('Unexpected error: ' + err.message);
-                closeConfirmation();
+                console.error('Error loading products:', err);
             }
         }
 
-        async function sendAdminNotification(title, message) {
-            if (!sbClient) return;
-
+        // Load Pending Inquiries
+        async function loadPendingInquiries() {
             try {
-                await sbClient.from('alerts').insert([{
-                    recipient_id: 'admin_system',
-                    recipient_type: 'admin',
-                    alert_type: 'feedback_action',
-                    title: title,
-                    message: message,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                }]);
+                const { data: inquiries, error } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .eq('vendor_id', vendorId)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const inquiriesList = document.getElementById('inquiries-list');
+                inquiriesList.innerHTML = '';
+
+                if (!inquiries || inquiries.length === 0) {
+                    inquiriesList.innerHTML = '<div class="empty-state">No inquiries yet</div>';
+                    return;
+                }
+
+                inquiries.forEach(inq => {
+                    const div = document.createElement('div');
+                    div.className = 'inquiry-thread';
+                    div.onclick = () => viewInquiryDetail(inq.id);
+                    div.innerHTML = `
+                        <div class="inquiry-header">
+                            <div class="inquiry-from">${escapeHtml(inq.buyer_name || 'Unknown')}</div>
+                            <div class="inquiry-date">${new Date(inq.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div class="inquiry-subject" style="font-weight: 500;">${escapeHtml(inq.subject || 'Inquiry')}</div>
+                        <div class="inquiry-preview">${escapeHtml((inq.message || '').substring(0, 100))}</div>
+                    `;
+                    inquiriesList.appendChild(div);
+                });
+
+                document.getElementById('inquiries-loading').style.display = 'none';
+                document.getElementById('inquiries-list').style.display = 'block';
             } catch (err) {
-                console.error('Error sending admin notification:', err);
+                console.error('Error loading inquiries:', err);
             }
         }
 
-        window.viewFeedbackDetails = function(feedbackId) {
-            if (!currentVendor) return;
+        // Load Rate Requests
+        async function loadRateRequests() {
+            try {
+                const { data: requests, error } = await sbClient
+                    .from('rate_change_requests')
+                    .select('*')
+                    .eq('vendor_id', vendorId)
+                    .order('created_at', { ascending: false });
 
-            // Find feedback in the global data
-            const feedback = globalInteractionData.feedbacks.find(f => f.id === feedbackId);
-            if (!feedback) {
-                alert('Feedback not found');
+                if (error) throw error;
+
+                const list = document.getElementById('rate-requests-list');
+                list.innerHTML = '';
+
+                if (!requests || requests.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No rate requests yet</div>';
+                    return;
+                }
+
+                requests.forEach(req => {
+                    const div = document.createElement('div');
+                    div.className = 'collapsible-section';
+                    div.innerHTML = `
+                        <div class="collapsible-header">
+                            <h3>${req.change_type === 'increase' ? '📈' : '📉'} ${req.requested_rate ? '$' + parseFloat(req.requested_rate).toFixed(2) : '--'} (${req.status})</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <p><strong>Reason:</strong> ${escapeHtml(req.reason || '--')}</p>
+                                <p style="margin-top: 8px;"><strong>Status:</strong> <span class="badge badge-${req.status === 'approved' ? 'success' : req.status === 'rejected' ? 'error' : 'warning'}">${req.status}</span></p>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Error loading rate requests:', err);
+            }
+        }
+
+        // Load Thresholds
+        async function loadThresholds() {
+            try {
+                const { data: agreements, error } = await sbClient
+                    .from('vendor_buyer_agreements')
+                    .select('*')
+                    .eq('vendor_id', vendorId);
+
+                if (error) throw error;
+
+                const list = document.getElementById('thresholds-list');
+                list.innerHTML = '';
+
+                if (!agreements || agreements.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No agreements established</div>';
+                    document.getElementById('active-agreements').textContent = '0';
+                    return;
+                }
+
+                document.getElementById('active-agreements').textContent = agreements.length;
+
+                agreements.forEach(agree => {
+                    const div = document.createElement('div');
+                    div.className = 'collapsible-section';
+                    div.innerHTML = `
+                        <div class="collapsible-header">
+                            <h3>${escapeHtml(agree.buyer_name || 'Buyer')} - $${parseFloat(agree.per_feedback_amount || 0).toFixed(2)}</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <p><strong>Per Feedback Rate:</strong> $${parseFloat(agree.per_feedback_amount).toFixed(2)}</p>
+                                <p><strong>Threshold:</strong> $${parseFloat(agree.threshold_amount || 0).toFixed(2)}</p>
+                                <p><strong>Status:</strong> <span class="badge badge-${agree.agreement_status === 'active' ? 'success' : 'warning'}">${agree.agreement_status}</span></p>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Error loading thresholds:', err);
+            }
+        }
+
+        // Load Payment History
+        async function loadPaymentHistory() {
+            try {
+                const { data: history, error } = await sbClient
+                    .from('payment_history')
+                    .select('*')
+                    .eq('vendor_id', vendorId)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('payment-history-body');
+                tbody.innerHTML = '';
+
+                if (!history || history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No payment history</td></tr>';
+                    return;
+                }
+
+                history.forEach(payment => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(payment.created_at).toLocaleDateString()}</td>
+                        <td>${escapeHtml(payment.from_type || '--')}</td>
+                        <td>$${parseFloat(payment.amount).toFixed(2)}</td>
+                        <td>${payment.payment_reason || '--'}</td>
+                        <td><span class="badge badge-${payment.payment_date ? 'success' : 'warning'}">${payment.payment_date ? 'Paid' : 'Pending'}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Error loading payment history:', err);
+            }
+        }
+
+        // Load Vendor Alerts
+        async function loadVendorAlerts() {
+            try {
+                const { data: alerts, error } = await sbClient
+                    .from('alerts')
+                    .select('*')
+                    .eq('recipient_id', vendorId)
+                    .eq('recipient_type', 'vendor')
+                    .eq('is_read', false)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error loading alerts:', error);
+                    return;
+                }
+
+                if (!alerts || alerts.length === 0) {
+                    document.getElementById('alerts-banner').style.display = 'none';
+                    return;
+                }
+
+                const alertsContent = document.getElementById('alerts-content');
+                let html = '';
+
+                alerts.forEach((alert, idx) => {
+                    html += `
+                        <div style="margin-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; padding-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; border-bottom: ${idx < alerts.length - 1 ? '1px solid #fcd34d' : 'none'};">
+                            <div style="font-weight: 600; color: #92400e; font-size: 0.95em;">🔔 ${escapeHtml(alert.title)}</div>
+                            <div style="color: #b45309; font-size: 0.9em; margin-top: 4px;">${escapeHtml(alert.message)}</div>
+                            <button onclick="markAlertAsRead('${alert.id}')" style="background: #fbbf24; color: #78350f; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
+                        </div>
+                    `;
+                });
+
+                alertsContent.innerHTML = html;
+                document.getElementById('alerts-banner').style.display = 'block';
+            } catch (err) {
+                console.error('Unexpected error loading alerts:', err);
+            }
+        }
+
+        // Polling Setup
+        function setupPolling() {
+            // Clear existing intervals
+            Object.values(pollIntervals).forEach(id => clearInterval(id));
+            pollIntervals = {};
+
+            pollIntervals.earnings = setInterval(loadEarningsData, 4000);
+            pollIntervals.inquiries = setInterval(loadPendingInquiries, 3000);
+            pollIntervals.alerts = setInterval(loadVendorAlerts, 5000);
+            pollIntervals.products = setInterval(loadVendorProducts, 4000);
+            pollIntervals.rates = setInterval(loadRateRequests, 6000);
+            pollIntervals.thresholds = setInterval(loadThresholds, 6000);
+        }
+
+        // Modal Functions
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Submit Rate Request
+        async function submitRateRequest() {
+            const newRate = document.getElementById('modal-new-rate').value;
+            const justification = document.getElementById('modal-rate-justification').value;
+
+            if (!newRate || !justification) {
+                alert('Please fill in all fields');
                 return;
             }
 
-            currentFeedbackData = feedback;
+            try {
+                const { error } = await sbClient
+                    .from('rate_change_requests')
+                    .insert([{
+                        vendor_id: vendorId,
+                        current_rate: currentVendor.current_per_feedback_rate || 5.00,
+                        requested_rate: parseFloat(newRate),
+                        change_type: 'increase',
+                        reason: justification,
+                        status: 'pending'
+                    }]);
 
-            // Build modal content
-            const buyer = globalInteractionData.buyerMap[feedback.buyer_id] || { full_name: 'Unknown', email: 'N/A' };
-            const product = globalInteractionData.productMap[feedback.product_id] || { product_name: 'Unknown' };
-            const timestamp = formatMessageTimestamp(feedback.created_at, 'long');
-            const status = (feedback.status || 'pending').toLowerCase();
+                if (error) throw error;
+                alert('Rate increase request submitted!');
+                closeModal('rate-increase-modal');
+                document.getElementById('modal-new-rate').value = '';
+                document.getElementById('modal-rate-justification').value = '';
+                await loadRateRequests();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
 
-            let statusBadge = `<span class="status-badge status-pending">PENDING</span>`;
-            if (status === 'approved') {
-                statusBadge = `<span class="status-badge" style="background: #d4edda; color: #155724;">✓ APPROVED</span>`;
-            } else if (status === 'rejected') {
-                statusBadge = `<span class="status-badge" style="background: #f8d7da; color: #721c24;">✗ REJECTED</span>`;
+        // Submit Threshold Config
+        async function submitThresholdConfig() {
+            const isEnabled = document.getElementById('threshold-enable').checked;
+            const amount = document.getElementById('threshold-amount').value;
+
+            if (isEnabled && !amount) {
+                alert('Please enter a threshold amount');
+                return;
             }
 
-            let modalHTML = `
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Buyer Name</div>
-                    <div class="feedback-detail-value">${escapeHtml(buyer.full_name)}</div>
-                </div>
+            try {
+                const updateData = {
+                    commission_threshold: isEnabled ? parseFloat(amount) : 0
+                };
 
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Buyer Email</div>
-                    <div class="feedback-detail-value">${escapeHtml(buyer.email)}</div>
-                </div>
+                const { error } = await sbClient
+                    .from('vendors')
+                    .update(updateData)
+                    .eq('id', vendorId);
 
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Product</div>
-                    <div class="feedback-detail-value">${escapeHtml(product.product_name)}</div>
-                </div>
-
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Feedback Message</div>
-                    <div class="feedback-detail-value">${escapeHtml(feedback.message || 'No message provided')}</div>
-                </div>
-
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Submitted Date</div>
-                    <div class="feedback-detail-value">${timestamp}</div>
-                </div>
-
-                <div class="feedback-detail">
-                    <div class="feedback-detail-label">Status</div>
-                    <div class="feedback-detail-value">${statusBadge}</div>
-                </div>
-            `;
-
-            // Add image if available
-            if (feedback.image_url) {
-                modalHTML += `
-                    <div class="feedback-detail">
-                        <div class="feedback-detail-label">Proof Image</div>
-                        <img src="${escapeHtml(feedback.image_url)}" alt="Feedback Proof" class="feedback-image" onclick="openLightbox('${escapeHtml(feedback.image_url)}')">
-                    </div>
-                `;
+                if (error) throw error;
+                alert('Threshold configuration saved!');
+                closeModal('threshold-modal');
+                await loadCommissionSettings();
+                await loadEarningsData();
+            } catch (err) {
+                alert('Error: ' + err.message);
             }
+        }
 
-            document.getElementById('feedbackModalBody').innerHTML = modalHTML;
+        // Tab Switching
+        function switchTab(event, tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Remove active from all tab buttons
+            document.querySelectorAll('.tabs > .tab').forEach(el => {
+                el.classList.remove('active');
+            });
 
-            // Show/hide action buttons based on status
-            if (status === 'pending') {
-                document.getElementById('approveFeedbackBtn').style.display = 'block';
-                document.getElementById('rejectFeedbackBtn').style.display = 'block';
-            } else {
-                document.getElementById('approveFeedbackBtn').style.display = 'none';
-                document.getElementById('rejectFeedbackBtn').style.display = 'none';
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Commission Tab Switching
+        function switchCommissionTab(event, tabId) {
+            const contentDivs = ['dashboard', 'rate-requests', 'thresholds', 'history'];
+            contentDivs.forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            document.querySelectorAll('[onclick*="switchCommissionTab"]').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Inquiry Folder Switching
+        function switchInquiryFolder(event, folder) {
+            document.querySelectorAll('.inquiry-tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            // TODO: Filter inquiries by folder
+        }
+
+        // Collapsible Toggle
+        function toggleCollapsible(headerElement) {
+            const section = headerElement.parentElement;
+            section.classList.toggle('open');
+        }
+
+        // Mark Alert as Read
+        async function markAlertAsRead(alertId) {
+            try {
+                const { error } = await sbClient
+                    .from('alerts')
+                    .update({ is_read: true })
+                    .eq('id', alertId);
+
+                if (error) throw error;
+                await loadVendorAlerts();
+            } catch (err) {
+                console.error('Error marking alert as read:', err);
             }
+        }
 
-            // Show modal
-            document.getElementById('feedbackModal').classList.add('show');
-        };
+        function closeAlertsBanner() {
+            document.getElementById('alerts-banner').style.display = 'none';
+        }
 
-        function escapeHtml(str) {
-            if (!str) return '';
+        // Product Functions
+        function resetFormMode() {
+            document.getElementById('productForm').reset();
+            document.getElementById('vendorIdInput').value = vendorId;
+        }
+
+        async function deleteProduct(productId) {
+            if (!confirm('Delete this product?')) return;
+
+            try {
+                const { error } = await sbClient
+                    .from('products')
+                    .delete()
+                    .eq('id', productId);
+
+                if (error) throw error;
+                await loadVendorProducts();
+            } catch (err) {
+                alert('Error deleting product: ' + err.message);
+            }
+        }
+
+        function escapeHtml(text) {
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -1492,244 +1827,42 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return str.replace(/[&<>"']/g, m => map[m]);
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        function formatMessageTimestamp(dateString, format = 'short') {
-            try {
-                const date = new Date(dateString);
-                if (format === 'long') {
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                } else {
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                }
-            } catch (e) {
-                return dateString || 'Invalid date';
-            }
+        // Logout
+        function handleLogout() {
+            localStorage.removeItem('vendor_id');
+            localStorage.removeItem('vendor_email');
+            window.location.href = 'login.html';
         }
 
-        function openLightbox(imageUrl) {
-            alert('Image preview: ' + imageUrl);
+        // View Inquiry Detail
+        function viewInquiryDetail(inquiryId) {
+            document.getElementById('inquiries-list').style.display = 'none';
+            document.getElementById('inquiry-detail').style.display = 'block';
+            // TODO: Load and display inquiry details
         }
 
-        // Global data storage for filtering
-        let globalInteractionData = {
-            inquiries: [],
-            feedbacks: [],
-            buyerMap: {},
-            productMap: {}
-        };
-
-        async function loadVendorProducts() {
-            if (!currentVendor) return;
-
-            const { data: products, error } = await sbClient
-                .from('products')
-                .select('*')
-                .eq('vendor_id', currentVendor.id);
-
-            inventoryBody.innerHTML = '';
-
-            if (error || !products || products.length === 0) {
-                cachedProducts = [];
-                inventoryTable.style.display = 'none';
-                emptyInventory.style.display = 'block';
-                itemCountBadge.textContent = '0 items';
-                return;
-            }
-
-            cachedProducts = products;
-            inventoryTable.style.display = 'table';
-            emptyInventory.style.display = 'none';
-            itemCountBadge.textContent = `${products.length} item${products.length === 1 ? '' : 's'}`;
-
-            products.forEach(prod => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${escapeHtml(prod.product_name || 'Untitled')}</strong></td>
-                    <td>${escapeHtml(prod.category || 'General')}</td>
-                    <td><strong>$${parseFloat(prod.price || 0).toFixed(2)}</strong></td>
-                    <td>Active</td>
-                    <td>
-                        <button class="btn-action btn-edit" onclick="editProduct('${prod.id}')">Edit</button>
-                        <button class="btn-action btn-delete" onclick="deleteProduct('${prod.id}')">Delete</button>
-                    </td>
-                `;
-                inventoryBody.appendChild(tr);
-            });
+        function closeInquiryDetail() {
+            document.getElementById('inquiry-detail').style.display = 'none';
+            document.getElementById('inquiries-list').style.display = 'block';
         }
 
-        window.editProduct = async function(productId) {
-            alert('Edit product: ' + productId);
-        };
+        // Product Form Handler
+        const productForm = document.getElementById('productForm');
+        productForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alert('Product submission functionality implemented');
+        });
 
-        window.deleteProduct = async function(productId) {
-            if (!confirm('Are you sure you want to delete this product?')) return;
-            alert('Delete product: ' + productId);
-        };
+        // Threshold Config
+        document.getElementById('threshold-enable')?.addEventListener('change', (e) => {
+            document.getElementById('threshold-amount-group').style.display = e.target.checked ? 'block' : 'none';
+        });
 
-        function toggleCollapsible(header) {
-            const section = header.closest('.collapsible-section');
-            section.classList.toggle('open');
-        }
-
-        async function loadCommissionSettings() {
-            if (!currentVendor) return;
-
-            const commissionAmount = currentVendor.commission_amount_per_feedback || 5.00;
-            const threshold = currentVendor.payout_threshold || 50.00;
-
-            document.getElementById('metrics-commission-due').textContent = '$0.00';
-            document.getElementById('metrics-threshold').textContent = `$${threshold.toFixed(2)}`;
-            document.getElementById('sidebar-threshold').textContent = `$${threshold.toFixed(2)}`;
-            document.getElementById('current-threshold-display').value = `$${threshold.toFixed(2)}`;
-        }
-
-        async function loadEarningsData() {
-            document.getElementById('earnings-count').textContent = '0';
-        }
-
-        async function loadVendorAlerts() {
-            // Load any pending alerts for vendor
-        }
-
-        async function loadPendingInquiries() {
-            if (!currentVendor) return;
-
-            try {
-                // Fetch vendor products
-                const { data: vendorProducts } = await sbClient
-                    .from('products')
-                    .select('id, product_name')
-                    .eq('vendor_id', currentVendor.id);
-
-                if (!vendorProducts || vendorProducts.length === 0) {
-                    document.getElementById('emptyInquiries').style.display = 'block';
-                    document.getElementById('emptyFeedback').style.display = 'block';
-                    return;
-                }
-
-                const productIds = vendorProducts.map(p => p.id);
-                const productMap = {};
-                vendorProducts.forEach(prod => {
-                    productMap[prod.id] = prod;
-                });
-
-                // Fetch all messages (inquiries and feedback)
-                const { data: allMessages } = await sbClient
-                    .from('inquiries')
-                    .select('*')
-                    .in('product_id', productIds)
-                    .order('created_at', { ascending: false });
-
-                if (!allMessages || allMessages.length === 0) {
-                    document.getElementById('emptyInquiries').style.display = 'block';
-                    document.getElementById('emptyFeedback').style.display = 'block';
-                    return;
-                }
-
-                // Separate inquiries and feedback
-                const inquiries = allMessages.filter(m => m.message_type === 'inquiry');
-                const feedbacks = allMessages.filter(m => m.message_type === 'feedback');
-
-                // Fetch buyer details
-                const buyerIds = [...new Set(allMessages.map(msg => msg.buyer_id).filter(Boolean))];
-                const buyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyerMap[buyer.id] = buyer;
-                        });
-                    }
-                }
-
-                // Store data globally
-                globalInteractionData = {
-                    inquiries: inquiries,
-                    feedbacks: feedbacks,
-                    buyerMap: buyerMap,
-                    productMap: productMap
-                };
-
-                // Render feedback cards
-                renderFeedbackCards(feedbacks, buyerMap, productMap);
-
-                // Update counts
-                document.getElementById('inquiryCountBadge').textContent = `${inquiries.length} question${inquiries.length !== 1 ? 's' : ''}`;
-                document.getElementById('feedbackCountBadge').textContent = `${feedbacks.length} feedback submission${feedbacks.length !== 1 ? 's' : ''}`;
-
-                document.getElementById('emptyInquiries').style.display = inquiries.length === 0 ? 'block' : 'none';
-                document.getElementById('emptyFeedback').style.display = feedbacks.length === 0 ? 'block' : 'none';
-
-            } catch (err) {
-                console.error('Error loading interactions:', err);
-            }
-        }
-
-        function renderFeedbackCards(feedbacks, buyerMap, productMap) {
-            const container = document.getElementById('feedbackContainer');
-            container.innerHTML = '';
-
-            feedbacks.forEach(feedback => {
-                const buyer = buyerMap[feedback.buyer_id] || { full_name: 'Unknown', email: 'N/A' };
-                const product = productMap[feedback.product_id] || { product_name: 'Unknown' };
-                const status = (feedback.status || 'pending').toLowerCase();
-                let statusClass = 'status-pending';
-                let statusText = 'Pending';
-
-                if (status === 'approved') {
-                    statusClass = 'status-approved';
-                    statusText = 'Approved';
-                } else if (status === 'rejected') {
-                    statusClass = 'status-rejected';
-                    statusText = 'Rejected';
-                }
-
-                const card = document.createElement('div');
-                card.className = 'interaction-card feedback';
-                card.innerHTML = `
-                    <div class="interaction-card-header">
-                        <div class="interaction-card-title">⭐ ${escapeHtml(buyer.full_name)}</div>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="interaction-card-subtitle">Product: ${escapeHtml(product.product_name)}</div>
-                    <div class="interaction-card-subtitle">Email: ${escapeHtml(buyer.email)}</div>
-                    <button class="respond-btn" onclick="viewFeedbackDetails('${feedback.id}')" style="margin-top: 12px; padding: 8px 16px; background: #1e5aa8; color: white; border: none; border-radius: 6px; cursor: pointer;">View & Approve</button>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function switchInteractionTab(tab) {
-            const inquiriesTab = document.getElementById('inquiriesTab');
-            const feedbackTab = document.getElementById('feedbackTab');
-            const tabInquiries = document.getElementById('tabInquiries');
-            const tabFeedback = document.getElementById('tabFeedback');
-
-            if (tab === 'inquiries') {
-                inquiriesTab.style.display = 'block';
-                feedbackTab.style.display = 'none';
-                tabInquiries.style.borderBottomColor = '#1e5aa8';
-                tabFeedback.style.borderBottomColor = 'transparent';
-            } else if (tab === 'feedback') {
-                inquiriesTab.style.display = 'none';
-                feedbackTab.style.display = 'block';
-                tabInquiries.style.borderBottomColor = 'transparent';
-                tabFeedback.style.borderBottomColor = '#1e5aa8';
-            }
-        }
-
-        function filterInteractionCards() {
-            // Filter cards based on search
-        }
-
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', initPortal);
+        // Initialize on load
+        window.addEventListener('load', initPortal);
     </script>
 </body>
 </html>
