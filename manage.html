@@ -16,7 +16,6 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #eef3f8;
-            
             min-height: 100vh;
             color: #2c3e50;
         }
@@ -3101,10 +3100,12 @@
 
                             <div class="thread-meta-info">
                                 <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
+                                ${thread.commissionValue > 0 ? `
                                 <div class="thread-commission">
                                     <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
-                                    <div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div>
+                                    <div class="commission-status">Ready</div>
                                 </div>
+                                ` : ''}
                                 <div class="thread-sla">
                                     <div class="sla-time">${sla.label}</div>
                                     <div class="sla-indicator ${sla.indicator}"></div>
