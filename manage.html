@@ -3070,7 +3070,7 @@
             threadList.innerHTML = filteredInquiries.map(thread => {
                 const lastMsg = thread.messages[thread.messages.length - 1];
                 const messageType = lastMsg.message_type;
-                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
+                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '';
 
                 const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
                 const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
