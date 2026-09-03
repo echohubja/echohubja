@@ -872,7 +872,7 @@
         }
 
         async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
-            let query = db.from('products').select('*');
+            let query = db.from('products').select('*, vendors(id, first_name, last_name, business_name)');
 
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
@@ -918,11 +918,24 @@
                     const price = parseFloat(product.price || 0);
                     const imageUrl = imageMap[productId] || null;
 
+                    // Construct vendor full name
+                    let vendorDisplayName = 'Vendor';
+                    if (product.vendors) {
+                        const v = product.vendors;
+                        if (v.first_name && v.last_name) {
+                            vendorDisplayName = `${v.first_name} ${v.last_name}`;
+                        } else if (v.business_name) {
+                            vendorDisplayName = v.business_name;
+                        } else if (v.first_name) {
+                            vendorDisplayName = v.first_name;
+                        }
+                    }
+
                     return `
                     <div class="product-box">
                         <div>
                             ${imageUrl ? `<img src="${imageUrl}" alt="${productName}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : '<div style="width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px; color: #a0aec0; font-size: 40px;">📦</div>'}
-                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${vendorId}</span>
+                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">By: ${vendorDisplayName}</span>
                             <h5 style="margin-top: 4px;">${productName}</h5>
                             <div class="cost">$${price.toFixed(2)}</div>
                         </div>
@@ -1413,6 +1426,9 @@
                     product_id: productId === 'null' || !productId ? null : productId,
                     vendor_id: vendorId === 'Echo Hub' || !vendorId ? null : vendorId,
                     buyer_id: currentBuyerId,
+                    sender_id: currentBuyerId,
+                    sender_type: 'buyer',
+                    message_type: 'followup',
                     message: `[Follow-up]: ${messageText}`,
                     image_url: null
                 }
