@@ -3100,12 +3100,6 @@
 
                             <div class="thread-meta-info">
                                 <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
-                                ${thread.commissionValue > 0 ? `
-                                <div class="thread-commission">
-                                    <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
-                                    <div class="commission-status">Ready</div>
-                                </div>
-                                ` : ''}
                                 <div class="thread-sla">
                                     <div class="sla-time">${sla.label}</div>
                                     <div class="sla-indicator ${sla.indicator}"></div>
@@ -3230,12 +3224,12 @@
 
                 const { error } = await sbClient
                     .from('inquiries')
-                    .update({ vendor_status: 'approved' })
+                    .update({ vendor_status: 'approved', status: 'verified' })
                     .eq('id', inquiryId);
 
                 if (error) throw error;
 
-                console.log('✅ Feedback approved');
+                console.log('✅ Feedback approved and verified - commission triggered');
                 loadPendingInquiries();
             } catch (error) {
                 console.error('❌ Error approving feedback:', error);
