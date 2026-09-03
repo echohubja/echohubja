@@ -3143,7 +3143,8 @@
         function renderMessage(msg, buyerName, idx) {
             const isBuyer = msg.message_type !== 'vendor_response';
             const avatar = isBuyer ? 'B' : 'V';
-            const senderName = isBuyer ? 'Buyer' : 'You';
+            const senderName = isBuyer ? 'Buyer' : (currentVendor ? currentVendor.full_name || 'Vendor' : 'Vendor');
+            const vendorInfo = !isBuyer && currentVendor ? `<span style="font-size: 12px; color: #666; margin-left: 8px;">ID: ${currentVendor.id} | Email: ${currentVendor.email}</span>` : '';
             const avatarClass = isBuyer ? 'buyer' : 'vendor';
 
             const feedbackStatus = msg.message_type === 'feedback' ? `
@@ -3178,7 +3179,10 @@
                     <div class="message-avatar ${avatarClass}">${avatar}</div>
                     <div class="message-body">
                         <div class="message-header">
-                            <span class="message-sender">${senderName}</span>
+                            <div style="display: flex; align-items: center;">
+                                <span class="message-sender">${senderName}</span>
+                                ${vendorInfo}
+                            </div>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
                         <div class="message-text">${linkifyText(msg.message || '[No message]')}</div>
