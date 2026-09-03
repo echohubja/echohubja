@@ -2923,7 +2923,7 @@
                 const productIds = products.map(p => p.id);
                 const { data: inquiries } = await sbClient
                     .from('inquiries')
-                    .select('*')
+                    .select('*, feedback(id)')
                     .in('product_id', productIds)
                     .order('created_at', { ascending: false });
 
@@ -3316,6 +3316,7 @@
                             <div style="display: flex; align-items: center;">
                                 <span class="message-sender">${senderName}</span>
                                 ${vendorInfo}
+                                ${msg.message_type === 'feedback' && msg.feedback && msg.feedback.length > 0 ? `<span class="copyable-id" style="margin-left: 12px;" onclick="copyToClipboard('${msg.feedback[0].id}', 'Feedback ID: ${msg.feedback[0].id.substring(0, 8)}')" title="Click to copy feedback ID">Feedback: ${msg.feedback[0].id.substring(0, 8)} 📋</span>` : ''}
                             </div>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
