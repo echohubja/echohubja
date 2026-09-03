@@ -797,11 +797,12 @@
                 if (buyerData) {
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.referral_code || 'BUYER-00000';
-                    buyerNameSpan.textContent = buyerData.full_name || currentActiveEmail;
+                    const displayName = buyerData.full_name ? `${buyerData.full_name} (${currentActiveEmail})` : currentActiveEmail;
+                    buyerNameSpan.textContent = `${displayName} • ID: ${buyerData.id}`;
                 } else {
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
-                    buyerNameSpan.textContent = currentActiveEmail;
+                    buyerNameSpan.textContent = `${currentActiveEmail} • ID: N/A`;
                 }
             } else {
                 buyerPill.style.display = 'none';
