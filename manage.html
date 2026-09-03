@@ -2508,6 +2508,7 @@
         // OPTION 2B Phase 1 State Variables
         let inquiriesCache = [];
         let productMapCache = {};
+        let feedbackIdMap = {};
         let filteredInquiries = [];
         let currentFolder = 'all';
         let currentSort = 'date-newest';
@@ -2923,7 +2924,7 @@
                 const productIds = products.map(p => p.id);
                 const { data: inquiries } = await sbClient
                     .from('inquiries')
-                    .select('*, feedback(id)')
+                    .select('*')
                     .in('product_id', productIds)
                     .order('created_at', { ascending: false });
 
@@ -2943,6 +2944,19 @@
                         .in('id', buyerIds);
                     if (buyers) {
                         buyers.forEach(b => buyerMap[b.id] = b);
+                    }
+                }
+
+                // Fetch feedback IDs for feedback messages
+                let feedbackIdMap = {};
+                const feedbackInquiryIds = inquiries.filter(i => i.message_type === 'feedback').map(i => i.id);
+                if (feedbackInquiryIds.length > 0) {
+                    const { data: feedbackRecords } = await sbClient
+                        .from('feedback')
+                        .select('id, inquiry_id')
+                        .in('inquiry_id', feedbackInquiryIds);
+                    if (feedbackRecords) {
+                        feedbackRecords.forEach(f => feedbackIdMap[f.inquiry_id] = f.id);
                     }
                 }
 
@@ -3316,7 +3330,7 @@
                             <div style="display: flex; align-items: center;">
                                 <span class="message-sender">${senderName}</span>
                                 ${vendorInfo}
-                                ${msg.message_type === 'feedback' && msg.feedback && msg.feedback.length > 0 ? `<span class="copyable-id" style="margin-left: 12px;" onclick="copyToClipboard('${msg.feedback[0].id}', 'Feedback ID: ${msg.feedback[0].id.substring(0, 8)}')" title="Click to copy feedback ID">Feedback: ${msg.feedback[0].id.substring(0, 8)} 📋</span>` : ''}
+                                ${msg.message_type === 'feedback' && feedbackIdMap[msg.id] ? `<span class="copyable-id" style="margin-left: 12px;" onclick="copyToClipboard('${feedbackIdMap[msg.id]}', 'Feedback ID: ${feedbackIdMap[msg.id].substring(0, 8)}')" title="Click to copy feedback ID">Feedback: ${feedbackIdMap[msg.id].substring(0, 8)} 📋</span>` : ''}
                             </div>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
