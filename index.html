@@ -739,7 +739,7 @@
 
             if (data && data.length > 0) {
                 container.innerHTML = data.map(product => {
-                    const productName = product.name || 'Unnamed Product';
+                    const productName = product.product_name || 'Unnamed Product';
                     const productId = product.id || '';
                     const vendorId = product.vendor_id || 'Echo Hub';
                     const price = parseFloat(product.price || 0);
