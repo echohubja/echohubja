@@ -1802,9 +1802,109 @@
         .inquiry-empty-state-text {
             margin: 0;
         }
+
+        /* Toast Notification Styles */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .toast {
+            padding: 14px 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+            min-width: 280px;
+        }
+
+        .toast.success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .toast.error {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .toast.info {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .toast.warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        .toast.removing {
+            animation: slideOutRight 0.3s ease forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <header>
         <div>
@@ -2413,6 +2513,40 @@
         let currentSort = 'date-newest';
         let currentProductFilter = '';
         let searchQuery = '';
+
+        // Toast Notification Functions
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toastId = `toast-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="closeToast('${toastId}')">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-dismiss after 4 seconds
+            setTimeout(() => {
+                closeToast(toastId);
+            }, 4000);
+        }
+
+        function closeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }
+        }
+
+        function showCopyToast(message) {
+            showToast(message, 'success');
+        }
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -3548,14 +3682,14 @@
 
                 const productIds = vendorProducts.map(p => p.id);
 
-                // Count feedback pending approval (awaiting_approval or pending status)
+                // Count feedback pending approval (vendor_status = 'pending')
                 const { data: pendingFeedback, error } = await sbClient
                     .from('inquiries')
                     .select('*')
                     .in('product_id', productIds)
                     .eq('message_type', 'feedback')
                     .eq('sender_type', 'buyer')
-                    .in('inquiry_status', ['awaiting_approval', 'pending']);
+                    .eq('vendor_status', 'pending');
 
                 if (error) {
                     console.error('Error fetching pending feedback:', error);
