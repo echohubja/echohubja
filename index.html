@@ -1080,7 +1080,7 @@
 
             const { data: inquiries, error } = await db
                 .from('inquiries')
-                .select('*, products(id, product_name)')
+                .select('*, products(id, product_name), vendors(id, first_name, last_name, business_name)')
                 .eq('buyer_id', buyerId)
                 .order('created_at', { ascending: false });
 
@@ -1106,8 +1106,19 @@
                     });
                 }
 
+                // Build vendor name map
+                const vendorNameMap = {};
+                inquiries.forEach(item => {
+                    if (item.vendor_id && item.vendors) {
+                        const vendor = item.vendors;
+                        const vendorName = vendor.business_name || (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : vendor.first_name || 'Unknown Vendor');
+                        vendorNameMap[item.vendor_id] = vendorName;
+                    }
+                });
+
                 const grouped = {};
                 window.inquiryVendorMap = {};
+                window.vendorNameMap = vendorNameMap;
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
                     const pName = item.products?.product_name || 'General Inquiries';
@@ -1207,7 +1218,7 @@
                                 <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
                                     <div style="display: flex; align-items: center; gap: 6px;">
                                         <span style="font-size: 12px;">🏢</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">${window.vendorNameMap?.[vendorId] || vendorId}</span>
                                         <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
                                     </div>
                                     <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
@@ -1611,4 +1622,3 @@
     </script>
 </body>
 </html>
-
