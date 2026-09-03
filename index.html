@@ -1303,11 +1303,6 @@
                 return;
             }
 
-            if (!hasFile) {
-                showToast('Please upload an image to create feedback message.', 'error');
-                return;
-            }
-
             let imageUrl = null;
 
             if (hasFile) {
@@ -1367,6 +1362,8 @@
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         buyer_id: currentBuyerId,
+                        sender_id: currentBuyerId,
+                        sender_type: 'buyer',
                         message_type: 'feedback',
                         message: feedbackMessage,
                         image_url: imageUrl
