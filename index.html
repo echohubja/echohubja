@@ -1065,8 +1065,16 @@
             }
         }
 
-        async function loadBuyerInquiriesHistory(buyerId) {
+        async function loadBuyerInquiriesHistory(buyerId, skipIfDrawerOpen = false) {
             if (!buyerId) return;
+
+            // Skip reload if drawer is open and skipIfDrawerOpen is true (prevents drawer from closing on new messages)
+            if (skipIfDrawerOpen) {
+                const drawer = document.getElementById('inquiries-drawer');
+                if (drawer && drawer.classList.contains('open')) {
+                    return;
+                }
+            }
 
             const container = document.getElementById('buyer-inquiries-body');
 
@@ -1409,7 +1417,7 @@
             }
 
             showToast('Product feedback (link & image) successfully submitted!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId);
+            loadBuyerInquiriesHistory(currentBuyerId, true);
         }
 
         async function submitFollowupMessage(inquiryId, productId, vendorId) {
@@ -1441,7 +1449,7 @@
             }
 
             showToast('Follow-up message sent successfully!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId);
+            loadBuyerInquiriesHistory(currentBuyerId, true);
         }
 
         async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
