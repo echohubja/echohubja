@@ -783,7 +783,6 @@
             currentActiveEmail = localStorage.getItem('buyer_email') || localStorage.getItem('buyer_id') || '';
 
             if (currentActiveEmail) {
-                buyerNameSpan.textContent = currentActiveEmail;
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
                 btnOpenReferrals.style.display = 'flex';
@@ -791,16 +790,18 @@
 
                 const { data: buyerData, error } = await db
                     .from('buyers')
-                    .select('id, referral_code')
+                    .select('id, referral_code, full_name')
                     .eq('email', currentActiveEmail)
                     .single();
 
                 if (buyerData) {
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.referral_code || 'BUYER-00000';
+                    buyerNameSpan.textContent = buyerData.full_name || currentActiveEmail;
                 } else {
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
+                    buyerNameSpan.textContent = currentActiveEmail;
                 }
             } else {
                 buyerPill.style.display = 'none';
