@@ -1293,6 +1293,12 @@
 
             const hasFile = fileInput.files && fileInput.files[0];
 
+            // Validate vendor_id exists
+            if (!vendorId || vendorId === 'Echo Hub') {
+                showToast('Feedback must be submitted for a specific vendor product.', 'error');
+                return;
+            }
+
             // Feedback message type requires BOTH Amazon URL and image
             if (!amazonLink) {
                 showToast('Please provide an Amazon review link to create feedback message.', 'error');
@@ -1367,7 +1373,7 @@
                 const { error: insertErr } = await db.from('inquiries').insert([
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
-                        vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
+                        vendor_id: vendorId,
                         buyer_id: currentBuyerId,
                         sender_id: currentBuyerId,
                         sender_type: 'buyer',
