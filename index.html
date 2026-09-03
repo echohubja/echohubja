@@ -360,6 +360,90 @@
             margin: 24px 0;
         }
 
+        /* Toast Notification System */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+        .toast {
+            background: white;
+            border-left: 4px solid #1e5aa8;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 300px;
+            cursor: pointer;
+        }
+        .toast.success {
+            border-left-color: #38a169;
+            background: #f0fdf4;
+        }
+        .toast.error {
+            border-left-color: #dc2626;
+            background: #fef2f2;
+        }
+        .toast.info {
+            border-left-color: #1e5aa8;
+            background: #f0f9ff;
+        }
+        .toast-message {
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .toast.success .toast-message {
+            color: #166534;
+        }
+        .toast.error .toast-message {
+            color: #991b1b;
+        }
+        .toast.info .toast-message {
+            color: #0c4a6e;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0 0 0 10px;
+            display: flex;
+            align-items: center;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        .toast.removing {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
@@ -604,6 +688,9 @@
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
@@ -612,6 +699,36 @@
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toastId = `toast-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="closeToast('${toastId}')">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-dismiss after 4 seconds
+            setTimeout(() => {
+                closeToast(toastId);
+            }, 4000);
+        }
+
+        function closeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }
+        }
 
         function captureReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -789,8 +906,8 @@
 
         function openInquiryDrawer(productId, productName, vendorId) {
             if (!currentActiveEmail) {
-                alert('Please sign in through the account portal before sending an inquiry.');
-                window.location.href = 'portal.html';
+                showToast('Please sign in through the account portal before sending an inquiry.', 'error');
+                setTimeout(() => { window.location.href = 'portal.html'; }, 1500);
                 return;
             }
             document.getElementById('modal-product-id').value = productId;
@@ -822,7 +939,7 @@
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
             if (!message) {
-                alert('Please enter a message or question.');
+                showToast('Please enter a message or question.', 'error');
                 return;
             }
 
@@ -844,11 +961,11 @@
 
             if (error) {
                 console.error('Error submitting inquiry:', error.message);
-                alert('Failed to send inquiry. Please try again.');
+                showToast('Failed to send inquiry. Please try again.', 'error');
                 return;
             }
 
-            alert('Inquiry submitted successfully!');
+            showToast('Inquiry submitted successfully!', 'success');
             closeInquiryDrawer();
         }
 
@@ -1125,7 +1242,7 @@
 
             const hasFile = fileInput.files && fileInput.files[0];
             if (!hasFile && !amazonLink) {
-                alert('Please provide either an Amazon feedback link or upload an image.');
+                showToast('Please provide either an Amazon feedback link or upload an image.', 'error');
                 return;
             }
 
@@ -1143,7 +1260,7 @@
 
                 if (uploadError) {
                     console.error('Error uploading feedback image:', uploadError.message);
-                    alert('Failed to upload feedback image.');
+                    showToast('Failed to upload feedback image.', 'error');
                     return;
                 }
 
@@ -1197,11 +1314,11 @@
 
             if (dbError) {
                 console.error('Error saving feedback record:', dbError.message);
-                alert('Failed to save feedback record.');
+                showToast('Failed to save feedback record.', 'error');
                 return;
             }
 
-            alert('Product feedback (link & image) successfully submitted!');
+            showToast('Product feedback (link & image) successfully submitted!', 'success');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
 
@@ -1210,7 +1327,7 @@
             const messageText = msgInput.value.trim();
 
             if (!messageText) {
-                alert('Please enter a reply message.');
+                showToast('Please enter a reply message.', 'error');
                 return;
             }
 
@@ -1226,11 +1343,11 @@
 
             if (error) {
                 console.error('Error submitting follow-up:', error.message);
-                alert('Failed to submit follow-up message.');
+                showToast('Failed to submit follow-up message.', 'error');
                 return;
             }
 
-            alert('Follow-up message sent successfully!');
+            showToast('Follow-up message sent successfully!', 'success');
             loadBuyerInquiriesHistory(currentBuyerId);
         }
 
@@ -1286,7 +1403,7 @@
             input.select();
             input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value);
-            alert('Referral link copied to clipboard!');
+            showToast('Referral link copied to clipboard!', 'success');
         }
 
         // Tab switching
@@ -1357,7 +1474,7 @@
             input.select();
             input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value);
-            alert('Referral link copied to clipboard!');
+            showToast('Referral link copied to clipboard!', 'success');
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
