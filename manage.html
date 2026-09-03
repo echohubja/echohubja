@@ -2488,7 +2488,7 @@
 
                 currentVendor = vendorData;
 
-                welcomeHeading.textContent = `Welcome, ${vendorData.full_name || vendorData.business_name || vendorData.first_name || 'Vendor'}!`;
+                welcomeHeading.textContent = `Welcome, ${(vendorData.first_name && vendorData.last_name) ? `${vendorData.first_name} ${vendorData.last_name}` : vendorData.business_name || 'Vendor'}!`;
                 document.getElementById('profileVendorId').textContent = vendorData.id;
                 profileEmail.textContent = vendorEmail;
                 profileType.textContent = vendorData.vendor_type || 'STANDARD';
