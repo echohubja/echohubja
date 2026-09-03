@@ -1840,13 +1840,7 @@
                 </div>
             </div>
 
-            <!-- Alerts Banner Section -->
-            <div id="alerts-banner" style="display: none; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
-                    <div id="alerts-content" style="flex: 1;"></div>
-                    <button onclick="closeAlertsBanner()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #92400e;">×</button>
-                </div>
-            </div>
+            <!-- ALERTS BANNER DISABLED - Fake commission notifications removed Sep 3, 2026 -->
 
             <!-- Metrics Grid (3 Cards) -->
             <div class="metrics-grid">
@@ -2505,7 +2499,7 @@
                 await loadCommissionSettings();
                 await loadEarningsData();
                 await loadCommissionStats();
-                await loadVendorAlerts();
+                await loadPendingFeedbackNotification(); // Show pending feedback count
                 await setupPolling();
 
                 loadingState.style.display = 'none';
@@ -2580,25 +2574,14 @@
                     }
                 }, 4000);
 
-                // Poll alerts every 5 seconds
-                pollingIntervals.alerts = setInterval(async () => {
+                // Poll pending feedback notification every 6 seconds
+                pollingIntervals.feedback = setInterval(async () => {
                     try {
-                        const { data: alerts } = await sbClient
-                            .from('alerts')
-                            .select('*')
-                            .eq('recipient_id', currentVendor.id)
-                            .eq('is_read', false);
-
-                        const currentHash = JSON.stringify(alerts || []);
-                        if (currentHash !== lastAlertsHash) {
-                            console.log('⚠️ Alerts changed - RELOADING');
-                            lastAlertsHash = currentHash;
-                            loadVendorAlerts();
-                        }
+                        await loadPendingFeedbackNotification();
                     } catch (err) {
-                        console.error('Polling error (alerts):', err);
+                        console.error('Polling error (pending feedback):', err);
                     }
-                }, 5000);
+                }, 6000);
 
                 // Poll products every 4 seconds
                 pollingIntervals.products = setInterval(async () => {
@@ -2628,8 +2611,8 @@
         function stopPolling() {
             if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
             if (pollingIntervals.vendor) clearInterval(pollingIntervals.vendor);
-            if (pollingIntervals.alerts) clearInterval(pollingIntervals.alerts);
             if (pollingIntervals.products) clearInterval(pollingIntervals.products);
+            if (pollingIntervals.feedback) clearInterval(pollingIntervals.feedback);
             pollingIntervals = {};
             console.log('🛑 Polling stopped');
         }
@@ -3548,66 +3531,69 @@
             errorState.style.display = 'block';
         }
 
-        // Alert Functions
-        async function loadVendorAlerts() {
+        // Pending Feedback Notification System
+        async function loadPendingFeedbackNotification() {
             try {
                 if (!currentVendor) return;
 
-                const { data: alerts, error } = await sbClient
-                    .from('alerts')
-                    .select('*')
-                    .eq('recipient_id', currentVendor.id)
-                    .eq('recipient_type', 'vendor')
-                    .eq('is_read', false)
-                    .order('created_at', { ascending: false });
+                const { data: vendorProducts } = await sbClient
+                    .from('products')
+                    .select('id')
+                    .eq('vendor_id', currentVendor.id);
 
-                if (error) {
-                    console.error('Error fetching alerts:', error);
-                    return;
-                }
-
-                if (!alerts || alerts.length === 0) {
+                if (!vendorProducts || vendorProducts.length === 0) {
                     document.getElementById('alerts-banner').style.display = 'none';
                     return;
                 }
 
-                const alertsContent = document.getElementById('alerts-content');
-                let html = '';
+                const productIds = vendorProducts.map(p => p.id);
 
-                alerts.forEach((alert, idx) => {
-                    html += `
-                        <div style="margin-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; padding-bottom: ${idx < alerts.length - 1 ? '12px' : '0'}; border-bottom: ${idx < alerts.length - 1 ? '1px solid #fcd34d' : 'none'};">
-                            <div style="font-weight: 600; color: #92400e; font-size: 0.95em;">🔔 ${escapeHtml(alert.title)}</div>
-                            <div style="color: #b45309; font-size: 0.9em; margin-top: 4px;">${escapeHtml(alert.message)}</div>
-                            <button onclick="markAlertAsRead('${alert.id}')" style="background: #fbbf24; color: #78350f; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
-                        </div>
-                    `;
-                });
-
-                alertsContent.innerHTML = html;
-                document.getElementById('alerts-banner').style.display = 'block';
-
-            } catch (err) {
-                console.error('Unexpected error loading alerts:', err);
-            }
-        }
-
-        async function markAlertAsRead(alertId) {
-            try {
-                const { error } = await sbClient
-                    .from('alerts')
-                    .update({ is_read: true })
-                    .eq('id', alertId);
+                // Count feedback pending approval (awaiting_approval or pending status)
+                const { data: pendingFeedback, error } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .in('product_id', productIds)
+                    .eq('message_type', 'feedback')
+                    .eq('sender_type', 'buyer')
+                    .in('inquiry_status', ['awaiting_approval', 'pending']);
 
                 if (error) {
-                    console.error('Error marking alert as read:', error);
+                    console.error('Error fetching pending feedback:', error);
                     return;
                 }
 
-                await loadVendorAlerts();
+                const pendingCount = pendingFeedback ? pendingFeedback.length : 0;
+
+                if (pendingCount === 0) {
+                    document.getElementById('alerts-banner').style.display = 'none';
+                    return;
+                }
+
+                // Display pending feedback notification
+                const alertsContent = document.getElementById('alerts-content');
+                const feedbackText = pendingCount === 1 ? 'feedback' : 'feedbacks';
+                alertsContent.innerHTML = `
+                    <div style="font-weight: 600; color: #1e40af; font-size: 0.95em;">📋 Pending Approval</div>
+                    <div style="color: #1e3a8a; font-size: 0.9em; margin-top: 4px;">You have ${pendingCount} ${feedbackText} awaiting approval from customers.</div>
+                    <button onclick="dismissPendingNotification()" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
+                `;
+
+                document.getElementById('alerts-banner').style.display = 'block';
+
+                // Auto-dismiss after 8 seconds if not manually dismissed
+                setTimeout(() => {
+                    if (document.getElementById('alerts-banner').style.display === 'block') {
+                        document.getElementById('alerts-banner').style.display = 'none';
+                    }
+                }, 8000);
+
             } catch (err) {
-                console.error('Error updating alert:', err);
+                console.error('Unexpected error loading pending feedback notification:', err);
             }
+        }
+
+        function dismissPendingNotification() {
+            document.getElementById('alerts-banner').style.display = 'none';
         }
 
         function closeAlertsBanner() {
@@ -4152,5 +4138,3 @@
     </script>
 </body>
 </html>
-
-                        v
