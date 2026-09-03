@@ -634,7 +634,7 @@
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
                 <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
-                <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
+                <div><strong>To (Vendor):</strong> <span id="modal-vendor-id-display"></span></div>
             </div>
 
             <input type="hidden" id="modal-product-id">
@@ -954,7 +954,7 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
+        async function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
             if (!currentActiveEmail) {
                 showToast('Please sign in through the account portal before sending an inquiry.', 'error');
                 setTimeout(() => { window.location.href = 'portal.html'; }, 1500);
@@ -966,7 +966,22 @@
             document.getElementById('modal-product-title').textContent = productName;
 
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
-            document.getElementById('modal-vendor-id-display').textContent = vendorId;
+
+            // Fetch vendor name
+            if (vendorId) {
+                const { data: vendor } = await db
+                    .from('vendors')
+                    .select('id, first_name, last_name, business_name')
+                    .eq('id', vendorId)
+                    .single();
+
+                if (vendor) {
+                    const vendorName = vendor.business_name || (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : vendor.first_name || 'Unknown');
+                    document.getElementById('modal-vendor-id-display').textContent = `${vendorName} (ID: ${vendorId.substring(0, 8)})`;
+                } else {
+                    document.getElementById('modal-vendor-id-display').textContent = `ID: ${vendorId.substring(0, 8)}`;
+                }
+            }
 
             document.getElementById('inquiry-message').value = '';
 
