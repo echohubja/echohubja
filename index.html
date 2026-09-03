@@ -1395,7 +1395,7 @@
                     .eq('id', existingFeedback.id);
                 dbError = updateErr;
             } else {
-                const { error: insertErr } = await db.from('inquiries').insert([
+                const { data: inquiryData, error: insertErr } = await db.from('inquiries').insert([
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         vendor_id: vendorId,
@@ -1406,8 +1406,24 @@
                         message: feedbackMessage,
                         image_url: imageUrl
                     }
-                ]);
+                ]).select('id');
                 dbError = insertErr;
+
+                // Create feedback record linked to the inquiry
+                if (!dbError && inquiryData && inquiryData.length > 0) {
+                    const inquiryId = inquiryData[0].id;
+                    const { error: feedbackErr } = await db.from('feedback').insert([
+                        {
+                            inquiry_id: inquiryId,
+                            commission_amount: null,
+                            commission_status: 'pending'
+                        }
+                    ]);
+                    if (feedbackErr) {
+                        console.error('Error creating feedback record:', feedbackErr.message);
+                        dbError = feedbackErr;
+                    }
+                }
             }
 
             if (dbError) {
