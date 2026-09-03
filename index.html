@@ -556,7 +556,7 @@
 
             <div class="divider"></div>
 
-            <!-- Earning Scenarios (4 total) -->
+            <!-- Earning Scenarios (2 only) -->
             <h3 class="section-title">Earning Scenarios</h3>
 
             <div class="commission-scenario">
@@ -983,15 +983,15 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
-            const { error } = await db.from('inquiries').insert([
-                {
-                    product_id: productId,
-                    vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
-                    buyer_id: currentBuyerId,
-                    message: message,
-                    image_url: imageUrl || ''
-                }
-            ]);
+            const inquiryData = {
+                product_id: productId,
+                vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
+                buyer_id: currentBuyerId,
+                message: message,
+                image_url: imageUrl && imageUrl.trim() ? imageUrl : null
+            };
+
+            const { error } = await db.from('inquiries').insert([inquiryData]);
 
             submitBtn.disabled = false;
             submitBtn.textContent = 'Send Inquiry';
@@ -1101,10 +1101,10 @@
                     const contentId = `inquiry-group-${pKey}-${index}`;
 
                     const latestMsg = group.items[0];
-                    const isPending = latestMsg.message.startsWith('[Follow-up]:') || latestMsg.image_url?.includes('feedback');
-                    const statusBadge = isPending
-                        ? `<span style="font-size: 10px; background: #feebc8; color: #c05621; padding: 2px 8px; border-radius: 10px; font-weight: 700;">PENDING VENDOR</span>`
-                        : `<span style="font-size: 10px; background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">ACTIVE</span>`;
+                    const hasFeedback = latestMsg.image_url?.includes('feedback');
+                    const statusBadge = hasFeedback
+                        ? `<span style="font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-weight: 700;">📋 AWAITING APPROVAL</span>`
+                        : `<span style="font-size: 10px; background: #e0f2fe; color: #0c4a6e; padding: 2px 8px; border-radius: 10px; font-weight: 700;">⏳ PENDING VENDOR</span>`;
 
                     const vendorGroups = {};
                     group.items.forEach(item => {
@@ -1278,8 +1278,20 @@
             const amazonLink = linkInput ? linkInput.value.trim() : '';
 
             const hasFile = fileInput.files && fileInput.files[0];
-            if (!hasFile && !amazonLink) {
-                showToast('Please provide either an Amazon feedback link or upload an image.', 'error');
+
+            // Feedback message type requires BOTH Amazon URL and image
+            if (!amazonLink) {
+                showToast('Please provide an Amazon review link to create feedback message.', 'error');
+                return;
+            }
+
+            if (!amazonLink.includes('amazon.com')) {
+                showToast('Amazon link must be from amazon.com domain.', 'error');
+                return;
+            }
+
+            if (!hasFile) {
+                showToast('Please upload an image to create feedback message.', 'error');
                 return;
             }
 
