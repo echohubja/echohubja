@@ -533,43 +533,77 @@
             <h3 class="section-title">Commission Breakdown</h3>
             <div class="commission-breakdown-grid">
                 <div class="breakdown-item">
-                    <div class="breakdown-item-label">Direct Referrals</div>
-                    <div class="breakdown-item-value" id="comm-direct-earnings">$0.00</div>
-                    <div class="breakdown-item-count" id="comm-direct-count">0 feedbacks</div>
+                    <div class="breakdown-item-label">Referred Buyers</div>
+                    <div class="breakdown-item-value" id="comm-referred-buyer-earnings">$0.00</div>
+                    <div class="breakdown-item-count" id="comm-referred-buyer-count">0 feedbacks</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-item-label">Referred Vendors</div>
+                    <div class="breakdown-item-value" id="comm-referred-vendor-earnings">$0.00</div>
+                    <div class="breakdown-item-count" id="comm-referred-vendor-count">0 feedbacks</div>
                 </div>
                 <div class="breakdown-item">
                     <div class="breakdown-item-label">Both-Referred</div>
                     <div class="breakdown-item-value" id="comm-both-earnings">$0.00</div>
                     <div class="breakdown-item-count" id="comm-both-count">0 feedbacks</div>
                 </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-item-label">Your Feedback</div>
+                    <div class="breakdown-item-value" id="comm-own-feedback-earnings">$0.00</div>
+                    <div class="breakdown-item-count" id="comm-own-feedback-count">0 feedbacks</div>
+                </div>
             </div>
 
             <div class="divider"></div>
 
-            <!-- Earning Scenarios (2 only) -->
+            <!-- Earning Scenarios (4 total) -->
             <h3 class="section-title">Earning Scenarios</h3>
 
             <div class="commission-scenario">
                 <div class="scenario-header">
-                    <div class="scenario-title">Direct Referral (You Refer)</div>
+                    <div class="scenario-title">Referred Buyer (You Refer for Feedback)</div>
                     <div class="scenario-rate">70%</div>
                 </div>
                 <div class="scenario-detail">
-                    You referred your friend for feedback. You earn a bonus 70% of the commission the vendor pays to this marketplace for your friend's feedback.
+                    You referred a buyer who submits feedback. You earn 70% of the commission the vendor pays to this marketplace for that feedback.
                     <div class="progress-bar"><div class="progress-fill" style="width: 70%"></div></div>
-                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor commission on your friend's feedback $10 → You earn $7.00</small>
+                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor commission on your referred buyer's feedback $10 → You earn $7.00</small>
+                </div>
+            </div>
+
+            <div class="commission-scenario">
+                <div class="scenario-header">
+                    <div class="scenario-title">Referred Vendor (Vendor You Referred)</div>
+                    <div class="scenario-rate">30%</div>
+                </div>
+                <div class="scenario-detail">
+                    You referred a vendor. When anyone submits feedback on that vendor, you earn 30% of the commission the vendor pays to this marketplace.
+                    <div class="progress-bar"><div class="progress-fill" style="width: 30%"></div></div>
+                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor commission $10 for feedback → You earn $3.00</small>
                 </div>
             </div>
 
             <div class="commission-scenario">
                 <div class="scenario-header">
                     <div class="scenario-title">Both Referred (Vendor & Feedback Submitter)</div>
-                    <div class="scenario-rate">60%</div>
+                    <div class="scenario-rate">30-60%</div>
                 </div>
                 <div class="scenario-detail">
-                    You referred a vendor and a friend who submits feedback (i.e., review). Bonus commission paid by the vendor to this marketplace is split and you earn 60% of it.
+                    You referred a vendor and a friend who submits feedback. You earn 30% as vendor referrer and 30% as buyer referrer (total 60% split from commission).
                     <div class="progress-bar"><div class="progress-fill" style="width: 60%"></div></div>
-                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor commission $10 for feedback → You earn $6.00</small>
+                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor commission $10 for feedback → You earn $3.00 (vendor) + $3.00 (buyer) = $6.00</small>
+                </div>
+            </div>
+
+            <div class="commission-scenario">
+                <div class="scenario-header">
+                    <div class="scenario-title">Your Feedback Submission</div>
+                    <div class="scenario-rate">Variable</div>
+                </div>
+                <div class="scenario-detail">
+                    You submit feedback on a product. You earn a per-feedback commission agreed between you and the vendor (default minimum $5).
+                    <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor's per-feedback rate $7 → You earn $7.00 per feedback</small>
                 </div>
             </div>
 
@@ -605,6 +639,7 @@
 
             <input type="hidden" id="modal-product-id">
             <input type="hidden" id="modal-vendor-id">
+            <input type="hidden" id="modal-product-image-url">
 
             <div>
                 <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
@@ -889,7 +924,7 @@
                             <h5 style="margin-top: 4px;">${productName}</h5>
                             <div class="cost">$${price.toFixed(2)}</div>
                         </div>
-                        <button onclick="openInquiryDrawer('${productId}', '${productName.replace(/'/g, "\\'")}', '${vendorId}')">Inquire Product</button>
+                        <button onclick="openInquiryDrawer('${productId}', '${productName.replace(/'/g, "\\'")}', '${vendorId}', '${imageUrl || ''}')">Inquire Product</button>
                     </div>
                 `;
                 }).join('');
@@ -904,7 +939,7 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        function openInquiryDrawer(productId, productName, vendorId) {
+        function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
             if (!currentActiveEmail) {
                 showToast('Please sign in through the account portal before sending an inquiry.', 'error');
                 setTimeout(() => { window.location.href = 'portal.html'; }, 1500);
@@ -912,6 +947,7 @@
             }
             document.getElementById('modal-product-id').value = productId;
             document.getElementById('modal-vendor-id').value = vendorId;
+            document.getElementById('modal-product-image-url').value = imageUrl || '';
             document.getElementById('modal-product-title').textContent = productName;
 
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
@@ -935,6 +971,7 @@
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
+            const imageUrl = document.getElementById('modal-product-image-url').value;
             const message = document.getElementById('inquiry-message').value.trim();
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
@@ -952,7 +989,7 @@
                     vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
                     buyer_id: currentBuyerId,
                     message: message,
-                    image_url: null
+                    image_url: imageUrl || ''
                 }
             ]);
 
@@ -1450,19 +1487,27 @@
                     document.getElementById('comm-pending-payouts').textContent = `$${pending.toFixed(2)}`;
                     document.getElementById('comm-paid-this-month').textContent = `$${paid.toFixed(2)}`;
 
-                    // Breakdown by scenario
-                    const direct = payables.filter(p => p.scenario_type === 'direct_referral').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const both = payables.filter(p => p.scenario_type === 'both_referred').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    // Breakdown by earning type
+                    const referredBuyer = payables.filter(p => p.earning_type === 'referred_buyer').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const referredVendor = payables.filter(p => p.earning_type === 'referred_vendor').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const bothReferred = payables.filter(p => p.earning_type === 'both_referred').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
 
-                    document.getElementById('comm-direct-earnings').textContent = `$${direct.toFixed(2)}`;
-                    document.getElementById('comm-both-earnings').textContent = `$${both.toFixed(2)}`;
+                    document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyer.toFixed(2)}`;
+                    document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendor.toFixed(2)}`;
+                    document.getElementById('comm-both-earnings').textContent = `$${bothReferred.toFixed(2)}`;
+                    document.getElementById('comm-own-feedback-earnings').textContent = `$${ownFeedback.toFixed(2)}`;
 
-                    const directCount = payables.filter(p => p.scenario_type === 'direct_referral').length;
-                    const bothCount = payables.filter(p => p.scenario_type === 'both_referred').length;
+                    const referredBuyerCount = payables.filter(p => p.earning_type === 'referred_buyer').length;
+                    const referredVendorCount = payables.filter(p => p.earning_type === 'referred_vendor').length;
+                    const bothCount = payables.filter(p => p.earning_type === 'both_referred').length;
+                    const ownFeedbackCount = payables.filter(p => p.earning_type === 'own_feedback').length;
 
-                    document.getElementById('comm-direct-count').textContent = `${directCount} feedbacks`;
+                    document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} feedbacks`;
+                    document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} feedbacks`;
                     document.getElementById('comm-both-count').textContent = `${bothCount} feedbacks`;
-                    document.getElementById('comm-feedback-referred').textContent = directCount + bothCount;
+                    document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount} feedbacks`;
+                    document.getElementById('comm-feedback-referred').textContent = referredBuyerCount + referredVendorCount + bothCount;
                 }
             } catch (err) {
                 console.error('Error loading commissions:', err);
