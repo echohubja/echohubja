@@ -983,10 +983,20 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
+            // Get buyer ID from localStorage to ensure it's always available
+            const buyerId = currentBuyerId || localStorage.getItem('buyer_id');
+
+            if (!buyerId) {
+                showToast('Session expired. Please log in again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Inquiry';
+                return;
+            }
+
             const inquiryData = {
                 product_id: productId,
                 vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
-                buyer_id: currentBuyerId,
+                buyer_id: buyerId,
                 message: message,
                 image_url: imageUrl && imageUrl.trim() ? imageUrl : null
             };
