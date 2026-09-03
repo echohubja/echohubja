@@ -496,6 +496,21 @@
             color: #065f46;
         }
 
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         /* Cards */
         .panel {
             background: white;
@@ -1461,6 +1476,332 @@
                 opacity: 1;
             }
         }
+
+        /* Commission Management Enhancements */
+        .commission-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .commission-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .commission-stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .commission-stat-card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .commission-stat-card:hover {
+            border-color: #1e5aa8;
+            box-shadow: 0 4px 16px rgba(30, 90, 168, 0.08);
+        }
+
+        .commission-stat-label {
+            font-size: 0.8em;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .commission-stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1e5aa8;
+            margin-bottom: 4px;
+        }
+
+        .commission-stat-detail {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        /* Commission Sub-Tabs */
+        .commission-subtabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid #e1e8ed;
+            margin-bottom: 20px;
+            background: white;
+            padding: 0 20px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .commission-subtab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .commission-subtab:hover {
+            color: #1e5aa8;
+        }
+
+        .commission-subtab.active {
+            color: #1e5aa8;
+            border-bottom-color: #1e5aa8;
+        }
+
+        .commission-subtab-content {
+            display: none;
+        }
+
+        .commission-subtab-content.active {
+            display: block;
+        }
+
+        /* Buyer Info Card */
+        .buyer-info-card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .buyer-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .buyer-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .buyer-info-label {
+            font-size: 0.85em;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .buyer-info-value {
+            font-size: 0.95em;
+            color: #1e293b;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-btn-small {
+            background: #dbeafe;
+            color: #1e5aa8;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .copy-btn-small:hover {
+            background: #bfdbfe;
+            transform: translateY(-1px);
+        }
+
+        /* Message Type Badge */
+        .message-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-inquiry {
+            background: #dbeafe;
+            color: #1e5aa8;
+        }
+
+        .badge-feedback {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-followup {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-response {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        /* Thread Enhancement */
+        .inquiry-thread-enhanced {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .inquiry-thread-enhanced:hover {
+            border-color: #1e5aa8;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+        }
+
+        /* Modals */
+        .commission-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .commission-modal.active {
+            display: flex;
+        }
+
+        .commission-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 28px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .commission-modal-header {
+            margin-bottom: 20px;
+        }
+
+        .commission-modal-header h2 {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .commission-modal-header p {
+            font-size: 0.9em;
+            color: #64748b;
+        }
+
+        .commission-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .commission-modal-close:hover {
+            color: #1e293b;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-section h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9em;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+        }
+
+        .inquiry-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            color: #94a3b8;
+        }
+
+        .inquiry-empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+        }
+
+        .inquiry-empty-state-text {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -1587,6 +1928,120 @@
                         <div style="font-size: 0.75em; color: #94a3b8; margin-top: 8px; text-align: center;">
                             Enable when threshold reached
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPREHENSIVE COMMISSION MANAGEMENT PANEL -->
+            <div class="panel" style="margin-top: 28px; margin-bottom: 28px;">
+                <div class="panel-header">
+                    <h2>💰 Commission Management Dashboard</h2>
+                </div>
+
+                <!-- Commission Stats Grid (4 Cards) -->
+                <div class="commission-stats-grid">
+                    <div class="commission-stat-card">
+                        <div class="commission-stat-label">Current Rate</div>
+                        <div class="commission-stat-value" id="commission-current-rate">$0.00</div>
+                        <div class="commission-stat-detail">Per feedback</div>
+                    </div>
+                    <div class="commission-stat-card">
+                        <div class="commission-stat-label">Pending Payouts</div>
+                        <div class="commission-stat-value" id="commission-pending">$0.00</div>
+                        <div class="commission-stat-detail">Awaiting threshold</div>
+                    </div>
+                    <div class="commission-stat-card">
+                        <div class="commission-stat-label">Paid This Month</div>
+                        <div class="commission-stat-value" id="commission-paid-month">$0.00</div>
+                        <div class="commission-stat-detail">Processed</div>
+                    </div>
+                    <div class="commission-stat-card">
+                        <div class="commission-stat-label">Active Agreements</div>
+                        <div class="commission-stat-value" id="commission-agreements">0</div>
+                        <div class="commission-stat-detail">Buyer relationships</div>
+                    </div>
+                </div>
+
+                <!-- Commission Sub-Tabs -->
+                <div class="commission-subtabs">
+                    <button class="commission-subtab active" onclick="switchCommissionTab(event, 'commission-dashboard')">📊 Dashboard</button>
+                    <button class="commission-subtab" onclick="switchCommissionTab(event, 'commission-rates')">📈 Rate Requests</button>
+                    <button class="commission-subtab" onclick="switchCommissionTab(event, 'commission-agreements')">🤝 Agreements</button>
+                    <button class="commission-subtab" onclick="switchCommissionTab(event, 'commission-history')">📋 History</button>
+                </div>
+
+                <!-- Dashboard Sub-Tab Content -->
+                <div id="commission-dashboard" class="commission-subtab-content active" style="padding: 20px; background: white; border-radius: 8px;">
+                    <h3 style="margin-bottom: 20px; font-size: 1.1em; font-weight: 600; color: #1e293b;">Commission Overview</h3>
+
+                    <div class="collapsible-section open">
+                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                            <h3>⚙️ Rate Settings</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <div class="info-box">Current rate: <strong id="display-commission-rate">$0.00</strong> per feedback</div>
+                                <button class="btn btn-primary" onclick="openCommissionModal('rate-increase-modal')" style="width: 100%; margin-bottom: 16px;">Request Rate Increase</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                            <h3>📊 Payment Threshold</h3>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-body">
+                                <p style="margin-bottom: 12px; color: #64748b;">Set minimum earnings before automatic payout.</p>
+                                <button class="btn btn-primary" onclick="openCommissionModal('threshold-modal')" style="width: 100%;">Configure Threshold</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rate Requests Sub-Tab -->
+                <div id="commission-rates" class="commission-subtab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 1.1em; font-weight: 600; color: #1e293b;">Rate Change Requests</h3>
+                        <button class="btn btn-primary" onclick="openCommissionModal('rate-increase-modal')">+ New Request</button>
+                    </div>
+                    <div id="commission-rate-requests-list" style="background: #f8fafc; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; text-align: center; color: #94a3b8;">
+                        No rate requests yet
+                    </div>
+                </div>
+
+                <!-- Agreements Sub-Tab -->
+                <div id="commission-agreements" class="commission-subtab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; font-size: 1.1em; font-weight: 600; color: #1e293b;">Vendor-Buyer Agreements</h3>
+                        <button class="btn btn-primary" onclick="openCommissionModal('threshold-modal')">+ New Agreement</button>
+                    </div>
+                    <div id="commission-agreements-list" style="background: #f8fafc; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; text-align: center; color: #94a3b8;">
+                        No agreements established
+                    </div>
+                </div>
+
+                <!-- History Sub-Tab -->
+                <div id="commission-history" class="commission-subtab-content" style="padding: 20px; background: white; border-radius: 8px;">
+                    <h3 style="margin-bottom: 20px; font-size: 1.1em; font-weight: 600; color: #1e293b;">Payment History</h3>
+                    <div class="table-responsive">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                            <thead style="background: #f1f5f9; border-bottom: 2px solid #e1e8ed;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.85em;">Date</th>
+                                    <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.85em;">Type</th>
+                                    <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.85em;">Amount</th>
+                                    <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.85em;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commission-history-body">
+                                <tr>
+                                    <td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">Loading payment history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1875,6 +2330,73 @@
                 </div>
             </div>
 
+            <!-- Rate Increase Request Modal -->
+            <div id="rate-increase-modal" class="commission-modal">
+                <div class="commission-modal-content">
+                    <button class="commission-modal-close" onclick="closeCommissionModal('rate-increase-modal')">×</button>
+                    <div class="commission-modal-header">
+                        <h2>Request Rate Increase</h2>
+                        <p>Submit a request to increase your per-feedback commission rate</p>
+                    </div>
+                    <div class="commission-modal-body">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label>Current Rate</label>
+                                <input type="text" id="current-rate-display" readonly style="background: #f1f5f9; cursor: not-allowed;" placeholder="$0.00">
+                            </div>
+                            <div class="form-group">
+                                <label>Requested Rate ($)</label>
+                                <input type="number" id="requested-rate" step="0.01" min="0" placeholder="e.g., 7.50" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason for Increase</label>
+                                <textarea id="rate-increase-reason" placeholder="e.g., Business growth, high quality feedback" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; min-height: 80px; resize: vertical;"></textarea>
+                            </div>
+                            <div id="rate-increase-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('rate-increase-modal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitRateIncreaseRequest()">Submit Request</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threshold Configuration Modal -->
+            <div id="threshold-modal" class="commission-modal">
+                <div class="commission-modal-content">
+                    <button class="commission-modal-close" onclick="closeCommissionModal('threshold-modal')">×</button>
+                    <div class="commission-modal-header">
+                        <h2>Configure Payment Threshold</h2>
+                        <p>Set the minimum earnings before automatic payout</p>
+                    </div>
+                    <div class="commission-modal-body">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label>Current Threshold</label>
+                                <input type="text" id="current-threshold-display" readonly style="background: #f1f5f9; cursor: not-allowed;" placeholder="$0.00">
+                            </div>
+                            <div class="form-group">
+                                <label>Requested Threshold ($)</label>
+                                <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason for Change (Optional)</label>
+                                <textarea id="threshold-reason" placeholder="e.g., Business growing, want less frequent payouts" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; min-height: 80px; resize: vertical;"></textarea>
+                            </div>
+                            <div id="threshold-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+                            <div class="info-box">
+                                ℹ️ Admin will review and approve your threshold change request
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('threshold-modal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitThresholdChangeRequest()">Submit Request</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1972,7 +2494,7 @@
 
                 currentVendor = vendorData;
 
-                welcomeHeading.textContent = `Welcome, ${vendorData.first_name || 'Vendor'}!`;
+                welcomeHeading.textContent = `Welcome, ${vendorData.business_name || vendorData.first_name || 'Vendor'}!`;
                 document.getElementById('profileVendorId').textContent = vendorData.id;
                 profileEmail.textContent = vendorEmail;
                 profileType.textContent = vendorData.vendor_type || 'STANDARD';
@@ -1982,6 +2504,7 @@
                 await loadPendingInquiries();
                 await loadCommissionSettings();
                 await loadEarningsData();
+                await loadCommissionStats();
                 await loadVendorAlerts();
                 await setupPolling();
 
@@ -3404,6 +3927,204 @@
         function viewFeedbackDetails(feedbackId) {
             alert(`Feedback ID: ${feedbackId}\n\nFull details page would open here in production.`);
             console.log('Viewing feedback:', feedbackId);
+        }
+
+        // ===== COMMISSION MANAGEMENT FUNCTIONS =====
+
+        function switchCommissionTab(event, tabId) {
+            event.preventDefault();
+
+            // Hide all tabs
+            document.querySelectorAll('.commission-subtab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.commission-subtab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab and mark button as active
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function openCommissionModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                if (modalId === 'rate-increase-modal') {
+                    loadCurrentRate();
+                } else if (modalId === 'threshold-modal') {
+                    loadCurrentThreshold();
+                }
+            }
+        }
+
+        function closeCommissionModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        async function loadCurrentRate() {
+            if (!currentVendor || !sbClient) return;
+            try {
+                const { data: vendor } = await sbClient
+                    .from('vendors')
+                    .select('current_per_feedback_rate')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                const rate = vendor?.current_per_feedback_rate || 0;
+                document.getElementById('current-rate-display').value = `$${rate.toFixed(2)}`;
+                document.getElementById('display-commission-rate').textContent = `$${rate.toFixed(2)}`;
+                document.getElementById('commission-current-rate').textContent = `$${rate.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error loading current rate:', error);
+            }
+        }
+
+        async function loadCurrentThreshold() {
+            if (!currentVendor || !sbClient) return;
+            try {
+                const { data: vendor } = await sbClient
+                    .from('vendors')
+                    .select('commission_threshold')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                const threshold = vendor?.commission_threshold || 0;
+                document.getElementById('current-threshold-display').value = `$${threshold.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error loading current threshold:', error);
+            }
+        }
+
+        async function submitRateIncreaseRequest() {
+            if (!currentVendor || !sbClient) return;
+
+            const requestedRate = parseFloat(document.getElementById('requested-rate').value);
+            const reason = document.getElementById('rate-increase-reason').value;
+
+            if (!requestedRate || requestedRate <= 0) {
+                alert('Please enter a valid rate');
+                return;
+            }
+
+            try {
+                const { error } = await sbClient
+                    .from('commission_rate_requests')
+                    .insert([{
+                        vendor_id: currentVendor.id,
+                        requested_rate: requestedRate,
+                        reason: reason,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                document.getElementById('rate-increase-status').textContent = '✓ Request submitted successfully!';
+                document.getElementById('rate-increase-status').style.display = 'block';
+                setTimeout(() => {
+                    closeCommissionModal('rate-increase-modal');
+                    document.getElementById('requested-rate').value = '';
+                    document.getElementById('rate-increase-reason').value = '';
+                }, 2000);
+            } catch (error) {
+                console.error('Error submitting rate request:', error);
+                alert('Failed to submit request. Please try again.');
+            }
+        }
+
+        async function submitThresholdChangeRequest() {
+            if (!currentVendor || !sbClient) return;
+
+            const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
+            const reason = document.getElementById('threshold-reason').value;
+
+            if (!requestedThreshold || requestedThreshold <= 0) {
+                alert('Please enter a valid threshold');
+                return;
+            }
+
+            try {
+                const { error } = await sbClient
+                    .from('commission_threshold_requests')
+                    .insert([{
+                        vendor_id: currentVendor.id,
+                        requested_threshold: requestedThreshold,
+                        reason: reason,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                document.getElementById('threshold-request-status').textContent = '✓ Request submitted successfully!';
+                document.getElementById('threshold-request-status').style.display = 'block';
+                setTimeout(() => {
+                    closeCommissionModal('threshold-modal');
+                    document.getElementById('requested-threshold').value = '';
+                    document.getElementById('threshold-reason').value = '';
+                }, 2000);
+            } catch (error) {
+                console.error('Error submitting threshold request:', error);
+                alert('Failed to submit request. Please try again.');
+            }
+        }
+
+        async function loadCommissionStats() {
+            if (!currentVendor || !sbClient) return;
+
+            try {
+                // Load commission data
+                const { data: vendor } = await sbClient
+                    .from('vendors')
+                    .select('current_per_feedback_rate, commission_threshold')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                if (vendor) {
+                    const rate = vendor.current_per_feedback_rate || 0;
+                    const threshold = vendor.commission_threshold || 0;
+
+                    document.getElementById('commission-current-rate').textContent = `$${rate.toFixed(2)}`;
+                    document.getElementById('display-commission-rate').textContent = `$${rate.toFixed(2)}`;
+
+                    // Load vendor buyer agreements
+                    const { data: agreements } = await sbClient
+                        .from('vendor_buyer_agreements')
+                        .select('id')
+                        .eq('vendor_id', currentVendor.id);
+
+                    document.getElementById('commission-agreements').textContent = agreements?.length || '0';
+                }
+
+                // Load payment history
+                const { data: payables } = await sbClient
+                    .from('vendor_payables')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (payables && payables.length > 0) {
+                    const historyBody = document.getElementById('commission-history-body');
+                    historyBody.innerHTML = payables.map(p => `
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e1e8ed;">${new Date(p.created_at).toLocaleDateString()}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e1e8ed;">Commission</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e1e8ed; font-weight: 600; color: #1e5aa8;">$${parseFloat(p.amount).toFixed(2)}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e1e8ed;"><span class="status-badge status-${p.status}">${p.status}</span></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading commission stats:', error);
+            }
         }
 
         // Logout Handler
