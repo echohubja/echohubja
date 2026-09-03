@@ -2688,7 +2688,7 @@
                     .single();
 
                 if (error || !data) {
-                    alert('Could not load product details for editing.');
+                    showToast('Could not load product details for editing.', 'error');
                     return;
                 }
                 product = data;
@@ -2761,7 +2761,7 @@
                 }
                 await loadVendorProducts();
             } else {
-                alert('Could not delete product: ' + error.message);
+                showToast('Could not delete product: ' + error.message, 'error');
             }
         };
 
@@ -3286,7 +3286,7 @@
                     .single();
 
                 if (!inquiry) {
-                    alert('Inquiry not found: ' + id);
+                    showToast('Inquiry not found: ' + id, 'error');
                     return;
                 }
 
@@ -3311,7 +3311,7 @@
                 document.getElementById('responseModal').style.display = 'flex';
             } catch (err) {
                 console.error('Error opening response modal:', err);
-                alert('Failed to load inquiry details');
+                showToast('Failed to load inquiry details', 'error');
             }
         };
 
@@ -3327,7 +3327,7 @@
 
             const responseText = document.getElementById('responseText').value.trim();
             if (!responseText) {
-                alert('Please enter a response.');
+                showToast('Please enter a response.', 'error');
                 return;
             }
 
@@ -3348,12 +3348,12 @@
 
                 if (error) throw error;
 
-                alert('Response sent successfully!');
+                showToast('Response sent successfully!', 'success');
                 closeResponseModal();
                 await loadPendingInquiries();
             } catch (err) {
                 console.error('Error sending response:', err);
-                alert('Failed to send response: ' + err.message);
+                showToast('Failed to send response: ' + err.message, 'error');
             } finally {
                 this.disabled = false;
                 this.textContent = 'Send Response';
@@ -3637,7 +3637,7 @@
                 const newCommission = parseFloat(document.getElementById('commission-amount').value);
 
                 if (isNaN(newCommission) || newCommission < 0) {
-                    alert('Please enter a valid commission amount (must be 0 or greater)');
+                    showToast('Please enter a valid commission amount (must be 0 or greater)', 'error');
                     return;
                 }
 
@@ -3651,15 +3651,15 @@
                     .eq('id', currentVendor.id);
 
                 if (error) {
-                    alert('Error updating commission: ' + error.message);
+                    showToast('Error updating commission: ' + error.message, 'error');
                     return;
                 }
 
-                alert(`✓ Commission updated to $${newCommission.toFixed(2)} per feedback!`);
+                showToast(`✓ Commission updated to $${newCommission.toFixed(2)} per feedback!`, 'success');
                 await loadCommissionSettings();
             } catch (err) {
                 console.error('Error updating commission:', err);
-                alert('Unexpected error: ' + err.message);
+                showToast('Unexpected error: ' + err.message, 'error');
             }
         }
 
@@ -3901,17 +3901,17 @@
             const balance = parseFloat(document.getElementById('sidebar-balance').textContent.replace('$', ''));
 
             if (balance <= 0) {
-                alert('Your balance is zero. No payout to process.');
+                showToast('Your balance is zero. No payout to process.', 'error');
                 return;
             }
 
-            alert(`Payout Process Initiated\n\n💳 Balance to Payout: $${balance.toFixed(2)}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
+            showToast(`Payout Process Initiated - Balance to Payout: $${balance.toFixed(2)}`, 'success');
 
             console.log('Payout initiated for balance:', balance);
         }
 
         function viewFeedbackDetails(feedbackId) {
-            alert(`Feedback ID: ${feedbackId}\n\nFull details page would open here in production.`);
+            showToast(`Feedback ID: ${feedbackId} - Full details would open in production`, 'info');
             console.log('Viewing feedback:', feedbackId);
         }
 
@@ -3995,7 +3995,7 @@
             const reason = document.getElementById('rate-increase-reason').value;
 
             if (!requestedRate || requestedRate <= 0) {
-                alert('Please enter a valid rate');
+                showToast('Please enter a valid rate', 'error');
                 return;
             }
 
@@ -4021,7 +4021,7 @@
                 }, 2000);
             } catch (error) {
                 console.error('Error submitting rate request:', error);
-                alert('Failed to submit request. Please try again.');
+                showToast('Failed to submit request. Please try again.', 'error');
             }
         }
 
@@ -4032,7 +4032,7 @@
             const reason = document.getElementById('threshold-reason').value;
 
             if (!requestedThreshold || requestedThreshold <= 0) {
-                alert('Please enter a valid threshold');
+                showToast('Please enter a valid threshold', 'error');
                 return;
             }
 
@@ -4058,7 +4058,7 @@
                 }, 2000);
             } catch (error) {
                 console.error('Error submitting threshold request:', error);
-                alert('Failed to submit request. Please try again.');
+                showToast('Failed to submit request. Please try again.', 'error');
             }
         }
 
