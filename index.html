@@ -1303,6 +1303,11 @@
                 return;
             }
 
+            if (!hasFile) {
+                showToast('Please upload an image to create feedback message.', 'error');
+                return;
+            }
+
             let imageUrl = null;
 
             if (hasFile) {
