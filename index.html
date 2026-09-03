@@ -997,6 +997,8 @@
                 product_id: productId,
                 vendor_id: vendorId === 'Echo Hub' ? null : vendorId,
                 buyer_id: buyerId,
+                sender_id: buyerId,
+                sender_type: 'buyer',
                 message: message,
                 image_url: imageUrl && imageUrl.trim() ? imageUrl : null
             };
