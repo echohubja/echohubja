@@ -1084,6 +1084,7 @@
                 }
 
                 const grouped = {};
+                window.inquiryVendorMap = {};
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
                     const pName = item.products?.product_name || 'General Inquiries';
@@ -1093,9 +1094,11 @@
                             productId: item.product_id,
                             productName: pName,
                             productImage: pImg,
+                            vendorId: item.vendor_id,
                             items: [],
                             latestTimestamp: item.created_at
                         };
+                        window.inquiryVendorMap[pKey] = item.vendor_id;
                     }
                     grouped[pKey].items.push(item);
                     if (new Date(item.created_at) > new Date(grouped[pKey].latestTimestamp)) {
@@ -1163,7 +1166,7 @@
                                     <input type="text" id="product-feedback-link-${pKey}" placeholder="Paste Amazon.com review/feedback link here..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; background: #fff;">
                                     <div style="display: flex; gap: 8px; align-items: center;">
                                         <input type="file" id="product-feedback-file-${pKey}" accept="image/*" style="font-size: 12px; flex: 1; padding: 6px; background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;">
-                                        <button onclick="uploadProductFeedbackImage('${group.productId}', '${pKey}')" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
+                                        <button onclick="submitProductFeedback('${group.productId}', '${pKey}', inquiryVendorMap['${pKey}'])" style="background: #38a169; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
                                     </div>
                                 </div>
 
@@ -1285,11 +1288,10 @@
             }
         }
 
-        async function uploadProductFeedbackImage(productId, pKey) {
+        async function submitProductFeedback(productId, pKey, vendorId) {
             const fileInput = document.getElementById(`product-feedback-file-${pKey}`);
             const linkInput = document.getElementById(`product-feedback-link-${pKey}`);
             const amazonLink = linkInput ? linkInput.value.trim() : '';
-            const vendorId = document.getElementById('modal-vendor-id').value;
 
             const hasFile = fileInput.files && fileInput.files[0];
 
