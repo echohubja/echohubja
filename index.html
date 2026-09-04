@@ -1452,6 +1452,12 @@
                         {
                             inquiry_id: inquiryId,
                             submitter_id: currentBuyerId,
+                            submitter_type: 'buyer',
+                            target_id: vendorId,
+                            feedback_text: feedbackMessage,
+                            proof_document: amazonLink,
+                            proof_images: imageUrl ? [imageUrl] : null,
+                            rating: null,
                             commission_amount: null,
                             commission_status: 'pending'
                         }
