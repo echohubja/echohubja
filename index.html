@@ -976,7 +976,9 @@
                     .single();
 
                 if (vendor) {
-                    const vendorName = vendor.business_name || (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : vendor.first_name || 'Unknown');
+                    // Prefer first_name + last_name; skip business_name if it's an email
+                    const isBusinessNameEmail = vendor.business_name && vendor.business_name.includes('@');
+                    const vendorName = (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : (isBusinessNameEmail ? null : vendor.business_name) || vendor.first_name || 'Unknown');
                     document.getElementById('modal-vendor-id-display').textContent = `${vendorName} (ID: ${vendorId.substring(0, 8)})`;
                 } else {
                     document.getElementById('modal-vendor-id-display').textContent = `ID: ${vendorId.substring(0, 8)}`;
@@ -1131,7 +1133,9 @@
                         .in('id', vendorIds);
                     if (vendors) {
                         vendors.forEach(vendor => {
-                            const vendorName = vendor.business_name || (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : vendor.first_name || 'Unknown Vendor');
+                            // Prefer first_name + last_name; only use business_name if it's not an email
+                            const isBusinessNameEmail = vendor.business_name && vendor.business_name.includes('@');
+                            const vendorName = (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : (isBusinessNameEmail ? null : vendor.business_name) || vendor.first_name || 'Unknown Vendor');
                             vendorNameMap[vendor.id] = vendorName;
                         });
                     }
