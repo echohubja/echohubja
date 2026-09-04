@@ -59,7 +59,7 @@
             color: #475569;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
@@ -71,10 +71,43 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #1e5aa8;
             background: #f8fafc;
+        }
+
+        input[type="file"] {
+            padding: 10px 0;
+            color: #2c3e50;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+            background: #fafbfc;
+            padding: 16px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: normal;
+            color: #2c3e50;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #1e5aa8;
+            cursor: pointer;
         }
 
         .btn-submit {
@@ -139,6 +172,15 @@
             display: flex;
             gap: 12px;
         }
+
+        @media (max-width: 600px) {
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            .auth-container {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -162,18 +204,55 @@
                     </select>
                 </div>
 
-                <div class="row-fields">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="India">
+                <!-- BUYER-SPECIFIC FIELDS (Consolidated from register.html) -->
+                <div id="buyerSpecificFields" style="display: block;">
+                    <div class="row-fields">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="buyerFirstName">First Name *</label>
+                            <input type="text" id="buyerFirstName" placeholder="First Name">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="buyerLastName">Last Name *</label>
+                            <input type="text" id="buyerLastName" placeholder="Last Name">
+                        </div>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Stronghold">
+
+                    <div class="form-group">
+                        <label for="whatsapp">WhatsApp Number (Optional)</label>
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Categories of Interest *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Toys"> Toys</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Gadgets"> Gadgets</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Clothing"> Clothing</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Office Furniture"> Office Furniture</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="All"> All (including future products)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
+                        <input type="file" id="nationalIdFile">
                     </div>
                 </div>
 
+                <!-- VENDOR-SPECIFIC FIELDS -->
                 <div id="vendorSpecificFields" style="display: none;">
+                    <div class="row-fields">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" placeholder="India">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" placeholder="Stronghold">
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="vendorType">Vendor Classification</label>
                         <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
@@ -195,7 +274,7 @@
         </form>
 
         <div class="toggle-mode">
-            <span id="toggleText">New to Echo Hub?</span> 
+            <span id="toggleText">New to Echo Hub?</span>
             <a href="#" id="toggleBtn">Create an account</a>
         </div>
     </div>
@@ -215,6 +294,7 @@
         const toggleText = document.getElementById('toggleText');
         const registerFields = document.getElementById('registerFields');
         const accountTypeSelect = document.getElementById('accountType');
+        const buyerSpecificFields = document.getElementById('buyerSpecificFields');
         const vendorSpecificFields = document.getElementById('vendorSpecificFields');
         const authAlert = document.getElementById('authAlert');
 
@@ -231,11 +311,13 @@
             }
         }
 
-        // Toggle visibility of vendor-specific inputs based on role selection
+        // Toggle visibility of account-type-specific fields
         accountTypeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'vendor') {
+                buyerSpecificFields.style.display = 'none';
                 vendorSpecificFields.style.display = 'block';
             } else {
+                buyerSpecificFields.style.display = 'block';
                 vendorSpecificFields.style.display = 'none';
             }
         });
@@ -278,26 +360,28 @@
                 if (isRegisterMode) {
                     // --- REGISTRATION FLOW ---
                     const accountType = accountTypeSelect.value;
-                    const firstName = document.getElementById('firstName').value.trim() || (accountType === 'vendor' ? 'Vendor' : 'Buyer');
-                    const lastName = document.getElementById('lastName').value.trim() || 'Partner';
 
                     submitBtn.textContent = 'Creating account...';
 
-                    // 1. Create Supabase Auth User
-                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { first_name: firstName, last_name: lastName, role: accountType } }
-                    });
-
-                    if (authError) throw new Error(authError.message);
-                    if (!authData.user) throw new Error('Registration failed to return user session.');
-
-                    const authUuid = authData.user.id;
-
                     if (accountType === 'vendor') {
-                        // Vendor Registration Path
+                        // --- VENDOR REGISTRATION ---
+                        const firstName = document.getElementById('firstName').value.trim() || 'Vendor';
+                        const lastName = document.getElementById('lastName').value.trim() || 'Partner';
                         const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
+
+                        // 1. Create Supabase Auth User
+                        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                            email,
+                            password,
+                            options: { data: { first_name: firstName, last_name: lastName, role: 'vendor' } }
+                        });
+
+                        if (authError) throw new Error(authError.message);
+                        if (!authData.user) throw new Error('Registration failed to return user session.');
+
+                        const authUuid = authData.user.id;
+
+                        // 2. Get vendor count for sequential ID
                         const { count, error: countError } = await supabaseClient
                             .from('vendors')
                             .select('*', { count: 'exact', head: true });
@@ -307,6 +391,7 @@
                         const nextNum = (count || 0) + 1;
                         const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
 
+                        // 3. Insert vendor record
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
                             {
                                 id: formattedId,
@@ -326,24 +411,61 @@
                         setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
 
                     } else {
-                        // Buyer Registration Path (creates referral code & profile)
-                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                        
-                        const { error: insertError } = await supabaseClient.from('user_profiles').insert([
+                        // --- BUYER REGISTRATION (CONSOLIDATED FROM REGISTER.HTML) ---
+                        const buyerFirstName = document.getElementById('buyerFirstName').value.trim();
+                        const buyerLastName = document.getElementById('buyerLastName').value.trim();
+                        const fullName = buyerFirstName + ' ' + buyerLastName;
+                        const whatsapp = document.getElementById('whatsapp').value.trim();
+                        const fileInput = document.getElementById('nationalIdFile').files[0];
+
+                        // Validate required buyer fields
+                        if (!buyerFirstName) throw new Error('First Name is required.');
+                        if (!buyerLastName) throw new Error('Last Name is required.');
+                        if (!fileInput) throw new Error('National ID file is required.');
+
+                        const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                            .map(cb => cb.value);
+
+                        if (selectedCategories.length === 0) {
+                            throw new Error('Please select at least one category of interest.');
+                        }
+
+                        // Convert file to Base64 using safe chunked approach (8KB chunks)
+                        const arrayBuffer = await fileInput.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer);
+
+                        let base64Data = '';
+                        const chunkSize = 8192;
+                        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                            const chunk = uint8Array.subarray(i, i + chunkSize);
+                            base64Data += String.fromCharCode.apply(null, Array.from(chunk));
+                        }
+                        base64Data = btoa(base64Data);
+
+                        const fileExt = fileInput.name.split('.').pop() || 'bin';
+                        const mimeType = fileInput.type || 'application/octet-stream';
+
+                        // Insert buyer record directly into buyers table
+                        const { error: insertError } = await supabaseClient.from('buyers').insert([
                             {
-                                id: authUuid,
+                                full_name: fullName,
                                 email: email,
-                                first_name: firstName,
-                                last_name: lastName,
-                                referral_code: refCode,
+                                password: password || null,
+                                whatsapp_number: whatsapp || null,
+                                categories_interest: selectedCategories,
+                                national_id_file_name: fileInput.name,
+                                national_id_file_type: mimeType,
+                                national_id_file_size: uint8Array.length,
+                                national_id_data: base64Data,
+                                approval_status: 'pending',
                                 created_at: new Date()
                             }
                         ]);
 
                         if (insertError) throw new Error('Buyer profile creation error: ' + insertError.message);
 
-                        showAlert('Registration successful! Redirecting to storefront...', false);
-                        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                        showAlert('Registration successful! Your national ID will be reviewed. You will be notified via email once verified.', false);
+                        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
                     }
 
                 } else {
@@ -386,7 +508,7 @@
                             if (buyerData.approval_status?.toLowerCase() !== 'approved') {
                                 throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
                             }
-                            // Store buyer session in localStorage for index.html (use numeric ID as primary)
+                            // Store buyer session in localStorage for index.html
                             localStorage.setItem('buyer_id', buyerData.id);
                             localStorage.setItem('buyer_email', buyerData.email);
                             window.location.href = 'index.html';
