@@ -1451,6 +1451,7 @@
                     const { error: feedbackErr } = await db.from('feedback').insert([
                         {
                             inquiry_id: inquiryId,
+                            submitter_id: currentBuyerId,
                             commission_amount: null,
                             commission_status: 'pending'
                         }
