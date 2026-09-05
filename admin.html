@@ -34,6 +34,50 @@
             color: #1e5aa8;
             font-weight: 700;
         }
+        /* Messaging Hub Styles */
+        .messaging-conversation-item {
+            padding: 10px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .messaging-conversation-item:hover {
+            background-color: #f0f0f0;
+        }
+        .messaging-conversation-item.active {
+            background-color: #e3f2fd;
+            border-left-color: #1e5aa8;
+        }
+        .messaging-bubble {
+            max-width: 70%;
+            word-wrap: break-word;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .messaging-bubble.sent {
+            background-color: #1e5aa8;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .messaging-bubble.received {
+            background-color: #f0f0f0;
+            color: #333;
+            margin-right: auto;
+        }
+        .messaging-bubble img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+        .messaging-timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -54,6 +98,7 @@
         <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">💳 Payment Reversals</button>
         <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">⚡ Circuit Breaker</button>
         <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">📊 Balance Health</button>
+        <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">💬 Messaging Hub</button>
     </div>
 
     <!-- SECTION: BUYERS ACCESS REQUESTS -->
@@ -519,6 +564,52 @@
         </div>
     </div>
 
+    <!-- SECTION: MESSAGING HUB -->
+    <div id="section-messaging" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">💬 Messaging Hub</h2>
+            <div class="flex gap-2">
+                <button onclick="switchMessagingCategory('vendors')" id="btn-msg-vendors" class="px-3 py-1 rounded text-xs font-semibold transition bg-blue-100 text-blue-700">Vendors</button>
+                <button onclick="switchMessagingCategory('buyers')" id="btn-msg-buyers" class="px-3 py-1 rounded text-xs font-semibold transition">Buyers</button>
+                <button onclick="switchMessagingCategory('monitor')" id="btn-msg-monitor" class="px-3 py-1 rounded text-xs font-semibold transition">V↔B Monitor</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <input type="text" id="msg-search" oninput="filterMessagingConversations()" placeholder="Search by name..." class="md:col-span-4 text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 h-[600px]">
+            <!-- Sidebar: Conversation List -->
+            <div class="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden flex flex-col bg-gray-50">
+                <div id="messaging-sidebar" class="flex-1 overflow-y-auto divide-y divide-gray-200">
+                    <div class="p-4 text-center text-gray-500 text-xs">Loading conversations...</div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="md:col-span-3 border border-gray-200 rounded-lg overflow-hidden flex flex-col bg-white">
+                <!-- Chat Header -->
+                <div id="messaging-header" class="border-b border-gray-200 bg-gray-50 p-4 text-sm font-semibold text-gray-700">
+                    Select a conversation
+                </div>
+
+                <!-- Messages Display -->
+                <div id="messaging-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
+                    <div class="text-center text-gray-400 text-xs mt-20">No conversation selected</div>
+                </div>
+
+                <!-- Input Area -->
+                <div id="messaging-input-area" class="border-t border-gray-200 bg-gray-50 p-4 hidden">
+                    <div class="flex gap-2">
+                        <textarea id="messaging-textarea" placeholder="Type your message..." class="flex-1 border border-gray-300 rounded px-3 py-2 text-xs resize-none max-h-20 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]" rows="2"></textarea>
+                        <button onclick="sendAdminMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-xs font-semibold transition whitespace-nowrap">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Product Image Tooltip Box -->
     <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
         <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
@@ -806,6 +897,7 @@
             document.getElementById('section-reversals').classList.add('hidden');
             document.getElementById('section-circuit').classList.add('hidden');
             document.getElementById('section-balance').classList.add('hidden');
+            document.getElementById('section-messaging').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -819,6 +911,7 @@
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
             else if (tabName === 'payments') loadPaymentProofsPortal();
+            else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
         }
 
         // BUYERS PORTAL
@@ -3029,6 +3122,308 @@
             } catch (err) {
                 console.error('Error loading circuit breaker:', err);
                 content.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        // ===== MESSAGING HUB (ADMIN) =====
+        let messagingState = {
+            currentCategory: 'vendors', // vendors, buyers, monitor
+            currentConversationId: null,
+            currentOtherPartyId: null,
+            currentOtherPartyType: null, // 'vendor' or 'buyer'
+            conversations: [],
+            allConversations: []
+        };
+
+        async function initMessagingHub() {
+            await loadMessagingConversations();
+            setupMessagingListeners();
+        }
+
+        async function loadMessagingConversations() {
+            const sidebar = document.getElementById('messaging-sidebar');
+            if (!sidebar) return;
+
+            try {
+                messagingState.allConversations = [];
+
+                if (messagingState.currentCategory === 'vendors') {
+                    // Load all vendor conversations
+                    const { data: vendors, error: vendorError } = await db
+                        .from('vendors')
+                        .select('id, business_name, email')
+                        .order('created_at', { ascending: false });
+
+                    if (vendorError) throw vendorError;
+
+                    messagingState.allConversations = (vendors || []).map(v => ({
+                        id: v.id,
+                        name: v.business_name,
+                        email: v.email,
+                        type: 'vendor',
+                        lastMessage: 'No messages yet',
+                        lastTime: ''
+                    }));
+
+                } else if (messagingState.currentCategory === 'buyers') {
+                    // Load all buyer conversations
+                    const { data: buyers, error: buyerError } = await db
+                        .from('buyers')
+                        .select('id, full_name, email')
+                        .order('created_at', { ascending: false });
+
+                    if (buyerError) throw buyerError;
+
+                    messagingState.allConversations = (buyers || []).map(b => ({
+                        id: b.id,
+                        name: b.full_name,
+                        email: b.email,
+                        type: 'buyer',
+                        lastMessage: 'No messages yet',
+                        lastTime: ''
+                    }));
+
+                } else if (messagingState.currentCategory === 'monitor') {
+                    // Load vendor-buyer conversation pairs (inquiries with message_type='feedback')
+                    const { data: inquiries, error: inquiryError } = await db
+                        .from('inquiries')
+                        .select('id, buyer_id, vendor_id, message, created_at, message_type')
+                        .eq('message_type', 'feedback')
+                        .order('created_at', { ascending: false });
+
+                    if (inquiryError) throw inquiryError;
+
+                    // Group by buyer_id + vendor_id pair
+                    const pairs = new Map();
+                    for (const inq of (inquiries || [])) {
+                        const key = `${inq.buyer_id}|${inq.vendor_id}`;
+                        if (!pairs.has(key)) {
+                            pairs.set(key, inq);
+                        }
+                    }
+
+                    // Fetch buyer and vendor names for each pair
+                    for (const [key, inq] of pairs.entries()) {
+                        const [buyerId, vendorId] = key.split('|');
+                        const { data: buyer } = await db.from('buyers').select('full_name').eq('id', buyerId).single();
+                        const { data: vendor } = await db.from('vendors').select('business_name').eq('id', vendorId).single();
+
+                        messagingState.allConversations.push({
+                            id: key,
+                            name: `${buyer?.full_name || 'Unknown'} ↔ ${vendor?.business_name || 'Unknown'}`,
+                            buyerId: buyerId,
+                            vendorId: vendorId,
+                            type: 'pair',
+                            lastMessage: inq.message?.substring(0, 50) || 'Feedback message',
+                            lastTime: new Date(inq.created_at).toLocaleDateString()
+                        });
+                    }
+                }
+
+                messagingState.conversations = messagingState.allConversations;
+                renderMessagingConversations();
+
+            } catch (err) {
+                console.error('Error loading messaging conversations:', err);
+                sidebar.innerHTML = `<div class="p-4 text-center text-red-500 text-xs">Error loading conversations</div>`;
+            }
+        }
+
+        function renderMessagingConversations() {
+            const sidebar = document.getElementById('messaging-sidebar');
+            if (!sidebar) return;
+
+            if (messagingState.conversations.length === 0) {
+                sidebar.innerHTML = `<div class="p-4 text-center text-gray-500 text-xs">No conversations</div>`;
+                return;
+            }
+
+            sidebar.innerHTML = messagingState.conversations.map(conv => `
+                <div class="messaging-conversation-item ${messagingState.currentConversationId === conv.id ? 'active' : ''}"
+                     onclick="selectMessagingConversation('${conv.id}', '${conv.type}')">
+                    <div class="font-semibold text-sm text-gray-800 truncate">${conv.name}</div>
+                    <div class="text-xs text-gray-500 truncate">${conv.lastMessage}</div>
+                    <div class="text-xs text-gray-400 mt-1">${conv.lastTime}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectMessagingConversation(conversationId, type) {
+            messagingState.currentConversationId = conversationId;
+            messagingState.currentOtherPartyType = type;
+
+            if (type === 'pair') {
+                const [buyerId, vendorId] = conversationId.split('|');
+                messagingState.currentOtherPartyId = { buyerId, vendorId };
+            } else {
+                messagingState.currentOtherPartyId = conversationId;
+            }
+
+            renderMessagingConversations();
+            await loadMessagingMessages();
+        }
+
+        async function loadMessagingMessages() {
+            try {
+                const header = document.getElementById('messaging-header');
+                const inputArea = document.getElementById('messaging-input-area');
+                const messages = [];
+
+                if (messagingState.currentCategory === 'monitor' && messagingState.currentOtherPartyType === 'pair') {
+                    const { buyerId, vendorId } = messagingState.currentOtherPartyId;
+                    const { data, error } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('buyer_id', buyerId)
+                        .eq('vendor_id', vendorId)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    messages.push(...(data || []));
+                    header.textContent = `Monitoring: Buyer & Vendor Conversation`;
+
+                } else if (messagingState.currentOtherPartyType === 'vendor') {
+                    const { data, error } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('vendor_id', messagingState.currentOtherPartyId)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    messages.push(...(data || []));
+                    const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
+                    header.textContent = `Vendor: ${conv?.name || 'Unknown'}`;
+
+                } else if (messagingState.currentOtherPartyType === 'buyer') {
+                    const { data, error } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('buyer_id', messagingState.currentOtherPartyId)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    messages.push(...(data || []));
+                    const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
+                    header.textContent = `Buyer: ${conv?.name || 'Unknown'}`;
+                }
+
+                renderMessagingMessages(messages);
+                inputArea.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('Error loading messages:', err);
+            }
+        }
+
+        function renderMessagingMessages(messages) {
+            const container = document.getElementById('messaging-messages');
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs mt-20">No messages in this conversation</div>`;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => {
+                const isAdminSent = msg.sender_type === 'admin';
+                const timestamp = new Date(msg.created_at).toLocaleString();
+                const senderLabel = msg.sender_type === 'buyer' ? 'Buyer' : msg.sender_type === 'vendor' ? 'Vendor' : 'Admin';
+
+                return `
+                    <div class="${isAdminSent ? 'flex justify-end' : 'flex justify-start'}">
+                        <div class="messaging-bubble ${isAdminSent ? 'sent' : 'received'}">
+                            ${!isAdminSent ? `<div style="font-size: 11px; font-weight: bold; margin-bottom: 4px;">${senderLabel}</div>` : ''}
+                            <div>${escapeHtml(msg.message || '')}</div>
+                            ${msg.image_url ? `<img src="${msg.image_url}" alt="Message image" style="max-width: 100%; border-radius: 6px; margin-top: 8px;">` : ''}
+                            <div class="messaging-timestamp">${timestamp}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendAdminMessage() {
+            const textarea = document.getElementById('messaging-textarea');
+            const message = textarea.value.trim();
+
+            if (!message) return;
+            if (!messagingState.currentConversationId) {
+                alert('Select a conversation first');
+                return;
+            }
+
+            try {
+                let insertData = {
+                    message: message,
+                    sender_type: 'admin',
+                    message_type: 'admin_message',
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                };
+
+                if (messagingState.currentOtherPartyType === 'vendor') {
+                    insertData.vendor_id = messagingState.currentOtherPartyId;
+                } else if (messagingState.currentOtherPartyType === 'buyer') {
+                    insertData.buyer_id = messagingState.currentOtherPartyId;
+                } else if (messagingState.currentOtherPartyType === 'pair') {
+                    const { buyerId, vendorId } = messagingState.currentOtherPartyId;
+                    insertData.buyer_id = buyerId;
+                    insertData.vendor_id = vendorId;
+                }
+
+                const { error } = await db
+                    .from('inquiries')
+                    .insert([insertData]);
+
+                if (error) throw error;
+
+                textarea.value = '';
+                await loadMessagingMessages();
+
+            } catch (err) {
+                console.error('Error sending message:', err);
+                alert('Failed to send message');
+            }
+        }
+
+        function switchMessagingCategory(category) {
+            messagingState.currentCategory = category;
+            messagingState.currentConversationId = null;
+            messagingState.currentOtherPartyId = null;
+
+            ['vendors', 'buyers', 'monitor'].forEach(cat => {
+                const btn = document.getElementById(`btn-msg-${cat}`);
+                if (btn) {
+                    if (cat === category) {
+                        btn.className = 'px-3 py-1 rounded text-xs font-semibold transition bg-blue-100 text-blue-700';
+                    } else {
+                        btn.className = 'px-3 py-1 rounded text-xs font-semibold transition';
+                    }
+                }
+            });
+
+            document.getElementById('messaging-header').textContent = 'Select a conversation';
+            document.getElementById('messaging-messages').innerHTML = '<div class="text-center text-gray-400 text-xs mt-20">No conversation selected</div>';
+            document.getElementById('messaging-input-area').classList.add('hidden');
+
+            loadMessagingConversations();
+        }
+
+        function filterMessagingConversations() {
+            const searchTerm = document.getElementById('msg-search').value.toLowerCase();
+            messagingState.conversations = messagingState.allConversations.filter(conv =>
+                conv.name.toLowerCase().includes(searchTerm)
+            );
+            renderMessagingConversations();
+        }
+
+        function setupMessagingListeners() {
+            const searchInput = document.getElementById('msg-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', filterMessagingConversations);
             }
         }
 
