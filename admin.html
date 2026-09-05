@@ -45,6 +45,7 @@
 
     <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
         <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">🔍 Commission Monitor</button>
+        <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">👥 Account Lookup</button>
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
@@ -346,6 +347,24 @@
 
         <div id="monitor-buyer-results" class="space-y-3">
             <div class="p-4 text-center text-gray-500 text-xs">Enter a buyer name or email to view their commission history</div>
+        </div>
+    </div>
+
+    <!-- SECTION: ACCOUNT LOOKUP -->
+    <div id="section-accounts" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Account Lookup</h2>
+        </div>
+
+        <!-- SEARCH SECTION -->
+        <div class="mb-6">
+            <label class="text-sm font-bold text-gray-700 block mb-2">Search by Name, Email, ID, or Phone</label>
+            <input type="text" id="account-search-input" placeholder="Type buyer/vendor name, email, ID, or phone number..." class="w-full text-sm border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e5aa8]">
+        </div>
+
+        <!-- SEARCH RESULTS -->
+        <div id="account-search-results" class="space-y-4">
+            <div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>
         </div>
     </div>
 
@@ -679,6 +698,7 @@
             document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
             document.getElementById('section-monitor').classList.add('hidden');
+            document.getElementById('section-accounts').classList.add('hidden');
             document.getElementById('section-buyers').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
@@ -687,6 +707,7 @@
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
             if (tabName === 'monitor') loadMonitoringDashboard();
+            else if (tabName === 'accounts') initializeAccountLookup();
             else if (tabName === 'buyers') loadBuyersPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
@@ -2301,6 +2322,267 @@
         function refreshMonitoringDashboard() {
             loadMonitoringDashboard();
         }
+
+        // ===== ACCOUNT LOOKUP =====
+        function initializeAccountLookup() {
+            const searchInput = document.getElementById('account-search-input');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.addEventListener('keyup', function() {
+                    clearTimeout(accountSearchTimeout);
+                    if (this.value.trim()) {
+                        accountSearchTimeout = setTimeout(searchAccounts, 300);
+                    } else {
+                        document.getElementById('account-search-results').innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>';
+                    }
+                });
+            }
+        }
+
+        async function searchAccounts() {
+            const query = document.getElementById('account-search-input').value.trim().toLowerCase();
+            const resultsContainer = document.getElementById('account-search-results');
+
+            if (!query) {
+                resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>';
+                return;
+            }
+
+            try {
+                // Search buyers
+                const { data: buyers, error: buyersError } = await db
+                    .from('buyers')
+                    .select('id, full_name, email, whatsapp_number, referred_by, approval_status, accumulated_balance, created_at')
+                    .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,id.ilike.%${query}%,whatsapp_number.ilike.%${query}%`);
+
+                if (buyersError) throw buyersError;
+
+                // Search vendors
+                const { data: vendors, error: vendorsError } = await db
+                    .from('vendors')
+                    .select('id, business_name, email, referred_by_buyer_id, suspension_status, current_per_feedback_rate, accumulated_balance, created_at')
+                    .or(`business_name.ilike.%${query}%,email.ilike.%${query}%,id.ilike.%${query}%`);
+
+                if (vendorsError) throw vendorsError;
+
+                if ((!buyers || buyers.length === 0) && (!vendors || vendors.length === 0)) {
+                    resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No buyers or vendors found matching your search</div>';
+                    return;
+                }
+
+                let html = '';
+
+                // Display buyers
+                if (buyers && buyers.length > 0) {
+                    html += '<div class="mb-6"><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">👤 Buyers</h3>';
+                    for (const buyer of buyers) {
+                        const referrerInfo = buyer.referred_by ? await getReferrerDetails(buyer.referred_by, 'buyer') : null;
+                        html += formatBuyerCard(buyer, referrerInfo);
+                    }
+                    html += '</div>';
+                }
+
+                // Display vendors
+                if (vendors && vendors.length > 0) {
+                    html += '<div><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">🏪 Vendors</h3>';
+                    for (const vendor of vendors) {
+                        const referrerInfo = vendor.referred_by_buyer_id ? await getReferrerDetails(vendor.referred_by_buyer_id, 'vendor') : null;
+                        html += formatVendorCard(vendor, referrerInfo);
+                    }
+                    html += '</div>';
+                }
+
+                resultsContainer.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error searching accounts:', err);
+                resultsContainer.innerHTML = '<div class="p-4 text-center text-red-500 text-sm">Error loading results: ' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        async function getReferrerDetails(referrerId, type) {
+            try {
+                if (type === 'buyer') {
+                    const { data, error } = await db
+                        .from('buyers')
+                        .select('id, full_name, email, whatsapp_number')
+                        .eq('id', referrerId)
+                        .single();
+                    return error ? null : data;
+                } else {
+                    const { data, error } = await db
+                        .from('vendors')
+                        .select('id, business_name, email')
+                        .eq('id', referrerId)
+                        .single();
+                    return error ? null : data;
+                }
+            } catch (err) {
+                console.error('Error fetching referrer details:', err);
+                return null;
+            }
+        }
+
+        function formatBuyerCard(buyer, referrer) {
+            const statusBadge = buyer.approval_status === 'approved'
+                ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Approved</span>'
+                : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold">Pending</span>';
+
+            return `
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="font-bold text-gray-900">${escapeHtml(buyer.full_name)}</div>
+                            <div class="text-xs text-gray-500">ID: ${buyer.id}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Email:</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-gray-800">${escapeHtml(buyer.email)}</span>
+                                <button onclick="copyToClipboard('${escapeHtml(buyer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Phone:</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-gray-800">${buyer.whatsapp_number ? escapeHtml(buyer.whatsapp_number) : 'N/A'}</span>
+                                <button onclick="copyToClipboard('${buyer.whatsapp_number ? escapeHtml(buyer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                            </div>
+                        </div>
+                        ${referrer ? `
+                        <div class="pt-2 border-t border-gray-200">
+                            <div class="text-xs font-semibold text-gray-700 mb-1">Referred By:</div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Name:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.full_name)}</span>
+                                    <button onclick="copyToClipboard('${escapeHtml(referrer.full_name)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Email:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.email)}</span>
+                                    <button onclick="copyToClipboard('${escapeHtml(referrer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Phone:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : 'N/A'}</span>
+                                    <button onclick="copyToClipboard('${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        <div class="pt-2 border-t border-gray-200 flex justify-between">
+                            <span class="text-gray-600">Balance:</span>
+                            <span class="font-bold text-green-600">$${parseFloat(buyer.accumulated_balance || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatVendorCard(vendor, referrer) {
+            const statusBadge = vendor.suspension_status === 'active'
+                ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Active</span>'
+                : '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">Suspended</span>';
+
+            return `
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="font-bold text-gray-900">${escapeHtml(vendor.business_name)}</div>
+                            <div class="text-xs text-gray-500">ID: ${vendor.id}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Email:</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-gray-800">${escapeHtml(vendor.email)}</span>
+                                <button onclick="copyToClipboard('${escapeHtml(vendor.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Rate:</span>
+                            <span class="font-mono text-gray-800">$${parseFloat(vendor.current_per_feedback_rate || 5.00).toFixed(2)}</span>
+                        </div>
+                        ${referrer ? `
+                        <div class="pt-2 border-t border-gray-200">
+                            <div class="text-xs font-semibold text-gray-700 mb-1">Referred By (Buyer):</div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Name:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.full_name)}</span>
+                                    <button onclick="copyToClipboard('${escapeHtml(referrer.full_name)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Email:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.email)}</span>
+                                    <button onclick="copyToClipboard('${escapeHtml(referrer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Phone:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-gray-800">${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : 'N/A'}</span>
+                                    <button onclick="copyToClipboard('${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        <div class="pt-2 border-t border-gray-200 flex justify-between">
+                            <span class="text-gray-600">Balance:</span>
+                            <span class="font-bold text-green-600">$${parseFloat(vendor.accumulated_balance || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text) {
+            if (!text) {
+                alert('Nothing to copy');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                // Show brief visual feedback
+                event.target.textContent = '✓ Copied';
+                setTimeout(() => {
+                    event.target.textContent = 'Copy';
+                }, 1500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                alert('Failed to copy');
+            });
+        }
+
+        // Add event listeners for account lookup
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('account-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function() {
+                    clearTimeout(accountSearchTimeout);
+                    if (this.value.trim()) {
+                        accountSearchTimeout = setTimeout(searchAccounts, 300);
+                    } else {
+                        document.getElementById('account-search-results').innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>';
+                    }
+                });
+            }
+        });
+
+        let accountSearchTimeout;
 
         // Add event listeners for monitoring search
         document.addEventListener('DOMContentLoaded', function() {
