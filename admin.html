@@ -116,10 +116,11 @@
                         <th class="p-2.5">ID Verification</th>
                         <th class="p-2.5">Status</th>
                         <th class="p-2.5 text-center">Action Control</th>
+                        <th class="p-2.5 text-center">Info</th>
                     </tr>
                 </thead>
                 <tbody id="buyers-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading buyers...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -254,7 +255,7 @@
                         </tr>
                     </thead>
                     <tbody id="vendor-rates-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading vendor rates...</td></tr>
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading vendor rates...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -915,25 +916,31 @@
         }
 
         // BUYERS PORTAL
-        async function loadBuyersPortal() {
+                async function loadBuyersPortal() {
             const tableBody = document.getElementById('buyers-table-body');
             if (!tableBody) return;
 
-            const { data, error } = await db.from('buyers').select('*').order('created_at', { ascending: false });
+            const { data, error } = await db.from('buyers').select('*')
+                .order('created_at', { ascending: false });
+            
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
             }
+            
             if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No buyer registrations found.</td></tr>`;
                 document.getElementById('buyer-count').textContent = '0 buyers';
                 return;
             }
 
-            document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
+            document.getElementById('buyer-count').textContent = 
+                `${data.length} buyer${data.length === 1 ? '' : 's'}`;
 
-            tableBody.innerHTML = data.map(buyer => {
-                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
+            let html = '';
+            for (const buyer of data) {
+                const rawStatus = (buyer.ready_to_invite || '')
+                    .trim().toUpperCase();
                 let statusBadge = '';
                 let actionButton = '';
 
@@ -958,7 +965,7 @@
                     }
                 }
 
-                return `
+                html += `
                     <tr class="hover:bg-gray-50/50 transition border-b">
                         <td class="p-2.5">
                             <div class="font-medium text-gray-800 text-xs">${escapeHtml(buyer.full_name || 'Unknown')}</div>
@@ -967,10 +974,224 @@
                         <td class="p-2.5">${idCellContent}</td>
                         <td class="p-2.5">${statusBadge}</td>
                         <td class="p-2.5 text-center">${actionButton}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="toggleBuyerDetails('${buyer.id}')" class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-2.5 py-1 rounded text-xs font-semibold transition">Details</button>
+                        </td>
+                    </tr>
+                    <tr id="details-${buyer.id}" class="hidden">
+                        <td colspan="5" class="p-4 bg-gray-50">
+                            <div id="details-content-${buyer.id}" class="text-sm">Loading details...</div>
+                        </td>
                     </tr>
                 `;
-            }).join('');
+            }
+            
+            tableBody.innerHTML = html;
         }
+
+
+
+        // ===== FEATURE 1: Referral Validation =====
+        async function validateReferralCode(referralCode) {
+            if (!referralCode) return { valid: false, message: 'No referral code' };
+            
+            const { data, error } = await db.from('buyers')
+                .select('id, full_name, referral_code, approval_status, accumulated_balance')
+                .eq('referral_code', referralCode)
+                .single();
+            
+            if (error || !data) {
+                return { valid: false, message: 'Invalid referral code' };
+            }
+            
+            if (data.approval_status !== 'approved') {
+                return { valid: false, message: `Referrer not approved (status: ${data.approval_status})` };
+            }
+            
+            return { 
+                valid: true, 
+                referrer: data.full_name, 
+                referrerBalance: data.accumulated_balance,
+                referrerId: data.id
+            };
+        }
+
+        // ===== FEATURE 2: Risk Detection =====
+        async function getRiskAssessment(buyerId) {
+            const { data, error } = await db.from('referral_risk_flags')
+                .select('risk_score, risk_type, detected_pattern, admin_decision')
+                .eq('buyer_id', buyerId)
+                .single();
+            
+            if (error || !data) {
+                return { risk_score: 0, risk_type: null, pattern: 'No risks detected' };
+            }
+            
+            return {
+                risk_score: data.risk_score,
+                risk_type: data.risk_type,
+                pattern: data.detected_pattern,
+                adminDecision: data.admin_decision
+            };
+        }
+
+        // ===== FEATURE 3: Accumulated Balance Preview =====
+        async function getBalanceBreakdown(buyerId) {
+            const { data: buyerData } = await db.from('buyers')
+                .select('accumulated_balance')
+                .eq('id', buyerId)
+                .single();
+            
+            const { data: earningsData } = await db.from('buyer_payables')
+                .select('earning_type, amount_owed, status')
+                .eq('buyer_id', buyerId)
+                .in('status', ['pending', 'payment_verified']);
+            
+            const breakdown = {
+                accumulated: buyerData?.accumulated_balance || 0,
+                pending: 0,
+                verified: 0,
+                byType: {}
+            };
+            
+            earningsData?.forEach(e => {
+                breakdown.byType[e.earning_type] = (breakdown.byType[e.earning_type] || 0) + parseFloat(e.amount_owed);
+                if (e.status === 'pending') breakdown.pending += parseFloat(e.amount_owed);
+                if (e.status === 'payment_verified') breakdown.verified += parseFloat(e.amount_owed);
+            });
+            
+            return breakdown;
+        }
+
+        // ===== FEATURE 4: Buyer-Admin Communication =====
+        async function loadBuyerMessages(buyerId) {
+            const { data, error } = await db.from('inquiries')
+                .select('id, message, sender_type, created_at, sender_id')
+                .eq('buyer_id', buyerId)
+                .eq('message_type', 'support_request')
+                .order('created_at', { ascending: false });
+            
+            return error ? [] : (data || []);
+        }
+
+        async function sendSupportGuidance(buyerId, templateKey) {
+            const { data: template } = await db.from('admin_message_templates')
+                .select('template_body, template_title')
+                .eq('template_key', templateKey)
+                .single();
+            
+            if (!template) {
+                alert('Template not found');
+                return false;
+            }
+            
+            const currentAdmin = JSON.parse(localStorage.getItem('adminUser') || '{}');
+            
+            const { error } = await db.from('inquiries').insert([{
+                buyer_id: buyerId,
+                vendor_id: null,
+                message_type: 'support_request',
+                message: template.template_body,
+                sender_type: 'admin',
+                sender_id: currentAdmin.id || 'system-admin',
+                vendor_status: 'approved'
+            }]);
+            
+            if (error) {
+                alert('Error sending message: ' + error.message);
+                return false;
+            }
+            
+            loadBuyersPortal();
+            return true;
+        }
+
+        // ===== Toggle Details Panel =====
+        async function toggleBuyerDetails(buyerId) {
+            const detailsRow = document.getElementById(`details-${buyerId}`);
+            const contentDiv = document.getElementById(`details-content-${buyerId}`);
+            
+            detailsRow.classList.toggle('hidden');
+            
+            if (!detailsRow.classList.contains('hidden') && contentDiv.innerHTML.includes('Loading details')) {
+                // Load all 4 features in parallel
+                const buyer = await db.from('buyers').select('*').eq('id', buyerId).single();
+                const riskData = await getRiskAssessment(buyerId);
+                const balanceData = await getBalanceBreakdown(buyerId);
+                const messages = await loadBuyerMessages(buyerId);
+                const referralValidation = buyer.data?.referred_by ? 
+                    await validateReferralCode(buyer.data?.referral_code) : 
+                    { valid: false, message: 'No referral used' };
+                
+                // Build HTML
+                let html = `
+                    <div class="space-y-4">
+                        <!-- Feature 1: Referral Validation -->
+                        <div class="border border-blue-200 bg-blue-50 p-3 rounded">
+                            <div class="font-semibold text-blue-900 mb-2">Referral Validation</div>
+                            <div class="text-xs text-blue-800">
+                                ${referralValidation.valid ? 
+                                    `✓ <strong>Valid Code:</strong> Referred by <strong>${referralValidation.referrer}</strong> (Balance: $${referralValidation.referrerBalance || 0})` :
+                                    `✗ ${referralValidation.message}`}
+                            </div>
+                        </div>
+                        
+                        <!-- Feature 2: Risk Assessment -->
+                        <div class="border ${riskData.risk_score > 50 ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'} p-3 rounded">
+                            <div class="font-semibold ${riskData.risk_score > 50 ? 'text-red-900' : 'text-green-900'} mb-2">Risk Assessment</div>
+                            <div class="text-xs ${riskData.risk_score > 50 ? 'text-red-800' : 'text-green-800'}">
+                                <strong>Score:</strong> ${riskData.risk_score}/100 
+                                ${riskData.risk_type ? `| <strong>Type:</strong> ${riskData.risk_type}` : ''}
+                                <br><strong>Pattern:</strong> ${riskData.pattern}
+                            </div>
+                        </div>
+                        
+                        <!-- Feature 3: Balance Preview -->
+                        <div class="border border-purple-200 bg-purple-50 p-3 rounded">
+                            <div class="font-semibold text-purple-900 mb-2">Earnings Preview</div>
+                            <div class="text-xs text-purple-800 space-y-1">
+                                <div><strong>Accumulated Balance:</strong> $${balanceData.accumulated.toFixed(2)}</div>
+                                <div><strong>Pending Payout:</strong> $${balanceData.pending.toFixed(2)}</div>
+                                <div><strong>Verified:</strong> $${balanceData.verified.toFixed(2)}</div>
+                                <div class="mt-2 pt-2 border-t border-purple-200">
+                                    <strong>By Type:</strong>
+                                    ${Object.entries(balanceData.byType).map(([type, amt]) => 
+                                        `<div>• ${type.replace(/_/g, ' ')}: $${amt.toFixed(2)}</div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Feature 4: Communication Hub -->
+                        <div class="border border-orange-200 bg-orange-50 p-3 rounded">
+                            <div class="font-semibold text-orange-900 mb-2">Support Messages</div>
+                            <div class="text-xs mb-3">
+                                <strong>${messages.length} message${messages.length !== 1 ? 's' : ''}</strong>
+                            </div>
+                            ${messages.length > 0 ? `
+                                <div class="bg-white rounded p-2 mb-3 max-h-32 overflow-y-auto">
+                                    ${messages.map(m => `
+                                        <div class="text-xs pb-2 mb-2 border-b border-gray-200">
+                                            <strong>${m.sender_type}:</strong> ${escapeHtml(m.message.substring(0, 100))}...
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="space-y-1">
+                                <button onclick="sendSupportGuidance('${buyerId}', 'paypal_invalid')" class="w-full text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-1 rounded">Send: PayPal Email Required</button>
+                                <button onclick="sendSupportGuidance('${buyerId}', 'quality_standards')" class="w-full text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-1 rounded">Send: Quality Standards</button>
+                                <button onclick="sendSupportGuidance('${buyerId}', 'referral_inactive')" class="w-full text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-1 rounded">Send: Referrer Inactive</button>
+                                <button onclick="sendSupportGuidance('${buyerId}', 'bot_farm_alert')" class="w-full text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-1 rounded">Send: Verification Required</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                contentDiv.innerHTML = html;
+            }
+        }
+
+
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             if (!confirm(`Update access status for ${buyerEmail}?`)) return;
@@ -1683,12 +1904,12 @@
                 const { data: vendors, error } = await db.from('vendors').select('id, first_name, last_name, current_per_feedback_rate, rate_last_changed_date').order('first_name');
 
                 if (error) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading rates: ${escapeHtml(error.message)}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading rates: ${escapeHtml(error.message)}</td></tr>`;
                     return;
                 }
 
                 if (!vendors || vendors.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No vendors registered.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vendors registered.</td></tr>`;
                     return;
                 }
 
@@ -1709,7 +1930,7 @@
                 }).join('');
             } catch (err) {
                 console.error('Error in loadVendorRates:', err);
-                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading rates</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading rates</td></tr>`;
             }
         }
 
