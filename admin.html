@@ -2371,26 +2371,30 @@
 
                 if (vendorsError) throw vendorsError;
 
-                // Filter buyers by: name, email, phone, or partial UUID
-                const buyers = (allBuyers || []).filter(buyer => {
+                // Filter buyers by: name, email, phone, or partial UUID - track matched field
+                const buyers = (allBuyers || []).map(buyer => {
                     const queryLower = query.toLowerCase();
-                    return (
-                        (buyer.full_name && buyer.full_name.toLowerCase().includes(queryLower)) ||
-                        (buyer.email && buyer.email.toLowerCase().includes(queryLower)) ||
-                        (buyer.whatsapp_number && buyer.whatsapp_number.toLowerCase().includes(queryLower)) ||
-                        (buyer.id && buyer.id.toLowerCase().includes(queryLower))
-                    );
-                });
+                    let matchedField = null;
 
-                // Filter vendors by: name, email, or partial UUID
-                const vendors = (allVendors || []).filter(vendor => {
+                    if (buyer.full_name && buyer.full_name.toLowerCase().includes(queryLower)) matchedField = 'Name';
+                    else if (buyer.email && buyer.email.toLowerCase().includes(queryLower)) matchedField = 'Email';
+                    else if (buyer.whatsapp_number && buyer.whatsapp_number.toLowerCase().includes(queryLower)) matchedField = 'Phone';
+                    else if (buyer.id && buyer.id.toLowerCase().includes(queryLower)) matchedField = 'ID';
+
+                    return matchedField ? { data: buyer, matchedField } : null;
+                }).filter(Boolean);
+
+                // Filter vendors by: name, email, or partial UUID - track matched field
+                const vendors = (allVendors || []).map(vendor => {
                     const queryLower = query.toLowerCase();
-                    return (
-                        (vendor.business_name && vendor.business_name.toLowerCase().includes(queryLower)) ||
-                        (vendor.email && vendor.email.toLowerCase().includes(queryLower)) ||
-                        (vendor.id && vendor.id.toLowerCase().includes(queryLower))
-                    );
-                });
+                    let matchedField = null;
+
+                    if (vendor.business_name && vendor.business_name.toLowerCase().includes(queryLower)) matchedField = 'Name';
+                    else if (vendor.email && vendor.email.toLowerCase().includes(queryLower)) matchedField = 'Email';
+                    else if (vendor.id && vendor.id.toLowerCase().includes(queryLower)) matchedField = 'ID';
+
+                    return matchedField ? { data: vendor, matchedField } : null;
+                }).filter(Boolean);
 
                 if ((!buyers || buyers.length === 0) && (!vendors || vendors.length === 0)) {
                     resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No buyers or vendors found matching your search</div>';
@@ -2402,9 +2406,10 @@
                 // Display buyers
                 if (buyers && buyers.length > 0) {
                     html += '<div class="mb-6"><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">👤 Buyers</h3>';
-                    for (const buyer of buyers) {
+                    for (const result of buyers) {
+                        const buyer = result.data;
                         const referrerInfo = buyer.referred_by ? await getReferrerDetails(buyer.referred_by, 'buyer') : null;
-                        html += formatBuyerCard(buyer, referrerInfo);
+                        html += formatBuyerCard(buyer, referrerInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -2412,9 +2417,10 @@
                 // Display vendors
                 if (vendors && vendors.length > 0) {
                     html += '<div><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">🏪 Vendors</h3>';
-                    for (const vendor of vendors) {
+                    for (const result of vendors) {
+                        const vendor = result.data;
                         const referrerInfo = vendor.referred_by_buyer_id ? await getReferrerDetails(vendor.referred_by_buyer_id, 'vendor') : null;
-                        html += formatVendorCard(vendor, referrerInfo);
+                        html += formatVendorCard(vendor, referrerInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -2450,7 +2456,7 @@
             }
         }
 
-        function formatBuyerCard(buyer, referrer) {
+        function formatBuyerCard(buyer, referrer, matchedField) {
             const statusBadge = buyer.approval_status === 'approved'
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Approved</span>'
                 : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold">Pending</span>';
@@ -2460,9 +2466,11 @@
             const referrerName = referrer ? referrer.full_name || '' : '';
             const referrerEmail = referrer ? referrer.email || '' : '';
             const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+            const matchBadge = matchedField ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">Matched in: ${matchedField}</span>` : '';
 
             let html = `
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                    ${matchBadge ? `<div class="mb-2">${matchBadge}</div>` : ''}
                     <div class="flex justify-between items-start mb-3">
                         <div>
                             <div class="font-bold text-gray-900">${escapeHtml(buyer.full_name)}</div>
@@ -2531,7 +2539,7 @@
             return html;
         }
 
-        function formatVendorCard(vendor, referrer) {
+        function formatVendorCard(vendor, referrer, matchedField) {
             const statusBadge = vendor.suspension_status === 'active'
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Active</span>'
                 : '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">Suspended</span>';
@@ -2540,9 +2548,11 @@
             const referrerName = referrer ? referrer.full_name || '' : '';
             const referrerEmail = referrer ? referrer.email || '' : '';
             const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+            const matchBadge = matchedField ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">Matched in: ${matchedField}</span>` : '';
 
             let html = `
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+                    ${matchBadge ? `<div class="mb-2">${matchBadge}</div>` : ''}
                     <div class="flex justify-between items-start mb-3">
                         <div>
                             <div class="font-bold text-gray-900">${escapeHtml(vendor.business_name)}</div>
