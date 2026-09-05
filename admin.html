@@ -2454,7 +2454,7 @@
             try {
                 // Get selected lookback period in hours (24, 168, 720, 999999)
                 const hours = parseInt(document.getElementById('earners-lookback-period').value) || 24;
-                const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19);
+                const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
                 console.log('[DEBUG] loadCommissionEarners - hours:', hours, 'cutoffDate:', cutoffDate);
 
                 // Fetch all buyer_payables with buyer details
