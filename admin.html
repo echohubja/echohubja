@@ -2324,13 +2324,22 @@
         }
 
         // ===== ACCOUNT LOOKUP =====
+        let accountSearchTimeout;
+
         function initializeAccountLookup() {
             const searchInput = document.getElementById('account-search-input');
             if (searchInput) {
+                searchInput.value = '';
                 searchInput.focus();
-                searchInput.addEventListener('keyup', function() {
+                // Remove any existing listeners
+                const newInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newInput, searchInput);
+
+                // Add fresh listener
+                document.getElementById('account-search-input').addEventListener('keyup', function(e) {
                     clearTimeout(accountSearchTimeout);
-                    if (this.value.trim()) {
+                    const val = this.value.trim();
+                    if (val.length > 0) {
                         accountSearchTimeout = setTimeout(searchAccounts, 300);
                     } else {
                         document.getElementById('account-search-results').innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>';
@@ -2349,21 +2358,39 @@
             }
 
             try {
-                // Search buyers
-                const { data: buyers, error: buyersError } = await db
+                // Fetch all buyers and vendors, then filter client-side for UUID support
+                const { data: allBuyers, error: buyersError } = await db
                     .from('buyers')
-                    .select('id, full_name, email, whatsapp_number, referred_by, approval_status, accumulated_balance, created_at')
-                    .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,id.ilike.%${query}%,whatsapp_number.ilike.%${query}%`);
+                    .select('id, full_name, email, whatsapp_number, referred_by, approval_status, accumulated_balance, created_at');
 
                 if (buyersError) throw buyersError;
 
-                // Search vendors
-                const { data: vendors, error: vendorsError } = await db
+                const { data: allVendors, error: vendorsError } = await db
                     .from('vendors')
-                    .select('id, business_name, email, referred_by_buyer_id, suspension_status, current_per_feedback_rate, accumulated_balance, created_at')
-                    .or(`business_name.ilike.%${query}%,email.ilike.%${query}%,id.ilike.%${query}%`);
+                    .select('id, business_name, email, referred_by_buyer_id, suspension_status, current_per_feedback_rate, accumulated_balance, created_at');
 
                 if (vendorsError) throw vendorsError;
+
+                // Filter buyers by: name, email, phone, or partial UUID
+                const buyers = (allBuyers || []).filter(buyer => {
+                    const queryLower = query.toLowerCase();
+                    return (
+                        (buyer.full_name && buyer.full_name.toLowerCase().includes(queryLower)) ||
+                        (buyer.email && buyer.email.toLowerCase().includes(queryLower)) ||
+                        (buyer.whatsapp_number && buyer.whatsapp_number.toLowerCase().includes(queryLower)) ||
+                        (buyer.id && buyer.id.toLowerCase().includes(queryLower))
+                    );
+                });
+
+                // Filter vendors by: name, email, or partial UUID
+                const vendors = (allVendors || []).filter(vendor => {
+                    const queryLower = query.toLowerCase();
+                    return (
+                        (vendor.business_name && vendor.business_name.toLowerCase().includes(queryLower)) ||
+                        (vendor.email && vendor.email.toLowerCase().includes(queryLower)) ||
+                        (vendor.id && vendor.id.toLowerCase().includes(queryLower))
+                    );
+                });
 
                 if ((!buyers || buyers.length === 0) && (!vendors || vendors.length === 0)) {
                     resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No buyers or vendors found matching your search</div>';
@@ -2428,7 +2455,13 @@
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Approved</span>'
                 : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold">Pending</span>';
 
-            return `
+            const email = buyer.email || '';
+            const phone = buyer.whatsapp_number || '';
+            const referrerName = referrer ? referrer.full_name || '' : '';
+            const referrerEmail = referrer ? referrer.email || '' : '';
+            const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+
+            let html = `
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
                     <div class="flex justify-between items-start mb-3">
                         <div>
@@ -2442,43 +2475,49 @@
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Email:</span>
                             <div class="flex items-center gap-2">
-                                <span class="font-mono text-gray-800">${escapeHtml(buyer.email)}</span>
-                                <button onclick="copyToClipboard('${escapeHtml(buyer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                <span class="font-mono text-gray-800">${escapeHtml(email)}</span>
+                                <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(email)}">Copy</button>
                             </div>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Phone:</span>
                             <div class="flex items-center gap-2">
-                                <span class="font-mono text-gray-800">${buyer.whatsapp_number ? escapeHtml(buyer.whatsapp_number) : 'N/A'}</span>
-                                <button onclick="copyToClipboard('${buyer.whatsapp_number ? escapeHtml(buyer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                <span class="font-mono text-gray-800">${phone ? escapeHtml(phone) : 'N/A'}</span>
+                                <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(phone)}">Copy</button>
                             </div>
                         </div>
-                        ${referrer ? `
+            `;
+
+            if (referrer) {
+                html += `
                         <div class="pt-2 border-t border-gray-200">
                             <div class="text-xs font-semibold text-gray-700 mb-1">Referred By:</div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Name:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.full_name)}</span>
-                                    <button onclick="copyToClipboard('${escapeHtml(referrer.full_name)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrerName)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerName)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Email:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.email)}</span>
-                                    <button onclick="copyToClipboard('${escapeHtml(referrer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrerEmail)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerEmail)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Phone:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : 'N/A'}</span>
-                                    <button onclick="copyToClipboard('${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${referrerPhone ? escapeHtml(referrerPhone) : 'N/A'}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerPhone)}">Copy</button>
                                 </div>
                             </div>
                         </div>
-                        ` : ''}
+                `;
+            }
+
+            html += `
                         <div class="pt-2 border-t border-gray-200 flex justify-between">
                             <span class="text-gray-600">Balance:</span>
                             <span class="font-bold text-green-600">$${parseFloat(buyer.accumulated_balance || 0).toFixed(2)}</span>
@@ -2486,6 +2525,7 @@
                     </div>
                 </div>
             `;
+            return html;
         }
 
         function formatVendorCard(vendor, referrer) {
@@ -2493,7 +2533,12 @@
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Active</span>'
                 : '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">Suspended</span>';
 
-            return `
+            const email = vendor.email || '';
+            const referrerName = referrer ? referrer.full_name || '' : '';
+            const referrerEmail = referrer ? referrer.email || '' : '';
+            const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+
+            let html = `
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
                     <div class="flex justify-between items-start mb-3">
                         <div>
@@ -2507,40 +2552,46 @@
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Email:</span>
                             <div class="flex items-center gap-2">
-                                <span class="font-mono text-gray-800">${escapeHtml(vendor.email)}</span>
-                                <button onclick="copyToClipboard('${escapeHtml(vendor.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                <span class="font-mono text-gray-800">${escapeHtml(email)}</span>
+                                <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(email)}">Copy</button>
                             </div>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Rate:</span>
                             <span class="font-mono text-gray-800">$${parseFloat(vendor.current_per_feedback_rate || 5.00).toFixed(2)}</span>
                         </div>
-                        ${referrer ? `
+            `;
+
+            if (referrer) {
+                html += `
                         <div class="pt-2 border-t border-gray-200">
                             <div class="text-xs font-semibold text-gray-700 mb-1">Referred By (Buyer):</div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Name:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.full_name)}</span>
-                                    <button onclick="copyToClipboard('${escapeHtml(referrer.full_name)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrerName)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerName)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Email:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrer.email)}</span>
-                                    <button onclick="copyToClipboard('${escapeHtml(referrer.email)}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(referrerEmail)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerEmail)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Phone:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : 'N/A'}</span>
-                                    <button onclick="copyToClipboard('${referrer.whatsapp_number ? escapeHtml(referrer.whatsapp_number) : ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Copy</button>
+                                    <span class="font-mono text-gray-800">${referrerPhone ? escapeHtml(referrerPhone) : 'N/A'}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerPhone)}">Copy</button>
                                 </div>
                             </div>
                         </div>
-                        ` : ''}
+                `;
+            }
+
+            html += `
                         <div class="pt-2 border-t border-gray-200 flex justify-between">
                             <span class="text-gray-600">Balance:</span>
                             <span class="font-bold text-green-600">$${parseFloat(vendor.accumulated_balance || 0).toFixed(2)}</span>
@@ -2548,41 +2599,42 @@
                     </div>
                 </div>
             `;
+            return html;
         }
 
         function copyToClipboard(text) {
-            if (!text) {
-                alert('Nothing to copy');
+            if (!text || text === '') {
                 return;
             }
+            const button = event.target;
             navigator.clipboard.writeText(text).then(() => {
-                // Show brief visual feedback
-                event.target.textContent = '✓ Copied';
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied';
                 setTimeout(() => {
-                    event.target.textContent = 'Copy';
+                    button.textContent = originalText;
                 }, 1500);
             }).catch(err => {
                 console.error('Copy failed:', err);
-                alert('Failed to copy');
             });
         }
 
-        // Add event listeners for account lookup
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('account-search-input');
-            if (searchInput) {
-                searchInput.addEventListener('keyup', function() {
-                    clearTimeout(accountSearchTimeout);
-                    if (this.value.trim()) {
-                        accountSearchTimeout = setTimeout(searchAccounts, 300);
-                    } else {
-                        document.getElementById('account-search-results').innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">Start typing to search for buyer or vendor accounts</div>';
-                    }
-                });
+        // Delegated event handler for copy buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('copy-btn')) {
+                const text = e.target.getAttribute('data-copy');
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        const original = e.target.textContent;
+                        e.target.textContent = '✓ Copied';
+                        setTimeout(() => {
+                            e.target.textContent = original;
+                        }, 1500);
+                    }).catch(err => {
+                        console.error('Copy failed:', err);
+                    });
+                }
             }
         });
-
-        let accountSearchTimeout;
 
         // Add event listeners for monitoring search
         document.addEventListener('DOMContentLoaded', function() {
