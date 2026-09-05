@@ -44,6 +44,7 @@
     </header>
 
     <div class="max-w-6xl mx-auto mb-6 flex gap-4 border-b border-gray-300 px-2 overflow-x-auto">
+        <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">🔍 Commission Monitor</button>
         <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Buyer Access Requests</button>
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
@@ -279,6 +280,72 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- SECTION: COMMISSION MONITOR -->
+    <div id="section-monitor" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Commission System Monitor</h2>
+            <button onclick="refreshMonitoringDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition">🔄 Refresh</button>
+        </div>
+
+        <!-- SYSTEM HEALTH STATUS -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-gradient-to-br from-green-50 to-green-25 border-2 border-green-300 rounded-lg p-4 text-center">
+                <div class="text-4xl font-bold text-green-600" id="queue-completed">—</div>
+                <div class="text-xs font-semibold text-green-700 mt-2 uppercase">Completed (24h)</div>
+            </div>
+            <div class="bg-gradient-to-br from-amber-50 to-amber-25 border-2 border-amber-300 rounded-lg p-4 text-center">
+                <div class="text-4xl font-bold text-amber-600" id="queue-pending">—</div>
+                <div class="text-xs font-semibold text-amber-700 mt-2 uppercase">Pending</div>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-blue-25 border-2 border-blue-300 rounded-lg p-4 text-center">
+                <div class="text-4xl font-bold text-blue-600" id="queue-processing">—</div>
+                <div class="text-xs font-semibold text-blue-700 mt-2 uppercase">Processing</div>
+            </div>
+            <div class="bg-gradient-to-br from-red-50 to-red-25 border-2 border-red-300 rounded-lg p-4 text-center">
+                <div class="text-4xl font-bold text-red-600" id="queue-failed">—</div>
+                <div class="text-xs font-semibold text-red-700 mt-2 uppercase">Failed</div>
+            </div>
+        </div>
+
+        <!-- CRON STATUS & 24H VOLUME -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-[#1e5aa8] mb-3">⏱️ Scheduler Status</h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between"><span class="text-gray-600">Last Execution:</span><span id="cron-last-exec" class="font-mono font-semibold text-gray-800">—</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Next Scheduled:</span><span id="cron-next-exec" class="font-mono font-semibold text-gray-800">Every 5 minutes</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Status:</span><span id="cron-status" class="font-semibold text-green-600">🟢 Active</span></div>
+                </div>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-[#1e5aa8] mb-3">📊 Scenarios (24h)</h3>
+                <div class="space-y-1.5 text-xs font-semibold">
+                    <div class="flex justify-between"><span>Own Feedback:</span><span id="scenario-own" class="text-gray-800">—</span></div>
+                    <div class="flex justify-between"><span>Referred Buyer:</span><span id="scenario-buyer" class="text-gray-800">—</span></div>
+                    <div class="flex justify-between"><span>Referred Vendor:</span><span id="scenario-vendor" class="text-gray-800">—</span></div>
+                    <div class="flex justify-between"><span>Both Referred:</span><span id="scenario-both" class="text-gray-800">—</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAILED COMMISSIONS ALERT -->
+        <div id="monitor-failed-alert" class="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6 hidden">
+            <h3 class="text-sm font-bold text-red-700 mb-3">🚨 Failed Commissions Detected</h3>
+            <div id="monitor-failed-list" class="text-xs space-y-2 mb-3"></div>
+            <button onclick="showFailedCommissions()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold transition">View Details</button>
+        </div>
+
+        <!-- BUYER DRILL-DOWN -->
+        <div class="mb-6">
+            <h3 class="text-sm font-bold text-[#1e5aa8] mb-3">🔎 Search Buyer Commission Trail</h3>
+            <input type="text" id="monitor-buyer-search" placeholder="Search by buyer name, email, or ID..." class="w-full text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+        </div>
+
+        <div id="monitor-buyer-results" class="space-y-3">
+            <div class="p-4 text-center text-gray-500 text-xs">Enter a buyer name or email to view their commission history</div>
         </div>
     </div>
 
@@ -611,6 +678,7 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
+            document.getElementById('section-monitor').classList.add('hidden');
             document.getElementById('section-buyers').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
@@ -618,7 +686,8 @@
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
-            if (tabName === 'buyers') loadBuyersPortal();
+            if (tabName === 'monitor') loadMonitoringDashboard();
+            else if (tabName === 'buyers') loadBuyersPortal();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
             else if (tabName === 'payments') loadPaymentProofsPortal();
@@ -2018,6 +2087,233 @@
                 alert('Error: ' + err.message);
             }
         }
+
+        // ===== COMMISSION MONITORING DASHBOARD =====
+        async function loadMonitoringDashboard() {
+            try {
+                // Fetch queue statistics
+                const { data: queueData, error: queueError } = await db
+                    .from('commission_queue')
+                    .select('status, event_type');
+
+                if (queueError) throw queueError;
+
+                const queueStats = {
+                    completed: queueData.filter(q => q.status === 'completed').length,
+                    pending: queueData.filter(q => q.status === 'pending').length,
+                    processing: queueData.filter(q => q.status === 'processing').length,
+                    failed: queueData.filter(q => q.status === 'failed').length
+                };
+
+                // Fetch buyer payables for scenarios (last 24 hours)
+                const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                const { data: buyerPayables, error: buyerError } = await db
+                    .from('buyer_payables')
+                    .select('earning_type, created_at')
+                    .gt('created_at', last24h);
+
+                if (buyerError) throw buyerError;
+
+                const scenarioStats = {
+                    own_feedback: buyerPayables.filter(b => b.earning_type === 'own_feedback').length,
+                    referred_buyer: buyerPayables.filter(b => b.earning_type === 'referred_buyer').length,
+                    referred_vendor: buyerPayables.filter(b => b.earning_type === 'referred_vendor').length,
+                    both_referred: buyerPayables.filter(b => b.earning_type === 'both_referred').length
+                };
+
+                // Get last cron execution from most recent completed job
+                const { data: lastJob } = await db
+                    .from('commission_queue')
+                    .select('created_at')
+                    .eq('status', 'completed')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                const lastExecution = lastJob && lastJob.length > 0
+                    ? getTimeAgo(new Date(lastJob[0].created_at))
+                    : 'Never';
+
+                // Update UI with metrics
+                document.getElementById('queue-completed').textContent = queueStats.completed;
+                document.getElementById('queue-pending').textContent = queueStats.pending;
+                document.getElementById('queue-processing').textContent = queueStats.processing;
+                document.getElementById('queue-failed').textContent = queueStats.failed;
+
+                document.getElementById('cron-last-exec').textContent = lastExecution;
+                document.getElementById('scenario-own').textContent = scenarioStats.own_feedback;
+                document.getElementById('scenario-buyer').textContent = scenarioStats.referred_buyer;
+                document.getElementById('scenario-vendor').textContent = scenarioStats.referred_vendor;
+                document.getElementById('scenario-both').textContent = scenarioStats.both_referred;
+
+                // Show failed alert if failures exist
+                if (queueStats.failed > 0) {
+                    await loadFailedCommissions();
+                    document.getElementById('monitor-failed-alert').classList.remove('hidden');
+                } else {
+                    document.getElementById('monitor-failed-alert').classList.add('hidden');
+                }
+
+            } catch (err) {
+                console.error('Error loading monitoring dashboard:', err);
+                document.getElementById('queue-completed').textContent = 'ERR';
+                document.getElementById('queue-pending').textContent = 'ERR';
+                document.getElementById('queue-processing').textContent = 'ERR';
+                document.getElementById('queue-failed').textContent = 'ERR';
+                document.getElementById('cron-last-exec').textContent = 'Error loading';
+            }
+        }
+
+        async function loadFailedCommissions() {
+            try {
+                const { data: failed, error } = await db
+                    .from('commission_queue')
+                    .select('id, feedback_id, status')
+                    .eq('status', 'failed')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                if (!failed || failed.length === 0) {
+                    document.getElementById('monitor-failed-list').innerHTML = '<div class="text-gray-500 text-sm">No failed commissions</div>';
+                    return;
+                }
+
+                let html = '';
+                for (const item of failed) {
+                    const feedbackId = item.feedback_id || 'Unknown';
+                    html += `
+                        <div class="text-xs bg-red-100 px-3 py-2 rounded border-l-2 border-red-600">
+                            ❌ Commission ID: ${feedbackId.substring(0, 8)} — Processing failed
+                        </div>
+                    `;
+                }
+                document.getElementById('monitor-failed-list').innerHTML = html;
+
+            } catch (err) {
+                console.error('Error loading failed commissions:', err);
+            }
+        }
+
+        async function searchBuyerCommissions() {
+            const query = document.getElementById('monitor-buyer-search').value.trim().toLowerCase();
+            const resultsContainer = document.getElementById('monitor-buyer-results');
+
+            if (!query) {
+                resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs">Enter a buyer name or email to view their commission history</div>';
+                return;
+            }
+
+            try {
+                // Search buyers
+                const { data: buyers, error: buyersError } = await db
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);
+
+                if (buyersError) throw buyersError;
+
+                if (!buyers || buyers.length === 0) {
+                    resultsContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs">No buyers found matching your search</div>';
+                    return;
+                }
+
+                // For each buyer, fetch their commission history
+                let html = '';
+                for (const buyer of buyers) {
+                    const commissionTrail = await getBuyerCommissionTrail(buyer.id);
+
+                    html += `
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                            <div class="font-semibold text-gray-900 text-xs mb-2">👤 ${escapeHtml(buyer.full_name)} (${escapeHtml(buyer.email)})</div>
+                            <div class="flex gap-2 flex-wrap">
+                                ${commissionTrail.length > 0
+                                    ? commissionTrail.map(c => formatCommissionBadge(c)).join('')
+                                    : '<span class="text-gray-500 text-xs">No commissions yet</span>'
+                                }
+                            </div>
+                        </div>
+                    `;
+                }
+
+                resultsContainer.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error searching buyers:', err);
+                resultsContainer.innerHTML = '<div class="p-4 text-center text-red-500 text-xs">Error loading results: ' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        async function getBuyerCommissionTrail(buyerId) {
+            try {
+                const { data: payables, error } = await db
+                    .from('buyer_payables')
+                    .select('id, amount_owed, earning_type, status, created_at')
+                    .eq('buyer_id', buyerId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                return payables || [];
+
+            } catch (err) {
+                console.error('Error fetching buyer commission trail:', err);
+                return [];
+            }
+        }
+
+        function formatCommissionBadge(commission) {
+            const date = new Date(commission.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const scenario = commission.earning_type
+                .replace(/_/g, ' ')
+                .split(' ')
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ');
+            const amount = parseFloat(commission.amount_owed || 0).toFixed(2);
+            const statusIcon = commission.status === 'completed' ? '✅' : (commission.status === 'pending' ? '⏳' : '❌');
+
+            let badgeClass = 'text-xs px-2 py-1 rounded font-semibold whitespace-nowrap';
+            if (commission.status === 'completed') {
+                badgeClass += ' bg-green-100 text-green-700';
+            } else if (commission.status === 'pending') {
+                badgeClass += ' bg-amber-100 text-amber-700';
+            } else {
+                badgeClass += ' bg-red-100 text-red-700';
+            }
+
+            return `<span class="${badgeClass}">${date} • ${scenario} • $${amount} • ${statusIcon}</span>`;
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
+        }
+
+        function refreshMonitoringDashboard() {
+            loadMonitoringDashboard();
+        }
+
+        // Add event listeners for monitoring search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('monitor-buyer-search');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(searchBuyerCommissions, 300);
+                });
+            }
+        });
+
+        let searchTimeout;
     </script>
 
 </body>
