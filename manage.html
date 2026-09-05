@@ -2026,6 +2026,17 @@
                 </div>
             </div>
 
+            <!-- VENDOR ALERTS WIDGET -->
+            <div class="panel" style="margin-top: 28px; margin-bottom: 28px;">
+                <div class="panel-header">
+                    <h2>🔔 Notifications & Alerts</h2>
+                    <span class="badge" id="vendor-alert-badge" style="background: #ef4444; color: white;">0 alerts</span>
+                </div>
+                <div id="vendor-alerts-container" style="padding: 20px; background: white; border-radius: 8px;">
+                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">Loading alerts...</div>
+                </div>
+            </div>
+
             <!-- COMPREHENSIVE COMMISSION MANAGEMENT PANEL -->
             <div class="panel" style="margin-top: 28px; margin-bottom: 28px;">
                 <div class="panel-header">
@@ -2635,6 +2646,7 @@
                 await loadEarningsData();
                 await loadCommissionStats();
                 await loadPendingFeedbackNotification(); // Show pending feedback count
+                await loadVendorAlerts(); // Load vendor alert notifications
                 await setupPolling();
 
                 loadingState.style.display = 'none';
@@ -4260,6 +4272,91 @@
             } catch (error) {
                 console.error('Error loading commission stats:', error);
             }
+        }
+
+        // Load Vendor Alerts
+        async function loadVendorAlerts() {
+            const container = document.getElementById('vendor-alerts-container');
+            const badge = document.getElementById('vendor-alert-badge');
+            if (!container || !currentVendor) return;
+
+            try {
+                const { data: alerts, error } = await sbClient
+                    .from('payment_alerts')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('is_acknowledged', { ascending: true })
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+                    return;
+                }
+
+                if (!alerts || alerts.length === 0) {
+                    container.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #94a3b8;">No alerts at this time ✓</div>`;
+                    badge.textContent = '0 alerts';
+                    badge.style.background = '#10b981';
+                    return;
+                }
+
+                const unacknowledgedCount = alerts.filter(a => !a.is_acknowledged).length;
+                badge.textContent = unacknowledgedCount > 0 ? `${unacknowledgedCount} alert${unacknowledgedCount !== 1 ? 's' : ''}` : '0 alerts';
+                badge.style.background = unacknowledgedCount > 0 ? '#ef4444' : '#10b981';
+
+                const alertsHtml = alerts.map(alert => {
+                    const severityColors = {
+                        'critical': { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', icon: '🚨' },
+                        'warning': { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b', icon: '⚠️' },
+                        'info': { bg: 'rgba(30, 90, 168, 0.1)', border: '#1e5aa8', icon: 'ℹ️' }
+                    };
+                    const colors = severityColors[alert.severity] || severityColors['info'];
+
+                    return `
+                        <div style="background: ${colors.bg}; border-left: 4px solid ${colors.border}; padding: 12px 16px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${colors.icon} ${escapeHtml(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
+                                <div style="font-size: 0.9em; color: #4b5563; margin-bottom: 6px;">${escapeHtml(alert.message)}</div>
+                                <div style="font-size: 0.8em; color: #94a3b8;">${new Date(alert.created_at).toLocaleString()}</div>
+                            </div>
+                            ${!alert.is_acknowledged ? `<button onclick="acknowledgeVendorAlert('${alert.id}')" style="background: ${colors.border}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;">Acknowledge</button>` : `<span style="color: #10b981; font-size: 0.85em; font-weight: 600;">✓ Acknowledged</span>`}
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = alertsHtml;
+            } catch (error) {
+                console.error('Error loading vendor alerts:', error);
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+            }
+        }
+
+        async function acknowledgeVendorAlert(alertId) {
+            if (!sbClient) return;
+            try {
+                const { error } = await sbClient
+                    .from('payment_alerts')
+                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
+                    .eq('id', alertId);
+
+                if (!error) {
+                    await loadVendorAlerts(); // Refresh alerts
+                }
+            } catch (err) {
+                console.error('Error acknowledging alert:', err);
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         // Logout Handler
