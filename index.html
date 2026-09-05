@@ -501,6 +501,17 @@
     <!-- Commissions Section -->
     <div id="commissions-section" class="tab-section">
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <!-- BUYER ALERTS WIDGET -->
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e1e8ed;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e1e8ed;">
+                    <h2 style="font-size: 1.1em; font-weight: 600; color: #1f2937; margin: 0;">🔔 Notifications & Alerts</h2>
+                    <span id="buyer-alert-badge" style="background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">0 alerts</span>
+                </div>
+                <div id="buyer-alerts-container" style="min-height: 80px;">
+                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">Loading alerts...</div>
+                </div>
+            </div>
+
             <div class="info-banner">
                 <strong>💡 How it works:</strong> When someone uses your referral link to submit feedback, you earn a commission based on the vendor's payment structure.
             </div>
@@ -1646,11 +1657,104 @@
             showToast('Referral link copied to clipboard!', 'success');
         }
 
+        // Load Buyer Alerts
+        async function loadBuyerAlerts() {
+            const container = document.getElementById('buyer-alerts-container');
+            const badge = document.getElementById('buyer-alert-badge');
+            if (!container || !db) return;
+
+            try {
+                const buyerId = localStorage.getItem('buyer_id');
+                if (!buyerId) {
+                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8;">No buyer session found</div>`;
+                    return;
+                }
+
+                const { data: alerts, error } = await db
+                    .from('payment_alerts')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .order('is_acknowledged', { ascending: true })
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    console.error('Error fetching alerts:', error);
+                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+                    return;
+                }
+
+                if (!alerts || alerts.length === 0) {
+                    container.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #94a3b8;">No alerts at this time ✓</div>`;
+                    badge.textContent = '0 alerts';
+                    badge.style.background = '#10b981';
+                    return;
+                }
+
+                const unacknowledgedCount = alerts.filter(a => !a.is_acknowledged).length;
+                badge.textContent = unacknowledgedCount > 0 ? `${unacknowledgedCount} alert${unacknowledgedCount !== 1 ? 's' : ''}` : '0 alerts';
+                badge.style.background = unacknowledgedCount > 0 ? '#ef4444' : '#10b981';
+
+                const alertsHtml = alerts.map(alert => {
+                    const severityColors = {
+                        'critical': { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', icon: '🚨' },
+                        'warning': { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b', icon: '⚠️' },
+                        'info': { bg: 'rgba(30, 90, 168, 0.1)', border: '#1e5aa8', icon: 'ℹ️' }
+                    };
+                    const colors = severityColors[alert.severity] || severityColors['info'];
+
+                    return `
+                        <div style="background: ${colors.bg}; border-left: 4px solid ${colors.border}; padding: 12px 16px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${colors.icon} ${escapeHtmlBuyer(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
+                                <div style="font-size: 0.9em; color: #4b5563; margin-bottom: 6px;">${escapeHtmlBuyer(alert.message)}</div>
+                                <div style="font-size: 0.8em; color: #94a3b8;">${new Date(alert.created_at).toLocaleString()}</div>
+                            </div>
+                            ${!alert.is_acknowledged ? `<button onclick="acknowledgeBuyerAlert('${alert.id}')" style="background: ${colors.border}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;">Acknowledge</button>` : `<span style="color: #10b981; font-size: 0.85em; font-weight: 600;">✓ Acknowledged</span>`}
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = alertsHtml;
+            } catch (error) {
+                console.error('Error loading buyer alerts:', error);
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+            }
+        }
+
+        async function acknowledgeBuyerAlert(alertId) {
+            if (!db) return;
+            try {
+                const { error } = await db
+                    .from('payment_alerts')
+                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
+                    .eq('id', alertId);
+
+                if (!error) {
+                    await loadBuyerAlerts(); // Refresh alerts
+                }
+            } catch (err) {
+                console.error('Error acknowledging alert:', err);
+            }
+        }
+
+        function escapeHtmlBuyer(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             captureReferralCode();
             await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
+            await loadBuyerAlerts(); // Load buyer alert notifications
         });
     </script>
 </body>
