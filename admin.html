@@ -50,6 +50,10 @@
         <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Inquiry & Feedback Verification</button>
         <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Referral Commissions & Payouts</button>
         <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">Payment Verification</button>
+        <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">🔔 Alert Center</button>
+        <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">💳 Payment Reversals</button>
+        <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">⚡ Circuit Breaker</button>
+        <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn pb-3 px-4 text-gray-600 font-semibold transition whitespace-nowrap">📊 Balance Health</button>
     </div>
 
     <!-- SECTION: BUYERS ACCESS REQUESTS -->
@@ -420,6 +424,101 @@
         </div>
     </div>
 
+    <!-- SECTION: ALERT CENTER -->
+    <div id="section-alerts" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Alert Center</h2>
+            <span id="alert-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0 unread</span>
+        </div>
+        <div id="alert-center-content" class="space-y-4">
+            <div class="text-center py-8 text-gray-500">Loading alerts...</div>
+        </div>
+    </div>
+
+    <!-- SECTION: PAYMENT REVERSALS -->
+    <div id="section-reversals" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Payment Reversals</h2>
+            <span id="reversal-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 reversals</span>
+        </div>
+        <div class="mb-6">
+            <h3 class="text-sm font-bold text-gray-700 mb-3">Search & Reverse Payment</h3>
+            <input type="text" id="reversal-search-input" placeholder="Search by payment ID, buyer name, or email..." class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 text-sm">
+            <div id="reversal-search-results" class="space-y-2"></div>
+        </div>
+        <div>
+            <h3 class="text-sm font-bold text-gray-700 mb-3">Recent Reversals</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Original Payment</th>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Reversal Reason</th>
+                            <th class="p-2.5">Reversed By</th>
+                            <th class="p-2.5">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reversal-history-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading reversal history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION: CIRCUIT BREAKER -->
+    <div id="section-circuit" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Circuit Breaker Status</h2>
+            <span id="circuit-status-badge" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Closed (Normal)</span>
+        </div>
+        <div id="circuit-breaker-content" class="space-y-4">
+            <div class="text-center py-8 text-gray-500">Loading circuit breaker status...</div>
+        </div>
+    </div>
+
+    <!-- SECTION: BALANCE HEALTH -->
+    <div id="section-balance" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Balance Health Report</h2>
+            <span id="balance-issue-count" class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-semibold">0 issues</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="text-2xl font-bold text-red-700" id="drift-count">0</div>
+                <div class="text-xs text-red-600">Balance Drift Detected</div>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="text-2xl font-bold text-yellow-700" id="duplicate-count">0</div>
+                <div class="text-xs text-yellow-600">Duplicate Payments</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="text-2xl font-bold text-blue-700" id="audit-count">0</div>
+                <div class="text-xs text-blue-600">Audit Logs</div>
+            </div>
+        </div>
+        <div>
+            <h3 class="text-sm font-bold text-gray-700 mb-3">Drift Detection</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Buyer</th>
+                            <th class="p-2.5">Accumulated Balance</th>
+                            <th class="p-2.5">Expected Balance</th>
+                            <th class="p-2.5">Drift Amount</th>
+                            <th class="p-2.5">Drift %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="balance-drift-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading balance report...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Product Image Tooltip Box -->
     <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
         <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
@@ -703,12 +802,20 @@
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
             document.getElementById('section-payments').classList.add('hidden');
+            document.getElementById('section-alerts').classList.add('hidden');
+            document.getElementById('section-reversals').classList.add('hidden');
+            document.getElementById('section-circuit').classList.add('hidden');
+            document.getElementById('section-balance').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
             if (tabName === 'monitor') loadMonitoringDashboard();
             else if (tabName === 'accounts') initializeAccountLookup();
             else if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'alerts') loadAlertCenter();
+            else if (tabName === 'reversals') loadReversalPanel();
+            else if (tabName === 'circuit') loadCircuitBreakerStatus();
+            else if (tabName === 'balance') loadBalanceHealthReport();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
             else if (tabName === 'payments') loadPaymentProofsPortal();
@@ -2664,6 +2771,324 @@
         });
 
         let searchTimeout;
+
+        // ===== ALERT CENTER =====
+        async function loadAlertCenter() {
+            const content = document.getElementById('alert-center-content');
+            const countBadge = document.getElementById('alert-count');
+            if (!content) return;
+
+            try {
+                // Fetch unacknowledged alerts for this admin
+                // Note: In production, replace 'admin-id' with actual logged-in admin ID
+                const adminId = localStorage.getItem('adminId') || 'default-admin';
+
+                const { data: alerts, error } = await db
+                    .from('payment_alerts')
+                    .select('*')
+                    .eq('recipient_admin_id', adminId)
+                    .eq('is_acknowledged', false)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    content.innerHTML = `<div class="p-4 text-center text-red-500">Error loading alerts: ${escapeHtml(error.message)}</div>`;
+                    return;
+                }
+
+                if (!alerts || alerts.length === 0) {
+                    content.innerHTML = `<div class="p-6 text-center text-gray-500">
+                        <div class="text-4xl mb-2">✨</div>
+                        <div class="font-semibold">No unread alerts</div>
+                        <div class="text-xs text-gray-400 mt-1">All systems operating normally</div>
+                    </div>`;
+                    countBadge.textContent = '0 unread';
+                    return;
+                }
+
+                countBadge.textContent = `${alerts.length} unread`;
+
+                // Group alerts by severity
+                const critical = alerts.filter(a => a.severity === 'critical');
+                const warning = alerts.filter(a => a.severity === 'warning');
+                const info = alerts.filter(a => a.severity === 'info');
+
+                let html = '';
+
+                if (critical.length > 0) {
+                    html += `<div class="mb-4"><h3 class="text-xs font-bold text-red-700 uppercase mb-2">🚨 Critical Alerts (${critical.length})</h3>`;
+                    critical.forEach(alert => {
+                        html += formatAlertCard(alert);
+                    });
+                    html += '</div>';
+                }
+
+                if (warning.length > 0) {
+                    html += `<div class="mb-4"><h3 class="text-xs font-bold text-amber-700 uppercase mb-2">⚠️ Warnings (${warning.length})</h3>`;
+                    warning.forEach(alert => {
+                        html += formatAlertCard(alert);
+                    });
+                    html += '</div>';
+                }
+
+                if (info.length > 0) {
+                    html += `<div><h3 class="text-xs font-bold text-blue-700 uppercase mb-2">ℹ️ Information (${info.length})</h3>`;
+                    info.forEach(alert => {
+                        html += formatAlertCard(alert);
+                    });
+                    html += '</div>';
+                }
+
+                content.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading alerts:', err);
+                content.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function formatAlertCard(alert) {
+            const severityColors = {
+                critical: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-amber-50 border-amber-200 text-amber-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            const color = severityColors[alert.severity] || severityColors.info;
+            const timestamp = new Date(alert.created_at).toLocaleString();
+
+            return `
+                <div class="border ${color} rounded-lg p-3 mb-2">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-gray-800">${escapeHtml(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
+                            <div class="text-sm mt-1 text-gray-700">${escapeHtml(alert.message)}</div>
+                            <div class="text-xs text-gray-500 mt-2">${timestamp}</div>
+                        </div>
+                        <button onclick="acknowledgeAlert('${alert.id}')" class="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold whitespace-nowrap">Mark Read</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function acknowledgeAlert(alertId) {
+            try {
+                const { error } = await db
+                    .from('payment_alerts')
+                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
+                    .eq('id', alertId);
+
+                if (error) throw error;
+                loadAlertCenter();
+            } catch (err) {
+                console.error('Error acknowledging alert:', err);
+                alert('Failed to mark alert as read');
+            }
+        }
+
+        // ===== PAYMENT REVERSALS =====
+        async function loadReversalPanel() {
+            const searchInput = document.getElementById('reversal-search-input');
+            const searchResults = document.getElementById('reversal-search-results');
+            const historyBody = document.getElementById('reversal-history-body');
+
+            if (!historyBody) return;
+
+            try {
+                // Load reversal history
+                const { data: reversals, error } = await db
+                    .from('payment_reversal_audit')
+                    .select('*')
+                    .order('reversed_at', { ascending: false })
+                    .limit(50);
+
+                if (error) {
+                    historyBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!reversals || reversals.length === 0) {
+                    historyBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No reversals recorded yet</td></tr>`;
+                    document.getElementById('reversal-count').textContent = '0 reversals';
+                    return;
+                }
+
+                document.getElementById('reversal-count').textContent = `${reversals.length} reversals`;
+
+                historyBody.innerHTML = reversals.map(reversal => {
+                    const amount = parseFloat(reversal.original_amount || 0).toFixed(2);
+                    const date = new Date(reversal.reversed_at).toLocaleDateString();
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 text-sm font-mono text-gray-700">${reversal.original_payment_id.substring(0, 8)}...</td>
+                            <td class="p-3 text-sm font-semibold text-red-600">$${amount}</td>
+                            <td class="p-3 text-sm text-gray-700">${escapeHtml(reversal.reason || 'No reason provided')}</td>
+                            <td class="p-3 text-sm text-gray-600">${escapeHtml(reversal.reversed_by.substring(0, 8))}</td>
+                            <td class="p-3 text-sm text-gray-500">${date}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Setup search functionality
+                if (searchInput) {
+                    searchInput.addEventListener('keyup', async function() {
+                        const query = this.value.trim().toLowerCase();
+                        if (query.length === 0) {
+                            searchResults.innerHTML = '';
+                            return;
+                        }
+
+                        // Search in reversal history and buyer payments
+                        const filtered = reversals.filter(r =>
+                            r.original_payment_id.toLowerCase().includes(query) ||
+                            r.buyer_id.toLowerCase().includes(query) ||
+                            r.reason.toLowerCase().includes(query)
+                        );
+
+                        if (filtered.length === 0) {
+                            searchResults.innerHTML = '<div class="text-sm text-gray-500 p-2">No reversals found matching search</div>';
+                            return;
+                        }
+
+                        searchResults.innerHTML = filtered.map(r => `
+                            <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm hover:bg-gray-100">
+                                <div class="font-semibold text-gray-800">${r.original_payment_id.substring(0, 8)}...</div>
+                                <div class="text-xs text-gray-600">Amount: $${parseFloat(r.original_amount).toFixed(2)}</div>
+                                <div class="text-xs text-gray-600">Reason: ${escapeHtml(r.reason)}</div>
+                            </div>
+                        `).join('');
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading reversals:', err);
+                historyBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        // ===== CIRCUIT BREAKER STATUS =====
+        async function loadCircuitBreakerStatus() {
+            const content = document.getElementById('circuit-breaker-content');
+            const badge = document.getElementById('circuit-status-badge');
+
+            if (!content) return;
+
+            try {
+                const { data: circuitStatus, error } = await db
+                    .from('payment_circuit_breaker')
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    content.innerHTML = `<div class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</div>`;
+                    return;
+                }
+
+                if (!circuitStatus || circuitStatus.length === 0) {
+                    content.innerHTML = `<div class="p-4 text-center text-gray-500">Circuit breaker not initialized</div>`;
+                    return;
+                }
+
+                const status = circuitStatus[0];
+                const statusText = status.status.charAt(0).toUpperCase() + status.status.slice(1);
+                const statusIcon = status.status === 'closed' ? '🟢' : status.status === 'open' ? '🔴' : '🟡';
+                const badgeColor = status.status === 'closed' ? 'bg-green-100 text-green-700' : status.status === 'open' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+
+                badge.className = `text-xs px-3 py-1 rounded-full font-semibold ${badgeColor}`;
+                badge.textContent = `${statusIcon} ${statusText}`;
+
+                const openedDate = status.opened_at ? new Date(status.opened_at).toLocaleString() : 'Never';
+
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="text-xs font-bold text-gray-600 uppercase mb-2">Current Status</div>
+                                <div class="text-2xl font-bold ${status.status === 'closed' ? 'text-green-600' : status.status === 'open' ? 'text-red-600' : 'text-yellow-600'}">${statusIcon} ${statusText}</div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="text-xs font-bold text-blue-600 uppercase mb-2">Consecutive Failures</div>
+                                <div class="text-2xl font-bold text-blue-800">${status.consecutive_failures} / ${status.failure_threshold}</div>
+                            </div>
+                        </div>
+
+                        ${status.reason ? `
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="text-xs font-bold text-amber-600 uppercase mb-2">Last Issue</div>
+                                <div class="text-sm text-gray-800">${escapeHtml(status.reason)}</div>
+                                <div class="text-xs text-gray-500 mt-2">Opened: ${openedDate}</div>
+                            </div>
+                        ` : ''}
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="text-xs font-bold text-blue-600 mb-2">ℹ️ What is this?</div>
+                            <div class="text-xs text-gray-700 space-y-1">
+                                <p><span class="font-bold">Closed:</span> Normal operation, all payment processing working</p>
+                                <p><span class="font-bold">Open:</span> Fail-safe activated, payment processing temporarily disabled</p>
+                                <p><span class="font-bold">Half-Open:</span> Recovery mode, system attempting to process limited transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Error loading circuit breaker:', err);
+                content.innerHTML = `<div class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        // ===== BALANCE HEALTH REPORT =====
+        async function loadBalanceHealthReport() {
+            const driftBody = document.getElementById('balance-drift-body');
+            const driftCount = document.getElementById('drift-count');
+            const duplicateCount = document.getElementById('duplicate-count');
+            const auditCount = document.getElementById('audit-count');
+            const issueCount = document.getElementById('balance-issue-count');
+
+            if (!driftBody) return;
+
+            try {
+                // Fetch balance drift report
+                const { data: driftReport, error: driftError } = await db
+                    .rpc('get_balance_drift_report');
+
+                // Fetch duplicate payments
+                const { data: duplicates, error: duplicateError } = await db
+                    .rpc('detect_duplicate_payments');
+
+                // Count audit logs
+                const { count: auditLogCount, error: auditError } = await db
+                    .from('balance_audit_log')
+                    .select('id', { count: 'exact' });
+
+                if (driftError || duplicateError || auditError) {
+                    driftBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading report</td></tr>`;
+                    return;
+                }
+
+                const totalIssues = (driftReport?.length || 0) + (duplicates?.length || 0);
+                issueCount.textContent = totalIssues;
+                driftCount.textContent = driftReport?.length || 0;
+                duplicateCount.textContent = duplicates?.length || 0;
+                auditCount.textContent = auditLogCount || 0;
+
+                if (!driftReport || driftReport.length === 0) {
+                    driftBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-green-600 font-semibold">✓ All balances are healthy - no drift detected</td></tr>`;
+                } else {
+                    driftBody.innerHTML = driftReport.map(drift => {
+                        const driftAmount = parseFloat(drift.drift || 0).toFixed(2);
+                        const driftPercent = parseFloat(drift.drift_percentage || 0).toFixed(2);
+                        return `
+                            <tr class="hover:bg-red-50">
+                                <td class="p-3 text-sm font-semibold text-gray-800">${escapeHtml(drift.buyer_name)}</td>
+                                <td class="p-3 text-sm text-gray-700">$${parseFloat(drift.accumulated_balance || 0).toFixed(2)}</td>
+                                <td class="p-3 text-sm text-gray-700">$${parseFloat(drift.expected_balance || 0).toFixed(2)}</td>
+                                <td class="p-3 text-sm font-bold text-red-600">$${driftAmount}</td>
+                                <td class="p-3 text-sm font-bold text-red-600">${driftPercent}%</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error('Error loading balance report:', err);
+                driftBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
     </script>
 
 </body>
