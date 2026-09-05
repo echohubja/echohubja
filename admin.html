@@ -2341,6 +2341,7 @@
 
         // ===== COMMISSION MONITORING DASHBOARD =====
         async function loadMonitoringDashboard() {
+            console.log('[DEBUG] loadMonitoringDashboard() called');
             try {
                 // Fetch queue statistics
                 const { data: queueData, error: queueError } = await db
@@ -2454,6 +2455,7 @@
                 // Get selected lookback period in hours (24, 168, 720, 999999)
                 const hours = parseInt(document.getElementById('earners-lookback-period').value) || 24;
                 const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+                console.log('[DEBUG] loadCommissionEarners - hours:', hours, 'cutoffDate:', cutoffDate);
 
                 // Fetch all buyer_payables with buyer details
                 const { data: payables, error: payableError } = await db
@@ -2461,6 +2463,8 @@
                     .select('id, buyer_id, amount_owed, earning_type, status, created_at')
                     .gt('created_at', cutoffDate)
                     .order('created_at', { ascending: false });
+
+                console.log('[DEBUG] Query result - payables:', payables, 'error:', payableError);
 
                 if (payableError) throw payableError;
 
