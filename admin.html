@@ -4111,7 +4111,7 @@
 
                 // Update metrics
                 document.getElementById('fraud-alert-count').textContent = (alerts?.length || 0);
-                document.getElementById('fraud-suspended-count').textContent = (pairs?.filter(p => p.is_suspended)?.length || 0);
+                document.getElementById('fraud-suspended-count').textContent = (pairs?.length || 0);
                 document.getElementById('fraud-collusion-count').textContent = (pairs?.filter(p => p.collusion_count > 2)?.length || 0);
                 document.getElementById('fraud-resolved-count').textContent = (alerts?.filter(a => a.status === 'acknowledged')?.length || 0);
 
@@ -4140,7 +4140,7 @@
 
                 // Render suspended pairs
                 const pairsBody = document.getElementById('fraud-pairs-body');
-                const suspendedPairs = pairs?.filter(p => p.is_suspended) || [];
+                const suspendedPairs = pairs || [];
                 if (suspendedPairs.length === 0) {
                     pairsBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No suspended pairs at this time</td></tr>`;
                 } else {
@@ -4150,7 +4150,7 @@
                             <td class="p-3 text-sm text-gray-800">${escapeHtml(pair.buyer_name || '-')}</td>
                             <td class="p-3 text-center"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">${pair.collusion_count || 0}</span></td>
                             <td class="p-3 text-xs text-gray-600">${new Date(pair.suspension_date).toLocaleDateString()}</td>
-                            <td class="p-3 text-xs text-gray-700">${escapeHtml(pair.suspension_reason || 'Collusion detected')}</td>
+                            <td class="p-3 text-xs text-gray-700">${escapeHtml(pair.flag_reason || 'Collusion detected')}</td>
                             <td class="p-3 text-center">
                                 <button onclick="unsuspendFraudPair('${escapeHtml(pair.vendor_id)}', '${escapeHtml(pair.buyer_id)}')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-1 px-2 rounded transition">Unsuspend</button>
                             </td>
@@ -4196,7 +4196,9 @@
                 return;
             }
             try {
-                const { data, error } = await db.rpc('admin_get_pair_payment_history', { p_vendor_id: pairId.split('-')[0], p_buyer_id: pairId.split('-')[1] });
+                const vendorIdParam = pairId.split('-')[0];
+                const buyerIdParam = pairId.split('-')[1];
+                const { data, error } = await db.rpc('admin_get_pair_payment_history', { vendor_id_param: vendorIdParam, buyer_id_param: buyerIdParam, limit_val: 50, offset_val: 0 });
                 if (error) throw error;
 
                 const resultsDiv = document.getElementById('fraud-investigation-results');
