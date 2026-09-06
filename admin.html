@@ -790,11 +790,13 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor Details</th>
-                            <th class="p-2.5">Commission Amount</th>
+                            <th class="p-2.5">Vendor ID</th>
+                            <th class="p-2.5">Name</th>
+                            <th class="p-2.5">Email</th>
+                            <th class="p-2.5">Amount</th>
                             <th class="p-2.5">Days Flagged</th>
-                            <th class="p-2.5">Flag Reason</th>
-                            <th class="p-2.5">Flagged Since</th>
+                            <th class="p-2.5">Severity</th>
+                            <th class="p-2.5">Reason</th>
                             <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -817,11 +819,13 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-red-50 text-red-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Buyer Details</th>
-                            <th class="p-2.5">Commission Amount</th>
+                            <th class="p-2.5">Buyer ID</th>
+                            <th class="p-2.5">Name</th>
+                            <th class="p-2.5">Email</th>
+                            <th class="p-2.5">Amount</th>
                             <th class="p-2.5">Hours Flagged</th>
-                            <th class="p-2.5">Flag Reason</th>
-                            <th class="p-2.5">Flagged Since</th>
+                            <th class="p-2.5">Severity</th>
+                            <th class="p-2.5">Reason</th>
                             <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -1644,6 +1648,15 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy', 'error');
+            });
         }
 
         function showProductPreview(event, imgUrl, title) {
@@ -3933,18 +3946,37 @@
                     vendorBody.innerHTML = flaggedVendors.map(flag => {
                         const vendor = vendorMap[flag.vendor_id];
                         const daysFlagged = Math.floor((new Date() - new Date(flag.payout_requested_date)) / (1000 * 60 * 60 * 24));
-                        const timeRemaining = Math.max(0, 5 - daysFlagged);
+
+                        // Determine severity
+                        let severity = 'warning';
+                        let severityBg = 'bg-yellow-100 text-yellow-700';
+                        if (daysFlagged >= 4) {
+                            severity = 'critical';
+                            severityBg = 'bg-red-100 text-red-700';
+                        } else if (daysFlagged >= 3) {
+                            severity = 'high';
+                            severityBg = 'bg-orange-100 text-orange-700';
+                        }
+
+                        const vendorId = flag.vendor_id || 'N/A';
+                        const businessName = vendor?.business_name || 'Unknown';
+                        const email = vendor?.email || 'No email';
 
                         return `
                             <tr class="hover:bg-orange-50">
+                                <td class="p-3 text-xs font-mono">
+                                    <span class="cursor-pointer hover:underline" title="Click to copy" onclick="copyToClipboard('${vendorId}')">${escapeHtml(vendorId.substring(0, 8))}...</span>
+                                </td>
                                 <td class="p-3">
-                                    <div class="font-semibold text-gray-800">${escapeHtml(vendor?.business_name || 'Unknown')}</div>
-                                    <div class="text-xs text-gray-500">${escapeHtml(vendor?.email || 'No email')}</div>
+                                    <span class="cursor-pointer hover:underline text-gray-800 font-semibold" title="Click to copy" onclick="copyToClipboard('${escapeHtml(businessName)}')">${escapeHtml(businessName)}</span>
+                                </td>
+                                <td class="p-3">
+                                    <span class="cursor-pointer hover:underline text-gray-600 text-sm" title="Click to copy" onclick="copyToClipboard('${escapeHtml(email)}')">${escapeHtml(email)}</span>
                                 </td>
                                 <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
                                 <td class="p-3"><span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold">${daysFlagged} days</span></td>
-                                <td class="p-3 text-sm">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
-                                <td class="p-3 text-xs text-gray-600">${new Date(flag.payout_requested_date).toLocaleDateString()}</td>
+                                <td class="p-3"><span class="${severityBg} px-2 py-1 rounded text-xs font-semibold">${severity.toUpperCase()}</span></td>
+                                <td class="p-3 text-sm text-gray-600">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex gap-1 justify-center flex-wrap">
                                         <button onclick="unflagAccount('${flag.id}', 'vendor')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
@@ -3972,18 +4004,37 @@
                     buyerBody.innerHTML = flaggedBuyers.map(flag => {
                         const buyer = buyerMap[flag.buyer_id];
                         const hoursFlagged = Math.floor((new Date() - new Date(flag.vendor_receipt_uploaded_date)) / (1000 * 60 * 60));
-                        const timeRemaining = Math.max(0, 8 - hoursFlagged);
+
+                        // Determine severity for buyers (T+8h timeout)
+                        let severity = 'warning';
+                        let severityBg = 'bg-yellow-100 text-yellow-700';
+                        if (hoursFlagged >= 7) {
+                            severity = 'critical';
+                            severityBg = 'bg-red-100 text-red-700';
+                        } else if (hoursFlagged >= 5) {
+                            severity = 'high';
+                            severityBg = 'bg-orange-100 text-orange-700';
+                        }
+
+                        const buyerId = flag.buyer_id || 'N/A';
+                        const fullName = buyer?.full_name || 'Unknown';
+                        const email = buyer?.email || 'No email';
 
                         return `
                             <tr class="hover:bg-red-50">
+                                <td class="p-3 text-xs font-mono">
+                                    <span class="cursor-pointer hover:underline" title="Click to copy" onclick="copyToClipboard('${buyerId}')">${escapeHtml(buyerId.substring(0, 8))}...</span>
+                                </td>
                                 <td class="p-3">
-                                    <div class="font-semibold text-gray-800">${escapeHtml(buyer?.full_name || 'Unknown')}</div>
-                                    <div class="text-xs text-gray-500">${escapeHtml(buyer?.email || 'No email')}</div>
+                                    <span class="cursor-pointer hover:underline text-gray-800 font-semibold" title="Click to copy" onclick="copyToClipboard('${escapeHtml(fullName)}')">${escapeHtml(fullName)}</span>
+                                </td>
+                                <td class="p-3">
+                                    <span class="cursor-pointer hover:underline text-gray-600 text-sm" title="Click to copy" onclick="copyToClipboard('${escapeHtml(email)}')">${escapeHtml(email)}</span>
                                 </td>
                                 <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
-                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h (${timeRemaining}h left)</span></td>
-                                <td class="p-3 text-sm">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
-                                <td class="p-3 text-xs text-gray-600">${new Date(flag.vendor_receipt_uploaded_date).toLocaleDateString()}</td>
+                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h</span></td>
+                                <td class="p-3"><span class="${severityBg} px-2 py-1 rounded text-xs font-semibold">${severity.toUpperCase()}</span></td>
+                                <td class="p-3 text-sm text-gray-600">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex gap-1 justify-center flex-wrap">
                                         <button onclick="unflagAccount('${flag.id}', 'buyer')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
