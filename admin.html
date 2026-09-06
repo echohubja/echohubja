@@ -29,10 +29,133 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
         }
+        /* Sidebar Navigation Styles */
+        .admin-container {
+            display: flex;
+            gap: 0;
+            margin-top: 0;
+        }
+        .sidebar-nav {
+            width: 260px;
+            background: #ffffff;
+            border-right: 2px solid #e1e8ed;
+            padding: 20px 0;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 120px;
+            z-index: 100;
+            scroll-behavior: smooth;
+            /* Hide scrollbar but keep scrolling functional */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sidebar-nav::-webkit-scrollbar {
+            display: none;
+        }
+        /* Fade gradient at bottom to indicate scrollable content */
+        .sidebar-nav::after {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 260px;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 70%, rgba(255, 255, 255, 1) 100%);
+            pointer-events: none;
+            z-index: 101;
+        }
+        /* Subtle scroll indicator line */
+        .sidebar-nav::before {
+            content: '';
+            position: fixed;
+            right: -2px;
+            top: 120px;
+            width: 2px;
+            height: calc(100vh - 140px);
+            background: #e1e8ed;
+            pointer-events: none;
+            z-index: 99;
+        }
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            margin: 0;
+            border: none;
+            background: transparent;
+            color: #5a6c7d;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+        }
+        .tab-btn:hover {
+            background-color: #f5f7fa;
+            color: #1e5aa8;
+        }
         .tab-btn.active {
-            border-bottom: 3px solid #1e5aa8;
+            background-color: #e3f2fd;
             color: #1e5aa8;
             font-weight: 700;
+            border-left-color: #1e5aa8;
+        }
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 0 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar-nav {
+                width: 200px;
+            }
+            .sidebar-nav::after {
+                width: 200px;
+            }
+            .sidebar-nav::before {
+                width: 2px;
+            }
+            .main-content {
+                margin-left: 200px;
+                padding: 0 10px;
+            }
+            .tab-btn {
+                padding: 10px 12px;
+                font-size: 13px;
+                gap: 8px;
+            }
+        }
+        @media (max-width: 640px) {
+            .sidebar-nav {
+                width: 160px;
+                top: 100px;
+            }
+            .sidebar-nav::after {
+                width: 160px;
+            }
+            .sidebar-nav::before {
+                width: 2px;
+            }
+            .main-content {
+                margin-left: 160px;
+                padding: 0 8px;
+            }
+            .tab-btn {
+                padding: 8px 10px;
+                font-size: 12px;
+                gap: 6px;
+            }
+            header {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            header h1 { font-size: 1.5em; }
+            header p { font-size: 0.85em; }
         }
         /* Messaging Hub Styles */
         .messaging-conversation-item {
@@ -87,20 +210,25 @@
         <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
-    <div class="max-w-6xl mx-auto mb-6 flex gap-2 border-b border-gray-300 px-2 overflow-x-auto">
-        <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🔍 Monitor</button>
-        <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">👥 Lookup</button>
-        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Requests</button>
-        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Verification</button>
-        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Payouts</button>
-        <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Payments</button>
-        <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🔔 Alerts</button>
-        <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">💳 Reversals</button>
-        <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">⚡ Circuit</button>
-        <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">📊 Health</button>
-        <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">💬 Messaging</button>
-        <button onclick="switchTab('flagged')" id="tab-btn-flagged" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🚩 Flagged</button>
-    </div>
+    <div class="admin-container">
+        <!-- SIDEBAR NAVIGATION -->
+        <nav class="sidebar-nav">
+            <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn">🔍 Monitor</button>
+            <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn">👥 Lookup</button>
+            <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active">Requests</button>
+            <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn">Verification</button>
+            <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn">Payouts</button>
+            <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn">Payments</button>
+            <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn">🔔 Alerts</button>
+            <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn">💳 Reversals</button>
+            <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn">⚡ Circuit</button>
+            <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn">📊 Health</button>
+            <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn">💬 Messaging</button>
+            <button onclick="switchTab('flagged')" id="tab-btn-flagged" class="tab-btn">🚩 Flagged</button>
+        </nav>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-content">
 
     <!-- SECTION: BUYERS ACCESS REQUESTS -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
@@ -951,6 +1079,9 @@
             </div>
         </div>
     </div>
+
+        </div><!-- End main-content -->
+    </div><!-- End admin-container -->
 
     <script>
         let db;
