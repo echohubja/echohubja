@@ -29,133 +29,10 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
         }
-        /* Sidebar Navigation Styles */
-        .admin-container {
-            display: flex;
-            gap: 0;
-            margin-top: 0;
-        }
-        .sidebar-nav {
-            width: 260px;
-            background: #ffffff;
-            border-right: 2px solid #e1e8ed;
-            padding: 20px 0;
-            height: calc(100vh - 140px);
-            overflow-y: auto;
-            position: fixed;
-            left: 0;
-            top: 120px;
-            z-index: 100;
-            scroll-behavior: smooth;
-            /* Hide scrollbar but keep scrolling functional */
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .sidebar-nav::-webkit-scrollbar {
-            display: none;
-        }
-        /* Fade gradient at bottom to indicate scrollable content */
-        .sidebar-nav::after {
-            content: '';
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 260px;
-            height: 40px;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 70%, rgba(255, 255, 255, 1) 100%);
-            pointer-events: none;
-            z-index: 101;
-        }
-        /* Subtle scroll indicator line */
-        .sidebar-nav::before {
-            content: '';
-            position: fixed;
-            right: -2px;
-            top: 120px;
-            width: 2px;
-            height: calc(100vh - 140px);
-            background: #e1e8ed;
-            pointer-events: none;
-            z-index: 99;
-        }
-        .tab-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 12px 16px;
-            margin: 0;
-            border: none;
-            background: transparent;
-            color: #5a6c7d;
-            font-weight: 500;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-            border-left: 3px solid transparent;
-        }
-        .tab-btn:hover {
-            background-color: #f5f7fa;
-            color: #1e5aa8;
-        }
         .tab-btn.active {
-            background-color: #e3f2fd;
+            border-bottom: 3px solid #1e5aa8;
             color: #1e5aa8;
             font-weight: 700;
-            border-left-color: #1e5aa8;
-        }
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 0 20px;
-        }
-        @media (max-width: 768px) {
-            .sidebar-nav {
-                width: 200px;
-            }
-            .sidebar-nav::after {
-                width: 200px;
-            }
-            .sidebar-nav::before {
-                width: 2px;
-            }
-            .main-content {
-                margin-left: 200px;
-                padding: 0 10px;
-            }
-            .tab-btn {
-                padding: 10px 12px;
-                font-size: 13px;
-                gap: 8px;
-            }
-        }
-        @media (max-width: 640px) {
-            .sidebar-nav {
-                width: 160px;
-                top: 100px;
-            }
-            .sidebar-nav::after {
-                width: 160px;
-            }
-            .sidebar-nav::before {
-                width: 2px;
-            }
-            .main-content {
-                margin-left: 160px;
-                padding: 0 8px;
-            }
-            .tab-btn {
-                padding: 8px 10px;
-                font-size: 12px;
-                gap: 6px;
-            }
-            header {
-                padding: 15px;
-                margin-bottom: 10px;
-            }
-            header h1 { font-size: 1.5em; }
-            header p { font-size: 0.85em; }
         }
         /* Messaging Hub Styles */
         .messaging-conversation-item {
@@ -210,25 +87,20 @@
         <p>Unified Marketplace & Referral Control Center</p>
     </header>
 
-    <div class="admin-container">
-        <!-- SIDEBAR NAVIGATION -->
-        <nav class="sidebar-nav">
-            <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn">🔍 Monitor</button>
-            <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn">👥 Lookup</button>
-            <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active">Requests</button>
-            <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn">Verification</button>
-            <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn">Payouts</button>
-            <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn">Payments</button>
-            <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn">🔔 Alerts</button>
-            <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn">💳 Reversals</button>
-            <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn">⚡ Circuit</button>
-            <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn">📊 Health</button>
-            <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn">💬 Messaging</button>
-            <button onclick="switchTab('flagged')" id="tab-btn-flagged" class="tab-btn">🚩 Flagged</button>
-        </nav>
-
-        <!-- MAIN CONTENT AREA -->
-        <div class="main-content">
+    <div class="max-w-6xl mx-auto mb-6 flex gap-2 border-b border-gray-300 px-2 overflow-x-auto">
+        <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🔍 Monitor</button>
+        <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">👥 Lookup</button>
+        <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Requests</button>
+        <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Verification</button>
+        <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Payouts</button>
+        <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">Payments</button>
+        <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🔔 Alerts</button>
+        <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">💳 Reversals</button>
+        <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">⚡ Circuit</button>
+        <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">📊 Health</button>
+        <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">💬 Messaging</button>
+        <button onclick="switchTab('fraud')" id="tab-btn-fraud" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🔒 Fraud</button>
+    </div>
 
     <!-- SECTION: BUYERS ACCESS REQUESTS -->
     <div id="section-buyers" class="max-w-6xl mx-auto hub-card p-4 md:p-6">
@@ -769,64 +641,92 @@
         </div>
     </div>
 
-    <!-- SECTION: FLAGGED ACCOUNTS -->
-    <div id="section-flagged" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+    <!-- SECTION: FRAUD MANAGEMENT DASHBOARD -->
+    <div id="section-fraud" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🚩 Flagged Accounts (Missing Receipts)</h2>
-            <span id="flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0 flagged</span>
-        </div>
-
-        <!-- VENDORS MISSING RECEIPTS (T+48h) -->
-        <div class="mb-8 pb-6 border-b">
-            <div class="flex items-center gap-2 mb-4">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">🏢 Vendors Missing Receipts (T+48h Timeout)</h3>
-                <span id="vendor-flagged-count" class="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">0</span>
-            </div>
-            <p class="text-xs text-gray-500 mb-4">Vendors who have not uploaded payment receipts within 48 hours of payment request.</p>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor Details</th>
-                            <th class="p-2.5">Commission Amount</th>
-                            <th class="p-2.5">Days Flagged</th>
-                            <th class="p-2.5">Flag Reason</th>
-                            <th class="p-2.5">Flagged Since</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vendor-flagged-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor flagged accounts...</td></tr>
-                    </tbody>
-                </table>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🔒 Fraud Management Dashboard</h2>
+            <div class="flex gap-2">
+                <input type="text" id="fraud-search" placeholder="Search pair ID..." class="text-xs border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
             </div>
         </div>
 
-        <!-- BUYERS MISSING RECEIPTS (T+8h) -->
-        <div>
-            <div class="flex items-center gap-2 mb-4">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">👤 Buyers Missing Receipts (T+8h Timeout)</h3>
-                <span id="buyer-flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0</span>
+        <!-- Fraud Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p class="text-xs text-red-600 font-semibold">Active Fraud Alerts</p>
+                <p id="fraud-alert-count" class="text-2xl font-bold text-red-700 mt-2">0</p>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Buyers who have not uploaded payment confirmation receipts within 8 hours of vendor upload.</p>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                <p class="text-xs text-orange-600 font-semibold">Suspended Pairs</p>
+                <p id="fraud-suspended-count" class="text-2xl font-bold text-orange-700 mt-2">0</p>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                <p class="text-xs text-purple-600 font-semibold">High Collusion Risk</p>
+                <p id="fraud-collusion-count" class="text-2xl font-bold text-purple-700 mt-2">0</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <p class="text-xs text-blue-600 font-semibold">Resolved Cases</p>
+                <p id="fraud-resolved-count" class="text-2xl font-bold text-blue-700 mt-2">0</p>
+            </div>
+        </div>
 
+        <!-- Real-time Fraud Alerts Table -->
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">⚠️ Real-Time Fraud Alerts</h3>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="bg-red-50 text-red-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Buyer Details</th>
-                            <th class="p-2.5">Commission Amount</th>
-                            <th class="p-2.5">Hours Flagged</th>
-                            <th class="p-2.5">Flag Reason</th>
-                            <th class="p-2.5">Flagged Since</th>
-                            <th class="p-2.5 text-center">Actions</th>
+                            <th class="p-2.5">Alert ID</th>
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Buyer</th>
+                            <th class="p-2.5">Alert Type</th>
+                            <th class="p-2.5">Risk Score</th>
+                            <th class="p-2.5">Created</th>
+                            <th class="p-2.5 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="buyer-flagged-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading buyer flagged accounts...</td></tr>
+                    <tbody id="fraud-alerts-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading fraud alerts...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Suspended Vendor-Buyer Pairs -->
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">🚫 Suspended Vendor-Buyer Pairs</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Buyer</th>
+                            <th class="p-2.5">Collusion Count</th>
+                            <th class="p-2.5">Suspension Date</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fraud-pairs-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading suspended pairs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Collusion Investigation Tools -->
+        <div>
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">🔍 Collusion Investigation</h3>
+            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input type="text" id="investigate-pair-id" placeholder="Vendor-Buyer Pair ID..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                    <button onclick="searchFraudPairHistory()" class="bg-[#1e5aa8] hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded transition">Search Payment History</button>
+                    <button onclick="loadFraudDashboard()" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 rounded transition">Refresh Dashboard</button>
+                </div>
+                <div id="fraud-investigation-results" class="bg-white border border-gray-300 rounded p-3 min-h-[100px] text-xs text-gray-600 hidden">
+                    Investigation results will appear here...
+                </div>
             </div>
         </div>
     </div>
@@ -1080,9 +980,6 @@
         </div>
     </div>
 
-        </div><!-- End main-content -->
-    </div><!-- End admin-container -->
-
     <script>
         let db;
         let activeThresholdVendorId = null;
@@ -1096,8 +993,8 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
-                const h = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzkzMzU0NSwiZXhwIjoyMTAzNTA5NTQ1fQ.84Q_UsQqd4o4maYTkCNBY_v3s5dm-SjwT00BHzphsoA';
-                db = window.supabase.createClient(SUPABASE_URL, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzkzMzU0NSwiZXhwIjoyMTAzNTA5NTQ1fQ.84Q_UsQqd4o4maYTkCNBY_v3s5dm-SjwT00BHzphsoA);
+                const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 loadBuyersPortal();
                 loadInquiriesPortal();
                 loadCommissionsPortal();
@@ -1122,7 +1019,7 @@
             document.getElementById('section-circuit').classList.add('hidden');
             document.getElementById('section-balance').classList.add('hidden');
             document.getElementById('section-messaging').classList.add('hidden');
-            document.getElementById('section-flagged').classList.add('hidden');
+            document.getElementById('section-fraud').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -1137,7 +1034,7 @@
             else if (tabName === 'commissions') loadCommissionsPortal();
             else if (tabName === 'payments') loadPaymentProofsPortal();
             else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
-            else if (tabName === 'flagged') handleFlaggedTabSwitch();
+            else if (tabName === 'fraud') setTimeout(() => loadFraudDashboard(), 300);
         }
 
         // BUYERS PORTAL
@@ -3794,213 +3691,130 @@
             }
         }
 
-        // ===== FLAGGED ACCOUNTS DASHBOARD =====
-        async function loadFlaggedAccounts() {
-            const vendorBody = document.getElementById('vendor-flagged-body');
-            const buyerBody = document.getElementById('buyer-flagged-body');
-            const vendorCount = document.getElementById('vendor-flagged-count');
-            const buyerCount = document.getElementById('buyer-flagged-count');
-            const totalCount = document.getElementById('flagged-count');
-
-            if (!vendorBody || !buyerBody) return;
-
+        // FRAUD MANAGEMENT DASHBOARD
+        async function loadFraudDashboard() {
             try {
-                // Query flagged vendors (T+48h timeout)
-                const { data: flaggedVendors, error: vendorError } = await db
-                    .from('buyer_payables')
-                    .select('id, vendor_id, amount_owed, vendor_flagged, vendor_flag_reason, payout_requested_date, created_at')
-                    .eq('vendor_flagged', true)
-                    .is('unflagged_date', null)
-                    .order('payout_requested_date', { ascending: false });
+                console.log('Loading fraud dashboard...');
 
-                if (vendorError) throw vendorError;
+                // Fetch fraud alerts
+                const { data: alerts, error: alertsError } = await db.rpc('admin_get_alerts_paginated', { limit_val: 100, offset_val: 0 });
+                if (alertsError) throw alertsError;
 
-                // Query flagged buyers (T+8h timeout)
-                const { data: flaggedBuyers, error: buyerError } = await db
-                    .from('buyer_payables')
-                    .select('id, buyer_id, amount_owed, buyer_flagged, buyer_flag_reason, vendor_receipt_uploaded_date, created_at')
-                    .eq('buyer_flagged', true)
-                    .is('unflagged_date', null)
-                    .order('vendor_receipt_uploaded_date', { ascending: false });
+                // Fetch suspended pairs
+                const { data: pairs, error: pairsError } = await db.rpc('admin_get_watchlist_pairs', {});
+                if (pairsError) throw pairsError;
 
-                if (buyerError) throw buyerError;
+                // Update metrics
+                document.getElementById('fraud-alert-count').textContent = (alerts?.length || 0);
+                document.getElementById('fraud-suspended-count').textContent = (pairs?.filter(p => p.is_suspended)?.length || 0);
+                document.getElementById('fraud-collusion-count').textContent = (pairs?.filter(p => p.collusion_count > 2)?.length || 0);
+                document.getElementById('fraud-resolved-count').textContent = (alerts?.filter(a => a.status === 'acknowledged')?.length || 0);
 
-                // Fetch vendor details
-                if (flaggedVendors.length > 0) {
-                    const vendorIds = [...new Set(flaggedVendors.map(v => v.vendor_id))];
-                    const { data: vendors } = await db
-                        .from('vendors')
-                        .select('id, business_name, email')
-                        .in('id', vendorIds);
-
-                    const vendorMap = {};
-                    vendors.forEach(v => vendorMap[v.id] = v);
-
-                    vendorBody.innerHTML = flaggedVendors.map(flag => {
-                        const vendor = vendorMap[flag.vendor_id];
-                        const daysFlagged = Math.floor((new Date() - new Date(flag.payout_requested_date)) / (1000 * 60 * 60 * 24));
-                        const timeRemaining = Math.max(0, 5 - daysFlagged);
-
-                        return `
-                            <tr class="hover:bg-orange-50">
-                                <td class="p-3">
-                                    <div class="font-semibold text-gray-800">${escapeHtml(vendor?.business_name || 'Unknown')}</div>
-                                    <div class="text-xs text-gray-500">${escapeHtml(vendor?.email || 'No email')}</div>
-                                </td>
-                                <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
-                                <td class="p-3"><span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold">${daysFlagged} days</span></td>
-                                <td class="p-3 text-sm">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
-                                <td class="p-3 text-xs text-gray-600">${new Date(flag.payout_requested_date).toLocaleDateString()}</td>
-                                <td class="p-3 text-center">
-                                    <div class="flex gap-1 justify-center flex-wrap">
-                                        <button onclick="unflagAccount('${flag.id}', 'vendor')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
-                                        <button onclick="approveVendorReceipt('${flag.id}', '${flag.vendor_id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📋 Approve</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
+                // Render fraud alerts
+                const alertsBody = document.getElementById('fraud-alerts-body');
+                if (!alerts || alerts.length === 0) {
+                    alertsBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No fraud alerts at this time</td></tr>`;
                 } else {
-                    vendorBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No flagged vendors</td></tr>';
-                }
-
-                // Fetch buyer details
-                if (flaggedBuyers.length > 0) {
-                    const buyerIds = [...new Set(flaggedBuyers.map(b => b.buyer_id))];
-                    const { data: buyers } = await db
-                        .from('buyers')
-                        .select('id, full_name, email')
-                        .in('id', buyerIds);
-
-                    const buyerMap = {};
-                    buyers.forEach(b => buyerMap[b.id] = b);
-
-                    buyerBody.innerHTML = flaggedBuyers.map(flag => {
-                        const buyer = buyerMap[flag.buyer_id];
-                        const hoursFlagged = Math.floor((new Date() - new Date(flag.vendor_receipt_uploaded_date)) / (1000 * 60 * 60));
-                        const timeRemaining = Math.max(0, 8 - hoursFlagged);
-
+                    alertsBody.innerHTML = alerts.map(alert => {
+                        const riskScore = Math.round((alert.risk_score || 0) * 100);
                         return `
                             <tr class="hover:bg-red-50">
-                                <td class="p-3">
-                                    <div class="font-semibold text-gray-800">${escapeHtml(buyer?.full_name || 'Unknown')}</div>
-                                    <div class="text-xs text-gray-500">${escapeHtml(buyer?.email || 'No email')}</div>
-                                </td>
-                                <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
-                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h (${timeRemaining}h left)</span></td>
-                                <td class="p-3 text-sm">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
-                                <td class="p-3 text-xs text-gray-600">${new Date(flag.vendor_receipt_uploaded_date).toLocaleDateString()}</td>
+                                <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(alert.id || '-')}</td>
+                                <td class="p-3 text-sm text-gray-800">${escapeHtml(alert.vendor_name || '-')}</td>
+                                <td class="p-3 text-sm text-gray-800">${escapeHtml(alert.buyer_name || '-')}</td>
+                                <td class="p-3 text-xs font-semibold text-orange-700">${escapeHtml(alert.alert_type || 'Unknown')}</td>
+                                <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${riskScore > 80 ? 'bg-red-100 text-red-700' : riskScore > 50 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}">${riskScore}%</span></td>
+                                <td class="p-3 text-xs text-gray-600">${new Date(alert.created_at).toLocaleDateString()}</td>
                                 <td class="p-3 text-center">
-                                    <div class="flex gap-1 justify-center flex-wrap">
-                                        <button onclick="unflagAccount('${flag.id}', 'buyer')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
-                                        <button onclick="approveBuyerReceipt('${flag.id}', '${flag.buyer_id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📋 Approve</button>
-                                    </div>
+                                    ${alert.status !== 'acknowledged' ? `<button onclick="acknowledgeFraudAlert('${escapeHtml(alert.id)}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-2 rounded transition">Acknowledge</button>` : '<span class="text-xs text-green-600 font-semibold">✓ Acknowledged</span>'}
                                 </td>
                             </tr>
                         `;
                     }).join('');
-                } else {
-                    buyerBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No flagged buyers</td></tr>';
                 }
 
-                // Update counts
-                vendorCount.textContent = flaggedVendors.length;
-                buyerCount.textContent = flaggedBuyers.length;
-                totalCount.textContent = flaggedVendors.length + flaggedBuyers.length;
-
-            } catch (err) {
-                console.error('Error loading flagged accounts:', err);
-                vendorBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
-                buyerBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
-            }
-        }
-
-        // Unflag an account
-        async function unflagAccount(commissionId, type) {
-            if (!confirm(`Are you sure you want to unflag this ${type}?`)) return;
-
-            try {
-                const adminId = localStorage.getItem('adminId') || 'admin-system';
-                const updateData = {
-                    unflagged_date: new Date().toISOString(),
-                    unflagged_by: adminId,
-                    unflag_reason: `Admin manual unflag - ${type} receipt issue resolved`
-                };
-
-                if (type === 'vendor') {
-                    updateData.vendor_flagged = false;
+                // Render suspended pairs
+                const pairsBody = document.getElementById('fraud-pairs-body');
+                const suspendedPairs = pairs?.filter(p => p.is_suspended) || [];
+                if (suspendedPairs.length === 0) {
+                    pairsBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No suspended pairs at this time</td></tr>`;
                 } else {
-                    updateData.buyer_flagged = false;
+                    pairsBody.innerHTML = suspendedPairs.map(pair => `
+                        <tr class="hover:bg-orange-50">
+                            <td class="p-3 text-sm font-semibold text-gray-800">${escapeHtml(pair.vendor_name || '-')}</td>
+                            <td class="p-3 text-sm text-gray-800">${escapeHtml(pair.buyer_name || '-')}</td>
+                            <td class="p-3 text-center"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">${pair.collusion_count || 0}</span></td>
+                            <td class="p-3 text-xs text-gray-600">${new Date(pair.suspension_date).toLocaleDateString()}</td>
+                            <td class="p-3 text-xs text-gray-700">${escapeHtml(pair.suspension_reason || 'Collusion detected')}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="unsuspendFraudPair('${escapeHtml(pair.vendor_id)}', '${escapeHtml(pair.buyer_id)}')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-1 px-2 rounded transition">Unsuspend</button>
+                            </td>
+                        </tr>
+                    `).join('');
                 }
-
-                const { error } = await db
-                    .from('buyer_payables')
-                    .update(updateData)
-                    .eq('id', commissionId);
-
-                if (error) throw error;
-
-                showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} unflagged successfully`, 'success');
-                loadFlaggedAccounts();
-            } catch (err) {
-                showToast(`Error unflagging: ${err.message}`, 'error');
+            } catch (error) {
+                console.error('Error loading fraud dashboard:', error);
+                document.getElementById('fraud-alerts-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                document.getElementById('fraud-pairs-body').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
             }
         }
 
-        // Approve vendor receipt (admin override)
-        async function approveVendorReceipt(commissionId, vendorId) {
-            if (!confirm('Approve this vendor receipt? Status will be set to "paid".')) return;
-
+        async function acknowledgeFraudAlert(alertId) {
             try {
-                const adminId = localStorage.getItem('adminId') || 'admin-system';
-                const { error } = await db
-                    .from('buyer_payables')
-                    .update({
-                        vendor_flagged: false,
-                        unflagged_date: new Date().toISOString(),
-                        unflagged_by: adminId,
-                        unflag_reason: 'Admin approved - receipt verified'
-                    })
-                    .eq('id', commissionId);
-
+                const { error } = await db.from('alerts').update({ status: 'acknowledged' }).eq('id', alertId);
                 if (error) throw error;
-
-                showToast('Vendor receipt approved successfully', 'success');
-                loadFlaggedAccounts();
-            } catch (err) {
-                showToast(`Error approving receipt: ${err.message}`, 'error');
+                showToast('Alert acknowledged successfully', 'success');
+                loadFraudDashboard();
+            } catch (error) {
+                console.error('Error acknowledging alert:', error);
+                showToast('Failed to acknowledge alert: ' + error.message, 'error');
             }
         }
 
-        // Approve buyer receipt (admin override)
-        async function approveBuyerReceipt(commissionId, buyerId) {
-            if (!confirm('Approve this buyer receipt? Status will be set to "received".')) return;
-
+        async function unsuspendFraudPair(vendorId, buyerId) {
+            if (!confirm('Are you sure you want to unsuspend this vendor-buyer pair?')) return;
             try {
-                const adminId = localStorage.getItem('adminId') || 'admin-system';
-                const { error } = await db
-                    .from('buyer_payables')
-                    .update({
-                        status: 'received',
-                        buyer_flagged: false,
-                        unflagged_date: new Date().toISOString(),
-                        unflagged_by: adminId,
-                        unflag_reason: 'Admin approved - buyer receipt verified'
-                    })
-                    .eq('id', commissionId);
-
+                const { error } = await db.from('referral_risk_flags').update({ is_suspended: false }).eq('vendor_id', vendorId).eq('buyer_id', buyerId);
                 if (error) throw error;
-
-                showToast('Buyer receipt approved successfully', 'success');
-                loadFlaggedAccounts();
-            } catch (err) {
-                showToast(`Error approving receipt: ${err.message}`, 'error');
+                showToast('Pair unsuspended successfully', 'success');
+                loadFraudDashboard();
+            } catch (error) {
+                console.error('Error unsuspending pair:', error);
+                showToast('Failed to unsuspend pair: ' + error.message, 'error');
             }
         }
 
-        // Load flagged accounts when tab switches
-        function handleFlaggedTabSwitch() {
-            setTimeout(() => loadFlaggedAccounts(), 100);
+        async function searchFraudPairHistory() {
+            const pairId = document.getElementById('investigate-pair-id').value.trim();
+            if (!pairId) {
+                showToast('Please enter a pair ID', 'error');
+                return;
+            }
+            try {
+                const { data, error } = await db.rpc('admin_get_pair_payment_history', { p_vendor_id: pairId.split('-')[0], p_buyer_id: pairId.split('-')[1] });
+                if (error) throw error;
+
+                const resultsDiv = document.getElementById('fraud-investigation-results');
+                if (!data || data.length === 0) {
+                    resultsDiv.textContent = 'No payment history found for this pair.';
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="space-y-2">
+                            <p class="font-semibold text-gray-800">Payment History for ${escapeHtml(pairId)}:</p>
+                            ${data.map(payment => `
+                                <div class="border-l-2 border-blue-400 pl-2 py-1">
+                                    <p class="text-xs font-semibold">Payment: $${parseFloat(payment.amount || 0).toFixed(2)} on ${new Date(payment.payment_date).toLocaleDateString()}</p>
+                                    <p class="text-xs text-gray-600">Status: ${escapeHtml(payment.status)}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                resultsDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error searching payment history:', error);
+                showToast('Error: ' + error.message, 'error');
+            }
         }
     </script>
 
