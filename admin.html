@@ -3234,22 +3234,6 @@
             return html;
         }
 
-        function copyToClipboard(text) {
-            if (!text || text === '') {
-                return;
-            }
-            const button = event.target;
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = button.textContent;
-                button.textContent = '✓ Copied';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 1500);
-            }).catch(err => {
-                console.error('Copy failed:', err);
-            });
-        }
-
         // Delegated event handler for copy buttons
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('copy-btn')) {
