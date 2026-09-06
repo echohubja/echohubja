@@ -99,6 +99,7 @@
         <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">⚡ Circuit</button>
         <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">📊 Health</button>
         <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">💬 Messaging</button>
+        <button onclick="switchTab('flagged')" id="tab-btn-flagged" class="tab-btn pb-3 px-3 text-gray-600 font-semibold text-sm transition whitespace-nowrap">🚩 Flagged</button>
     </div>
 
     <!-- SECTION: BUYERS ACCESS REQUESTS -->
@@ -640,6 +641,68 @@
         </div>
     </div>
 
+    <!-- SECTION: FLAGGED ACCOUNTS -->
+    <div id="section-flagged" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🚩 Flagged Accounts (Missing Receipts)</h2>
+            <span id="flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0 flagged</span>
+        </div>
+
+        <!-- VENDORS MISSING RECEIPTS (T+48h) -->
+        <div class="mb-8 pb-6 border-b">
+            <div class="flex items-center gap-2 mb-4">
+                <h3 class="text-lg font-bold text-[#1e5aa8]">🏢 Vendors Missing Receipts (T+48h Timeout)</h3>
+                <span id="vendor-flagged-count" class="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">0</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">Vendors who have not uploaded payment receipts within 48 hours of payment request.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor Details</th>
+                            <th class="p-2.5">Commission Amount</th>
+                            <th class="p-2.5">Days Flagged</th>
+                            <th class="p-2.5">Flag Reason</th>
+                            <th class="p-2.5">Flagged Since</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-flagged-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor flagged accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BUYERS MISSING RECEIPTS (T+8h) -->
+        <div>
+            <div class="flex items-center gap-2 mb-4">
+                <h3 class="text-lg font-bold text-[#1e5aa8]">👤 Buyers Missing Receipts (T+8h Timeout)</h3>
+                <span id="buyer-flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">Buyers who have not uploaded payment confirmation receipts within 8 hours of vendor upload.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-red-50 text-red-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Buyer Details</th>
+                            <th class="p-2.5">Commission Amount</th>
+                            <th class="p-2.5">Hours Flagged</th>
+                            <th class="p-2.5">Flag Reason</th>
+                            <th class="p-2.5">Flagged Since</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyer-flagged-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading buyer flagged accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Product Image Tooltip Box -->
     <div id="product-hover-tooltip" class="fixed hidden z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 w-48 pointer-events-none transition-opacity duration-150">
         <img id="tooltip-img" src="" alt="Product Preview" class="w-full h-32 object-contain rounded mb-1.5 bg-gray-50">
@@ -928,6 +991,7 @@
             document.getElementById('section-circuit').classList.add('hidden');
             document.getElementById('section-balance').classList.add('hidden');
             document.getElementById('section-messaging').classList.add('hidden');
+            document.getElementById('section-flagged').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -942,6 +1006,7 @@
             else if (tabName === 'commissions') loadCommissionsPortal();
             else if (tabName === 'payments') loadPaymentProofsPortal();
             else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
+            else if (tabName === 'flagged') handleFlaggedTabSwitch();
         }
 
         // BUYERS PORTAL
@@ -1004,7 +1069,7 @@
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             if (!confirm(`Update access status for ${buyerEmail}?`)) return;
-            const { error } = await db.from('buyers').update({ ready_to_invite: newStatus }).eq('id', buyerId);
+            const { error } = await db.from('buyers').update({ approval_status: 'approved' }).eq('id', buyerId);
             if (error) { alert('Error: ' + error.message); return; }
             loadBuyersPortal();
         }
@@ -2454,7 +2519,7 @@
             try {
                 // Get selected lookback period in hours (24, 168, 720, 999999)
                 const hours = parseInt(document.getElementById('earners-lookback-period').value) || 24;
-                const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString().slice(0, 19);
+                const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
                 console.log('[DEBUG] loadCommissionEarners - hours:', hours, 'cutoffDate:', cutoffDate);
 
                 // Fetch all buyer_payables with buyer details
@@ -3596,6 +3661,215 @@
                 console.error('Error loading balance report:', err);
                 driftBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Unexpected error: ${escapeHtml(err.message)}</td></tr>`;
             }
+        }
+
+        // ===== FLAGGED ACCOUNTS DASHBOARD =====
+        async function loadFlaggedAccounts() {
+            const vendorBody = document.getElementById('vendor-flagged-body');
+            const buyerBody = document.getElementById('buyer-flagged-body');
+            const vendorCount = document.getElementById('vendor-flagged-count');
+            const buyerCount = document.getElementById('buyer-flagged-count');
+            const totalCount = document.getElementById('flagged-count');
+
+            if (!vendorBody || !buyerBody) return;
+
+            try {
+                // Query flagged vendors (T+48h timeout)
+                const { data: flaggedVendors, error: vendorError } = await db
+                    .from('buyer_payables')
+                    .select('id, vendor_id, amount_owed, vendor_flagged, vendor_flag_reason, payout_requested_date, created_at')
+                    .eq('vendor_flagged', true)
+                    .is('unflagged_date', null)
+                    .order('payout_requested_date', { ascending: false });
+
+                if (vendorError) throw vendorError;
+
+                // Query flagged buyers (T+8h timeout)
+                const { data: flaggedBuyers, error: buyerError } = await db
+                    .from('buyer_payables')
+                    .select('id, buyer_id, amount_owed, buyer_flagged, buyer_flag_reason, vendor_receipt_uploaded_date, created_at')
+                    .eq('buyer_flagged', true)
+                    .is('unflagged_date', null)
+                    .order('vendor_receipt_uploaded_date', { ascending: false });
+
+                if (buyerError) throw buyerError;
+
+                // Fetch vendor details
+                if (flaggedVendors.length > 0) {
+                    const vendorIds = [...new Set(flaggedVendors.map(v => v.vendor_id))];
+                    const { data: vendors } = await db
+                        .from('vendors')
+                        .select('id, business_name, email')
+                        .in('id', vendorIds);
+
+                    const vendorMap = {};
+                    vendors.forEach(v => vendorMap[v.id] = v);
+
+                    vendorBody.innerHTML = flaggedVendors.map(flag => {
+                        const vendor = vendorMap[flag.vendor_id];
+                        const daysFlagged = Math.floor((new Date() - new Date(flag.payout_requested_date)) / (1000 * 60 * 60 * 24));
+                        const timeRemaining = Math.max(0, 5 - daysFlagged);
+
+                        return `
+                            <tr class="hover:bg-orange-50">
+                                <td class="p-3">
+                                    <div class="font-semibold text-gray-800">${escapeHtml(vendor?.business_name || 'Unknown')}</div>
+                                    <div class="text-xs text-gray-500">${escapeHtml(vendor?.email || 'No email')}</div>
+                                </td>
+                                <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
+                                <td class="p-3"><span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold">${daysFlagged} days</span></td>
+                                <td class="p-3 text-sm">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3 text-xs text-gray-600">${new Date(flag.payout_requested_date).toLocaleDateString()}</td>
+                                <td class="p-3 text-center">
+                                    <div class="flex gap-1 justify-center flex-wrap">
+                                        <button onclick="unflagAccount('${flag.id}', 'vendor')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
+                                        <button onclick="approveVendorReceipt('${flag.id}', '${flag.vendor_id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📋 Approve</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    vendorBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No flagged vendors</td></tr>';
+                }
+
+                // Fetch buyer details
+                if (flaggedBuyers.length > 0) {
+                    const buyerIds = [...new Set(flaggedBuyers.map(b => b.buyer_id))];
+                    const { data: buyers } = await db
+                        .from('buyers')
+                        .select('id, full_name, email')
+                        .in('id', buyerIds);
+
+                    const buyerMap = {};
+                    buyers.forEach(b => buyerMap[b.id] = b);
+
+                    buyerBody.innerHTML = flaggedBuyers.map(flag => {
+                        const buyer = buyerMap[flag.buyer_id];
+                        const hoursFlagged = Math.floor((new Date() - new Date(flag.vendor_receipt_uploaded_date)) / (1000 * 60 * 60));
+                        const timeRemaining = Math.max(0, 8 - hoursFlagged);
+
+                        return `
+                            <tr class="hover:bg-red-50">
+                                <td class="p-3">
+                                    <div class="font-semibold text-gray-800">${escapeHtml(buyer?.full_name || 'Unknown')}</div>
+                                    <div class="text-xs text-gray-500">${escapeHtml(buyer?.email || 'No email')}</div>
+                                </td>
+                                <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
+                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h (${timeRemaining}h left)</span></td>
+                                <td class="p-3 text-sm">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3 text-xs text-gray-600">${new Date(flag.vendor_receipt_uploaded_date).toLocaleDateString()}</td>
+                                <td class="p-3 text-center">
+                                    <div class="flex gap-1 justify-center flex-wrap">
+                                        <button onclick="unflagAccount('${flag.id}', 'buyer')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
+                                        <button onclick="approveBuyerReceipt('${flag.id}', '${flag.buyer_id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📋 Approve</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    buyerBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No flagged buyers</td></tr>';
+                }
+
+                // Update counts
+                vendorCount.textContent = flaggedVendors.length;
+                buyerCount.textContent = flaggedBuyers.length;
+                totalCount.textContent = flaggedVendors.length + flaggedBuyers.length;
+
+            } catch (err) {
+                console.error('Error loading flagged accounts:', err);
+                vendorBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                buyerBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        // Unflag an account
+        async function unflagAccount(commissionId, type) {
+            if (!confirm(`Are you sure you want to unflag this ${type}?`)) return;
+
+            try {
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
+                const updateData = {
+                    unflagged_date: new Date().toISOString(),
+                    unflagged_by: adminId,
+                    unflag_reason: `Admin manual unflag - ${type} receipt issue resolved`
+                };
+
+                if (type === 'vendor') {
+                    updateData.vendor_flagged = false;
+                } else {
+                    updateData.buyer_flagged = false;
+                }
+
+                const { error } = await db
+                    .from('buyer_payables')
+                    .update(updateData)
+                    .eq('id', commissionId);
+
+                if (error) throw error;
+
+                showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} unflagged successfully`, 'success');
+                loadFlaggedAccounts();
+            } catch (err) {
+                showToast(`Error unflagging: ${err.message}`, 'error');
+            }
+        }
+
+        // Approve vendor receipt (admin override)
+        async function approveVendorReceipt(commissionId, vendorId) {
+            if (!confirm('Approve this vendor receipt? Status will be set to "paid".')) return;
+
+            try {
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
+                const { error } = await db
+                    .from('buyer_payables')
+                    .update({
+                        vendor_flagged: false,
+                        unflagged_date: new Date().toISOString(),
+                        unflagged_by: adminId,
+                        unflag_reason: 'Admin approved - receipt verified'
+                    })
+                    .eq('id', commissionId);
+
+                if (error) throw error;
+
+                showToast('Vendor receipt approved successfully', 'success');
+                loadFlaggedAccounts();
+            } catch (err) {
+                showToast(`Error approving receipt: ${err.message}`, 'error');
+            }
+        }
+
+        // Approve buyer receipt (admin override)
+        async function approveBuyerReceipt(commissionId, buyerId) {
+            if (!confirm('Approve this buyer receipt? Status will be set to "received".')) return;
+
+            try {
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
+                const { error } = await db
+                    .from('buyer_payables')
+                    .update({
+                        status: 'received',
+                        buyer_flagged: false,
+                        unflagged_date: new Date().toISOString(),
+                        unflagged_by: adminId,
+                        unflag_reason: 'Admin approved - buyer receipt verified'
+                    })
+                    .eq('id', commissionId);
+
+                if (error) throw error;
+
+                showToast('Buyer receipt approved successfully', 'success');
+                loadFlaggedAccounts();
+            } catch (err) {
+                showToast(`Error approving receipt: ${err.message}`, 'error');
+            }
+        }
+
+        // Load flagged accounts when tab switches
+        function handleFlaggedTabSwitch() {
+            setTimeout(() => loadFlaggedAccounts(), 100);
         }
     </script>
 
