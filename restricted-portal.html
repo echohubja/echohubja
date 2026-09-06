@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Hub - Account Restricted</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            padding: 30px 40px;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.1);
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .alert-box {
+            grid-column: 1 / -1;
+            background: #fef3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .alert-content h2 {
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 1.2em;
+        }
+
+        .alert-content p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05);
+        }
+
+        .panel h2 {
+            color: #1e5aa8;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #e0e7ff;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9em;
+        }
+
+        input[type="file"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #1e293b;
+            background: #fff;
+        }
+
+        input[type="file"]:focus,
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1e5aa8;
+            background: #f8fafc;
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #1e5aa8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #174887;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e0e7ff;
+            color: #1e5aa8;
+        }
+
+        .btn-secondary:hover {
+            background: #c7d2fe;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #1e5aa8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .info-box strong {
+            color: #1e5aa8;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status-message.success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-message.loading {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #7dd3fc;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        .upload-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .upload-preview img,
+        .upload-preview video {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏢 Echo Hub</h1>
+        <p>Account Restricted - Receipt Upload Required</p>
+    </header>
+
+    <div class="container">
+        <!-- Alert Box -->
+        <div class="alert-box">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <h2>Account Restricted</h2>
+                <p id="flaggedMessage">Your account has been flagged for missing receipt. Please upload the required receipt below to restore full access to your account.</p>
+            </div>
+        </div>
+
+        <!-- Receipt Upload Panel -->
+        <div class="panel">
+            <h2>📤 Upload Receipt</h2>
+
+            <div class="info-box">
+                <strong>What we need:</strong>
+                <p>Please upload proof of your payment or transaction receipt showing the PayPal payment confirmation.</p>
+            </div>
+
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="paypalEmail">PayPal Email Address</label>
+                    <input type="email" id="paypalEmail" placeholder="your-email@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="transactionId">PayPal Transaction ID</label>
+                    <input type="text" id="transactionId" placeholder="e.g., 1AB23456789012345" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="receiptFile">Upload Receipt File (PDF, PNG, JPG)</label>
+                    <input type="file" id="receiptFile" accept=".pdf,.png,.jpg,.jpeg" required>
+                    <div class="file-info">Maximum file size: 10MB. Accepted formats: PDF, PNG, JPG</div>
+                    <div class="upload-preview" id="uploadPreview"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">Submit Receipt for Review</button>
+                <div class="status-message" id="statusMessage"></div>
+            </form>
+        </div>
+
+        <!-- Account Info Panel -->
+        <div class="panel">
+            <h2>ℹ️ Account Status</h2>
+
+            <div id="accountInfo">
+                <p><strong>Account ID:</strong> <span id="accountId">Loading...</span></p>
+                <p><strong>Email:</strong> <span id="accountEmail">Loading...</span></p>
+                <p><strong>Account Type:</strong> <span id="accountType">Loading...</span></p>
+                <p><strong>Flag Reason:</strong> <span id="flagReason">Missing Receipt</span></p>
+            </div>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <strong>Next Steps:</strong>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Fill in your PayPal transaction details</li>
+                    <li>Upload a clear photo or PDF of your receipt</li>
+                    <li>Submit for admin review</li>
+                    <li>Once approved, your account will be restored</li>
+                </ol>
+            </div>
+
+            <button class="btn btn-secondary logout-btn" id="logoutBtn">Sign Out & Return to Login</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        const uploadForm = document.getElementById('uploadForm');
+        const receiptFile = document.getElementById('receiptFile');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const statusMessage = document.getElementById('statusMessage');
+        const submitBtn = document.getElementById('submitBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Load account information from localStorage
+        window.addEventListener('load', () => {
+            const vendorId = localStorage.getItem('vendor_id');
+            const buyerId = localStorage.getItem('buyer_id');
+            const email = localStorage.getItem('vendor_email') || localStorage.getItem('buyer_email');
+            const flaggedReason = localStorage.getItem('flagged_reason');
+            const flaggedType = localStorage.getItem('flagged_type');
+
+            if (flaggedReason) {
+                document.getElementById('flaggedMessage').textContent = flaggedReason;
+            }
+
+            if (vendorId) {
+                document.getElementById('accountId').textContent = vendorId;
+                document.getElementById('accountType').textContent = 'Vendor Partner';
+            } else if (buyerId) {
+                document.getElementById('accountId').textContent = buyerId;
+                document.getElementById('accountType').textContent = 'Buyer / Reviewer';
+            }
+
+            if (email) {
+                document.getElementById('accountEmail').textContent = email;
+            }
+        });
+
+        // File preview
+        receiptFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                uploadPreview.innerHTML = '';
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    uploadPreview.appendChild(img);
+                } else if (file.type === 'application/pdf') {
+                    uploadPreview.innerHTML = '📄 PDF file selected: ' + file.name;
+                }
+                uploadPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Handle form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const paypalEmail = document.getElementById('paypalEmail').value;
+            const transactionId = document.getElementById('transactionId').value;
+            const file = receiptFile.files[0];
+
+            if (!file) {
+                showStatus('Please select a receipt file', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus('File size exceeds 10MB limit', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            showStatus('Uploading receipt...', 'loading');
+
+            try {
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const base64Data = reader.result.split(',')[1];
+
+                    const buyerId = localStorage.getItem('buyer_id');
+                    const vendorId = localStorage.getItem('vendor_id');
+
+                    // Determine if vendor or buyer
+                    const isVendor = !!vendorId;
+                    const userId = vendorId || buyerId;
+
+                    if (isVendor) {
+                        // Update vendor receipt data
+                        const { error } = await supabaseClient.from('buyer_payables').update({
+                            vendor_paypal_email: paypalEmail,
+                            vendor_paypal_transaction_id: transactionId,
+                            vendor_receipt_data: base64Data,
+                            vendor_receipt_filename: file.name,
+                            vendor_receipt_filetype: file.type,
+                            vendor_receipt_filesize: file.size,
+                            vendor_receipt_uploaded_date: new Date().toISOString()
+                        }).eq('vendor_id', userId).neq('status', 'received');
+
+                        if (error) throw error;
+                    } else {
+                        // Update buyer receipt data
+                        const { error } = await supabaseClient.from('buyer_payables').update({
+                            buyer_paypal_email: paypalEmail,
+                            buyer_paypal_transaction_id: transactionId,
+                            buyer_receipt_data: base64Data,
+                            buyer_receipt_filename: file.name,
+                            buyer_receipt_filetype: file.type,
+                            buyer_receipt_filesize: file.size,
+                            buyer_receipt_uploaded_date: new Date().toISOString()
+                        }).eq('buyer_id', userId).neq('status', 'paid');
+
+                        if (error) throw error;
+                    }
+
+                    showStatus('Receipt uploaded successfully! Admin will review within 24 hours.', 'success');
+                    setTimeout(() => {
+                        uploadForm.reset();
+                        uploadPreview.style.display = 'none';
+                    }, 2000);
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                showStatus('Error uploading receipt: ' + err.message, 'error');
+                console.error('Upload error:', err);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('vendor_id');
+            localStorage.removeItem('vendor_email');
+            localStorage.removeItem('buyer_id');
+            localStorage.removeItem('buyer_email');
+            localStorage.removeItem('flagged_reason');
+            localStorage.removeItem('flagged_type');
+            window.location.href = 'login.html?logout=true';
+        });
+
+        function showStatus(msg, type) {
+            statusMessage.textContent = msg;
+            statusMessage.className = 'status-message ' + type;
+            statusMessage.style.display = 'block';
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
