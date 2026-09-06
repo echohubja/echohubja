@@ -236,6 +236,10 @@ button[type="submit"]:disabled {
                         <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
                     </div>
                     <div class="form-group">
+                        <label for="referralCode">Referral Code (Optional)</label>
+                        <input type="text" id="referralCode" placeholder="Enter referral code if you have one">
+                    </div>
+                    <div class="form-group">
                         <label>Categories of Interest *</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
@@ -341,6 +345,7 @@ button[type="submit"]:disabled {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const whatsapp = document.getElementById('whatsapp').value.trim();
+            const manualReferralCode = document.getElementById('referralCode').value.trim();
             const fileInput = document.getElementById('nationalIdFile').files[0];
 
             const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
@@ -362,6 +367,42 @@ button[type="submit"]:disabled {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Registering...';
 
+                // Determine referrer ID: use manual code first, then URL parameter
+                let finalReferredBy = null;
+                const codeToUse = manualReferralCode || referredBy;
+
+                if (codeToUse) {
+                    console.log('[REFERRAL] Looking up referral code:', codeToUse);
+                    try {
+                        const { data: referrerData, error: referrerError } = await supabaseClient
+                            .from('buyers')
+                            .select('id')
+                            .eq('referral_code', codeToUse)
+                            .single();
+
+                        if (referrerError) {
+                            console.warn('[REFERRAL] Code not found or error:', referrerError.message);
+                            errorDiv.textContent = 'Referral code is invalid. Please check and try again.';
+                            errorDiv.style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Register Account';
+                            return;
+                        }
+
+                        if (referrerData) {
+                            finalReferredBy = referrerData.id;
+                            console.log('[REFERRAL] Found referrer ID:', finalReferredBy);
+                        }
+                    } catch (refErr) {
+                        console.error('[REFERRAL_ERROR]', refErr);
+                        errorDiv.textContent = 'Error validating referral code. Please try again.';
+                        errorDiv.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Register Account';
+                        return;
+                    }
+                }
+
                 // Convert file to Base64 using safe chunked approach
                 const arrayBuffer = await fileInput.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
@@ -381,6 +422,9 @@ button[type="submit"]:disabled {
                 console.log('[BASE64] Converting file to Base64:', fileInput.name);
                 console.log('[BASE64] File size:', uint8Array.length, 'bytes, Base64 size:', base64Data.length, 'bytes');
 
+                // Generate unique referral code for this new buyer
+                const newReferralCode = 'REF' + Date.now() + Math.random().toString(36).substr(2, 9).toUpperCase();
+
                 // Insert buyer record directly to database
                 console.log('[DB] Inserting buyer record');
                 console.log('[DB] Full data collected:', {
@@ -393,7 +437,9 @@ button[type="submit"]:disabled {
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
                     national_id_data: '(base64 data prepared)',
-                    approval_status: 'pending'
+                    approval_status: 'pending',
+                    referred_by: finalReferredBy,
+                    referral_code: newReferralCode
                 });
 
                 // Hash password using PBKDF2 before storing
@@ -415,7 +461,8 @@ button[type="submit"]:disabled {
                     password: hashedPassword || null,
                     whatsapp_number: whatsapp || null,
                     categories_interest: selectedCategories,
-                    referred_by: referredBy || null,
+                    referred_by: finalReferredBy || null,
+                    referral_code: newReferralCode,
                     national_id_file_name: fileInput.name,
                     national_id_file_type: mimeType,
                     national_id_file_size: uint8Array.length,
@@ -445,9 +492,17 @@ button[type="submit"]:disabled {
                 console.log('[SUCCESS] Registration complete');
                 console.log('[SUCCESS] Buyer ID:', data?.[0]?.id);
 
-                // Hide form and show success message with login link
+                // Hide form and show success message with login link and referral code
                 document.getElementById('buyerForm').style.display = 'none';
-                successDiv.innerHTML = `Registration successful! Your national ID is under review. Once approved, you will receive access to the marketplace. <br><br><a href="login.html" style="color: #1e5aa8; font-weight: 600; text-decoration: none;">Go to Login →</a>`;
+                successDiv.innerHTML = `
+                    <div style="margin-bottom: 15px;">Registration successful! Your national ID is under review. Once approved, you will receive access to the marketplace.</div>
+                    <div style="background: #f0f7ff; border: 2px solid #1e5aa8; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <strong>Your Referral Code:</strong><br>
+                        <code style="font-size: 14px; font-weight: bold; color: #1e5aa8;">${newReferralCode}</code><br>
+                        <small style="color: #666;">Share this code with friends to earn referral commissions!</small>
+                    </div>
+                    <a href="login.html" style="color: #1e5aa8; font-weight: 600; text-decoration: none;">Go to Login →</a>
+                `;
                 successDiv.style.display = 'block';
                 submitBtn.textContent = 'Register Account';
             } catch (err) {
