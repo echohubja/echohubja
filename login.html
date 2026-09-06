@@ -175,8 +175,19 @@
 
                 <div id="vendorSpecificFields" style="display: none;">
                     <div class="form-group">
+                        <label for="businessName">Business Name</label>
+                        <input type="text" id="businessName" placeholder="Your Business Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paypalEmail">PayPal Email</label>
+                        <input type="email" id="paypalEmail" placeholder="paypal@example.com" required>
+                    </div>
+                    <div class="form-group">
                         <label for="vendorType">Vendor Classification</label>
-                        <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
+                        <select id="vendorType">
+                            <option value="UPFRONT">UPFRONT</option>
+                            <option value="REFUND_AFTER_REVIEW">REFUND_AFTER_REVIEW</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -297,7 +308,16 @@
 
                     if (accountType === 'vendor') {
                         // Vendor Registration Path
+                        const businessName = document.getElementById('businessName').value.trim();
+                        const paypalEmail = document.getElementById('paypalEmail').value.trim();
                         const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
+
+                        if (!businessName) throw new Error('Business name is required');
+                        if (!paypalEmail) throw new Error('PayPal email is required');
+
+                        // Hash the password
+                        const hashedPassword = await hashPBKDF2Password(password);
+
                         const { count, error: countError } = await supabaseClient
                             .from('vendors')
                             .select('*', { count: 'exact', head: true });
@@ -312,10 +332,16 @@
                                 id: formattedId,
                                 user_id: authUuid,
                                 email: email,
+                                password: hashedPassword,
                                 first_name: firstName,
                                 last_name: lastName,
+                                business_name: businessName,
+                                paypal_email: paypalEmail,
                                 vendor_type: vendorType,
-                                status: 'ACTIVE',
+                                suspension_status: 'active',
+                                is_blocked: false,
+                                accumulated_balance: 0,
+                                current_per_feedback_rate: 5.00,
                                 created_at: new Date()
                             }
                         ]);
@@ -480,6 +506,45 @@
                 submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
             }
         });
+
+        async function hashPBKDF2Password(password) {
+            // Generate random 16-byte salt
+            const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+
+            // Compute PBKDF2 with 100k iterations, SHA-256
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits']
+            );
+
+            const derivedBits = await crypto.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: saltBuffer,
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                256
+            );
+
+            // Combine salt + hash and encode as Base64
+            const hashArray = new Uint8Array(derivedBits);
+            const combined = new Uint8Array(saltBuffer.length + hashArray.length);
+            combined.set(saltBuffer);
+            combined.set(hashArray, saltBuffer.length);
+
+            // Convert to Base64
+            let binaryString = '';
+            for (let i = 0; i < combined.length; i++) {
+                binaryString += String.fromCharCode(combined[i]);
+            }
+            return btoa(binaryString);
+        }
 
         async function verifyPBKDF2Password(inputPassword, storedHashBase64) {
             // storedHash format: Base64(16-byte salt + 32-byte PBKDF2 hash)
