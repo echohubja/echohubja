@@ -156,7 +156,7 @@
             <div id="registerFields" style="display: none;">
                 <div class="form-group">
                     <label for="accountType">I want to register as a:</label>
-                    <select id="accountType">
+                    <select id="accountType" name="accountType">
                         <option value="buyer">Buyer / Reviewer</option>
                         <option value="vendor">Vendor Partner</option>
                     </select>
@@ -165,26 +165,26 @@
                 <div class="row-fields">
                     <div class="form-group" style="flex: 1;">
                         <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="India">
+                        <input type="text" id="firstName" name="firstName" placeholder="India">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Stronghold">
+                        <input type="text" id="lastName" name="lastName" placeholder="Stronghold">
                     </div>
                 </div>
 
                 <div id="vendorSpecificFields" style="display: none;">
                     <div class="form-group">
                         <label for="businessName">Business Name</label>
-                        <input type="text" id="businessName" placeholder="Your Business Name" required>
+                        <input type="text" id="businessName" name="businessName" placeholder="Your Business Name" required>
                     </div>
                     <div class="form-group">
                         <label for="paypalEmail">PayPal Email</label>
-                        <input type="email" id="paypalEmail" placeholder="paypal@example.com" required>
+                        <input type="email" id="paypalEmail" name="paypalEmail" placeholder="paypal@example.com" required>
                     </div>
                     <div class="form-group">
                         <label for="vendorType">Vendor Classification</label>
-                        <select id="vendorType">
+                        <select id="vendorType" name="vendorType">
                             <option value="UPFRONT">UPFRONT</option>
                             <option value="REFUND_AFTER_REVIEW">REFUND_AFTER_REVIEW</option>
                         </select>
@@ -194,12 +194,12 @@
 
             <div class="form-group">
                 <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="name@example.com">
+                <input type="email" id="email" name="email" required placeholder="name@example.com">
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
