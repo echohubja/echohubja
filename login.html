@@ -318,18 +318,8 @@
                         // Hash the password
                         const hashedPassword = await hashPBKDF2Password(password);
 
-                        const { count, error: countError } = await supabaseClient
-                            .from('vendors')
-                            .select('*', { count: 'exact', head: true });
-
-                        if (countError) throw new Error('Could not calculate vendor sequence.');
-
-                        const nextNum = (count || 0) + 1;
-                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
-
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
                             {
-                                id: formattedId,
                                 user_id: authUuid,
                                 email: email,
                                 password: hashedPassword,
