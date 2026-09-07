@@ -464,9 +464,6 @@
             <button id="btn-open-inquiries" onclick="toggleInquiriesDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
                 💬 My Inquiries
             </button>
-            <button id="btn-open-referrals" onclick="toggleReferralDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
-                🎁 My Referrals
-            </button>
             <div id="buyer-pill" class="buyer-pill">
                 Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
                 <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
@@ -502,17 +499,6 @@
     <!-- Commissions Section -->
     <div id="commissions-section" class="tab-section">
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
-            <!-- BUYER ALERTS WIDGET -->
-            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e1e8ed;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e1e8ed;">
-                    <h2 style="font-size: 1.1em; font-weight: 600; color: #1f2937; margin: 0;">🔔 Notifications & Alerts</h2>
-                    <span id="buyer-alert-badge" style="background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">0 alerts</span>
-                </div>
-                <div id="buyer-alerts-container" style="min-height: 80px;">
-                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">Loading alerts...</div>
-                </div>
-            </div>
-
             <div class="info-banner">
                 <strong>💡 How it works:</strong> When someone uses your referral link to submit feedback, you earn a commission based on the vendor's payment structure.
             </div>
@@ -637,41 +623,13 @@
     <!-- Messaging Hub Section -->
     <div id="messaging-section" class="tab-section">
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
-            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e1e8ed;">
-                <div style="margin-bottom: 16px;">
-                    <h2 style="font-size: 1.1em; font-weight: 600; color: #1f2937; margin: 0 0 12px 0;">💬 Your Conversations</h2>
-                    <input type="text" id="msg-search-buyer" oninput="filterBuyerMessagingConversations()" placeholder="Search conversations by name or vendor..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
-                </div>
+            <div class="info-banner">
+                <strong>💬 Messaging Hub:</strong> View and manage all your messages with vendors and the marketplace admin.
+            </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 20px; min-height: 500px;">
-                    <!-- Conversation List Sidebar -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background: #f8fafc;">
-                        <div id="buyer-messaging-sidebar" style="flex: 1; overflow-y: auto; border-right: 1px solid #e2e8f0;">
-                            <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Loading conversations...</div>
-                        </div>
-                    </div>
-
-                    <!-- Chat Area -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background: white;">
-                        <!-- Header -->
-                        <div id="buyer-messaging-header" style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 16px; font-weight: 600; color: #4a5568;">
-                            Select a conversation
-                        </div>
-
-                        <!-- Messages Display -->
-                        <div id="buyer-messaging-messages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: white;">
-                            <div style="text-align: center; color: #94a3b8; font-size: 14px; margin-top: 40px;">No conversation selected</div>
-                        </div>
-
-                        <!-- Input Area -->
-                        <div id="buyer-messaging-input-area" style="border-top: 1px solid #e2e8f0; background: #f8fafc; padding: 16px; display: none;">
-                            <div style="display: flex; gap: 12px;">
-                                <textarea id="buyer-messaging-textarea" placeholder="Type your message..." style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: none; max-height: 80px; font-family: inherit;"></textarea>
-                                <button onclick="sendBuyerMessage()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; white-space: nowrap; height: fit-content;">Send</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); padding: 40px; text-align: center; color: #718096;">
+                <p style="font-size: 16px; margin: 0;">Messages will appear here when you communicate with vendors or receive admin notifications.</p>
+                <p style="font-size: 14px; margin-top: 10px; color: #a0aec0;">Start by submitting an inquiry to a product vendor.</p>
             </div>
         </div>
     </div>
@@ -688,7 +646,7 @@
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
                 <div><strong>From (Buyer ID):</strong> <span id="modal-buyer-id-display"></span></div>
-                <div><strong>To (Vendor):</strong> <span id="modal-vendor-id-display"></span></div>
+                <div><strong>To (Vendor ID):</strong> <span id="modal-vendor-id-display"></span></div>
             </div>
 
             <input type="hidden" id="modal-product-id">
@@ -707,57 +665,6 @@
         </div>
     </div>
 
-    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleReferralDrawer()"></div>
-    <div class="drawer-container" id="referral-drawer">
-        <div class="drawer-header">
-            <h2 style="font-size: 20px; margin: 0;">Referral Dashboard</h2>
-            <button class="btn-close-drawer" onclick="toggleReferralDrawer()">&times;</button>
-        </div>
-
-        <div class="drawer-body">
-            <div>
-                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 5px;">Your Unique Referral Link</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="referral-link-input" readonly style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; background: #f8fafc; font-size: 13px;">
-                    <button onclick="copyReferralLink()" style="background: #2b6cb0; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Copy</button>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
-                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Referrals</span>
-                    <h3 id="stat-total-referrals" style="font-size: 18px; color: #2d3748; margin-top: 4px;">0</h3>
-                </div>
-                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
-                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Pending</span>
-                    <h3 id="stat-pending-balance" style="font-size: 18px; color: #d69e2e; margin-top: 4px;">$0.00</h3>
-                </div>
-                <div style="background: #f8fafc; padding: 12px 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
-                    <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: 700; display: block;">Payable</span>
-                    <h3 id="stat-payable-balance" style="font-size: 18px; color: #38a169; margin-top: 4px;">$0.00</h3>
-                </div>
-            </div>
-
-            <div>
-                <h4 style="color: #2d3748; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Commission History</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-                        <thead>
-                            <tr style="background: #f8fafc; color: #4a5568; font-size: 11px; text-transform: uppercase;">
-                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Date</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Net Comm.</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Your Split</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #e2e8f0;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="buyer-ledger-body">
-                            <tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">Loading history...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
     <div class="drawer-container" id="inquiries-drawer">
@@ -831,7 +738,6 @@
             const buyerPill = document.getElementById('buyer-pill');
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
-            const btnOpenReferrals = document.getElementById('btn-open-referrals');
             const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             currentActiveEmail = localStorage.getItem('buyer_email') || localStorage.getItem('buyer_id') || '';
@@ -839,7 +745,6 @@
             if (currentActiveEmail) {
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
-                btnOpenReferrals.style.display = 'flex';
                 btnOpenInquiries.style.display = 'flex';
 
                 const { data: buyerData, error } = await db
@@ -861,7 +766,6 @@
             } else {
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
-                btnOpenReferrals.style.display = 'none';
                 btnOpenInquiries.style.display = 'none';
                 currentBuyerId = '';
                 currentBuyerStringId = '';
@@ -926,7 +830,7 @@
         }
 
         async function loadProducts(categoryQuery = 'All', isMainGroup = false) {
-            let query = db.from('products').select('*, vendors(id, first_name, last_name, business_name)');
+            let query = db.from('products').select('*');
 
             if (categoryQuery !== 'All') {
                 if (isMainGroup) {
@@ -972,24 +876,11 @@
                     const price = parseFloat(product.price || 0);
                     const imageUrl = imageMap[productId] || null;
 
-                    // Construct vendor full name
-                    let vendorDisplayName = 'Vendor';
-                    if (product.vendors) {
-                        const v = product.vendors;
-                        if (v.first_name && v.last_name) {
-                            vendorDisplayName = `${v.first_name} ${v.last_name}`;
-                        } else if (v.business_name) {
-                            vendorDisplayName = v.business_name;
-                        } else if (v.first_name) {
-                            vendorDisplayName = v.first_name;
-                        }
-                    }
-
                     return `
                     <div class="product-box">
                         <div>
                             ${imageUrl ? `<img src="${imageUrl}" alt="${productName}" style="width: 100%; height: 160px; object-fit: contain; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px;">` : '<div style="width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background-color: #f8fafc; border-radius: 8px; margin-bottom: 12px; color: #a0aec0; font-size: 40px;">📦</div>'}
-                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">By: ${vendorDisplayName}</span>
+                            <span style="font-size: 11px; color: #718096; text-transform: uppercase; font-weight: 600;">Vendor: ${vendorId}</span>
                             <h5 style="margin-top: 4px;">${productName}</h5>
                             <div class="cost">$${price.toFixed(2)}</div>
                         </div>
@@ -1008,7 +899,7 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        async function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
+        function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
             if (!currentActiveEmail) {
                 showToast('Please sign in through the account portal before sending an inquiry.', 'error');
                 setTimeout(() => { window.location.href = 'portal.html'; }, 1500);
@@ -1020,24 +911,7 @@
             document.getElementById('modal-product-title').textContent = productName;
 
             document.getElementById('modal-buyer-id-display').textContent = currentBuyerStringId;
-
-            // Fetch vendor name
-            if (vendorId) {
-                const { data: vendor } = await db
-                    .from('vendors')
-                    .select('id, first_name, last_name, business_name')
-                    .eq('id', vendorId)
-                    .single();
-
-                if (vendor) {
-                    // Prefer first_name + last_name; skip business_name if it's an email
-                    const isBusinessNameEmail = vendor.business_name && vendor.business_name.includes('@');
-                    const vendorName = (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : (isBusinessNameEmail ? null : vendor.business_name) || vendor.first_name || 'Unknown');
-                    document.getElementById('modal-vendor-id-display').textContent = `${vendorName} (ID: ${vendorId.substring(0, 8)})`;
-                } else {
-                    document.getElementById('modal-vendor-id-display').textContent = `ID: ${vendorId.substring(0, 8)}`;
-                }
-            }
+            document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
 
@@ -1105,20 +979,6 @@
             closeInquiryDrawer();
         }
 
-        function toggleReferralDrawer() {
-            const drawer = document.getElementById('referral-drawer');
-            const overlay = document.getElementById('drawer-overlay');
-
-            const isOpen = drawer.classList.contains('open');
-            if (isOpen) {
-                drawer.classList.remove('open');
-                overlay.style.display = 'none';
-            } else {
-                drawer.classList.add('open');
-                overlay.style.display = 'block';
-                loadBuyerReferralDashboard(currentBuyerId, currentBuyerStringId);
-            }
-        }
 
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
@@ -1136,16 +996,8 @@
             }
         }
 
-        async function loadBuyerInquiriesHistory(buyerId, skipIfDrawerOpen = false) {
+        async function loadBuyerInquiriesHistory(buyerId) {
             if (!buyerId) return;
-
-            // Skip reload if drawer is open and skipIfDrawerOpen is true (prevents drawer from closing on new messages)
-            if (skipIfDrawerOpen) {
-                const drawer = document.getElementById('inquiries-drawer');
-                if (drawer && drawer.classList.contains('open')) {
-                    return;
-                }
-            }
 
             const container = document.getElementById('buyer-inquiries-body');
 
@@ -1177,27 +1029,8 @@
                     });
                 }
 
-                // Fetch vendors separately (not as join)
-                const vendorIds = [...new Set(inquiries.map(i => i.vendor_id).filter(Boolean))];
-                let vendorNameMap = {};
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await db
-                        .from('vendors')
-                        .select('id, first_name, last_name, business_name')
-                        .in('id', vendorIds);
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            // Prefer first_name + last_name; only use business_name if it's not an email
-                            const isBusinessNameEmail = vendor.business_name && vendor.business_name.includes('@');
-                            const vendorName = (vendor.first_name && vendor.last_name ? `${vendor.first_name} ${vendor.last_name}` : (isBusinessNameEmail ? null : vendor.business_name) || vendor.first_name || 'Unknown Vendor');
-                            vendorNameMap[vendor.id] = vendorName;
-                        });
-                    }
-                }
-
                 const grouped = {};
                 window.inquiryVendorMap = {};
-                window.vendorNameMap = vendorNameMap;
                 inquiries.forEach(item => {
                     const pKey = item.product_id || 'general';
                     const pName = item.products?.product_name || 'General Inquiries';
@@ -1233,7 +1066,7 @@
                     const hasFeedback = latestMsg.image_url?.includes('feedback');
                     const statusBadge = hasFeedback
                         ? `<span style="font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-weight: 700;">📋 AWAITING APPROVAL</span>`
-                        : `<span style="font-size: 10px; background: #e0f2fe; color: #0c4a6e; padding: 2px 8px; border-radius: 10px; font-weight: 700;">⏳ PENDING VENDOR RESPONSE</span>`;
+                        : `<span style="font-size: 10px; background: #e0f2fe; color: #0c4a6e; padding: 2px 8px; border-radius: 10px; font-weight: 700;">⏳ PENDING VENDOR</span>`;
 
                     const vendorGroups = {};
                     group.items.forEach(item => {
@@ -1297,7 +1130,7 @@
                                 <div onclick="toggleVendorGroup('${vAccordionId}', this)" style="background: #edf2f7; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
                                     <div style="display: flex; align-items: center; gap: 6px;">
                                         <span style="font-size: 12px;">🏢</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">${window.vendorNameMap?.[vendorId] ? `${window.vendorNameMap[vendorId]} (ID: ${vendorId.substring(0, 8)})` : `ID: ${vendorId.substring(0, 8)}`}</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #2d3748;">Vendor ID: ${vendorId}</span>
                                         <span style="font-size: 10px; background: #cbd5e0; color: #2d3748; padding: 1px 6px; border-radius: 8px; font-weight: 600;">${vItems.length}</span>
                                     </div>
                                     <span id="icon-${vAccordionId}" style="font-size: 11px; font-weight: bold; color: #718096; transition: transform 0.2s;">▼</span>
@@ -1485,7 +1318,7 @@
                     .eq('id', existingFeedback.id);
                 dbError = updateErr;
             } else {
-                const { data: inquiryData, error: insertErr } = await db.from('inquiries').insert([
+                const { error: insertErr } = await db.from('inquiries').insert([
                     {
                         product_id: productId === 'null' || !productId ? null : productId,
                         vendor_id: vendorId,
@@ -1494,34 +1327,10 @@
                         sender_type: 'buyer',
                         message_type: 'feedback',
                         message: feedbackMessage,
-                        image_url: imageUrl,
-                        vendor_status: 'pending'
+                        image_url: imageUrl
                     }
-                ]).select('id');
+                ]);
                 dbError = insertErr;
-
-                // Create feedback record linked to the inquiry
-                if (!dbError && inquiryData && inquiryData.length > 0) {
-                    const inquiryId = inquiryData[0].id;
-                    const { error: feedbackErr } = await db.from('feedback').insert([
-                        {
-                            inquiry_id: inquiryId,
-                            submitter_id: currentBuyerId,
-                            submitter_type: 'buyer',
-                            target_id: vendorId,
-                            feedback_text: feedbackMessage,
-                            proof_document: amazonLink,
-                            proof_images: imageUrl ? [imageUrl] : null,
-                            rating: null,
-                            commission_amount: null,
-                            commission_status: 'pending'
-                        }
-                    ]);
-                    if (feedbackErr) {
-                        console.error('Error creating feedback record:', feedbackErr.message);
-                        dbError = feedbackErr;
-                    }
-                }
             }
 
             if (dbError) {
@@ -1531,7 +1340,7 @@
             }
 
             showToast('Product feedback (link & image) successfully submitted!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId, true);
+            loadBuyerInquiriesHistory(currentBuyerId);
         }
 
         async function submitFollowupMessage(inquiryId, productId, vendorId) {
@@ -1563,70 +1372,15 @@
             }
 
             showToast('Follow-up message sent successfully!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId, true);
+            loadBuyerInquiriesHistory(currentBuyerId);
         }
 
-        async function loadBuyerReferralDashboard(buyerId, buyerStringId) {
-            if (!buyerId) return;
-
-            const refLink = `${window.location.origin}/index.html?ref=${buyerStringId || buyerId}`;
-            document.getElementById('referral-link-input').value = refLink;
-
-            const { data: ledgerRows, error } = await db
-                .from('referral_ledger')
-                .select('*')
-                .eq('referrer_id', buyerId)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error loading buyer ledger:', error.message);
-                return;
-            }
-
-            let totalReferrals = ledgerRows ? ledgerRows.length : 0;
-            let pendingBal = 0;
-            let payableBal = 0;
-
-            const tbody = document.getElementById('buyer-ledger-body');
-
-            if (ledgerRows && ledgerRows.length > 0) {
-                tbody.innerHTML = ledgerRows.map(row => {
-                    const amt = parseFloat(row.commission_amount || 0);
-                    if (row.status === 'pending') pendingBal += amt;
-                    if (row.status === 'payable' || row.status === 'paid') payableBal += amt;
-
-                    return `
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(row.created_at).toLocaleDateString()}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${parseFloat(row.net_commission || 0).toFixed(2)}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #2b6cb0;">$${amt.toFixed(2)}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${row.status === 'pending' ? '#feebc8; color: #c05621;' : '#c6f6d5; color: #22543d;'}">${row.status.toUpperCase()}</span></td>
-                        </tr>
-                    `;
-                }).join('');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #718096; padding: 15px;">No earnings yet. Share your link!</td></tr>`;
-            }
-
-            document.getElementById('stat-total-referrals').innerText = totalReferrals;
-            document.getElementById('stat-pending-balance').innerText = `$${pendingBal.toFixed(2)}`;
-            document.getElementById('stat-payable-balance').innerText = `$${payableBal.toFixed(2)}`;
-        }
-
-        function copyReferralLink() {
-            const input = document.getElementById('referral-link-input');
-            input.select();
-            input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value);
-            showToast('Referral link copied to clipboard!', 'success');
-        }
 
         // Tab switching
         function switchTab(tabName, buttonElement) {
             // Hide all sections
             document.getElementById('marketplace-section').classList.remove('active');
             document.getElementById('commissions-section').classList.remove('active');
-            document.getElementById('messaging-section').classList.remove('active');
 
             // Remove active from all buttons
             document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1637,9 +1391,6 @@
             } else if (tabName === 'commissions') {
                 document.getElementById('commissions-section').classList.add('active');
                 loadCommissionsDashboard(currentBuyerId, currentBuyerStringId);
-            } else if (tabName === 'messaging') {
-                document.getElementById('messaging-section').classList.add('active');
-                setTimeout(() => initBuyerMessagingHub(), 300);
             }
 
             // Mark button as active
@@ -1655,42 +1406,77 @@
             document.getElementById('comm-referral-link-input').value = refLink;
 
             try {
-                const { data: payables, error } = await db
+                // Fetch own feedback payables
+                const { data: payables } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId);
 
+                // Fetch referral commissions (where this buyer is the referrer)
+                const { data: referralPayables } = await db
+                    .from('admin_payables')
+                    .select('related_feedback_id, buyer_portion, status, created_at')
+                    .eq('split_with_buyer_id', buyerId);
+
+                // Combine data
+                let totalEarned = 0;
+                let pending = 0;
+                let paid = 0;
+                let referredBuyer = 0;
+                let referredVendor = 0;
+                let bothReferred = 0;
+                let ownFeedback = 0;
+                let referredBuyerCount = 0;
+                let referredVendorCount = 0;
+                let bothCount = 0;
+                let ownFeedbackCount = 0;
+                let referralCommissionCount = 0;
+
+                // Process own feedback earnings
                 if (payables && payables.length > 0) {
-                    const totalEarned = payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const pending = payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const paid = payables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    totalEarned += payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    pending += payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    paid += payables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
 
-                    document.getElementById('comm-total-earned').textContent = `$${totalEarned.toFixed(2)}`;
-                    document.getElementById('comm-pending-payouts').textContent = `$${pending.toFixed(2)}`;
-                    document.getElementById('comm-paid-this-month').textContent = `$${paid.toFixed(2)}`;
+                    referredBuyer = payables.filter(p => p.earning_type === 'referred_buyer').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    referredVendor = payables.filter(p => p.earning_type === 'referred_vendor').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    bothReferred = payables.filter(p => p.earning_type === 'both_referred').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
 
-                    // Breakdown by earning type
-                    const referredBuyer = payables.filter(p => p.earning_type === 'referred_buyer').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const referredVendor = payables.filter(p => p.earning_type === 'referred_vendor').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const bothReferred = payables.filter(p => p.earning_type === 'both_referred').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-
-                    document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyer.toFixed(2)}`;
-                    document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendor.toFixed(2)}`;
-                    document.getElementById('comm-both-earnings').textContent = `$${bothReferred.toFixed(2)}`;
-                    document.getElementById('comm-own-feedback-earnings').textContent = `$${ownFeedback.toFixed(2)}`;
-
-                    const referredBuyerCount = payables.filter(p => p.earning_type === 'referred_buyer').length;
-                    const referredVendorCount = payables.filter(p => p.earning_type === 'referred_vendor').length;
-                    const bothCount = payables.filter(p => p.earning_type === 'both_referred').length;
-                    const ownFeedbackCount = payables.filter(p => p.earning_type === 'own_feedback').length;
-
-                    document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} feedbacks`;
-                    document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} feedbacks`;
-                    document.getElementById('comm-both-count').textContent = `${bothCount} feedbacks`;
-                    document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount} feedbacks`;
-                    document.getElementById('comm-feedback-referred').textContent = referredBuyerCount + referredVendorCount + bothCount;
+                    referredBuyerCount = payables.filter(p => p.earning_type === 'referred_buyer').length;
+                    referredVendorCount = payables.filter(p => p.earning_type === 'referred_vendor').length;
+                    bothCount = payables.filter(p => p.earning_type === 'both_referred').length;
+                    ownFeedbackCount = payables.filter(p => p.earning_type === 'own_feedback').length;
                 }
+
+                // Process referral commissions
+                if (referralPayables && referralPayables.length > 0) {
+                    const referralTotal = referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
+                    totalEarned += referralTotal;
+
+                    const referralPending = referralPayables.filter(p => p.status !== 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
+                    const referralPaid = referralPayables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
+
+                    pending += referralPending;
+                    paid += referralPaid;
+                    referralCommissionCount = referralPayables.length;
+                }
+
+                // Update UI
+                document.getElementById('comm-total-earned').textContent = `$${totalEarned.toFixed(2)}`;
+                document.getElementById('comm-pending-payouts').textContent = `$${pending.toFixed(2)}`;
+                document.getElementById('comm-paid-this-month').textContent = `$${paid.toFixed(2)}`;
+
+                document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyer.toFixed(2)}`;
+                document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendor.toFixed(2)}`;
+                document.getElementById('comm-both-earnings').textContent = `$${bothReferred.toFixed(2)}`;
+                document.getElementById('comm-own-feedback-earnings').textContent = `$${(ownFeedback + (referralPayables ? referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0) : 0)).toFixed(2)}`;
+
+                document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} feedbacks`;
+                document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} feedbacks`;
+                document.getElementById('comm-both-count').textContent = `${bothCount} feedbacks`;
+                document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount + referralCommissionCount} feedbacks`;
+                document.getElementById('comm-feedback-referred').textContent = referredBuyerCount + referredVendorCount + bothCount + referralCommissionCount;
             } catch (err) {
                 console.error('Error loading commissions:', err);
             }
@@ -1704,330 +1490,11 @@
             showToast('Referral link copied to clipboard!', 'success');
         }
 
-        // Load Buyer Alerts
-        async function loadBuyerAlerts() {
-            const container = document.getElementById('buyer-alerts-container');
-            const badge = document.getElementById('buyer-alert-badge');
-            if (!container || !db) return;
-
-            try {
-                const buyerId = localStorage.getItem('buyer_id');
-                if (!buyerId) {
-                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8;">No buyer session found</div>`;
-                    return;
-                }
-
-                const { data: alerts, error } = await db
-                    .from('payment_alerts')
-                    .select('*')
-                    .eq('buyer_id', buyerId)
-                    .order('is_acknowledged', { ascending: true })
-                    .order('created_at', { ascending: false })
-                    .limit(20);
-
-                if (error) {
-                    console.error('Error fetching alerts:', error);
-                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
-                    return;
-                }
-
-                if (!alerts || alerts.length === 0) {
-                    container.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #94a3b8;">No alerts at this time ✓</div>`;
-                    badge.textContent = '0 alerts';
-                    badge.style.background = '#10b981';
-                    return;
-                }
-
-                const unacknowledgedCount = alerts.filter(a => !a.is_acknowledged).length;
-                badge.textContent = unacknowledgedCount > 0 ? `${unacknowledgedCount} alert${unacknowledgedCount !== 1 ? 's' : ''}` : '0 alerts';
-                badge.style.background = unacknowledgedCount > 0 ? '#ef4444' : '#10b981';
-
-                const alertsHtml = alerts.map(alert => {
-                    const severityColors = {
-                        'critical': { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', icon: '🚨' },
-                        'warning': { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b', icon: '⚠️' },
-                        'info': { bg: 'rgba(30, 90, 168, 0.1)', border: '#1e5aa8', icon: 'ℹ️' }
-                    };
-                    const colors = severityColors[alert.severity] || severityColors['info'];
-
-                    return `
-                        <div style="background: ${colors.bg}; border-left: 4px solid ${colors.border}; padding: 12px 16px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${colors.icon} ${escapeHtmlBuyer(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
-                                <div style="font-size: 0.9em; color: #4b5563; margin-bottom: 6px;">${escapeHtmlBuyer(alert.message)}</div>
-                                <div style="font-size: 0.8em; color: #94a3b8;">${new Date(alert.created_at).toLocaleString()}</div>
-                            </div>
-                            ${!alert.is_acknowledged ? `<button onclick="acknowledgeBuyerAlert('${alert.id}')" style="background: ${colors.border}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;">Acknowledge</button>` : `<span style="color: #10b981; font-size: 0.85em; font-weight: 600;">✓ Acknowledged</span>`}
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = alertsHtml;
-            } catch (error) {
-                console.error('Error loading buyer alerts:', error);
-                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
-            }
-        }
-
-        async function acknowledgeBuyerAlert(alertId) {
-            if (!db) return;
-            try {
-                const { error } = await db
-                    .from('payment_alerts')
-                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
-                    .eq('id', alertId);
-
-                if (!error) {
-                    await loadBuyerAlerts(); // Refresh alerts
-                }
-            } catch (err) {
-                console.error('Error acknowledging alert:', err);
-            }
-        }
-
-        function escapeHtmlBuyer(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // ===== BUYER MESSAGING HUB =====
-        let buyerMessagingState = {
-            currentPartyId: null,
-            currentPartyType: null, // 'admin' or 'vendor'
-            conversations: [],
-            allConversations: []
-        };
-
-        async function initBuyerMessagingHub() {
-            await loadBuyerMessagingConversations();
-        }
-
-        async function loadBuyerMessagingConversations() {
-            const sidebar = document.getElementById('buyer-messaging-sidebar');
-            if (!sidebar) return;
-
-            try {
-                buyerMessagingState.allConversations = [];
-
-                // Load conversations (both with vendors and admin)
-                const { data: inquiries, error: inquiryError } = await db
-                    .from('inquiries')
-                    .select('id, vendor_id, message, created_at, message_type, sender_type')
-                    .eq('buyer_id', currentBuyerId)
-                    .order('created_at', { ascending: false });
-
-                if (inquiryError) throw inquiryError;
-
-                // Group conversations by party (vendor or admin sender)
-                const parties = new Map();
-
-                for (const inq of (inquiries || [])) {
-                    // Track vendor conversations
-                    if (inq.vendor_id) {
-                        if (!parties.has(inq.vendor_id)) {
-                            parties.set(inq.vendor_id, { type: 'vendor', id: inq.vendor_id });
-                        }
-                    }
-
-                    // Track admin messages
-                    if (inq.sender_type === 'admin') {
-                        if (!parties.has('admin')) {
-                            parties.set('admin', { type: 'admin', id: 'admin' });
-                        }
-                    }
-                }
-
-                // Fetch vendor and admin names
-                for (const [key, party] of parties.entries()) {
-                    let conversationData = { id: key, type: party.type, lastMessage: 'No messages yet', lastTime: '' };
-
-                    if (party.type === 'vendor') {
-                        const { data: vendor } = await db.from('vendors').select('business_name').eq('id', key).single();
-                        conversationData.name = vendor?.business_name || 'Unknown Vendor';
-                    } else if (party.type === 'admin') {
-                        conversationData.name = 'Echo Hub Admin';
-                    }
-
-                    // Find last message for this party
-                    const lastMsg = inquiries.find(inq =>
-                        (party.type === 'vendor' && inq.vendor_id === key) ||
-                        (party.type === 'admin' && inq.sender_type === 'admin')
-                    );
-
-                    if (lastMsg) {
-                        conversationData.lastMessage = lastMsg.message?.substring(0, 50) || 'Message';
-                        conversationData.lastTime = new Date(lastMsg.created_at).toLocaleDateString();
-                    }
-
-                    buyerMessagingState.allConversations.push(conversationData);
-                }
-
-                buyerMessagingState.conversations = buyerMessagingState.allConversations;
-                renderBuyerMessagingConversations();
-
-            } catch (err) {
-                console.error('Error loading buyer messaging conversations:', err);
-                sidebar.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 14px;">Error loading conversations</div>`;
-            }
-        }
-
-        function renderBuyerMessagingConversations() {
-            const sidebar = document.getElementById('buyer-messaging-sidebar');
-            if (!sidebar) return;
-
-            if (buyerMessagingState.conversations.length === 0) {
-                sidebar.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">No conversations yet</div>`;
-                return;
-            }
-
-            sidebar.innerHTML = buyerMessagingState.conversations.map(conv => `
-                <div onclick="selectBuyerMessagingConversation('${conv.id}', '${conv.type}')"
-                     style="padding: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0; transition: background 0.2s; ${buyerMessagingState.currentPartyId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : 'border-left: 3px solid transparent;'} hover: {background: #f1f5f9;}"
-                     onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${buyerMessagingState.currentPartyId === conv.id ? '#dbeafe' : 'transparent'}'">
-                    <div style="font-weight: 600; color: #2c3e50; font-size: 14px; margin-bottom: 4px;">${escapeHtmlBuyer(conv.name)}</div>
-                    <div style="font-size: 12px; color: #718096; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtmlBuyer(conv.lastMessage)}</div>
-                    <div style="font-size: 11px; color: #cbd5e0;">${conv.lastTime}</div>
-                </div>
-            `).join('');
-        }
-
-        async function selectBuyerMessagingConversation(partyId, partyType) {
-            buyerMessagingState.currentPartyId = partyId;
-            buyerMessagingState.currentPartyType = partyType;
-            renderBuyerMessagingConversations();
-            await loadBuyerMessagingMessages();
-        }
-
-        async function loadBuyerMessagingMessages() {
-            try {
-                const header = document.getElementById('buyer-messaging-header');
-                const inputArea = document.getElementById('buyer-messaging-input-area');
-
-                let messages = [];
-
-                if (buyerMessagingState.currentPartyType === 'vendor') {
-                    const { data, error } = await db
-                        .from('inquiries')
-                        .select('*')
-                        .eq('buyer_id', currentBuyerId)
-                        .eq('vendor_id', buyerMessagingState.currentPartyId)
-                        .order('created_at', { ascending: true });
-
-                    if (error) throw error;
-                    messages = data || [];
-                    const conv = buyerMessagingState.conversations.find(c => c.id === buyerMessagingState.currentPartyId);
-                    header.textContent = `Vendor: ${conv?.name || 'Unknown'}`;
-
-                } else if (buyerMessagingState.currentPartyType === 'admin') {
-                    const { data, error } = await db
-                        .from('inquiries')
-                        .select('*')
-                        .eq('buyer_id', currentBuyerId)
-                        .or('sender_type.eq.admin,message_type.eq.admin_message')
-                        .order('created_at', { ascending: true });
-
-                    if (error) throw error;
-                    messages = (data || []).filter(m => m.sender_type === 'admin' || m.message_type === 'admin_message');
-                    header.textContent = 'Echo Hub Admin';
-                }
-
-                renderBuyerMessagingMessages(messages);
-                inputArea.classList.remove('hidden');
-
-            } catch (err) {
-                console.error('Error loading buyer messages:', err);
-            }
-        }
-
-        function renderBuyerMessagingMessages(messages) {
-            const container = document.getElementById('buyer-messaging-messages');
-            if (!container) return;
-
-            if (messages.length === 0) {
-                container.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 14px; margin-top: 40px;">No messages yet. Start a conversation!</div>`;
-                return;
-            }
-
-            container.innerHTML = messages.map(msg => {
-                const isSent = msg.sender_type === 'buyer';
-                const timestamp = new Date(msg.created_at).toLocaleString();
-                const senderLabel = msg.sender_type === 'vendor' ? 'Vendor' : msg.sender_type === 'admin' ? 'Admin' : 'You';
-
-                return `
-                    <div style="display: flex; ${isSent ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-                        <div style="max-width: 60%; background: ${isSent ? '#1e5aa8' : '#f1f5f9'}; color: ${isSent ? 'white' : '#2c3e50'}; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4;">
-                            ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">${senderLabel}</div>` : ''}
-                            <div>${escapeHtmlBuyer(msg.message || '')}</div>
-                            ${msg.image_url ? `<img src="${msg.image_url}" alt="Message image" style="max-width: 100%; border-radius: 6px; margin-top: 8px;">` : ''}
-                            <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">${timestamp}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Auto-scroll to bottom
-            container.scrollTop = container.scrollHeight;
-        }
-
-        async function sendBuyerMessage() {
-            const textarea = document.getElementById('buyer-messaging-textarea');
-            const message = textarea.value.trim();
-
-            if (!message) return;
-            if (!buyerMessagingState.currentPartyId) {
-                alert('Select a conversation first');
-                return;
-            }
-
-            try {
-                let insertData = {
-                    buyer_id: currentBuyerId,
-                    message: message,
-                    sender_type: 'buyer',
-                    message_type: buyerMessagingState.currentPartyType === 'admin' ? 'admin_message' : 'vendor_response',
-                    status: 'active',
-                    created_at: new Date().toISOString()
-                };
-
-                if (buyerMessagingState.currentPartyType === 'vendor') {
-                    insertData.vendor_id = buyerMessagingState.currentPartyId;
-                }
-
-                const { error } = await db
-                    .from('inquiries')
-                    .insert([insertData]);
-
-                if (error) throw error;
-
-                textarea.value = '';
-                await loadBuyerMessagingMessages();
-
-            } catch (err) {
-                console.error('Error sending message:', err);
-                alert('Failed to send message');
-            }
-        }
-
-        function filterBuyerMessagingConversations() {
-            const searchTerm = document.getElementById('msg-search-buyer').value.toLowerCase();
-            buyerMessagingState.conversations = buyerMessagingState.allConversations.filter(conv =>
-                conv.name.toLowerCase().includes(searchTerm)
-            );
-            renderBuyerMessagingConversations();
-        }
-
         window.addEventListener('DOMContentLoaded', async () => {
             captureReferralCode();
             await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
-            await loadBuyerAlerts(); // Load buyer alert notifications
         });
     </script>
 </body>
