@@ -2449,6 +2449,7 @@
         let currentSort = 'date-newest';
         let currentProductFilter = '';
         let searchQuery = '';
+        let isLoadingInquiries = false;  // Prevent concurrent calls to loadPendingInquiries
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -2581,7 +2582,7 @@
                         if (currentHash !== lastInquiriesHash) {
                             console.log('💬 Inquiries changed - RELOADING');
                             lastInquiriesHash = currentHash;
-                            loadPendingInquiries();
+                            await loadPendingInquiries();
                         }
                     } catch (err) {
                         console.error('Polling error (inquiries):', err);
@@ -2798,8 +2799,9 @@
         // ==================== OPTION 2B PHASE 1 IMPLEMENTATION ====================
 
         async function loadPendingInquiries() {
-            if (!currentVendor) return;
+            if (!currentVendor || isLoadingInquiries) return;
 
+            isLoadingInquiries = true;
             try {
                 // Fetch vendor's products with full details
                 const { data: products } = await sbClient
@@ -2900,6 +2902,8 @@
 
             } catch (error) {
                 console.error('❌ Error loading inquiries:', error);
+            } finally {
+                isLoadingInquiries = false;
             }
         }
 
