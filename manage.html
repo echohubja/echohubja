@@ -2450,14 +2450,29 @@
         let currentProductFilter = '';
         let searchQuery = '';
         let isLoadingInquiries = false;  // Prevent concurrent calls to loadPendingInquiries
-        let renderInquiriesTimeout = null;  // Debounce timer for renderInquiries
 
-        // Debounce function to prevent rapid re-renders
-        function debounce(func, delay) {
-            return function(...args) {
-                clearTimeout(renderInquiriesTimeout);
-                renderInquiriesTimeout = setTimeout(() => func(...args), delay);
-            };
+        // Virtual scrolling state
+        const ITEM_HEIGHT = 120;  // Estimated height of each inquiry thread (pixels)
+        const BUFFER_SIZE = 5;   // Render 5 items above/below viewport
+        let virtualScrollState = {
+            firstVisibleIndex: 0,
+            lastVisibleIndex: 0,
+            scrollTop: 0,
+            containerHeight: 600
+        };
+
+        // Debounce render to prevent excessive DOM updates
+        let renderDebounceTimer = null;
+        let lastRenderedHash = '';
+        function debounceRender(productMap, delay = 300) {
+            if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+            renderDebounceTimer = setTimeout(() => {
+                const currentHash = JSON.stringify(filteredInquiries);
+                if (currentHash !== lastRenderedHash) {
+                    lastRenderedHash = currentHash;
+                    renderInquiries(productMap);
+                }
+            }, delay);
         }
 
         // DOM Elements
@@ -2577,7 +2592,7 @@
                 let lastAlertsHash = '';
                 let lastProductsHash = '';
 
-                // Poll inquiries every 5 seconds (increased from 3s to reduce render frequency)
+                // Poll inquiries every 15 seconds (INCREASED from 5s to reduce API load and main thread blocking)
                 pollingIntervals.inquiries = setInterval(async () => {
                     try {
                         const { data: inquiries } = await sbClient
@@ -2596,9 +2611,9 @@
                     } catch (err) {
                         console.error('Polling error (inquiries):', err);
                     }
-                }, 5000);
+                }, 15000);
 
-                // Poll vendor data every 4 seconds
+                // Poll vendor data every 15 seconds (INCREASED from 4s to reduce API load)
                 pollingIntervals.vendor = setInterval(async () => {
                     try {
                         const { data: vendor } = await sbClient
@@ -2618,11 +2633,11 @@
                     } catch (err) {
                         console.error('Polling error (vendor):', err);
                     }
-                }, 4000);
+                }, 15000);
 
                 // Alert polling DISABLED - commission system notifications removed (Sep 3, 2026)
 
-                // Poll products every 4 seconds
+                // Poll products every 15 seconds (INCREASED from 4s to reduce API load)
                 pollingIntervals.products = setInterval(async () => {
                     try {
                         const { data: products } = await sbClient
@@ -2639,7 +2654,7 @@
                     } catch (err) {
                         console.error('Polling error (products):', err);
                     }
-                }, 4000);
+                }, 15000);
 
                 console.log('✅ POLLING ACTIVE - Updates checked every 3-5 seconds');
             } catch (err) {
@@ -2906,8 +2921,7 @@
                 inquiriesCache = threads;
                 populateProductFilter(products);
                 setupInquiryEventListeners();
-                // Use debounced render to batch multiple updates within 300ms window
-                debouncedRenderInquiries(productMapCache);
+                renderInquiries(productMapCache);
                 updateFolderCounts();
 
             } catch (error) {
@@ -3082,10 +3096,23 @@
         // Track expanded thread to preserve state during polling
         let expandedThreadId = null;
 
+        function renderThreadHTML(thread, productMap) {
+            const lastMsg = thread.messages[thread.messages.length - 1];
+            const messageType = lastMsg.message_type;
+            const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
+            const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
+            const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
+            const adminVerified = feedbackMessages.filter(m => m.status === 'verified').length > 0;
+            const sla = getSLAStatus(thread.lastMessageTime);
+            const threadClass = `inquiry-thread ${vendorApproved && adminVerified ? 'both-approved' : vendorApproved ? 'vendor-approved' : ''}`;
+            const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
+            return `<div class="${threadClass}" data-thread-id="${threadId}"><div class="inquiry-thread-header"><div class="thread-header-left"><div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div><div class="thread-customer-info"><div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div><div class="copyable-id" onclick="copyToClipboard('${thread.buyer_id}', '${thread.buyer_id.substring(0, 8)}')" title="Click to copy buyer ID">ID: ${thread.buyer_id.substring(0, 8)} 📋</div><div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div></div></div><div class="thread-meta-info"><div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div><div class="thread-commission"><div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div><div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div></div><div class="thread-sla"><div class="sla-time">${sla.label}</div><div class="sla-indicator ${sla.indicator}"></div></div><div class="thread-expand-arrow">▼</div></div></div><div class="inquiry-thread-content">${getProductContextHtml(thread, productMap)}<div class="thread-messages">${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}</div></div></div>`;
+        }
+
+        let scrollListenerAttached = false;
+
         function renderInquiries(productMap = {}) {
             const threadList = document.getElementById('inquiriesThreadList');
-
-            // Save expanded thread before re-rendering
             const expandedThread = document.querySelector('.inquiry-thread.expanded');
             if (expandedThread) {
                 const firstMsg = expandedThread.querySelector('.inquiry-message');
@@ -3109,85 +3136,51 @@
                 return;
             }
 
-            // Build HTML in chunks to avoid blocking the main thread
-            const threadHtmlArray = filteredInquiries.map(thread => {
-                const lastMsg = thread.messages[thread.messages.length - 1];
-                const messageType = lastMsg.message_type;
-                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
+            // Virtual scrolling: calculate visible range
+            const containerHeight = threadList.clientHeight || 600;
+            const visibleCount = Math.ceil(containerHeight / ITEM_HEIGHT) + BUFFER_SIZE * 2;
+            const scrollTop = threadList.scrollTop || 0;
+            const firstVisible = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
+            const lastVisible = Math.min(filteredInquiries.length - 1, firstVisible + visibleCount);
 
-                const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
-                const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
-                const adminVerified = feedbackMessages.filter(m => m.status === 'verified').length > 0;
+            // Build only visible items + spacers
+            const topSpacerHeight = firstVisible * ITEM_HEIGHT;
+            const visibleItems = filteredInquiries.slice(firstVisible, lastVisible + 1).map(t => renderThreadHTML(t, productMap)).join('');
+            const bottomSpacerHeight = Math.max(0, (filteredInquiries.length - lastVisible - 1) * ITEM_HEIGHT);
 
-                const sla = getSLAStatus(thread.lastMessageTime);
+            threadList.innerHTML = `
+                <div style="height: ${topSpacerHeight}px;"></div>
+                ${visibleItems}
+                <div style="height: ${bottomSpacerHeight}px;"></div>
+            `;
 
-                const threadClass = `inquiry-thread ${
-                    vendorApproved && adminVerified ? 'both-approved' :
-                    vendorApproved ? 'vendor-approved' : ''
-                }`;
-
-                const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
-                return `
-                    <div class="${threadClass}" data-thread-id="${threadId}">
-                        <div class="inquiry-thread-header">
-                            <div class="thread-header-left">
-                                <div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div>
-                                <div class="thread-customer-info">
-                                    <div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div>
-                                    <div class="copyable-id" onclick="copyToClipboard('${thread.buyer_id}', '${thread.buyer_id.substring(0, 8)}')" title="Click to copy buyer ID">
-                                        ID: ${thread.buyer_id.substring(0, 8)} 📋
-                                    </div>
-                                    <div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div>
-                                </div>
-                            </div>
-
-                            <div class="thread-meta-info">
-                                <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
-                                <div class="thread-commission">
-                                    <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
-                                    <div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div>
-                                </div>
-                                <div class="thread-sla">
-                                    <div class="sla-time">${sla.label}</div>
-                                    <div class="sla-indicator ${sla.indicator}"></div>
-                                </div>
-                                <div class="thread-expand-arrow">▼</div>
-                            </div>
-                        </div>
-
-                        <div class="inquiry-thread-content">
-                            ${getProductContextHtml(thread, productMap)}
-                            <div class="thread-messages">
-                                ${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
+            // Attach click handlers to rendered threads
+            document.querySelectorAll('.inquiry-thread').forEach(thread => {
+                thread.removeEventListener('click', threadClickHandler);
+                thread.addEventListener('click', threadClickHandler);
             });
 
-            // Use requestAnimationFrame to batch DOM updates and prevent blocking
-            requestAnimationFrame(() => {
-                threadList.innerHTML = threadHtmlArray.join('');
-
-                document.querySelectorAll('.inquiry-thread').forEach(thread => {
-                    thread.removeEventListener('click', threadClickHandler);
-                    thread.addEventListener('click', threadClickHandler);
-                });
-
-                // Re-expand the thread that was expanded before polling
-                if (expandedThreadId) {
-                    const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
-                    if (threadToExpand) {
-                        threadToExpand.classList.add('expanded');
-                    }
+            // Re-expand preserved thread
+            if (expandedThreadId) {
+                const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
+                if (threadToExpand) {
+                    threadToExpand.classList.add('expanded');
                 }
-            });
+            }
+
+            // Attach scroll listener ONCE for virtual scrolling (not on every render)
+            if (!scrollListenerAttached) {
+                threadList.addEventListener('scroll', handleInquiriesScroll);
+                scrollListenerAttached = true;
+            }
         }
 
-        // Debounced render to batch multiple updates (max once every 300ms)
-        const debouncedRenderInquiries = debounce((productMap) => {
-            renderInquiries(productMap);
-        }, 300);
+        function handleInquiriesScroll(e) {
+            const threadList = document.getElementById('inquiriesThreadList');
+            virtualScrollState.scrollTop = threadList.scrollTop;
+            // Debounce scroll-triggered re-renders to prevent excessive DOM updates
+            debounceRender(productMapCache, 150);
+        }
 
         const threadClickHandler = (e) => {
             if (!e.target.closest('.inquiry-approve-btn') &&
