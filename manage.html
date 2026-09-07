@@ -1945,6 +1945,34 @@
             box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
         }
 
+        .messaging-filter-tab {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            color: #475569;
+            font-weight: 500;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 50px;
+        }
+
+        .messaging-filter-tab:hover {
+            border-color: #1e5aa8;
+            background: #f0f7ff;
+            color: #1e5aa8;
+        }
+
+        .messaging-filter-tab.active {
+            background: #1e5aa8;
+            color: white;
+            border-color: #1e5aa8;
+            box-shadow: 0 2px 8px rgba(30, 90, 168, 0.2);
+        }
+
         .messaging-conversation-list {
             flex: 1;
             overflow-y: auto;
@@ -2681,6 +2709,24 @@
                             <div class="messaging-sidebar-header">
                                 <h3>💬 Conversations</h3>
                                 <input type="text" class="messaging-search" id="messagingSearch" placeholder="Search conversations...">
+                                <!-- Quick Filter Tabs -->
+                                <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
+                                    <button class="messaging-filter-tab active" data-filter="all" onclick="filterMessagingConversations('all')">
+                                        <span style="font-size: 12px;">All</span>
+                                    </button>
+                                    <button class="messaging-filter-tab" data-filter="pending-feedback" onclick="filterMessagingConversations('pending-feedback')">
+                                        <span style="font-size: 12px;">⏳ Pending</span>
+                                    </button>
+                                    <button class="messaging-filter-tab" data-filter="approved" onclick="filterMessagingConversations('approved')">
+                                        <span style="font-size: 12px;">✅ Approved</span>
+                                    </button>
+                                    <button class="messaging-filter-tab" data-filter="inquiries" onclick="filterMessagingConversations('inquiries')">
+                                        <span style="font-size: 12px;">❓ Inquiries</span>
+                                    </button>
+                                    <button class="messaging-filter-tab" data-filter="flagged" onclick="filterMessagingConversations('flagged')">
+                                        <span style="font-size: 12px;">🚩 Flagged</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="messaging-conversation-list" id="messagingConversationList">
                                 <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">
@@ -3760,9 +3806,13 @@
                 if (error) throw error;
 
                 console.log('✅ Feedback approved and verified - commission triggered');
-                loadPendingInquiries();
+                showToast('Feedback approved! Commission created.', 'success');
+                await loadPendingInquiries();
+                await loadMessagingConversations();
+                await selectMessagingConversation(messagingState.currentConversationId, messagingState.currentOtherPartyId);
             } catch (error) {
                 console.error('❌ Error approving feedback:', error);
+                showToast('Error approving feedback', 'error');
                 buttonElement.disabled = false;
                 buttonElement.textContent = 'Approve';
             }
@@ -3781,9 +3831,13 @@
                 if (error) throw error;
 
                 console.log('✅ Feedback rejected');
-                loadPendingInquiries();
+                showToast('Feedback rejected', 'info');
+                await loadPendingInquiries();
+                await loadMessagingConversations();
+                await selectMessagingConversation(messagingState.currentConversationId, messagingState.currentOtherPartyId);
             } catch (error) {
                 console.error('❌ Error rejecting feedback:', error);
+                showToast('Error rejecting feedback', 'error');
                 buttonElement.disabled = false;
                 buttonElement.textContent = 'Reject';
             }
@@ -4715,7 +4769,9 @@
             currentConversationId: null,
             currentConversationType: null,
             currentOtherPartyId: null,
-            conversations: []
+            conversations: [],
+            currentFilter: 'all', // all, pending-feedback, approved, inquiries, flagged
+            allConversations: [] // Store unfiltered conversations
         };
 
         async function initMessagingHub() {
@@ -4723,6 +4779,42 @@
 
             await loadMessagingConversations();
             setupMessagingListeners();
+        }
+
+        function filterMessagingConversations(filterType) {
+            messagingState.currentFilter = filterType;
+
+            // Update active filter button
+            document.querySelectorAll('.messaging-filter-tab').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filterType) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Apply filter logic
+            let filtered = messagingState.allConversations;
+
+            if (filterType === 'pending-feedback') {
+                filtered = messagingState.allConversations.filter(conv =>
+                    conv.messages.some(m => m.message_type === 'feedback' && m.vendor_status !== 'approved' && m.vendor_status !== 'rejected')
+                );
+            } else if (filterType === 'approved') {
+                filtered = messagingState.allConversations.filter(conv =>
+                    conv.messages.some(m => m.message_type === 'feedback' && m.vendor_status === 'approved')
+                );
+            } else if (filterType === 'inquiries') {
+                filtered = messagingState.allConversations.filter(conv =>
+                    conv.messages.some(m => m.message_type === 'inquiry')
+                );
+            } else if (filterType === 'flagged') {
+                filtered = messagingState.allConversations.filter(conv =>
+                    conv.messages.some(m => m.is_flagged || m.alert_id)
+                );
+            }
+
+            messagingState.conversations = filtered;
+            renderMessagingConversations();
         }
 
         async function loadMessagingConversations() {
@@ -4773,9 +4865,12 @@
                     }
                 });
 
-                messagingState.conversations = Object.values(conversationMap).sort((a, b) =>
+                const sorted = Object.values(conversationMap).sort((a, b) =>
                     new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
                 );
+
+                messagingState.allConversations = sorted;
+                messagingState.conversations = sorted;
 
                 console.log('[MESSAGING] Conversations grouped:', messagingState.conversations.length);
                 renderMessagingConversations();
@@ -4826,9 +4921,23 @@
                     const time = new Date(lastMsg.created_at).toLocaleDateString();
                     const isActive = messagingState.currentConversationId === conv.id;
 
+                    // Calculate message counts
+                    const pendingFeedback = conv.messages.filter(m => m.message_type === 'feedback' && m.vendor_status !== 'approved' && m.vendor_status !== 'rejected').length;
+                    const approvedFeedback = conv.messages.filter(m => m.message_type === 'feedback' && m.vendor_status === 'approved').length;
+                    const inquiries = conv.messages.filter(m => m.message_type === 'inquiry').length;
+                    const flagged = conv.messages.filter(m => m.is_flagged || m.alert_id).length;
+
+                    const badgesHtml = `
+                        ${pendingFeedback > 0 ? `<span style="display: inline-block; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">⏳ ${pendingFeedback}</span>` : ''}
+                        ${approvedFeedback > 0 ? `<span style="display: inline-block; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">✅ ${approvedFeedback}</span>` : ''}
+                        ${inquiries > 0 ? `<span style="display: inline-block; background: #dbeafe; color: #0c4a6e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">❓ ${inquiries}</span>` : ''}
+                        ${flagged > 0 ? `<span style="display: inline-block; background: #fee2e2; color: #7f1d1d; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">🚩 ${flagged}</span>` : ''}
+                    `;
+
                     return `
                         <div class="conversation-item ${isActive ? 'active' : ''}" data-conv-id="${conv.id}" data-buyer-id="${conv.buyerId}">
                             <div class="conversation-item-name">${escapeHtml(buyerName)}</div>
+                            <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">${badgesHtml}</div>
                             <div class="conversation-item-preview">${escapeHtml(preview)}</div>
                             <div class="conversation-item-time">${time}</div>
                         </div>
@@ -4926,6 +5035,11 @@
                         const isSent = msg.sender_type === 'vendor';
                         const time = new Date(msg.created_at).toLocaleTimeString();
                         const msgTypeEmoji = {'inquiry': '❓', 'feedback': '⭐', 'followup': '↩️', 'vendor_response': '✅'}[msg.message_type] || '💬';
+                        const isFeedback = msg.message_type === 'feedback';
+                        const hasVendorApproved = msg.vendor_status === 'approved';
+                        const hasVendorRejected = msg.vendor_status === 'rejected';
+                        const needsApproval = isFeedback && !hasVendorApproved && !hasVendorRejected;
+                        const statusBadge = hasVendorApproved ? '✅ Approved' : (hasVendorRejected ? '❌ Rejected' : '');
 
                         return `
                             <div class="message-bubble ${isSent ? 'sent' : 'received'}">
@@ -4936,6 +5050,16 @@
                                         ${escapeHtml(msg.message)}
                                         ${msg.image_url ? `<div class="message-image-container"><img src="${msg.image_url}" alt="Attached image"></div>` : ''}
                                     </div>
+                                    ${needsApproval ? `
+                                        <div style="margin-top: 10px; display: flex; gap: 8px;">
+                                            <button class="inquiry-approve-btn" style="padding: 6px 12px; font-size: 13px; flex: 1;" onclick="approveVendorFeedback('${msg.id}', this)">✅ Approve</button>
+                                            <button class="inquiry-reject-btn" style="padding: 6px 12px; font-size: 13px; flex: 1;" onclick="rejectVendorFeedback('${msg.id}', this)">❌ Reject</button>
+                                        </div>
+                                    ` : (statusBadge ? `
+                                        <div style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: ${hasVendorApproved ? '#059669' : '#dc2626'}; background: ${hasVendorApproved ? '#ecfdf5' : '#fef2f2'};">
+                                            ${statusBadge}
+                                        </div>
+                                    ` : '')}
                                     <div class="message-time">${time}</div>
                                 </div>
                                 ${isSent ? `<div class="message-avatar" style="background: #10b981;">V</div>` : ''}
