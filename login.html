@@ -182,6 +182,21 @@
 
                 <div id="buyerSpecificFields" style="display: none;">
                     <div class="form-group">
+                        <label for="whatsappNumber">WhatsApp Number</label>
+                        <input type="tel" id="whatsappNumber" name="whatsappNumber" placeholder="+1234567890">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoriesInterest">Categories of Interest</label>
+                        <input type="text" id="categoriesInterest" name="categoriesInterest" placeholder="e.g., Electronics, Fashion, Food">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nationalIdFile">National ID File</label>
+                        <input type="file" id="nationalIdFile" name="nationalIdFile" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+
+                    <div class="form-group">
                         <label for="paypalEmail">PayPal Email</label>
                         <input type="email" id="paypalEmail" name="paypalEmail" placeholder="your.paypal@email.com">
                     </div>
@@ -333,6 +348,9 @@
                         // Buyer Registration Path (creates referral code & profile)
                         const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
                         const paypalEmail = document.getElementById('paypalEmail').value.trim();
+                        const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
+                        const categoriesInterest = document.getElementById('categoriesInterest').value.trim();
+                        const nationalIdFile = document.getElementById('nationalIdFile').files[0];
 
                         if (!paypalEmail) {
                             document.getElementById('paypalError').textContent = 'PayPal Email is required.';
@@ -342,6 +360,23 @@
                             throw new Error('PayPal Email is required for buyer registration.');
                         }
 
+                        let nationalIdData = null;
+                        let nationalIdFileName = null;
+                        let nationalIdFileType = null;
+                        let nationalIdFileSize = null;
+
+                        if (nationalIdFile) {
+                            nationalIdFileName = nationalIdFile.name;
+                            nationalIdFileType = nationalIdFile.type;
+                            nationalIdFileSize = nationalIdFile.size;
+                            const reader = new FileReader();
+                            nationalIdData = await new Promise((resolve, reject) => {
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(nationalIdFile);
+                            });
+                        }
+
                         const { error: insertError } = await supabaseClient.from('buyers').insert([
                             {
                                 id: authUuid,
@@ -349,6 +384,12 @@
                                 email: email,
                                 full_name: firstName + ' ' + lastName,
                                 paypal_email: paypalEmail,
+                                whatsapp_number: whatsappNumber || null,
+                                categories_interest: categoriesInterest || null,
+                                national_id_data: nationalIdData,
+                                national_id_file_name: nationalIdFileName,
+                                national_id_file_type: nationalIdFileType,
+                                national_id_file_size: nationalIdFileSize,
                                 referral_code: refCode,
                                 approval_status: 'approved',
                                 accumulated_balance: 0,
