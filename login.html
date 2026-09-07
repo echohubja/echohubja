@@ -59,7 +59,7 @@
             color: #475569;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
@@ -71,10 +71,43 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #1e5aa8;
             background: #f8fafc;
+        }
+
+        input[type="file"] {
+            padding: 10px 0;
+            color: #2c3e50;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+            background: #fafbfc;
+            padding: 16px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: normal;
+            color: #2c3e50;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #1e5aa8;
+            cursor: pointer;
         }
 
         .btn-submit {
@@ -139,6 +172,15 @@
             display: flex;
             gap: 12px;
         }
+
+        @media (max-width: 600px) {
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            .auth-container {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -156,57 +198,83 @@
             <div id="registerFields" style="display: none;">
                 <div class="form-group">
                     <label for="accountType">I want to register as a:</label>
-                    <select id="accountType" name="accountType">
+                    <select id="accountType">
                         <option value="buyer">Buyer / Reviewer</option>
                         <option value="vendor">Vendor Partner</option>
                     </select>
                 </div>
 
-                <div class="row-fields">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="firstName" placeholder="India">
+                <!-- BUYER-SPECIFIC FIELDS (Consolidated from register.html) -->
+                <div id="buyerSpecificFields" style="display: block;">
+                    <div class="row-fields">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="buyerFirstName">First Name *</label>
+                            <input type="text" id="buyerFirstName" placeholder="First Name">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="buyerLastName">Last Name *</label>
+                            <input type="text" id="buyerLastName" placeholder="Last Name">
+                        </div>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" placeholder="Stronghold">
+
+                    <div class="form-group">
+                        <label for="whatsapp">WhatsApp Number (Optional)</label>
+                        <input type="text" id="whatsapp" placeholder="e.g., +18765555555">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Categories of Interest *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Toys"> Toys</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Gadgets"> Gadgets</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Clothing"> Clothing</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="Office Furniture"> Office Furniture</label>
+                            <label class="checkbox-label"><input type="checkbox" name="category" value="All"> All (including future products)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nationalIdFile">Upload Your National ID * (Mandatory)</label>
+                        <input type="file" id="nationalIdFile">
                     </div>
                 </div>
 
+                <!-- VENDOR-SPECIFIC FIELDS -->
                 <div id="vendorSpecificFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="businessName">Business Name</label>
-                        <input type="text" id="businessName" name="businessName" placeholder="Your Business Name">
+                    <div class="row-fields">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" placeholder="India">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" placeholder="Stronghold">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="paypalEmail">PayPal Email</label>
-                        <input type="email" id="paypalEmail" name="paypalEmail" placeholder="paypal@example.com">
-                    </div>
+
                     <div class="form-group">
                         <label for="vendorType">Vendor Classification</label>
-                        <select id="vendorType" name="vendorType">
-                            <option value="UPFRONT">UPFRONT</option>
-                            <option value="REFUND_AFTER_REVIEW">REFUND_AFTER_REVIEW</option>
-                        </select>
+                        <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="email">Account Email</label>
-                <input type="email" id="email" name="email" required placeholder="name@example.com">
+                <input type="email" id="email" required placeholder="name@example.com">
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••">
+                <input type="password" id="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
         </form>
 
         <div class="toggle-mode">
-            <span id="toggleText">New to Echo Hub?</span> 
+            <span id="toggleText">New to Echo Hub?</span>
             <a href="#" id="toggleBtn">Create an account</a>
         </div>
     </div>
@@ -226,6 +294,7 @@
         const toggleText = document.getElementById('toggleText');
         const registerFields = document.getElementById('registerFields');
         const accountTypeSelect = document.getElementById('accountType');
+        const buyerSpecificFields = document.getElementById('buyerSpecificFields');
         const vendorSpecificFields = document.getElementById('vendorSpecificFields');
         const authAlert = document.getElementById('authAlert');
 
@@ -242,11 +311,13 @@
             }
         }
 
-        // Toggle visibility of vendor-specific inputs based on role selection
+        // Toggle visibility of account-type-specific fields
         accountTypeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'vendor') {
+                buyerSpecificFields.style.display = 'none';
                 vendorSpecificFields.style.display = 'block';
             } else {
+                buyerSpecificFields.style.display = 'block';
                 vendorSpecificFields.style.display = 'none';
             }
         });
@@ -289,49 +360,47 @@
                 if (isRegisterMode) {
                     // --- REGISTRATION FLOW ---
                     const accountType = accountTypeSelect.value;
-                    const firstName = document.getElementById('firstName').value.trim() || (accountType === 'vendor' ? 'Vendor' : 'Buyer');
-                    const lastName = document.getElementById('lastName').value.trim() || 'Partner';
 
                     submitBtn.textContent = 'Creating account...';
 
-                    // 1. Create Supabase Auth User
-                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { first_name: firstName, last_name: lastName, role: accountType } }
-                    });
-
-                    if (authError) throw new Error(authError.message);
-                    if (!authData.user) throw new Error('Registration failed to return user session.');
-
-                    const authUuid = authData.user.id;
-
                     if (accountType === 'vendor') {
-                        // Vendor Registration Path
-                        const businessName = document.getElementById('businessName').value.trim();
-                        const paypalEmail = document.getElementById('paypalEmail').value.trim();
+                        // --- VENDOR REGISTRATION ---
+                        const firstName = document.getElementById('firstName').value.trim() || 'Vendor';
+                        const lastName = document.getElementById('lastName').value.trim() || 'Partner';
                         const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
 
-                        if (!businessName) throw new Error('Business name is required');
-                        if (!paypalEmail) throw new Error('PayPal email is required');
+                        // 1. Create Supabase Auth User
+                        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                            email,
+                            password,
+                            options: { data: { first_name: firstName, last_name: lastName, role: 'vendor' } }
+                        });
 
-                        // Hash the password
-                        const hashedPassword = await hashPBKDF2Password(password);
+                        if (authError) throw new Error(authError.message);
+                        if (!authData.user) throw new Error('Registration failed to return user session.');
 
+                        const authUuid = authData.user.id;
+
+                        // 2. Get vendor count for sequential ID
+                        const { count, error: countError } = await supabaseClient
+                            .from('vendors')
+                            .select('*', { count: 'exact', head: true });
+
+                        if (countError) throw new Error('Could not calculate vendor sequence.');
+
+                        const nextNum = (count || 0) + 1;
+                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
+
+                        // 3. Insert vendor record
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
                             {
+                                id: formattedId,
                                 user_id: authUuid,
                                 email: email,
-                                password: hashedPassword,
                                 first_name: firstName,
                                 last_name: lastName,
-                                business_name: businessName,
-                                paypal_email: paypalEmail,
                                 vendor_type: vendorType,
-                                suspension_status: 'active',
-                                is_blocked: false,
-                                accumulated_balance: 0,
-                                current_per_feedback_rate: 5.00,
+                                status: 'ACTIVE',
                                 created_at: new Date()
                             }
                         ]);
@@ -342,24 +411,61 @@
                         setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
 
                     } else {
-                        // Buyer Registration Path (creates referral code & profile)
-                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                        
-                        const { error: insertError } = await supabaseClient.from('user_profiles').insert([
+                        // --- BUYER REGISTRATION (CONSOLIDATED FROM REGISTER.HTML) ---
+                        const buyerFirstName = document.getElementById('buyerFirstName').value.trim();
+                        const buyerLastName = document.getElementById('buyerLastName').value.trim();
+                        const fullName = buyerFirstName + ' ' + buyerLastName;
+                        const whatsapp = document.getElementById('whatsapp').value.trim();
+                        const fileInput = document.getElementById('nationalIdFile').files[0];
+
+                        // Validate required buyer fields
+                        if (!buyerFirstName) throw new Error('First Name is required.');
+                        if (!buyerLastName) throw new Error('Last Name is required.');
+                        if (!fileInput) throw new Error('National ID file is required.');
+
+                        const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                            .map(cb => cb.value);
+
+                        if (selectedCategories.length === 0) {
+                            throw new Error('Please select at least one category of interest.');
+                        }
+
+                        // Convert file to Base64 using safe chunked approach (8KB chunks)
+                        const arrayBuffer = await fileInput.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer);
+
+                        let base64Data = '';
+                        const chunkSize = 8192;
+                        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                            const chunk = uint8Array.subarray(i, i + chunkSize);
+                            base64Data += String.fromCharCode.apply(null, Array.from(chunk));
+                        }
+                        base64Data = btoa(base64Data);
+
+                        const fileExt = fileInput.name.split('.').pop() || 'bin';
+                        const mimeType = fileInput.type || 'application/octet-stream';
+
+                        // Insert buyer record directly into buyers table
+                        const { error: insertError } = await supabaseClient.from('buyers').insert([
                             {
-                                id: authUuid,
+                                full_name: fullName,
                                 email: email,
-                                first_name: firstName,
-                                last_name: lastName,
-                                referral_code: refCode,
+                                password: password || null,
+                                whatsapp_number: whatsapp || null,
+                                categories_interest: selectedCategories,
+                                national_id_file_name: fileInput.name,
+                                national_id_file_type: mimeType,
+                                national_id_file_size: uint8Array.length,
+                                national_id_data: base64Data,
+                                approval_status: 'pending',
                                 created_at: new Date()
                             }
                         ]);
 
                         if (insertError) throw new Error('Buyer profile creation error: ' + insertError.message);
 
-                        showAlert('Registration successful! Redirecting to storefront...', false);
-                        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                        showAlert('Registration successful! Your national ID will be reviewed. You will be notified via email once verified.', false);
+                        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
                     }
 
                 } else {
@@ -380,20 +486,7 @@
                             // Store vendor session in localStorage for manage.html
                             localStorage.setItem('vendor_id', vendorData.id);
                             localStorage.setItem('vendor_email', vendorData.email);
-
-                            // Check if vendor is flagged
-                            const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
-                                p_vendor_id: vendorData.id,
-                                p_buyer_id: null
-                            });
-
-                            if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
-                                localStorage.setItem('flagged_reason', flaggedStatus[0].message);
-                                localStorage.setItem('flagged_type', 'vendor');
-                                window.location.href = 'restricted-portal.html';
-                            } else {
-                                window.location.href = 'manage.html';
-                            }
+                            window.location.href = 'manage.html';
                             return;
                         } else {
                             throw new Error('Invalid login credentials');
@@ -415,23 +508,10 @@
                             if (buyerData.approval_status?.toLowerCase() !== 'approved') {
                                 throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
                             }
-                            // Store buyer session in localStorage for index.html (use numeric ID as primary)
+                            // Store buyer session in localStorage for index.html
                             localStorage.setItem('buyer_id', buyerData.id);
                             localStorage.setItem('buyer_email', buyerData.email);
-
-                            // Check if buyer is flagged
-                            const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
-                                p_vendor_id: null,
-                                p_buyer_id: buyerData.id
-                            });
-
-                            if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
-                                localStorage.setItem('flagged_reason', flaggedStatus[0].message);
-                                localStorage.setItem('flagged_type', 'buyer');
-                                window.location.href = 'restricted-portal.html';
-                            } else {
-                                window.location.href = 'index.html';
-                            }
+                            window.location.href = 'index.html';
                             return;
                         } else {
                             throw new Error('Invalid login credentials');
@@ -469,20 +549,7 @@
                         // Store buyer session (use numeric ID as primary, not Supabase UUID)
                         localStorage.setItem('buyer_id', buyerCheckData.id);
                         localStorage.setItem('buyer_email', email);
-
-                        // Check if buyer is flagged
-                        const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
-                            p_vendor_id: null,
-                            p_buyer_id: buyerCheckData.id
-                        });
-
-                        if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
-                            localStorage.setItem('flagged_reason', flaggedStatus[0].message);
-                            localStorage.setItem('flagged_type', 'buyer');
-                            window.location.href = 'restricted-portal.html';
-                        } else {
-                            window.location.href = 'index.html';
-                        }
+                        window.location.href = 'index.html';
                         return;
                     }
 
@@ -496,45 +563,6 @@
                 submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
             }
         });
-
-        async function hashPBKDF2Password(password) {
-            // Generate random 16-byte salt
-            const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
-
-            // Compute PBKDF2 with 100k iterations, SHA-256
-            const encoder = new TextEncoder();
-            const keyMaterial = await crypto.subtle.importKey(
-                'raw',
-                encoder.encode(password),
-                { name: 'PBKDF2' },
-                false,
-                ['deriveBits']
-            );
-
-            const derivedBits = await crypto.subtle.deriveBits(
-                {
-                    name: 'PBKDF2',
-                    salt: saltBuffer,
-                    iterations: 100000,
-                    hash: 'SHA-256'
-                },
-                keyMaterial,
-                256
-            );
-
-            // Combine salt + hash and encode as Base64
-            const hashArray = new Uint8Array(derivedBits);
-            const combined = new Uint8Array(saltBuffer.length + hashArray.length);
-            combined.set(saltBuffer);
-            combined.set(hashArray, saltBuffer.length);
-
-            // Convert to Base64
-            let binaryString = '';
-            for (let i = 0; i < combined.length; i++) {
-                binaryString += String.fromCharCode(combined[i]);
-            }
-            return btoa(binaryString);
-        }
 
         async function verifyPBKDF2Password(inputPassword, storedHashBase64) {
             // storedHash format: Base64(16-byte salt + 32-byte PBKDF2 hash)
