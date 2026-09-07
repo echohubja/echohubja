@@ -4848,7 +4848,10 @@
                 console.log('[RENDER] Conversation items in DOM after render:', items.length);
 
                 // Add click listeners to conversation items
-                items.forEach(item => {
+                items.forEach((item, idx) => {
+                    const style = window.getComputedStyle(item);
+                    console.log(`[RENDER] Item ${idx}: display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`);
+
                     item.addEventListener('click', () => {
                         const convId = item.getAttribute('data-conv-id');
                         const buyerId = item.getAttribute('data-buyer-id');
@@ -4856,6 +4859,17 @@
                         selectMessagingConversation(convId, buyerId);
                     });
                 });
+
+                // Check parent containers
+                console.log('[RENDER] List container display:', window.getComputedStyle(list).display);
+                const sidebar = list.closest('.messaging-sidebar');
+                if (sidebar) {
+                    console.log('[RENDER] Sidebar display:', window.getComputedStyle(sidebar).display);
+                }
+                const hubContainer = list.closest('.messaging-hub-container');
+                if (hubContainer) {
+                    console.log('[RENDER] Hub container display:', window.getComputedStyle(hubContainer).display);
+                }
             } catch (error) {
                 console.error('[RENDER] Error rendering conversations:', error);
                 list.innerHTML = '<div style="padding: 20px; text-align: center; color: #c0392b; font-size: 13px;">Error loading conversations</div>';
