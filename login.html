@@ -253,6 +253,28 @@
             }
         });
 
+        // Check URL parameters for auto-registration mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const registerType = urlParams.get('register'); // 'buyer' or 'vendor'
+
+        if (registerType === 'buyer' || registerType === 'vendor') {
+            // Auto-toggle to registration mode
+            isRegisterMode = true;
+            formTitle.textContent = 'Create Account';
+            formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
+            submitBtn.textContent = 'Complete Registration';
+            registerFields.style.display = 'block';
+            toggleText.textContent = 'Already have an account?';
+            toggleBtn.textContent = 'Sign in';
+
+            // Auto-select account type
+            accountTypeSelect.value = registerType;
+            accountTypeSelect.dispatchEvent(new Event('change'));
+
+            // Clear URL to avoid confusion
+            window.history.replaceState({}, document.title, 'login.html');
+        }
+
         // Clear PayPal error when user types
         document.getElementById('paypalEmail').addEventListener('input', () => {
             document.getElementById('paypalError').style.display = 'none';
