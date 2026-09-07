@@ -224,7 +224,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="businessDetails">Business Details</label>
+                        <label for="businessDetails">What will you be interested in offering?</label>
                         <textarea id="businessDetails" placeholder="Describe your business and services..." style="width: 100%; padding: 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; resize: vertical; min-height: 100px;"></textarea>
                     </div>
 
@@ -232,6 +232,12 @@
                         <label for="referralCodeVendor">Referral Code (Optional)</label>
                         <input type="text" id="referralCodeVendor" placeholder="Enter referral code if you have one">
                     </div>
+
+                    <div class="form-group">
+                        <label for="paypalEmailVendor">PayPal Email <span style="color: #e74c3c;">*</span></label>
+                        <input type="email" id="paypalEmailVendor" placeholder="your.paypal@email.com" required>
+                    </div>
+                    <div id="paypalErrorVendor" class="alert-msg alert-error" style="display: none; margin-bottom: 15px;"></div>
                 </div>
 
                 <div id="buyerSpecificFields" style="display: none;">
@@ -346,12 +352,18 @@
             document.getElementById('paypalError').style.display = 'none';
         });
 
+        // Clear Vendor PayPal error when user types
+        document.getElementById('paypalEmailVendor').addEventListener('input', () => {
+            document.getElementById('paypalErrorVendor').style.display = 'none';
+        });
+
         // Toggle between Login and Registration views
         toggleBtn.addEventListener('click', (e) => {
             e.preventDefault();
             isRegisterMode = !isRegisterMode;
             showAlert('', false);
             document.getElementById('paypalError').style.display = 'none';
+            document.getElementById('paypalErrorVendor').style.display = 'none';
 
             if (isRegisterMode) {
                 formTitle.textContent = 'Create Account';
@@ -408,10 +420,20 @@
                         const commissionAmount = parseFloat(document.getElementById('commissionAmount').value);
                         const businessDetails = document.getElementById('businessDetails').value.trim();
                         const referralCode = document.getElementById('referralCodeVendor').value.trim() || null;
+                        const paypalEmail = document.getElementById('paypalEmailVendor').value.trim();
 
                         // Validate commission amount
                         if (isNaN(commissionAmount) || commissionAmount < 5.00) {
                             throw new Error('Commission amount must be at least $5.00 USD.');
+                        }
+
+                        // Validate PayPal Email
+                        if (!paypalEmail) {
+                            document.getElementById('paypalErrorVendor').textContent = 'PayPal Email is required.';
+                            document.getElementById('paypalErrorVendor').style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Complete Registration';
+                            throw new Error('PayPal Email is required for vendor registration.');
                         }
 
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
@@ -422,6 +444,7 @@
                                 business_name: firstName + ' ' + lastName,
                                 description: businessDetails,
                                 current_per_feedback_rate: commissionAmount,
+                                paypal_email: paypalEmail,
                                 suspension_status: 'active',
                                 accumulated_balance: 0,
                                 rating: 0,
