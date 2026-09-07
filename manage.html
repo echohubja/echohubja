@@ -4790,40 +4790,76 @@
 
         async function renderMessagingConversations() {
             const list = document.getElementById('messagingConversationList');
-            if (!list) return;
+            console.log('[RENDER] list element found:', !!list);
+            if (!list) {
+                console.error('[RENDER] ERROR: messagingConversationList element not found in DOM');
+                return;
+            }
+
+            console.log('[RENDER] Conversations count:', messagingState.conversations.length);
 
             if (messagingState.conversations.length === 0) {
+                console.log('[RENDER] No conversations, showing empty state');
                 list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">No conversations yet</div>';
                 return;
             }
 
-            // Fetch buyer names
-            const buyerIds = [...new Set(messagingState.conversations.map(c => c.buyerId))];
-            const { data: buyers } = await sbClient
-                .from('buyers')
-                .select('id, full_name')
-                .in('id', buyerIds);
+            try {
+                // Fetch buyer names
+                const buyerIds = [...new Set(messagingState.conversations.map(c => c.buyerId))];
+                console.log('[RENDER] Buyer IDs to fetch:', buyerIds);
 
-            const buyerMap = {};
-            buyers?.forEach(b => { buyerMap[b.id] = b.full_name; });
+                const { data: buyers, error: buyersError } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name')
+                    .in('id', buyerIds);
 
-            const html = messagingState.conversations.map(conv => {
-                const buyerName = buyerMap[conv.buyerId] || 'Unknown Buyer';
-                const lastMsg = conv.lastMessage;
-                const preview = lastMsg.message.substring(0, 40) + (lastMsg.message.length > 40 ? '...' : '');
-                const time = new Date(lastMsg.created_at).toLocaleDateString();
-                const isActive = messagingState.currentConversationId === conv.id;
+                console.log('[RENDER] Buyers fetch error:', buyersError);
+                console.log('[RENDER] Buyers fetched:', buyers?.length || 0, 'buyers');
 
-                return `
-                    <div class="conversation-item ${isActive ? 'active' : ''}" onclick="selectMessagingConversation('${conv.id}', '${conv.buyerId}')">
-                        <div class="conversation-item-name">${escapeHtml(buyerName)}</div>
-                        <div class="conversation-item-preview">${escapeHtml(preview)}</div>
-                        <div class="conversation-item-time">${time}</div>
-                    </div>
-                `;
-            }).join('');
+                const buyerMap = {};
+                if (buyers) {
+                    buyers.forEach(b => { buyerMap[b.id] = b.full_name; });
+                }
+                console.log('[RENDER] Buyer map built:', Object.keys(buyerMap).length, 'entries');
 
-            list.innerHTML = html;
+                const html = messagingState.conversations.map(conv => {
+                    const buyerName = buyerMap[conv.buyerId] || 'Unknown Buyer';
+                    const lastMsg = conv.lastMessage;
+                    const preview = lastMsg.message.substring(0, 40) + (lastMsg.message.length > 40 ? '...' : '');
+                    const time = new Date(lastMsg.created_at).toLocaleDateString();
+                    const isActive = messagingState.currentConversationId === conv.id;
+
+                    return `
+                        <div class="conversation-item ${isActive ? 'active' : ''}" data-conv-id="${conv.id}" data-buyer-id="${conv.buyerId}">
+                            <div class="conversation-item-name">${escapeHtml(buyerName)}</div>
+                            <div class="conversation-item-preview">${escapeHtml(preview)}</div>
+                            <div class="conversation-item-time">${time}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                console.log('[RENDER] HTML generated, length:', html.length);
+                list.innerHTML = html;
+                console.log('[RENDER] HTML set to DOM');
+
+                // Verify HTML was actually set
+                const items = list.querySelectorAll('.conversation-item');
+                console.log('[RENDER] Conversation items in DOM after render:', items.length);
+
+                // Add click listeners to conversation items
+                items.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const convId = item.getAttribute('data-conv-id');
+                        const buyerId = item.getAttribute('data-buyer-id');
+                        console.log('[CLICK] Conversation clicked:', convId, buyerId);
+                        selectMessagingConversation(convId, buyerId);
+                    });
+                });
+            } catch (error) {
+                console.error('[RENDER] Error rendering conversations:', error);
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #c0392b; font-size: 13px;">Error loading conversations</div>';
+            }
         }
 
         async function selectMessagingConversation(conversationId, buyerId) {
