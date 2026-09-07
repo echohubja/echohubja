@@ -2450,6 +2450,15 @@
         let currentProductFilter = '';
         let searchQuery = '';
         let isLoadingInquiries = false;  // Prevent concurrent calls to loadPendingInquiries
+        let renderInquiriesTimeout = null;  // Debounce timer for renderInquiries
+
+        // Debounce function to prevent rapid re-renders
+        function debounce(func, delay) {
+            return function(...args) {
+                clearTimeout(renderInquiriesTimeout);
+                renderInquiriesTimeout = setTimeout(() => func(...args), delay);
+            };
+        }
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -2568,7 +2577,7 @@
                 let lastAlertsHash = '';
                 let lastProductsHash = '';
 
-                // Poll inquiries every 3 seconds
+                // Poll inquiries every 5 seconds (increased from 3s to reduce render frequency)
                 pollingIntervals.inquiries = setInterval(async () => {
                     try {
                         const { data: inquiries } = await sbClient
@@ -2587,7 +2596,7 @@
                     } catch (err) {
                         console.error('Polling error (inquiries):', err);
                     }
-                }, 3000);
+                }, 5000);
 
                 // Poll vendor data every 4 seconds
                 pollingIntervals.vendor = setInterval(async () => {
@@ -2897,7 +2906,8 @@
                 inquiriesCache = threads;
                 populateProductFilter(products);
                 setupInquiryEventListeners();
-                renderInquiries(productMapCache);
+                // Use debounced render to batch multiple updates within 300ms window
+                debouncedRenderInquiries(productMapCache);
                 updateFolderCounts();
 
             } catch (error) {
@@ -3099,7 +3109,8 @@
                 return;
             }
 
-            threadList.innerHTML = filteredInquiries.map(thread => {
+            // Build HTML in chunks to avoid blocking the main thread
+            const threadHtmlArray = filteredInquiries.map(thread => {
                 const lastMsg = thread.messages[thread.messages.length - 1];
                 const messageType = lastMsg.message_type;
                 const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
@@ -3152,21 +3163,31 @@
                         </div>
                     </div>
                 `;
-            }).join('');
-
-            document.querySelectorAll('.inquiry-thread').forEach(thread => {
-                thread.removeEventListener('click', threadClickHandler);
-                thread.addEventListener('click', threadClickHandler);
             });
 
-            // Re-expand the thread that was expanded before polling
-            if (expandedThreadId) {
-                const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
-                if (threadToExpand) {
-                    threadToExpand.classList.add('expanded');
+            // Use requestAnimationFrame to batch DOM updates and prevent blocking
+            requestAnimationFrame(() => {
+                threadList.innerHTML = threadHtmlArray.join('');
+
+                document.querySelectorAll('.inquiry-thread').forEach(thread => {
+                    thread.removeEventListener('click', threadClickHandler);
+                    thread.addEventListener('click', threadClickHandler);
+                });
+
+                // Re-expand the thread that was expanded before polling
+                if (expandedThreadId) {
+                    const threadToExpand = document.querySelector(`[data-thread-id="${expandedThreadId}"]`);
+                    if (threadToExpand) {
+                        threadToExpand.classList.add('expanded');
+                    }
                 }
-            }
+            });
         }
+
+        // Debounced render to batch multiple updates (max once every 300ms)
+        const debouncedRenderInquiries = debounce((productMap) => {
+            renderInquiries(productMap);
+        }, 300);
 
         const threadClickHandler = (e) => {
             if (!e.target.closest('.inquiry-approve-btn') &&
