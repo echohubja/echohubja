@@ -414,18 +414,9 @@
                             throw new Error('Commission amount must be at least $5.00 USD.');
                         }
 
-                        const { count, error: countError } = await supabaseClient
-                            .from('vendors')
-                            .select('*', { count: 'exact', head: true });
-
-                        if (countError) throw new Error('Could not calculate vendor sequence.');
-
-                        const nextNum = (count || 0) + 1;
-                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
-
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
                             {
-                                id: formattedId,
+                                id: authUuid,
                                 user_id: authUuid,
                                 email: email,
                                 business_name: firstName + ' ' + lastName,
@@ -440,7 +431,7 @@
 
                         if (insertError) throw new Error('Vendor profile creation error: ' + insertError.message);
 
-                        localStorage.setItem('vendor_id', formattedId);
+                        localStorage.setItem('vendor_id', authUuid);
                         localStorage.setItem('vendor_email', email);
                         if (referralCode) localStorage.setItem('vendor_referral_code', referralCode);
 
