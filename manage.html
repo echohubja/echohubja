@@ -760,11 +760,14 @@
             gap: 12px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            align-items: center;
+            width: 100%;
         }
 
         .search-box {
-            flex: 1;
-            min-width: 250px;
+            flex: 1 1 auto;
+            min-width: 200px;
+            max-width: 100%;
             position: relative;
         }
 
@@ -776,6 +779,7 @@
             font-size: 14px;
             background: white;
             transition: all 0.2s ease;
+            box-sizing: border-box;
         }
 
         .search-input:focus {
@@ -791,11 +795,15 @@
             transform: translateY(-50%);
             font-size: 16px;
             color: #9ca3af;
+            pointer-events: none;
         }
 
         .sort-controls,
         .filter-box {
             flex: 0 0 auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
         .sort-select,
@@ -807,6 +815,9 @@
             background: white;
             cursor: pointer;
             transition: all 0.2s ease;
+            box-sizing: border-box;
+            white-space: nowrap;
+            min-width: 120px;
         }
 
         .sort-select:focus,
@@ -814,6 +825,31 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Mobile Responsiveness - Stack Vertically on Small Screens */
+        @media (max-width: 768px) {
+            .inquiry-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-box {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .sort-controls,
+            .filter-box {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .sort-select,
+            .filter-select {
+                flex: 1;
+                min-width: 100px;
+            }
         }
 
         /* Thread List Container */
@@ -1802,468 +1838,9 @@
         .inquiry-empty-state-text {
             margin: 0;
         }
-
-        /* Toast Notification Styles */
-        #toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-width: 400px;
-        }
-
-        .toast {
-            padding: 14px 16px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideInRight 0.3s ease;
-            min-width: 280px;
-        }
-
-        .toast.success {
-            background-color: #10b981;
-            color: white;
-        }
-
-        .toast.error {
-            background-color: #ef4444;
-            color: white;
-        }
-
-        .toast.info {
-            background-color: #3b82f6;
-            color: white;
-        }
-
-        .toast.warning {
-            background-color: #f59e0b;
-            color: white;
-        }
-
-        .toast-message {
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .toast-close {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 0;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-            flex-shrink: 0;
-        }
-
-        .toast-close:hover {
-            opacity: 1;
-        }
-
-        .toast.removing {
-            animation: slideOutRight 0.3s ease forwards;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-
-        /* ==================== MESSAGING HUB STYLES ==================== */
-        .messaging-hub-container {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-            min-height: 600px;
-        }
-
-        .messaging-sidebar {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .messaging-sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid #e1e8ed;
-            background: #f8fafc;
-        }
-
-        .messaging-sidebar-header h3 {
-            font-size: 0.95em;
-            font-weight: 600;
-            color: #1e5aa8;
-            margin: 0 0 12px 0;
-        }
-
-        .messaging-search {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            background: white;
-        }
-
-        .messaging-search:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
-        }
-
-        .messaging-filter-tab {
-            padding: 6px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            background: white;
-            color: #475569;
-            font-weight: 500;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            flex: 1;
-            min-width: 50px;
-        }
-
-        .messaging-filter-tab:hover {
-            border-color: #1e5aa8;
-            background: #f0f7ff;
-            color: #1e5aa8;
-        }
-
-        .messaging-filter-tab.active {
-            background: #1e5aa8;
-            color: white;
-            border-color: #1e5aa8;
-            box-shadow: 0 2px 8px rgba(30, 90, 168, 0.2);
-        }
-
-        .messaging-conversation-list {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .conversation-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-left: 3px solid transparent;
-        }
-
-        .conversation-item:hover {
-            background: #f8fafc;
-            border-left-color: #1e5aa8;
-        }
-
-        .conversation-item.active {
-            background: #f0f4f8;
-            border-left-color: #1e5aa8;
-        }
-
-        .conversation-item-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-
-        .conversation-item-preview {
-            font-size: 12px;
-            color: #64748b;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .conversation-item-time {
-            font-size: 11px;
-            color: #94a3b8;
-        }
-
-        .conversation-item-unread {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #1e5aa8;
-            border-radius: 50%;
-            margin-left: 6px;
-        }
-
-        .messaging-chat-area {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .messaging-header {
-            padding: 16px;
-            border-bottom: 1px solid #e1e8ed;
-            background: #f8fafc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .messaging-header-title {
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .messaging-header-subtitle {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 2px;
-        }
-
-        .messaging-header-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .messaging-header-btn {
-            padding: 6px 12px;
-            border: 1px solid #cbd5e1;
-            background: white;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            color: #475569;
-            transition: all 0.2s;
-        }
-
-        .messaging-header-btn:hover {
-            background: #e2e8f0;
-            border-color: #1e5aa8;
-            color: #1e5aa8;
-        }
-
-        .messaging-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .messaging-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #94a3b8;
-            text-align: center;
-        }
-
-        .messaging-empty-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .message-bubble {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .message-bubble.sent {
-            justify-content: flex-end;
-        }
-
-        .message-bubble.received {
-            justify-content: flex-start;
-        }
-
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            max-width: 60%;
-        }
-
-        .message-bubble.sent .message-content {
-            text-align: right;
-        }
-
-        .message-text {
-            background: #e2e8f0;
-            color: #1e293b;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .message-bubble.sent .message-text {
-            background: #1e5aa8;
-            color: white;
-        }
-
-        .message-time {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 4px;
-            padding: 0 4px;
-        }
-
-        .message-image-container {
-            margin-top: 6px;
-        }
-
-        .message-image-container img {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 8px;
-            border: 1px solid #e1e8ed;
-        }
-
-        .messaging-input-area {
-            padding: 16px;
-            border-top: 1px solid #e1e8ed;
-            background: #f8fafc;
-        }
-
-        .messaging-input-form {
-            display: flex;
-            gap: 8px;
-        }
-
-        .messaging-text-input {
-            flex: 1;
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: inherit;
-            resize: none;
-            max-height: 100px;
-        }
-
-        .messaging-text-input:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
-        }
-
-        .messaging-send-btn {
-            padding: 10px 16px;
-            background: #1e5aa8;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .messaging-send-btn:hover {
-            background: #174887;
-        }
-
-        .messaging-send-btn:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-        }
-
-        .messaging-attachment-btn {
-            padding: 10px 12px;
-            background: white;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s;
-        }
-
-        .messaging-attachment-btn:hover {
-            background: #f1f5f9;
-            border-color: #1e5aa8;
-        }
-
-        @media (max-width: 1024px) {
-            .messaging-hub-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .messaging-no-selection {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #94a3b8;
-            text-align: center;
-        }
-
-        .messaging-no-selection-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
     </style>
 </head>
 <body>
-
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
 
     <header>
         <div>
@@ -2382,17 +1959,6 @@
                             Enable when threshold reached
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- VENDOR ALERTS WIDGET -->
-            <div class="panel" style="margin-top: 28px; margin-bottom: 28px;">
-                <div class="panel-header">
-                    <h2>🔔 Notifications & Alerts</h2>
-                    <span class="badge" id="vendor-alert-badge" style="background: #ef4444; color: white;">0 alerts</span>
-                </div>
-                <div id="vendor-alerts-container" style="padding: 20px; background: white; border-radius: 8px;">
-                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">Loading alerts...</div>
                 </div>
             </div>
 
@@ -2549,12 +2115,6 @@
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 12px;">
-                                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Request Target (First Name + Last Name, Buyer ID, or 'Admin')</label>
-                                    <input type="text" id="threshold-target" placeholder="e.g., John Smith or 550e8400 or Admin" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
-                                    <div style="font-size: 0.8em; color: #64748b; margin-top: 4px;">💡 Specify the buyer you're requesting the change for (by name or ID), or type 'Admin' to target the admin</div>
-                                </div>
-
-                                <div class="form-group" style="margin-bottom: 12px;">
                                     <label style="font-size: 0.9em; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Requested Threshold ($)</label>
                                     <input type="number" id="requested-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b;">
                                 </div>
@@ -2698,52 +2258,6 @@
                     </form>
                 </div>
 
-            </div>
-
-            <!-- MESSAGING HUB SECTION -->
-            <div class="panel" style="margin-top: 24px; padding: 0; border: none; box-shadow: none;">
-                <div style="height: 700px; border: 1px solid #e1e8ed; border-radius: 12px; background: white; overflow: hidden;">
-                    <div class="messaging-hub-container">
-                        <!-- Messaging Sidebar -->
-                        <div class="messaging-sidebar">
-                            <div class="messaging-sidebar-header">
-                                <h3>💬 Conversations</h3>
-                                <input type="text" class="messaging-search" id="messagingSearch" placeholder="Search conversations...">
-                                <!-- Quick Filter Tabs -->
-                                <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
-                                    <button class="messaging-filter-tab active" data-filter="all" onclick="filterMessagingConversations('all')">
-                                        <span style="font-size: 12px;">All</span>
-                                    </button>
-                                    <button class="messaging-filter-tab" data-filter="pending-feedback" onclick="filterMessagingConversations('pending-feedback')">
-                                        <span style="font-size: 12px;">⏳ Pending</span>
-                                    </button>
-                                    <button class="messaging-filter-tab" data-filter="approved" onclick="filterMessagingConversations('approved')">
-                                        <span style="font-size: 12px;">✅ Approved</span>
-                                    </button>
-                                    <button class="messaging-filter-tab" data-filter="inquiries" onclick="filterMessagingConversations('inquiries')">
-                                        <span style="font-size: 12px;">❓ Inquiries</span>
-                                    </button>
-                                    <button class="messaging-filter-tab" data-filter="flagged" onclick="filterMessagingConversations('flagged')">
-                                        <span style="font-size: 12px;">🚩 Flagged</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="messaging-conversation-list" id="messagingConversationList">
-                                <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">
-                                    Loading conversations...
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Messaging Chat Area -->
-                        <div class="messaging-chat-area" id="messagingChatArea">
-                            <div class="messaging-no-selection">
-                                <div class="messaging-no-selection-icon">💬</div>
-                                <div>Select a conversation to start messaging</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Pending Inquiries Section - OPTION 2B PHASE 1 -->
@@ -2930,46 +2444,11 @@
         // OPTION 2B Phase 1 State Variables
         let inquiriesCache = [];
         let productMapCache = {};
-        let feedbackIdMap = {};
         let filteredInquiries = [];
         let currentFolder = 'all';
         let currentSort = 'date-newest';
         let currentProductFilter = '';
         let searchQuery = '';
-
-        // Toast Notification Functions
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toastId = `toast-${Date.now()}`;
-            const toast = document.createElement('div');
-            toast.id = toastId;
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <span class="toast-message">${message}</span>
-                <button class="toast-close" onclick="closeToast('${toastId}')">×</button>
-            `;
-
-            container.appendChild(toast);
-
-            // Auto-dismiss after 4 seconds
-            setTimeout(() => {
-                closeToast(toastId);
-            }, 4000);
-        }
-
-        function closeToast(toastId) {
-            const toast = document.getElementById(toastId);
-            if (toast) {
-                toast.classList.add('removing');
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }
-        }
-
-        function showCopyToast(message) {
-            showToast(message, 'success');
-        }
 
         // DOM Elements
         const loadingState = document.getElementById('loadingState');
@@ -3045,7 +2524,7 @@
 
                 currentVendor = vendorData;
 
-                welcomeHeading.textContent = `Welcome, ${(vendorData.first_name && vendorData.last_name) ? `${vendorData.first_name} ${vendorData.last_name}` : vendorData.business_name || 'Vendor'}!`;
+                welcomeHeading.textContent = `Welcome, ${vendorData.business_name || vendorData.first_name || 'Vendor'}!`;
                 document.getElementById('profileVendorId').textContent = vendorData.id;
                 profileEmail.textContent = vendorEmail;
                 profileType.textContent = vendorData.vendor_type || 'STANDARD';
@@ -3056,8 +2535,7 @@
                 await loadCommissionSettings();
                 await loadEarningsData();
                 await loadCommissionStats();
-                await loadPendingFeedbackNotification(); // Show pending feedback count
-                await loadVendorAlerts(); // Load vendor alert notifications
+                // await loadVendorAlerts(); // DISABLED - alerts system removed (Sep 3, 2026)
                 await setupPolling();
 
                 loadingState.style.display = 'none';
@@ -3132,14 +2610,7 @@
                     }
                 }, 4000);
 
-                // Poll pending feedback notification every 6 seconds
-                pollingIntervals.feedback = setInterval(async () => {
-                    try {
-                        await loadPendingFeedbackNotification();
-                    } catch (err) {
-                        console.error('Polling error (pending feedback):', err);
-                    }
-                }, 6000);
+                // Alert polling DISABLED - commission system notifications removed (Sep 3, 2026)
 
                 // Poll products every 4 seconds
                 pollingIntervals.products = setInterval(async () => {
@@ -3170,7 +2641,6 @@
             if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
             if (pollingIntervals.vendor) clearInterval(pollingIntervals.vendor);
             if (pollingIntervals.products) clearInterval(pollingIntervals.products);
-            if (pollingIntervals.feedback) clearInterval(pollingIntervals.feedback);
             pollingIntervals = {};
             console.log('🛑 Polling stopped');
         }
@@ -3246,7 +2716,7 @@
                     .single();
 
                 if (error || !data) {
-                    showToast('Could not load product details for editing.', 'error');
+                    alert('Could not load product details for editing.');
                     return;
                 }
                 product = data;
@@ -3319,7 +2789,7 @@
                 }
                 await loadVendorProducts();
             } else {
-                showToast('Could not delete product: ' + error.message, 'error');
+                alert('Could not delete product: ' + error.message);
             }
         };
 
@@ -3367,19 +2837,6 @@
                         .in('id', buyerIds);
                     if (buyers) {
                         buyers.forEach(b => buyerMap[b.id] = b);
-                    }
-                }
-
-                // Fetch feedback IDs for feedback messages
-                let feedbackIdMap = {};
-                const feedbackInquiryIds = inquiries.filter(i => i.message_type === 'feedback').map(i => i.id);
-                if (feedbackInquiryIds.length > 0) {
-                    const { data: feedbackRecords } = await sbClient
-                        .from('feedback')
-                        .select('id, inquiry_id')
-                        .in('inquiry_id', feedbackInquiryIds);
-                    if (feedbackRecords) {
-                        feedbackRecords.forEach(f => feedbackIdMap[f.inquiry_id] = f.id);
                     }
                 }
 
@@ -3641,7 +3098,7 @@
             threadList.innerHTML = filteredInquiries.map(thread => {
                 const lastMsg = thread.messages[thread.messages.length - 1];
                 const messageType = lastMsg.message_type;
-                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '';
+                const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
 
                 const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
                 const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
@@ -3671,6 +3128,10 @@
 
                             <div class="thread-meta-info">
                                 <div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div>
+                                <div class="thread-commission">
+                                    <div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div>
+                                    <div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div>
+                                </div>
                                 <div class="thread-sla">
                                     <div class="sla-time">${sla.label}</div>
                                     <div class="sla-indicator ${sla.indicator}"></div>
@@ -3714,14 +3175,13 @@
         function renderMessage(msg, buyerName, idx) {
             const isBuyer = msg.message_type !== 'vendor_response';
             const avatar = isBuyer ? 'B' : 'V';
-            const senderName = isBuyer ? 'Buyer' : (currentVendor ? currentVendor.full_name || 'Vendor' : 'Vendor');
-            const vendorInfo = !isBuyer && currentVendor ? `<span style="font-size: 12px; color: #666; margin-left: 8px;">ID: ${currentVendor.id} | Email: ${currentVendor.email}</span>` : '';
+            const senderName = isBuyer ? 'Buyer' : 'You';
             const avatarClass = isBuyer ? 'buyer' : 'vendor';
 
             const feedbackStatus = msg.message_type === 'feedback' ? `
                 <div class="inquiry-feedback-status">
-                    ${msg.vendor_status ? `<span class="status-badge-pill vendor ${msg.vendor_status}">${msg.vendor_status === 'approved' ? '✅ You Approve' : '❌ You Reject'}</span>` : ''}
-                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending Vendor Verification'}</span>` : ''}
+                    ${msg.vendor_status ? `<span class="status-badge-pill vendor ${msg.vendor_status}">You: ${msg.vendor_status === 'approved' ? '✅' : '❌'}</span>` : ''}
+                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending'}</span>` : ''}
                 </div>
             ` : '';
 
@@ -3750,11 +3210,7 @@
                     <div class="message-avatar ${avatarClass}">${avatar}</div>
                     <div class="message-body">
                         <div class="message-header">
-                            <div style="display: flex; align-items: center;">
-                                <span class="message-sender">${senderName}</span>
-                                ${vendorInfo}
-                                ${msg.message_type === 'feedback' && feedbackIdMap[msg.id] ? `<span class="copyable-id" style="margin-left: 12px;" onclick="copyToClipboard('${feedbackIdMap[msg.id]}', 'Feedback ID: ${feedbackIdMap[msg.id].substring(0, 8)}')" title="Click to copy feedback ID">Feedback: ${feedbackIdMap[msg.id].substring(0, 8)} 📋</span>` : ''}
-                            </div>
+                            <span class="message-sender">${senderName}</span>
                             <span class="message-timestamp">${formatThreadTime(msg.created_at)}</span>
                         </div>
                         <div class="message-text">${linkifyText(msg.message || '[No message]')}</div>
@@ -3800,19 +3256,15 @@
 
                 const { error } = await sbClient
                     .from('inquiries')
-                    .update({ vendor_status: 'approved', status: 'verified' })
+                    .update({ vendor_status: 'approved' })
                     .eq('id', inquiryId);
 
                 if (error) throw error;
 
-                console.log('✅ Feedback approved and verified - commission triggered');
-                showToast('Feedback approved! Commission created.', 'success');
-                await loadPendingInquiries();
-                await loadMessagingConversations();
-                await selectMessagingConversation(messagingState.currentConversationId, messagingState.currentOtherPartyId);
+                console.log('✅ Feedback approved');
+                loadPendingInquiries();
             } catch (error) {
                 console.error('❌ Error approving feedback:', error);
-                showToast('Error approving feedback', 'error');
                 buttonElement.disabled = false;
                 buttonElement.textContent = 'Approve';
             }
@@ -3831,13 +3283,9 @@
                 if (error) throw error;
 
                 console.log('✅ Feedback rejected');
-                showToast('Feedback rejected', 'info');
-                await loadPendingInquiries();
-                await loadMessagingConversations();
-                await selectMessagingConversation(messagingState.currentConversationId, messagingState.currentOtherPartyId);
+                loadPendingInquiries();
             } catch (error) {
                 console.error('❌ Error rejecting feedback:', error);
-                showToast('Error rejecting feedback', 'error');
                 buttonElement.disabled = false;
                 buttonElement.textContent = 'Reject';
             }
@@ -3866,7 +3314,7 @@
                     .single();
 
                 if (!inquiry) {
-                    showToast('Inquiry not found: ' + id, 'error');
+                    alert('Inquiry not found: ' + id);
                     return;
                 }
 
@@ -3891,7 +3339,7 @@
                 document.getElementById('responseModal').style.display = 'flex';
             } catch (err) {
                 console.error('Error opening response modal:', err);
-                showToast('Failed to load inquiry details', 'error');
+                alert('Failed to load inquiry details');
             }
         };
 
@@ -3907,7 +3355,7 @@
 
             const responseText = document.getElementById('responseText').value.trim();
             if (!responseText) {
-                showToast('Please enter a response.', 'error');
+                alert('Please enter a response.');
                 return;
             }
 
@@ -3928,12 +3376,12 @@
 
                 if (error) throw error;
 
-                showToast('Response sent successfully!', 'success');
+                alert('Response sent successfully!');
                 closeResponseModal();
                 await loadPendingInquiries();
             } catch (err) {
                 console.error('Error sending response:', err);
-                showToast('Failed to send response: ' + err.message, 'error');
+                alert('Failed to send response: ' + err.message);
             } finally {
                 this.disabled = false;
                 this.textContent = 'Send Response';
@@ -4111,87 +3559,13 @@
             errorState.style.display = 'block';
         }
 
-        // Pending Feedback Notification System
-        async function loadPendingFeedbackNotification() {
-            try {
-                if (!currentVendor) return;
-
-                const { data: vendorProducts } = await sbClient
-                    .from('products')
-                    .select('id')
-                    .eq('vendor_id', currentVendor.id);
-
-                if (!vendorProducts || vendorProducts.length === 0) {
-                    const alertsBanner = document.getElementById('alerts-banner');
-                    if (alertsBanner) {
-                        alertsBanner.style.display = 'none';
-                    }
-                    return;
-                }
-
-                const productIds = vendorProducts.map(p => p.id);
-
-                // Count feedback pending approval (vendor_status = 'pending')
-                const { data: pendingFeedback, error } = await sbClient
-                    .from('inquiries')
-                    .select('*')
-                    .in('product_id', productIds)
-                    .eq('message_type', 'feedback')
-                    .eq('sender_type', 'buyer')
-                    .eq('vendor_status', 'pending');
-
-                if (error) {
-                    console.error('Error fetching pending feedback:', error);
-                    return;
-                }
-
-                const pendingCount = pendingFeedback ? pendingFeedback.length : 0;
-                const alertsBanner = document.getElementById('alerts-banner');
-                const alertsContent = document.getElementById('alerts-content');
-
-                // Only proceed if the alerts elements exist in the DOM
-                if (!alertsBanner || !alertsContent) {
-                    console.warn('Alerts banner elements not found in DOM - skipping notification');
-                    return;
-                }
-
-                if (pendingCount === 0) {
-                    alertsBanner.style.display = 'none';
-                    return;
-                }
-
-                // Display pending feedback notification
-                const feedbackText = pendingCount === 1 ? 'feedback' : 'feedbacks';
-                alertsContent.innerHTML = `
-                    <div style="font-weight: 600; color: #1e40af; font-size: 0.95em;">📋 Pending Approval</div>
-                    <div style="color: #1e3a8a; font-size: 0.9em; margin-top: 4px;">You have ${pendingCount} ${feedbackText} awaiting approval from customers.</div>
-                    <button onclick="dismissPendingNotification()" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
-                `;
-
-                alertsBanner.style.display = 'block';
-
-                // Auto-dismiss after 8 seconds if not manually dismissed
-                setTimeout(() => {
-                    if (alertsBanner && alertsBanner.style.display === 'block') {
-                        alertsBanner.style.display = 'none';
-                    }
-                }, 8000);
-
-            } catch (err) {
-                console.error('Unexpected error loading pending feedback notification:', err);
+        // Alert Functions DISABLED - commission notifications removed (Sep 3, 2026)
+        // These functions generated fake "Commission Generated" notifications
+        // The backend commission system was non-functional anyway
             }
         }
 
-        function dismissPendingNotification() {
-            const alertsBanner = document.getElementById('alerts-banner');
-            if (alertsBanner) {
-                alertsBanner.style.display = 'none';
-            }
-        }
-
-        function closeAlertsBanner() {
-            document.getElementById('alerts-banner').style.display = 'none';
-        }
+        // closeAlertsBanner REMOVED - alerts system disabled (Sep 3, 2026)
 
         // Collapsible Sections
         function toggleCollapsible(headerElement) {
@@ -4230,7 +3604,7 @@
                 const newCommission = parseFloat(document.getElementById('commission-amount').value);
 
                 if (isNaN(newCommission) || newCommission < 0) {
-                    showToast('Please enter a valid commission amount (must be 0 or greater)', 'error');
+                    alert('Please enter a valid commission amount (must be 0 or greater)');
                     return;
                 }
 
@@ -4244,15 +3618,15 @@
                     .eq('id', currentVendor.id);
 
                 if (error) {
-                    showToast('Error updating commission: ' + error.message, 'error');
+                    alert('Error updating commission: ' + error.message);
                     return;
                 }
 
-                showToast(`✓ Commission updated to $${newCommission.toFixed(2)} per feedback!`, 'success');
+                alert(`✓ Commission updated to $${newCommission.toFixed(2)} per feedback!`);
                 await loadCommissionSettings();
             } catch (err) {
                 console.error('Error updating commission:', err);
-                showToast('Unexpected error: ' + err.message, 'error');
+                alert('Unexpected error: ' + err.message);
             }
         }
 
@@ -4261,14 +3635,7 @@
             try {
                 const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
                 const reason = document.getElementById('threshold-reason').value.trim();
-                const target = document.getElementById('threshold-target').value.trim();
                 const statusDiv = document.getElementById('threshold-request-status');
-
-                if (!target) {
-                    statusDiv.textContent = '❌ Please specify who this request targets (buyer name/ID or "Admin")';
-                    statusDiv.style.display = 'block';
-                    return;
-                }
 
                 if (isNaN(requestedThreshold) || requestedThreshold < 0) {
                     statusDiv.textContent = '❌ Please enter a valid threshold amount (must be 0 or greater)';
@@ -4307,7 +3674,6 @@
                         vendor_id: currentVendor.id,
                         current_threshold: currentVendor.commission_threshold,
                         requested_threshold: requestedThreshold,
-                        target_buyer_id_or_name: target,
                         reason: reason || null,
                         status: 'pending',
                         created_at: new Date().toISOString()
@@ -4326,7 +3692,6 @@
                 statusDiv.style.color = '#166534';
 
                 document.getElementById('requested-threshold').value = '';
-                document.getElementById('threshold-target').value = '';
                 document.getElementById('threshold-reason').value = '';
 
                 setTimeout(() => {
@@ -4503,17 +3868,17 @@
             const balance = parseFloat(document.getElementById('sidebar-balance').textContent.replace('$', ''));
 
             if (balance <= 0) {
-                showToast('Your balance is zero. No payout to process.', 'error');
+                alert('Your balance is zero. No payout to process.');
                 return;
             }
 
-            showToast(`Payout Process Initiated - Balance to Payout: $${balance.toFixed(2)}`, 'success');
+            alert(`Payout Process Initiated\n\n💳 Balance to Payout: $${balance.toFixed(2)}\n\n⚠️ You will be directed to complete your PayPal payment securely.\n\nImportant: Do NOT share your PayPal credentials with anyone.`);
 
             console.log('Payout initiated for balance:', balance);
         }
 
         function viewFeedbackDetails(feedbackId) {
-            showToast(`Feedback ID: ${feedbackId} - Full details would open in production`, 'info');
+            alert(`Feedback ID: ${feedbackId}\n\nFull details page would open here in production.`);
             console.log('Viewing feedback:', feedbackId);
         }
 
@@ -4597,7 +3962,7 @@
             const reason = document.getElementById('rate-increase-reason').value;
 
             if (!requestedRate || requestedRate <= 0) {
-                showToast('Please enter a valid rate', 'error');
+                alert('Please enter a valid rate');
                 return;
             }
 
@@ -4623,10 +3988,46 @@
                 }, 2000);
             } catch (error) {
                 console.error('Error submitting rate request:', error);
-                showToast('Failed to submit request. Please try again.', 'error');
+                alert('Failed to submit request. Please try again.');
             }
         }
 
+        async function submitThresholdChangeRequest() {
+            if (!currentVendor || !sbClient) return;
+
+            const requestedThreshold = parseFloat(document.getElementById('requested-threshold').value);
+            const reason = document.getElementById('threshold-reason').value;
+
+            if (!requestedThreshold || requestedThreshold <= 0) {
+                alert('Please enter a valid threshold');
+                return;
+            }
+
+            try {
+                const { error } = await sbClient
+                    .from('commission_threshold_requests')
+                    .insert([{
+                        vendor_id: currentVendor.id,
+                        requested_threshold: requestedThreshold,
+                        reason: reason,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                document.getElementById('threshold-request-status').textContent = '✓ Request submitted successfully!';
+                document.getElementById('threshold-request-status').style.display = 'block';
+                setTimeout(() => {
+                    closeCommissionModal('threshold-modal');
+                    document.getElementById('requested-threshold').value = '';
+                    document.getElementById('threshold-reason').value = '';
+                }, 2000);
+            } catch (error) {
+                console.error('Error submitting threshold request:', error);
+                alert('Failed to submit request. Please try again.');
+            }
+        }
 
         async function loadCommissionStats() {
             if (!currentVendor || !sbClient) return;
@@ -4679,498 +4080,6 @@
             }
         }
 
-        // Load Vendor Alerts
-        async function loadVendorAlerts() {
-            const container = document.getElementById('vendor-alerts-container');
-            const badge = document.getElementById('vendor-alert-badge');
-            if (!container || !currentVendor) return;
-
-            try {
-                const { data: alerts, error } = await sbClient
-                    .from('payment_alerts')
-                    .select('*')
-                    .eq('vendor_id', currentVendor.id)
-                    .order('is_acknowledged', { ascending: true })
-                    .order('created_at', { ascending: false })
-                    .limit(20);
-
-                if (error) {
-                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
-                    return;
-                }
-
-                if (!alerts || alerts.length === 0) {
-                    container.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #94a3b8;">No alerts at this time ✓</div>`;
-                    badge.textContent = '0 alerts';
-                    badge.style.background = '#10b981';
-                    return;
-                }
-
-                const unacknowledgedCount = alerts.filter(a => !a.is_acknowledged).length;
-                badge.textContent = unacknowledgedCount > 0 ? `${unacknowledgedCount} alert${unacknowledgedCount !== 1 ? 's' : ''}` : '0 alerts';
-                badge.style.background = unacknowledgedCount > 0 ? '#ef4444' : '#10b981';
-
-                const alertsHtml = alerts.map(alert => {
-                    const severityColors = {
-                        'critical': { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', icon: '🚨' },
-                        'warning': { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b', icon: '⚠️' },
-                        'info': { bg: 'rgba(30, 90, 168, 0.1)', border: '#1e5aa8', icon: 'ℹ️' }
-                    };
-                    const colors = severityColors[alert.severity] || severityColors['info'];
-
-                    return `
-                        <div style="background: ${colors.bg}; border-left: 4px solid ${colors.border}; padding: 12px 16px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${colors.icon} ${escapeHtml(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
-                                <div style="font-size: 0.9em; color: #4b5563; margin-bottom: 6px;">${escapeHtml(alert.message)}</div>
-                                <div style="font-size: 0.8em; color: #94a3b8;">${new Date(alert.created_at).toLocaleString()}</div>
-                            </div>
-                            ${!alert.is_acknowledged ? `<button onclick="acknowledgeVendorAlert('${alert.id}')" style="background: ${colors.border}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;">Acknowledge</button>` : `<span style="color: #10b981; font-size: 0.85em; font-weight: 600;">✓ Acknowledged</span>`}
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = alertsHtml;
-            } catch (error) {
-                console.error('Error loading vendor alerts:', error);
-                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
-            }
-        }
-
-        async function acknowledgeVendorAlert(alertId) {
-            if (!sbClient) return;
-            try {
-                const { error } = await sbClient
-                    .from('payment_alerts')
-                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
-                    .eq('id', alertId);
-
-                if (!error) {
-                    await loadVendorAlerts(); // Refresh alerts
-                }
-            } catch (err) {
-                console.error('Error acknowledging alert:', err);
-            }
-        }
-
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // ==================== MESSAGING HUB FUNCTIONS ====================
-        let messagingState = {
-            currentConversationId: null,
-            currentConversationType: null,
-            currentOtherPartyId: null,
-            conversations: [],
-            currentFilter: 'all', // all, pending-feedback, approved, inquiries, flagged
-            allConversations: [] // Store unfiltered conversations
-        };
-
-        async function initMessagingHub() {
-            if (!sbClient || !currentVendor) return;
-
-            await loadMessagingConversations();
-            setupMessagingListeners();
-        }
-
-        function filterMessagingConversations(filterType) {
-            messagingState.currentFilter = filterType;
-
-            // Update active filter button
-            document.querySelectorAll('.messaging-filter-tab').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.filter === filterType) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Apply filter logic
-            let filtered = messagingState.allConversations;
-
-            if (filterType === 'pending-feedback') {
-                filtered = messagingState.allConversations.filter(conv =>
-                    conv.messages.some(m => m.message_type === 'feedback' && m.vendor_status !== 'approved' && m.vendor_status !== 'rejected')
-                );
-            } else if (filterType === 'approved') {
-                filtered = messagingState.allConversations.filter(conv =>
-                    conv.messages.some(m => m.message_type === 'feedback' && m.vendor_status === 'approved')
-                );
-            } else if (filterType === 'inquiries') {
-                filtered = messagingState.allConversations.filter(conv =>
-                    conv.messages.some(m => m.message_type === 'inquiry')
-                );
-            } else if (filterType === 'flagged') {
-                filtered = messagingState.allConversations.filter(conv =>
-                    conv.messages.some(m => m.is_flagged || m.alert_id)
-                );
-            }
-
-            messagingState.conversations = filtered;
-            renderMessagingConversations();
-        }
-
-        async function loadMessagingConversations() {
-            if (!sbClient || !currentVendor) return;
-
-            try {
-                console.log('[MESSAGING] Loading conversations for vendor:', currentVendor.id);
-
-                // Get all inquiries/feedback where vendor is involved
-                const { data: inquiries, error } = await sbClient
-                    .from('inquiries')
-                    .select('*')
-                    .eq('vendor_id', currentVendor.id)
-                    .order('created_at', { ascending: false });
-
-                console.log('[MESSAGING] Query error:', error);
-                console.log('[MESSAGING] Inquiries received:', inquiries);
-                console.log('[MESSAGING] Number of inquiries:', inquiries?.length || 0);
-
-                if (error) {
-                    console.error('Error loading conversations:', error);
-                    return;
-                }
-
-                if (!inquiries || inquiries.length === 0) {
-                    console.warn('[MESSAGING] No inquiries found for vendor', currentVendor.id);
-                    messagingState.conversations = [];
-                    renderMessagingConversations();
-                    return;
-                }
-
-                // Group by conversation (buyer + first message)
-                const conversationMap = {};
-
-                inquiries.forEach(msg => {
-                    const key = `buyer_${msg.buyer_id}`;
-                    if (!conversationMap[key]) {
-                        conversationMap[key] = {
-                            id: key,
-                            buyerId: msg.buyer_id,
-                            lastMessage: msg,
-                            messages: []
-                        };
-                    }
-                    conversationMap[key].messages.push(msg);
-                    if (!conversationMap[key].lastMessage || msg.created_at > conversationMap[key].lastMessage.created_at) {
-                        conversationMap[key].lastMessage = msg;
-                    }
-                });
-
-                const sorted = Object.values(conversationMap).sort((a, b) =>
-                    new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
-                );
-
-                messagingState.allConversations = sorted;
-                messagingState.conversations = sorted;
-
-                console.log('[MESSAGING] Conversations grouped:', messagingState.conversations.length);
-                renderMessagingConversations();
-            } catch (error) {
-                console.error('Error loading messaging conversations:', error);
-            }
-        }
-
-        async function renderMessagingConversations() {
-            const list = document.getElementById('messagingConversationList');
-            console.log('[RENDER] list element found:', !!list);
-            if (!list) {
-                console.error('[RENDER] ERROR: messagingConversationList element not found in DOM');
-                return;
-            }
-
-            console.log('[RENDER] Conversations count:', messagingState.conversations.length);
-
-            if (messagingState.conversations.length === 0) {
-                console.log('[RENDER] No conversations, showing empty state');
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">No conversations yet</div>';
-                return;
-            }
-
-            try {
-                // Fetch buyer names
-                const buyerIds = [...new Set(messagingState.conversations.map(c => c.buyerId))];
-                console.log('[RENDER] Buyer IDs to fetch:', buyerIds);
-
-                const { data: buyers, error: buyersError } = await sbClient
-                    .from('buyers')
-                    .select('id, full_name')
-                    .in('id', buyerIds);
-
-                console.log('[RENDER] Buyers fetch error:', buyersError);
-                console.log('[RENDER] Buyers fetched:', buyers?.length || 0, 'buyers');
-
-                const buyerMap = {};
-                if (buyers) {
-                    buyers.forEach(b => { buyerMap[b.id] = b.full_name; });
-                }
-                console.log('[RENDER] Buyer map built:', Object.keys(buyerMap).length, 'entries');
-
-                const html = messagingState.conversations.map(conv => {
-                    const buyerName = buyerMap[conv.buyerId] || 'Unknown Buyer';
-                    const lastMsg = conv.lastMessage;
-                    const preview = lastMsg.message.substring(0, 40) + (lastMsg.message.length > 40 ? '...' : '');
-                    const time = new Date(lastMsg.created_at).toLocaleDateString();
-                    const isActive = messagingState.currentConversationId === conv.id;
-
-                    // Calculate message counts
-                    const pendingFeedback = conv.messages.filter(m => m.message_type === 'feedback' && m.vendor_status !== 'approved' && m.vendor_status !== 'rejected').length;
-                    const approvedFeedback = conv.messages.filter(m => m.message_type === 'feedback' && m.vendor_status === 'approved').length;
-                    const inquiries = conv.messages.filter(m => m.message_type === 'inquiry').length;
-                    const flagged = conv.messages.filter(m => m.is_flagged || m.alert_id).length;
-
-                    const badgesHtml = `
-                        ${pendingFeedback > 0 ? `<span style="display: inline-block; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">⏳ ${pendingFeedback}</span>` : ''}
-                        ${approvedFeedback > 0 ? `<span style="display: inline-block; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">✅ ${approvedFeedback}</span>` : ''}
-                        ${inquiries > 0 ? `<span style="display: inline-block; background: #dbeafe; color: #0c4a6e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; font-weight: 600;">❓ ${inquiries}</span>` : ''}
-                        ${flagged > 0 ? `<span style="display: inline-block; background: #fee2e2; color: #7f1d1d; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">🚩 ${flagged}</span>` : ''}
-                    `;
-
-                    return `
-                        <div class="conversation-item ${isActive ? 'active' : ''}" data-conv-id="${conv.id}" data-buyer-id="${conv.buyerId}">
-                            <div class="conversation-item-name">${escapeHtml(buyerName)}</div>
-                            <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">${badgesHtml}</div>
-                            <div class="conversation-item-preview">${escapeHtml(preview)}</div>
-                            <div class="conversation-item-time">${time}</div>
-                        </div>
-                    `;
-                }).join('');
-
-                console.log('[RENDER] HTML generated, length:', html.length);
-                list.innerHTML = html;
-                console.log('[RENDER] HTML set to DOM');
-
-                // Verify HTML was actually set
-                const items = list.querySelectorAll('.conversation-item');
-                console.log('[RENDER] Conversation items in DOM after render:', items.length);
-
-                // Add click listeners to conversation items
-                items.forEach((item, idx) => {
-                    const style = window.getComputedStyle(item);
-                    console.log(`[RENDER] Item ${idx}: display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`);
-
-                    item.addEventListener('click', () => {
-                        const convId = item.getAttribute('data-conv-id');
-                        const buyerId = item.getAttribute('data-buyer-id');
-                        console.log('[CLICK] Conversation clicked:', convId, buyerId);
-                        selectMessagingConversation(convId, buyerId);
-                    });
-                });
-
-                // Check parent containers
-                console.log('[RENDER] List container display:', window.getComputedStyle(list).display);
-                const sidebar = list.closest('.messaging-sidebar');
-                if (sidebar) {
-                    console.log('[RENDER] Sidebar display:', window.getComputedStyle(sidebar).display);
-                }
-                const hubContainer = list.closest('.messaging-hub-container');
-                if (hubContainer) {
-                    console.log('[RENDER] Hub container display:', window.getComputedStyle(hubContainer).display);
-                }
-            } catch (error) {
-                console.error('[RENDER] Error rendering conversations:', error);
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #c0392b; font-size: 13px;">Error loading conversations</div>';
-            }
-        }
-
-        async function selectMessagingConversation(conversationId, buyerId) {
-            messagingState.currentConversationId = conversationId;
-            messagingState.currentOtherPartyId = buyerId;
-            messagingState.currentConversationType = 'buyer';
-
-            renderMessagingConversations();
-            await loadMessagingMessages();
-        }
-
-        async function loadMessagingMessages() {
-            if (!messagingState.currentConversationId) return;
-
-            try {
-                const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
-                if (!conv) return;
-
-                const messages = conv.messages || [];
-                renderMessagingMessages(messages);
-            } catch (error) {
-                console.error('Error loading messages:', error);
-            }
-        }
-
-        function renderMessagingMessages(messages) {
-            const chatArea = document.getElementById('messagingChatArea');
-            if (!chatArea) return;
-
-            const buName = messagingState.conversations.find(c => c.id === messagingState.currentConversationId)?.lastMessage?.buyer_id;
-
-            const headerHtml = `
-                <div class="messaging-header">
-                    <div>
-                        <div class="messaging-header-title">Conversation with Buyer</div>
-                        <div class="messaging-header-subtitle">ID: ${messagingState.currentOtherPartyId?.substring(0, 8)}...</div>
-                    </div>
-                    <div class="messaging-header-actions">
-                        <button class="messaging-header-btn" onclick="toggleMessagingArchive()">📁 Archive</button>
-                    </div>
-                </div>
-            `;
-
-            const messagesHtml = messages.length === 0 ? `
-                <div class="messaging-messages">
-                    <div class="messaging-empty">
-                        <div class="messaging-empty-icon">💬</div>
-                        <div>No messages yet</div>
-                    </div>
-                </div>
-            ` : `
-                <div class="messaging-messages">
-                    ${messages.map(msg => {
-                        const isSent = msg.sender_type === 'vendor';
-                        const time = new Date(msg.created_at).toLocaleTimeString();
-                        const msgTypeEmoji = {'inquiry': '❓', 'feedback': '⭐', 'followup': '↩️', 'vendor_response': '✅'}[msg.message_type] || '💬';
-                        const isFeedback = msg.message_type === 'feedback';
-                        const hasVendorApproved = msg.vendor_status === 'approved';
-                        const hasVendorRejected = msg.vendor_status === 'rejected';
-                        const needsApproval = isFeedback && !hasVendorApproved && !hasVendorRejected;
-                        const statusBadge = hasVendorApproved ? '✅ Approved' : (hasVendorRejected ? '❌ Rejected' : '');
-
-                        return `
-                            <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                                ${!isSent ? `<div class="message-avatar">B</div>` : ''}
-                                <div class="message-content">
-                                    <div class="message-text">
-                                        <span style="font-size: 11px; opacity: 0.8;">${msgTypeEmoji}</span>
-                                        ${escapeHtml(msg.message)}
-                                        ${msg.image_url ? `<div class="message-image-container"><img src="${msg.image_url}" alt="Attached image"></div>` : ''}
-                                    </div>
-                                    ${needsApproval ? `
-                                        <div style="margin-top: 10px; display: flex; gap: 8px;">
-                                            <button class="inquiry-approve-btn" style="padding: 6px 12px; font-size: 13px; flex: 1;" onclick="approveVendorFeedback('${msg.id}', this)">✅ Approve</button>
-                                            <button class="inquiry-reject-btn" style="padding: 6px 12px; font-size: 13px; flex: 1;" onclick="rejectVendorFeedback('${msg.id}', this)">❌ Reject</button>
-                                        </div>
-                                    ` : (statusBadge ? `
-                                        <div style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: ${hasVendorApproved ? '#059669' : '#dc2626'}; background: ${hasVendorApproved ? '#ecfdf5' : '#fef2f2'};">
-                                            ${statusBadge}
-                                        </div>
-                                    ` : '')}
-                                    <div class="message-time">${time}</div>
-                                </div>
-                                ${isSent ? `<div class="message-avatar" style="background: #10b981;">V</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-
-            const inputHtml = `
-                <div class="messaging-input-area">
-                    <div class="messaging-input-form">
-                        <textarea id="messagingTextInput" class="messaging-text-input" placeholder="Type your response..." rows="1"></textarea>
-                        <button class="messaging-send-btn" onclick="sendMessagingMessage()">Send</button>
-                    </div>
-                </div>
-            `;
-
-            chatArea.innerHTML = headerHtml + messagesHtml + inputHtml;
-
-            // Auto-scroll to bottom
-            const msgContainer = chatArea.querySelector('.messaging-messages');
-            if (msgContainer) {
-                setTimeout(() => {
-                    msgContainer.scrollTop = msgContainer.scrollHeight;
-                }, 100);
-            }
-
-            // Focus on input
-            const input = document.getElementById('messagingTextInput');
-            if (input) {
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessagingMessage();
-                    }
-                });
-            }
-        }
-
-        async function sendMessagingMessage() {
-            const input = document.getElementById('messagingTextInput');
-            if (!input || !input.value.trim()) return;
-
-            const message = input.value.trim();
-            input.value = '';
-
-            try {
-                // Get product_id from conversation's last message (original inquiry has product_id)
-                const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
-                if (!conv) {
-                    console.error('Conversation not found');
-                    showToast('Error: Conversation not found', 'error');
-                    return;
-                }
-
-                const productId = conv.lastMessage?.product_id;
-                if (!productId) {
-                    console.error('Product ID not found in conversation');
-                    showToast('Error: Cannot determine product', 'error');
-                    return;
-                }
-
-                // Insert vendor response message into inquiries table
-                const { error } = await sbClient
-                    .from('inquiries')
-                    .insert([{
-                        product_id: productId,
-                        buyer_id: messagingState.currentOtherPartyId,
-                        vendor_id: currentVendor.id,
-                        message_type: 'vendor_response',
-                        message: message,
-                        sender_type: 'vendor',
-                        sender_id: currentVendor.id,
-                        status: 'completed',
-                        vendor_status: 'pending'
-                    }]);
-
-                if (error) {
-                    console.error('Error sending message:', error);
-                    showToast('Error sending message', 'error');
-                    return;
-                }
-
-                showToast('Message sent', 'success');
-                await loadMessagingConversations();
-                await selectMessagingConversation(messagingState.currentConversationId, messagingState.currentOtherPartyId);
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Error sending message', 'error');
-            }
-        }
-
-        function toggleMessagingArchive() {
-            showToast('Archive feature coming soon', 'info');
-        }
-
-        function setupMessagingListeners() {
-            const search = document.getElementById('messagingSearch');
-            if (search) {
-                search.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase();
-                    const items = document.querySelectorAll('.conversation-item');
-                    items.forEach(item => {
-                        const name = item.querySelector('.conversation-item-name').textContent.toLowerCase();
-                        item.style.display = name.includes(query) ? '' : 'none';
-                    });
-                });
-            }
-        }
-
         // Logout Handler
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('logoutBtn');
@@ -5192,15 +4101,7 @@
             }
         });
 
-        async function initPortalWithMessaging() {
-            await initPortal();
-            // Initialize messaging hub after portal is loaded
-            setTimeout(() => {
-                initMessagingHub();
-            }, 500);
-        }
-
-        initPortalWithMessaging();
+        initPortal();
     </script>
 </body>
 </html>
