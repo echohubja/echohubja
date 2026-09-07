@@ -223,6 +223,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="paypalEmail">PayPal Email *</label>
+                        <input type="email" id="paypalEmail" placeholder="your.paypal@email.com" required>
+                    </div>
+
+                    <div class="form-group">
                         <label>Categories of Interest *</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label"><input type="checkbox" name="category" value="Wigs"> Wigs</label>
@@ -416,11 +421,13 @@
                         const buyerLastName = document.getElementById('buyerLastName').value.trim();
                         const fullName = buyerFirstName + ' ' + buyerLastName;
                         const whatsapp = document.getElementById('whatsapp').value.trim();
+                        const paypalEmail = document.getElementById('paypalEmail').value.trim();
                         const fileInput = document.getElementById('nationalIdFile').files[0];
 
                         // Validate required buyer fields
                         if (!buyerFirstName) throw new Error('First Name is required.');
                         if (!buyerLastName) throw new Error('Last Name is required.');
+                        if (!paypalEmail) throw new Error('PayPal Email is required.');
                         if (!fileInput) throw new Error('National ID file is required.');
 
                         const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
@@ -465,6 +472,7 @@
                                 user_id: authUuid,
                                 full_name: fullName,
                                 email: email,
+                                paypal_email: paypalEmail,
                                 whatsapp_number: whatsapp || null,
                                 categories_interest: selectedCategories,
                                 national_id_file_name: fileInput.name,
