@@ -4072,7 +4072,10 @@
                     .eq('vendor_id', currentVendor.id);
 
                 if (!vendorProducts || vendorProducts.length === 0) {
-                    document.getElementById('alerts-banner').style.display = 'none';
+                    const alertsBanner = document.getElementById('alerts-banner');
+                    if (alertsBanner) {
+                        alertsBanner.style.display = 'none';
+                    }
                     return;
                 }
 
@@ -4093,14 +4096,21 @@
                 }
 
                 const pendingCount = pendingFeedback ? pendingFeedback.length : 0;
+                const alertsBanner = document.getElementById('alerts-banner');
+                const alertsContent = document.getElementById('alerts-content');
+
+                // Only proceed if the alerts elements exist in the DOM
+                if (!alertsBanner || !alertsContent) {
+                    console.warn('Alerts banner elements not found in DOM - skipping notification');
+                    return;
+                }
 
                 if (pendingCount === 0) {
-                    document.getElementById('alerts-banner').style.display = 'none';
+                    alertsBanner.style.display = 'none';
                     return;
                 }
 
                 // Display pending feedback notification
-                const alertsContent = document.getElementById('alerts-content');
                 const feedbackText = pendingCount === 1 ? 'feedback' : 'feedbacks';
                 alertsContent.innerHTML = `
                     <div style="font-weight: 600; color: #1e40af; font-size: 0.95em;">📋 Pending Approval</div>
@@ -4108,12 +4118,12 @@
                     <button onclick="dismissPendingNotification()" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; margin-top: 8px; font-weight: 600;">Dismiss</button>
                 `;
 
-                document.getElementById('alerts-banner').style.display = 'block';
+                alertsBanner.style.display = 'block';
 
                 // Auto-dismiss after 8 seconds if not manually dismissed
                 setTimeout(() => {
-                    if (document.getElementById('alerts-banner').style.display === 'block') {
-                        document.getElementById('alerts-banner').style.display = 'none';
+                    if (alertsBanner && alertsBanner.style.display === 'block') {
+                        alertsBanner.style.display = 'none';
                     }
                 }, 8000);
 
@@ -4123,7 +4133,10 @@
         }
 
         function dismissPendingNotification() {
-            document.getElementById('alerts-banner').style.display = 'none';
+            const alertsBanner = document.getElementById('alerts-banner');
+            if (alertsBanner) {
+                alertsBanner.style.display = 'none';
+            }
         }
 
         function closeAlertsBanner() {
