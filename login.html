@@ -430,6 +430,18 @@
                             throw new Error('Please select at least one category of interest.');
                         }
 
+                        // 1. Create Supabase Auth user first
+                        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                            email,
+                            password,
+                            options: { data: { first_name: buyerFirstName, last_name: buyerLastName, role: 'buyer' } }
+                        });
+
+                        if (authError) throw new Error(authError.message);
+                        if (!authData.user) throw new Error('Registration failed to return user session.');
+
+                        const authUuid = authData.user.id;
+
                         // Convert file to Base64 using safe chunked approach (8KB chunks)
                         const arrayBuffer = await fileInput.arrayBuffer();
                         const uint8Array = new Uint8Array(arrayBuffer);
@@ -444,21 +456,26 @@
 
                         const fileExt = fileInput.name.split('.').pop() || 'bin';
                         const mimeType = fileInput.type || 'application/octet-stream';
+                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-                        // Insert buyer record directly into buyers table
+                        // 2. Insert buyer record into buyers table with auth UUID
                         const { error: insertError } = await supabaseClient.from('buyers').insert([
                             {
+                                id: authUuid,
+                                user_id: authUuid,
                                 full_name: fullName,
                                 email: email,
-                                password: password || null,
                                 whatsapp_number: whatsapp || null,
                                 categories_interest: selectedCategories,
                                 national_id_file_name: fileInput.name,
                                 national_id_file_type: mimeType,
                                 national_id_file_size: uint8Array.length,
                                 national_id_data: base64Data,
+                                referral_code: refCode,
                                 approval_status: 'pending',
-                                created_at: new Date()
+                                accumulated_balance: 0,
+                                created_at: new Date(),
+                                updated_at: new Date()
                             }
                         ]);
 
