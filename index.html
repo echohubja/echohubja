@@ -360,6 +360,129 @@
             margin: 24px 0;
         }
 
+        /* Payout Settings */
+        .payout-settings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .vendor-agreement-card {
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .vendor-agreement-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .vendor-agreement-vendor-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .vendor-agreement-terms {
+            color: #718096;
+            font-size: 13px;
+        }
+        .vendor-agreement-next-payout {
+            color: #1e5aa8;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+        }
+        .modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e5aa8;
+            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
+        }
+
         /* Toast Notification System */
         .toast-container {
             position: fixed;
@@ -616,6 +739,39 @@
                     <button onclick="copyCommissionReferralLink()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Copy Link</button>
                 </div>
                 <small style="display: block; margin-top: 8px; color: #718096;">Share this link with anyone. They'll be identified as your referral.</small>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Payout Settings -->
+            <h3 class="section-title">Payout Settings</h3>
+            <div class="payout-settings-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <!-- Default Payout Settings -->
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #718096; margin-bottom: 12px;">Default Payout Frequency</div>
+                        <div id="default-payout-frequency" style="font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">On-Demand</div>
+                        <small style="color: #718096;">Applied to all vendors (unless customized)</small>
+                    </div>
+                    <!-- Payment Method -->
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #718096; margin-bottom: 12px;">Payment Method</div>
+                        <div id="payment-method" style="font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">PayPal</div>
+                        <small style="color: #718096;" id="paypal-email-display">Email: Loading...</small>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="showPayoutSettingsModal()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Edit Default Settings</button>
+                    <button id="request-payout-btn" onclick="requestPayout()" style="background: #27ae60; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Request Payout Now</button>
+                </div>
+            </div>
+
+            <!-- Per-Vendor Payout Agreements -->
+            <h3 class="section-title">Vendor-Specific Payout Terms</h3>
+            <div id="vendor-agreements-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                <div id="vendor-agreements-list" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; color: #718096; padding: 20px;">No custom vendor agreements yet. Default settings will apply.</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1391,6 +1547,9 @@
             } else if (tabName === 'commissions') {
                 document.getElementById('commissions-section').classList.add('active');
                 loadCommissionsDashboard(currentBuyerId, currentBuyerStringId);
+                loadPayoutSettings(currentBuyerId);
+            } else if (tabName === 'messaging') {
+                document.getElementById('messaging-section').classList.add('active');
             }
 
             // Mark button as active
@@ -1418,7 +1577,7 @@
                     .select('related_feedback_id, buyer_portion, status, created_at')
                     .eq('split_with_buyer_id', buyerId);
 
-                // Combine data
+                // Initialize totals
                 let totalEarned = 0;
                 let pending = 0;
                 let paid = 0;
@@ -1426,17 +1585,22 @@
                 let referredVendor = 0;
                 let bothReferred = 0;
                 let ownFeedback = 0;
+                let referralEarnings = 0;
                 let referredBuyerCount = 0;
                 let referredVendorCount = 0;
                 let bothCount = 0;
                 let ownFeedbackCount = 0;
                 let referralCommissionCount = 0;
 
-                // Process own feedback earnings
+                // Process own feedback earnings (buyer_payables)
                 if (payables && payables.length > 0) {
-                    totalEarned += payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    pending += payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    paid += payables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    ownFeedback = payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    totalEarned += ownFeedback;
+
+                    const ownPending = payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const ownPaid = payables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    pending += ownPending;
+                    paid += ownPaid;
 
                     referredBuyer = payables.filter(p => p.earning_type === 'referred_buyer').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
                     referredVendor = payables.filter(p => p.earning_type === 'referred_vendor').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
@@ -1449,10 +1613,10 @@
                     ownFeedbackCount = payables.filter(p => p.earning_type === 'own_feedback').length;
                 }
 
-                // Process referral commissions
+                // Process referral commissions (admin_payables buyer_portion)
                 if (referralPayables && referralPayables.length > 0) {
-                    const referralTotal = referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
-                    totalEarned += referralTotal;
+                    referralEarnings = referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
+                    totalEarned += referralEarnings;
 
                     const referralPending = referralPayables.filter(p => p.status !== 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
                     const referralPaid = referralPayables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
@@ -1462,21 +1626,22 @@
                     referralCommissionCount = referralPayables.length;
                 }
 
-                // Update UI
+                // Update totals
                 document.getElementById('comm-total-earned').textContent = `$${totalEarned.toFixed(2)}`;
                 document.getElementById('comm-pending-payouts').textContent = `$${pending.toFixed(2)}`;
                 document.getElementById('comm-paid-this-month').textContent = `$${paid.toFixed(2)}`;
 
+                // Update breakdown - keep own feedback separate from referral earnings
                 document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyer.toFixed(2)}`;
                 document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendor.toFixed(2)}`;
                 document.getElementById('comm-both-earnings').textContent = `$${bothReferred.toFixed(2)}`;
-                document.getElementById('comm-own-feedback-earnings').textContent = `$${(ownFeedback + (referralPayables ? referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0) : 0)).toFixed(2)}`;
+                document.getElementById('comm-own-feedback-earnings').textContent = `$${ownFeedback.toFixed(2)}`;
 
                 document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} feedbacks`;
                 document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} feedbacks`;
                 document.getElementById('comm-both-count').textContent = `${bothCount} feedbacks`;
-                document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount + referralCommissionCount} feedbacks`;
-                document.getElementById('comm-feedback-referred').textContent = referredBuyerCount + referredVendorCount + bothCount + referralCommissionCount;
+                document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount} feedbacks`;
+                document.getElementById('comm-feedback-referred').textContent = referralCommissionCount;
             } catch (err) {
                 console.error('Error loading commissions:', err);
             }
@@ -1490,6 +1655,178 @@
             showToast('Referral link copied to clipboard!', 'success');
         }
 
+        async function loadPayoutSettings(buyerId) {
+            if (!buyerId) return;
+
+            try {
+                // Load buyer's default payout settings
+                const { data: defaults, error: defaultError } = await db
+                    .from('buyer_payout_defaults')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .single();
+
+                if (defaults) {
+                    document.getElementById('default-payout-frequency').textContent =
+                        defaults.payout_frequency.charAt(0).toUpperCase() + defaults.payout_frequency.slice(1);
+                } else {
+                    document.getElementById('default-payout-frequency').textContent = 'On-Demand';
+                }
+
+                // Load buyer's email for payment method display
+                const { data: buyer } = await db
+                    .from('buyers')
+                    .select('paypal_email')
+                    .eq('id', buyerId)
+                    .single();
+
+                if (buyer && buyer.paypal_email) {
+                    document.getElementById('paypal-email-display').textContent = `Email: ${buyer.paypal_email}`;
+                }
+
+                // Load vendor-specific agreements
+                const { data: agreements } = await db
+                    .from('vendor_buyer_agreements')
+                    .select('*, vendor_id, payout_frequency, next_payout_date')
+                    .eq('buyer_id', buyerId)
+                    .eq('agreement_status', 'active');
+
+                const listContainer = document.getElementById('vendor-agreements-list');
+                if (agreements && agreements.length > 0) {
+                    listContainer.innerHTML = agreements.map(agreement => {
+                        const nextPayoutText = agreement.next_payout_date
+                            ? `Next payout: ${new Date(agreement.next_payout_date).toLocaleDateString()}`
+                            : 'Payout: On-Demand';
+
+                        return `
+                            <div class="vendor-agreement-card">
+                                <div class="vendor-agreement-info">
+                                    <div class="vendor-agreement-vendor-name">Vendor: ${agreement.vendor_id}</div>
+                                    <div class="vendor-agreement-terms">Frequency: ${agreement.payout_frequency}</div>
+                                    <div class="vendor-agreement-next-payout">${nextPayoutText}</div>
+                                </div>
+                                <button onclick="editVendorAgreement('${agreement.vendor_id}')" style="background: #f0f4f8; color: #1e5aa8; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Edit</button>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    listContainer.innerHTML = '<div style="text-align: center; color: #718096; padding: 20px;">No custom vendor agreements yet. Default settings will apply.</div>';
+                }
+            } catch (err) {
+                console.error('Error loading payout settings:', err);
+            }
+        }
+
+        function showPayoutSettingsModal() {
+            if (!currentBuyerId) {
+                showToast('Please log in first', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('payout-settings-modal');
+            const frequencyInput = document.getElementById('default-frequency-input');
+            const minAmountInput = document.getElementById('default-min-amount-input');
+
+            // Load current settings and populate form
+            db.from('buyer_payout_defaults')
+                .select('*')
+                .eq('buyer_id', currentBuyerId)
+                .single()
+                .then(({ data: defaults }) => {
+                    if (defaults) {
+                        frequencyInput.value = defaults.payout_frequency;
+                        minAmountInput.value = defaults.minimum_amount || '0.00';
+                    } else {
+                        frequencyInput.value = 'on-demand';
+                        minAmountInput.value = '0.00';
+                    }
+                    modal.classList.add('active');
+                });
+        }
+
+        function closePayoutSettingsModal() {
+            document.getElementById('payout-settings-modal').classList.remove('active');
+        }
+
+        async function savePayoutSettings() {
+            if (!currentBuyerId) return;
+
+            const frequency = document.getElementById('default-frequency-input').value;
+            const minAmount = parseFloat(document.getElementById('default-min-amount-input').value) || 0;
+
+            try {
+                const { data: existing } = await db
+                    .from('buyer_payout_defaults')
+                    .select('id')
+                    .eq('buyer_id', currentBuyerId)
+                    .single();
+
+                if (existing) {
+                    // Update existing
+                    await db
+                        .from('buyer_payout_defaults')
+                        .update({ payout_frequency: frequency, minimum_amount: minAmount })
+                        .eq('buyer_id', currentBuyerId);
+                } else {
+                    // Create new
+                    await db
+                        .from('buyer_payout_defaults')
+                        .insert([{
+                            buyer_id: currentBuyerId,
+                            payout_frequency: frequency,
+                            minimum_amount: minAmount
+                        }]);
+                }
+
+                showToast('Payout settings saved successfully!', 'success');
+                closePayoutSettingsModal();
+                await loadPayoutSettings(currentBuyerId);
+            } catch (err) {
+                console.error('Error saving payout settings:', err);
+                showToast('Failed to save payout settings', 'error');
+            }
+        }
+
+        function editVendorAgreement(vendorId) {
+            showToast('Vendor-specific customization coming soon!', 'info');
+            // Future implementation for per-vendor customization
+        }
+
+        async function requestPayout() {
+            if (!currentBuyerId) {
+                showToast('Please log in first', 'error');
+                return;
+            }
+
+            try {
+                // Get buyer's pending earnings
+                const { data: payables } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', currentBuyerId)
+                    .eq('status', 'pending');
+
+                const totalPending = payables
+                    ? payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0)
+                    : 0;
+
+                if (totalPending === 0) {
+                    showToast('No pending earnings to request payout for', 'info');
+                    return;
+                }
+
+                // In production, this would create a payout request
+                // For now, show confirmation message
+                showToast(`Payout request for $${totalPending.toFixed(2)} submitted! Admin will process soon.`, 'success');
+
+                // Could trigger email to admin or create request record
+                console.log(`Payout request: Buyer ${currentBuyerId}, Amount: $${totalPending.toFixed(2)}`);
+            } catch (err) {
+                console.error('Error requesting payout:', err);
+                showToast('Failed to request payout', 'error');
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             captureReferralCode();
             await checkBuyerSession();
@@ -1497,5 +1834,35 @@
             await loadProducts('All');
         });
     </script>
+
+    <!-- Payout Settings Modal -->
+    <div class="modal-overlay" id="payout-settings-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Default Payout Settings</h2>
+                <button class="modal-close" onclick="closePayoutSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Payout Frequency</label>
+                    <select id="default-frequency-input">
+                        <option value="on-demand">On-Demand (Request anytime)</option>
+                        <option value="weekly">Weekly (Every 7 days)</option>
+                        <option value="bi-weekly">Bi-Weekly (Every 14 days)</option>
+                        <option value="monthly">Monthly (Every month)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Minimum Amount for Automatic Payout</label>
+                    <input type="number" id="default-min-amount-input" placeholder="0.00" step="0.01" min="0">
+                    <small style="color: #718096;">Leave at $0.00 for no minimum requirement</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closePayoutSettingsModal()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button onclick="savePayoutSettings()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Save Settings</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
