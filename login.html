@@ -185,6 +185,7 @@
                         <label for="paypalEmail">PayPal Email</label>
                         <input type="email" id="paypalEmail" name="paypalEmail" placeholder="your.paypal@email.com">
                     </div>
+                    <div id="paypalError" class="alert-msg alert-error" style="display: none; margin-bottom: 15px;"></div>
                 </div>
             </div>
 
@@ -237,11 +238,17 @@
             }
         });
 
+        // Clear PayPal error when user types
+        document.getElementById('paypalEmail').addEventListener('input', () => {
+            document.getElementById('paypalError').style.display = 'none';
+        });
+
         // Toggle between Login and Registration views
         toggleBtn.addEventListener('click', (e) => {
             e.preventDefault();
             isRegisterMode = !isRegisterMode;
             showAlert('', false);
+            document.getElementById('paypalError').style.display = 'none';
 
             if (isRegisterMode) {
                 formTitle.textContent = 'Create Account';
@@ -327,7 +334,13 @@
                         const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
                         const paypalEmail = document.getElementById('paypalEmail').value.trim();
 
-                        if (!paypalEmail) throw new Error('PayPal Email is required for buyer registration.');
+                        if (!paypalEmail) {
+                            document.getElementById('paypalError').textContent = 'PayPal Email is required.';
+                            document.getElementById('paypalError').style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Complete Registration';
+                            throw new Error('PayPal Email is required for buyer registration.');
+                        }
 
                         const { error: insertError } = await supabaseClient.from('buyers').insert([
                             {
