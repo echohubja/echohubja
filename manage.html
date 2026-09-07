@@ -4733,6 +4733,8 @@
             if (!sbClient || !currentVendor) return;
 
             try {
+                console.log('[MESSAGING] Loading conversations for vendor:', currentVendor.id);
+
                 // Get all inquiries/feedback where vendor is involved
                 const { data: inquiries, error } = await sbClient
                     .from('inquiries')
@@ -4740,8 +4742,19 @@
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
+                console.log('[MESSAGING] Query error:', error);
+                console.log('[MESSAGING] Inquiries received:', inquiries);
+                console.log('[MESSAGING] Number of inquiries:', inquiries?.length || 0);
+
                 if (error) {
                     console.error('Error loading conversations:', error);
+                    return;
+                }
+
+                if (!inquiries || inquiries.length === 0) {
+                    console.warn('[MESSAGING] No inquiries found for vendor', currentVendor.id);
+                    messagingState.conversations = [];
+                    renderMessagingConversations();
                     return;
                 }
 
@@ -4768,6 +4781,7 @@
                     new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
                 );
 
+                console.log('[MESSAGING] Conversations grouped:', messagingState.conversations.length);
                 renderMessagingConversations();
             } catch (error) {
                 console.error('Error loading messaging conversations:', error);
