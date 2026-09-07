@@ -1588,8 +1588,8 @@
                     ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
                     totalEarned += ownFeedback;
 
-                    const ownPending = payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    const ownPaid = payables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const ownPending = payables.filter(p => p.status === 'pending' && p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    const ownPaid = payables.filter(p => p.status === 'paid' && p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
                     pending += ownPending;
                     paid += ownPaid;
 
