@@ -360,129 +360,6 @@
             margin: 24px 0;
         }
 
-        /* Payout Settings */
-        .payout-settings-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .vendor-agreement-card {
-            background: white;
-            border: 1px solid #cbd5e0;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .vendor-agreement-info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .vendor-agreement-vendor-name {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 14px;
-        }
-        .vendor-agreement-terms {
-            color: #718096;
-            font-size: 13px;
-        }
-        .vendor-agreement-next-payout {
-            color: #1e5aa8;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #718096;
-        }
-        .modal-body {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            flex: 1;
-        }
-        .modal-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .form-group label {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 14px;
-        }
-        .form-group input,
-        .form-group select {
-            padding: 10px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.1);
-        }
-
         /* Toast Notification System */
         .toast-container {
             position: fixed;
@@ -567,91 +444,6 @@
             animation: slideOut 0.3s ease-out forwards;
         }
 
-        /* Receipt Upload Modal */
-        .receipt-upload-modal { display: none; }
-        .receipt-upload-modal.active { display: block; }
-        .receipt-upload-content {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1001;
-        }
-        .receipt-upload-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .receipt-upload-header h2 { font-size: 20px; color: #2c3e50; margin: 0; }
-        .receipt-upload-close { background: none; border: none; font-size: 24px; color: #718096; cursor: pointer; }
-        .receipt-upload-status {
-            background: #e6f7ff;
-            border-left: 4px solid #1e5aa8;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #2c3e50;
-        }
-        .receipt-upload-file {
-            border: 2px dashed #cbd5e0;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 15px;
-            background: #f8fafc;
-        }
-        .receipt-upload-file:hover { border-color: #1e5aa8; background: #f0f7ff; }
-        .receipt-upload-file input { display: none; }
-        .receipt-upload-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .receipt-file-item {
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
-        .receipt-buttons { display: flex; gap: 10px; }
-        .receipt-buttons button {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .receipt-btn-submit { background: #27ae60; color: white; }
-        .receipt-btn-cancel { background: #e2e8f0; color: #2c3e50; }
-
-        /* Pending Receipts Section */
-        .pending-receipts-container {
-            background: #fffbea;
-            border-left: 4px solid #d97706;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .pending-receipts-container.show { display: block; }
-        .pending-receipts-title { font-weight: 600; color: #92400e; margin-bottom: 12px; }
-        .pending-receipt-item {
-            background: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
-
         @media (max-width: 768px) {
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
@@ -659,139 +451,6 @@
             .main-tabs { padding: 0 10px; }
             .main-tab-btn { padding: 12px 16px; font-size: 13px; }
             .commission-stats-grid { grid-template-columns: 1fr; }
-            .receipt-upload-content { padding: 20px; }
-        }
-        /* ===== PHASE 2: THREAD DISPLAY STYLES ===== */
-        .thread-section {
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            border-radius: 8px;
-            background: #f8f9fa;
-            border-left: 4px solid #3498db;
-        }
-        .thread-section.feedback-approval {
-            background: #e8f5e9;
-            border-left-color: #2ecc71;
-        }
-        .thread-section.feedback-pending {
-            background: #fff3cd;
-            border-left-color: #f39c12;
-        }
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .message-bubble {
-            background: white;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 0.75rem;
-            border: 1px solid #ecf0f1;
-        }
-        .message-bubble.feedback {
-            border: 2px solid #3498db;
-        }
-        .message-bubble.feedback.approved {
-            border-color: #2ecc71;
-            background: #f0fff4;
-        }
-        .message-bubble.feedback.pending {
-            border-color: #f39c12;
-            background: #fffbf0;
-        }
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-        .sender {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .timestamp {
-            color: #95a5a6;
-            font-size: 0.85rem;
-        }
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
-        }
-        .badge.approved {
-            background: #d4edda;
-            color: #155724;
-        }
-        .badge.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .rejection-reason {
-            background: #ffebee;
-            padding: 0.75rem;
-            border-radius: 4px;
-            color: #c62828;
-            margin-bottom: 0.75rem;
-            border-left: 3px solid #c62828;
-            font-size: 0.9rem;
-        }
-        .feedback-image {
-            max-width: 300px;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-        }
-        .amazon-link {
-            margin-top: 0.5rem;
-            color: #3498db;
-            font-size: 0.9rem;
-        }
-        .amazon-link a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        .feedback-status {
-            margin-top: 0.75rem;
-            padding: 0.75rem;
-            background: #e3f2fd;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: #1565c0;
-        }
-        .feedback-actions {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .btn-approve, .btn-reject {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-approve {
-            background: #2ecc71;
-            color: white;
-        }
-        .btn-approve:hover {
-            background: #27ae60;
-        }
-        .btn-reject {
-            background: #e74c3c;
-            color: white;
-        }
-        .btn-reject:hover {
-            background: #c0392b;
         }
     </style>
 </head>
@@ -820,6 +479,7 @@
     <div class="main-tabs">
         <button class="main-tab-btn active" onclick="switchTab('marketplace', this)">🛍️ Marketplace</button>
         <button class="main-tab-btn" onclick="switchTab('commissions', this)">💰 Referral Commissions</button>
+        <button class="main-tab-btn" onclick="switchTab('messaging', this)">💬 Messaging Hub</button>
     </div>
 
     <!-- Marketplace Section -->
@@ -842,14 +502,19 @@
     <!-- Commissions Section -->
     <div id="commissions-section" class="tab-section">
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
-            <div class="info-banner">
-                <strong>💡 How it works:</strong> When someone uses your referral link to submit feedback, you earn a commission based on the vendor's payment structure.
+            <!-- BUYER ALERTS WIDGET -->
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e1e8ed;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e1e8ed;">
+                    <h2 style="font-size: 1.1em; font-weight: 600; color: #1f2937; margin: 0;">🔔 Notifications & Alerts</h2>
+                    <span id="buyer-alert-badge" style="background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">0 alerts</span>
+                </div>
+                <div id="buyer-alerts-container" style="min-height: 80px;">
+                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">Loading alerts...</div>
+                </div>
             </div>
 
-            <!-- Pending Receipts Alert -->
-            <div class="pending-receipts-container" id="pending-receipts-alert">
-                <div class="pending-receipts-title">⏰ Action Needed: Payment Confirmations Pending</div>
-                <div id="pending-receipts-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <div class="info-banner">
+                <strong>💡 How it works:</strong> When someone uses your referral link to submit feedback, you earn a commission based on the vendor's payment structure.
             </div>
 
             <!-- Commission Stats -->
@@ -966,37 +631,46 @@
                 </div>
                 <small style="display: block; margin-top: 8px; color: #718096;">Share this link with anyone. They'll be identified as your referral.</small>
             </div>
+        </div>
+    </div>
 
-            <div class="divider"></div>
-
-            <!-- Payout Settings -->
-            <h3 class="section-title">Payout Settings</h3>
-            <div class="payout-settings-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <!-- Default Payout Settings -->
-                    <div>
-                        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #718096; margin-bottom: 12px;">Default Payout Frequency</div>
-                        <div id="default-payout-frequency" style="font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">On-Demand</div>
-                        <small style="color: #718096;">Applied to all vendors (unless customized)</small>
-                    </div>
-                    <!-- Payment Method -->
-                    <div>
-                        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #718096; margin-bottom: 12px;">Payment Method</div>
-                        <div id="payment-method" style="font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">PayPal</div>
-                        <small style="color: #718096;" id="paypal-email-display">Email: Loading...</small>
-                    </div>
+    <!-- Messaging Hub Section -->
+    <div id="messaging-section" class="tab-section">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e1e8ed;">
+                <div style="margin-bottom: 16px;">
+                    <h2 style="font-size: 1.1em; font-weight: 600; color: #1f2937; margin: 0 0 12px 0;">💬 Your Conversations</h2>
+                    <input type="text" id="msg-search-buyer" oninput="filterBuyerMessagingConversations()" placeholder="Search conversations by name or vendor..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="showPayoutSettingsModal()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Edit Default Settings</button>
-                    <button id="request-payout-btn" onclick="requestPayout()" style="background: #27ae60; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Request Payout Now</button>
-                </div>
-            </div>
 
-            <!-- Per-Vendor Payout Agreements -->
-            <h3 class="section-title">Vendor-Specific Payout Terms</h3>
-            <div id="vendor-agreements-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-                <div id="vendor-agreements-list" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="text-align: center; color: #718096; padding: 20px;">No custom vendor agreements yet. Default settings will apply.</div>
+                <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 20px; min-height: 500px;">
+                    <!-- Conversation List Sidebar -->
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background: #f8fafc;">
+                        <div id="buyer-messaging-sidebar" style="flex: 1; overflow-y: auto; border-right: 1px solid #e2e8f0;">
+                            <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Loading conversations...</div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; background: white;">
+                        <!-- Header -->
+                        <div id="buyer-messaging-header" style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 16px; font-weight: 600; color: #4a5568;">
+                            Select a conversation
+                        </div>
+
+                        <!-- Messages Display -->
+                        <div id="buyer-messaging-messages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: white;">
+                            <div style="text-align: center; color: #94a3b8; font-size: 14px; margin-top: 40px;">No conversation selected</div>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div id="buyer-messaging-input-area" style="border-top: 1px solid #e2e8f0; background: #f8fafc; padding: 16px; display: none;">
+                            <div style="display: flex; gap: 12px;">
+                                <textarea id="buyer-messaging-textarea" placeholder="Type your message..." style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: none; max-height: 80px; font-family: inherit;"></textarea>
+                                <button onclick="sendBuyerMessage()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; white-space: nowrap; height: fit-content;">Send</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1010,9 +684,6 @@
         </div>
 
         <div class="drawer-body">
-            <!-- Phase 2: Thread Display Container -->
-            <div id="thread-container" class="thread-display" style="margin-bottom: 20px;"></div>
-
             <p id="modal-product-title" style="font-weight: 600; color: #2c3e50; font-size: 16px;"></p>
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #4a5568; display: flex; flex-direction: column; gap: 4px;">
@@ -1955,6 +1626,7 @@
             // Hide all sections
             document.getElementById('marketplace-section').classList.remove('active');
             document.getElementById('commissions-section').classList.remove('active');
+            document.getElementById('messaging-section').classList.remove('active');
 
             // Remove active from all buttons
             document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1965,6 +1637,9 @@
             } else if (tabName === 'commissions') {
                 document.getElementById('commissions-section').classList.add('active');
                 loadCommissionsDashboard(currentBuyerId, currentBuyerStringId);
+            } else if (tabName === 'messaging') {
+                document.getElementById('messaging-section').classList.add('active');
+                setTimeout(() => initBuyerMessagingHub(), 300);
             }
 
             // Mark button as active
@@ -2019,12 +1694,6 @@
             } catch (err) {
                 console.error('Error loading commissions:', err);
             }
-
-            // Load payout settings and agreements
-            await loadPayoutSettings(buyerId);
-
-            // Load pending receipt uploads
-            await loadPendingReceipts(buyerId);
         }
 
         function copyCommissionReferralLink() {
@@ -2035,634 +1704,322 @@
             showToast('Referral link copied to clipboard!', 'success');
         }
 
-        // ========== PAYOUT SETTINGS FUNCTIONS ==========
-
-        async function loadPayoutSettings(buyerId) {
-            if (!buyerId) return;
+        // Load Buyer Alerts
+        async function loadBuyerAlerts() {
+            const container = document.getElementById('buyer-alerts-container');
+            const badge = document.getElementById('buyer-alert-badge');
+            if (!container || !db) return;
 
             try {
-                // Load buyer's default payout settings
-                const { data: defaults, error: defaultError } = await db
-                    .from('buyer_payout_defaults')
+                const buyerId = localStorage.getItem('buyer_id');
+                if (!buyerId) {
+                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8;">No buyer session found</div>`;
+                    return;
+                }
+
+                const { data: alerts, error } = await db
+                    .from('payment_alerts')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .single();
+                    .order('is_acknowledged', { ascending: true })
+                    .order('created_at', { ascending: false })
+                    .limit(20);
 
-                if (defaults) {
-                    document.getElementById('default-payout-frequency').textContent =
-                        defaults.payout_frequency.charAt(0).toUpperCase() + defaults.payout_frequency.slice(1);
-                } else {
-                    document.getElementById('default-payout-frequency').textContent = 'On-Demand';
+                if (error) {
+                    console.error('Error fetching alerts:', error);
+                    container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+                    return;
                 }
 
-                // Load buyer's email for payment method display
-                const { data: buyer } = await db
-                    .from('buyers')
-                    .select('paypal_email')
-                    .eq('id', buyerId)
-                    .single();
-
-                if (buyer && buyer.paypal_email) {
-                    document.getElementById('paypal-email-display').textContent = `Email: ${buyer.paypal_email}`;
+                if (!alerts || alerts.length === 0) {
+                    container.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #94a3b8;">No alerts at this time ✓</div>`;
+                    badge.textContent = '0 alerts';
+                    badge.style.background = '#10b981';
+                    return;
                 }
 
-                // Load vendor-specific agreements
-                const { data: agreements } = await db
-                    .from('vendor_buyer_agreements')
-                    .select('*, vendor_id, payout_frequency, next_payout_date')
-                    .eq('buyer_id', buyerId)
-                    .eq('agreement_status', 'active');
+                const unacknowledgedCount = alerts.filter(a => !a.is_acknowledged).length;
+                badge.textContent = unacknowledgedCount > 0 ? `${unacknowledgedCount} alert${unacknowledgedCount !== 1 ? 's' : ''}` : '0 alerts';
+                badge.style.background = unacknowledgedCount > 0 ? '#ef4444' : '#10b981';
 
-                const listContainer = document.getElementById('vendor-agreements-list');
-                if (agreements && agreements.length > 0) {
-                    listContainer.innerHTML = agreements.map(agreement => {
-                        const nextPayoutText = agreement.next_payout_date
-                            ? `Next payout: ${new Date(agreement.next_payout_date).toLocaleDateString()}`
-                            : 'Payout: On-Demand';
+                const alertsHtml = alerts.map(alert => {
+                    const severityColors = {
+                        'critical': { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', icon: '🚨' },
+                        'warning': { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b', icon: '⚠️' },
+                        'info': { bg: 'rgba(30, 90, 168, 0.1)', border: '#1e5aa8', icon: 'ℹ️' }
+                    };
+                    const colors = severityColors[alert.severity] || severityColors['info'];
 
-                        return `
-                            <div class="vendor-agreement-card">
-                                <div class="vendor-agreement-info">
-                                    <div class="vendor-agreement-vendor-name">Vendor: ${agreement.vendor_id}</div>
-                                    <div class="vendor-agreement-terms">Frequency: ${agreement.payout_frequency}</div>
-                                    <div class="vendor-agreement-next-payout">${nextPayoutText}</div>
-                                </div>
-                                <button onclick="editVendorAgreement('${agreement.vendor_id}')" style="background: #f0f4f8; color: #1e5aa8; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Edit</button>
+                    return `
+                        <div style="background: ${colors.bg}; border-left: 4px solid ${colors.border}; padding: 12px 16px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${colors.icon} ${escapeHtmlBuyer(alert.alert_type.replace(/_/g, ' ').toUpperCase())}</div>
+                                <div style="font-size: 0.9em; color: #4b5563; margin-bottom: 6px;">${escapeHtmlBuyer(alert.message)}</div>
+                                <div style="font-size: 0.8em; color: #94a3b8;">${new Date(alert.created_at).toLocaleString()}</div>
                             </div>
-                        `;
-                    }).join('');
-                } else {
-                    listContainer.innerHTML = '<div style="text-align: center; color: #718096; padding: 20px;">No custom vendor agreements yet. Default settings will apply.</div>';
+                            ${!alert.is_acknowledged ? `<button onclick="acknowledgeBuyerAlert('${alert.id}')" style="background: ${colors.border}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s;">Acknowledge</button>` : `<span style="color: #10b981; font-size: 0.85em; font-weight: 600;">✓ Acknowledged</span>`}
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = alertsHtml;
+            } catch (error) {
+                console.error('Error loading buyer alerts:', error);
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading alerts</div>`;
+            }
+        }
+
+        async function acknowledgeBuyerAlert(alertId) {
+            if (!db) return;
+            try {
+                const { error } = await db
+                    .from('payment_alerts')
+                    .update({ is_acknowledged: true, acknowledged_at: new Date().toISOString() })
+                    .eq('id', alertId);
+
+                if (!error) {
+                    await loadBuyerAlerts(); // Refresh alerts
                 }
             } catch (err) {
-                console.error('Error loading payout settings:', err);
+                console.error('Error acknowledging alert:', err);
             }
         }
 
-        function showPayoutSettingsModal() {
-            if (!currentBuyerId) {
-                showToast('Please log in first', 'error');
-                return;
-            }
-
-            const modal = document.getElementById('payout-settings-modal');
-            const frequencyInput = document.getElementById('default-frequency-input');
-            const minAmountInput = document.getElementById('default-min-amount-input');
-
-            // Load current settings and populate form
-            db.from('buyer_payout_defaults')
-                .select('*')
-                .eq('buyer_id', currentBuyerId)
-                .single()
-                .then(({ data: defaults }) => {
-                    if (defaults) {
-                        frequencyInput.value = defaults.payout_frequency;
-                        minAmountInput.value = defaults.minimum_amount || '0.00';
-                    } else {
-                        frequencyInput.value = 'on-demand';
-                        minAmountInput.value = '0.00';
-                    }
-                    modal.classList.add('active');
-                });
+        function escapeHtmlBuyer(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        function closePayoutSettingsModal() {
-            document.getElementById('payout-settings-modal').classList.remove('active');
+        // ===== BUYER MESSAGING HUB =====
+        let buyerMessagingState = {
+            currentPartyId: null,
+            currentPartyType: null, // 'admin' or 'vendor'
+            conversations: [],
+            allConversations: []
+        };
+
+        async function initBuyerMessagingHub() {
+            await loadBuyerMessagingConversations();
         }
 
-        async function savePayoutSettings() {
-            if (!currentBuyerId) return;
-
-            const frequency = document.getElementById('default-frequency-input').value;
-            const minAmount = parseFloat(document.getElementById('default-min-amount-input').value) || 0;
+        async function loadBuyerMessagingConversations() {
+            const sidebar = document.getElementById('buyer-messaging-sidebar');
+            if (!sidebar) return;
 
             try {
-                const { data: existing } = await db
-                    .from('buyer_payout_defaults')
-                    .select('id')
+                buyerMessagingState.allConversations = [];
+
+                // Load conversations (both with vendors and admin)
+                const { data: inquiries, error: inquiryError } = await db
+                    .from('inquiries')
+                    .select('id, vendor_id, message, created_at, message_type, sender_type')
                     .eq('buyer_id', currentBuyerId)
-                    .single();
+                    .order('created_at', { ascending: false });
 
-                if (existing) {
-                    // Update existing
-                    await db
-                        .from('buyer_payout_defaults')
-                        .update({ payout_frequency: frequency, minimum_amount: minAmount })
-                        .eq('buyer_id', currentBuyerId);
-                } else {
-                    // Create new
-                    await db
-                        .from('buyer_payout_defaults')
-                        .insert([{
-                            buyer_id: currentBuyerId,
-                            payout_frequency: frequency,
-                            minimum_amount: minAmount
-                        }]);
+                if (inquiryError) throw inquiryError;
+
+                // Group conversations by party (vendor or admin sender)
+                const parties = new Map();
+
+                for (const inq of (inquiries || [])) {
+                    // Track vendor conversations
+                    if (inq.vendor_id) {
+                        if (!parties.has(inq.vendor_id)) {
+                            parties.set(inq.vendor_id, { type: 'vendor', id: inq.vendor_id });
+                        }
+                    }
+
+                    // Track admin messages
+                    if (inq.sender_type === 'admin') {
+                        if (!parties.has('admin')) {
+                            parties.set('admin', { type: 'admin', id: 'admin' });
+                        }
+                    }
                 }
 
-                showToast('Payout settings saved successfully!', 'success');
-                closePayoutSettingsModal();
-                await loadPayoutSettings(currentBuyerId);
+                // Fetch vendor and admin names
+                for (const [key, party] of parties.entries()) {
+                    let conversationData = { id: key, type: party.type, lastMessage: 'No messages yet', lastTime: '' };
+
+                    if (party.type === 'vendor') {
+                        const { data: vendor } = await db.from('vendors').select('business_name').eq('id', key).single();
+                        conversationData.name = vendor?.business_name || 'Unknown Vendor';
+                    } else if (party.type === 'admin') {
+                        conversationData.name = 'Echo Hub Admin';
+                    }
+
+                    // Find last message for this party
+                    const lastMsg = inquiries.find(inq =>
+                        (party.type === 'vendor' && inq.vendor_id === key) ||
+                        (party.type === 'admin' && inq.sender_type === 'admin')
+                    );
+
+                    if (lastMsg) {
+                        conversationData.lastMessage = lastMsg.message?.substring(0, 50) || 'Message';
+                        conversationData.lastTime = new Date(lastMsg.created_at).toLocaleDateString();
+                    }
+
+                    buyerMessagingState.allConversations.push(conversationData);
+                }
+
+                buyerMessagingState.conversations = buyerMessagingState.allConversations;
+                renderBuyerMessagingConversations();
+
             } catch (err) {
-                console.error('Error saving payout settings:', err);
-                showToast('Failed to save payout settings', 'error');
+                console.error('Error loading buyer messaging conversations:', err);
+                sidebar.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 14px;">Error loading conversations</div>`;
             }
         }
 
-        function editVendorAgreement(vendorId) {
-            showToast('Vendor-specific customization coming soon!', 'info');
-            // Future implementation for per-vendor customization
-        }
+        function renderBuyerMessagingConversations() {
+            const sidebar = document.getElementById('buyer-messaging-sidebar');
+            if (!sidebar) return;
 
-        // ========== RECEIPT UPLOAD FUNCTIONS ==========
-
-        let selectedReceiptFile = null;
-        let currentReceiptPayableId = null;
-
-        function showReceiptUploadModal(payableId, amount, vendorId) {
-            currentReceiptPayableId = payableId;
-            selectedReceiptFile = null;
-
-            document.getElementById('receipt-amount').textContent = `$${parseFloat(amount).toFixed(2)}`;
-            document.getElementById('receipt-vendor-id').textContent = vendorId || 'Unknown';
-            document.getElementById('receipt-file-list').innerHTML = '';
-            document.getElementById('receipt-file-input').value = '';
-            document.getElementById('receipt-submit-btn').disabled = false;
-            document.getElementById('receipt-upload-modal').classList.add('active');
-        }
-
-        function closeReceiptUploadModal(event) {
-            if (event && event.target.id !== 'receipt-upload-modal') return;
-            document.getElementById('receipt-upload-modal').classList.remove('active');
-            selectedReceiptFile = null;
-            currentReceiptPayableId = null;
-            document.getElementById('buyer-tx-id').value = '';
-            document.getElementById('buyer-paypal-email').value = '';
-            document.getElementById('receipt-file-input').value = '';
-        }
-
-        function handleReceiptFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSize) {
-                showToast('File size exceeds 5MB limit', 'error');
+            if (buyerMessagingState.conversations.length === 0) {
+                sidebar.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">No conversations yet</div>`;
                 return;
             }
 
-            selectedReceiptFile = file;
-            const fileList = document.getElementById('receipt-file-list');
-            fileList.innerHTML = `
-                <div class="receipt-file-item">
-                    <span>📄 ${file.name} (${(file.size / 1024).toFixed(0)} KB)</span>
-                    <button onclick="clearReceiptFile()" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">Remove</button>
+            sidebar.innerHTML = buyerMessagingState.conversations.map(conv => `
+                <div onclick="selectBuyerMessagingConversation('${conv.id}', '${conv.type}')"
+                     style="padding: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0; transition: background 0.2s; ${buyerMessagingState.currentPartyId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : 'border-left: 3px solid transparent;'} hover: {background: #f1f5f9;}"
+                     onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${buyerMessagingState.currentPartyId === conv.id ? '#dbeafe' : 'transparent'}'">
+                    <div style="font-weight: 600; color: #2c3e50; font-size: 14px; margin-bottom: 4px;">${escapeHtmlBuyer(conv.name)}</div>
+                    <div style="font-size: 12px; color: #718096; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtmlBuyer(conv.lastMessage)}</div>
+                    <div style="font-size: 11px; color: #cbd5e0;">${conv.lastTime}</div>
                 </div>
-            `;
+            `).join('');
         }
 
-        function clearReceiptFile() {
-            selectedReceiptFile = null;
-            document.getElementById('receipt-file-input').value = '';
-            document.getElementById('receipt-file-list').innerHTML = '';
+        async function selectBuyerMessagingConversation(partyId, partyType) {
+            buyerMessagingState.currentPartyId = partyId;
+            buyerMessagingState.currentPartyType = partyType;
+            renderBuyerMessagingConversations();
+            await loadBuyerMessagingMessages();
         }
 
-        async function submitBuyerReceipt() {
-            if (!selectedReceiptFile || !currentReceiptPayableId) {
-                showToast('Please select a receipt file', 'error');
+        async function loadBuyerMessagingMessages() {
+            try {
+                const header = document.getElementById('buyer-messaging-header');
+                const inputArea = document.getElementById('buyer-messaging-input-area');
+
+                let messages = [];
+
+                if (buyerMessagingState.currentPartyType === 'vendor') {
+                    const { data, error } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('buyer_id', currentBuyerId)
+                        .eq('vendor_id', buyerMessagingState.currentPartyId)
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    messages = data || [];
+                    const conv = buyerMessagingState.conversations.find(c => c.id === buyerMessagingState.currentPartyId);
+                    header.textContent = `Vendor: ${conv?.name || 'Unknown'}`;
+
+                } else if (buyerMessagingState.currentPartyType === 'admin') {
+                    const { data, error } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('buyer_id', currentBuyerId)
+                        .or('sender_type.eq.admin,message_type.eq.admin_message')
+                        .order('created_at', { ascending: true });
+
+                    if (error) throw error;
+                    messages = (data || []).filter(m => m.sender_type === 'admin' || m.message_type === 'admin_message');
+                    header.textContent = 'Echo Hub Admin';
+                }
+
+                renderBuyerMessagingMessages(messages);
+                inputArea.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('Error loading buyer messages:', err);
+            }
+        }
+
+        function renderBuyerMessagingMessages(messages) {
+            const container = document.getElementById('buyer-messaging-messages');
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 14px; margin-top: 40px;">No messages yet. Start a conversation!</div>`;
                 return;
             }
 
-            // Capture PayPal transaction details
-            const txId = document.getElementById('buyer-tx-id').value.trim();
-            const paypalEmail = document.getElementById('buyer-paypal-email').value.trim();
+            container.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_type === 'buyer';
+                const timestamp = new Date(msg.created_at).toLocaleString();
+                const senderLabel = msg.sender_type === 'vendor' ? 'Vendor' : msg.sender_type === 'admin' ? 'Admin' : 'You';
 
-            if (!txId) {
-                showToast('Please enter your PayPal Transaction ID', 'error');
+                return `
+                    <div style="display: flex; ${isSent ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
+                        <div style="max-width: 60%; background: ${isSent ? '#1e5aa8' : '#f1f5f9'}; color: ${isSent ? 'white' : '#2c3e50'}; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4;">
+                            ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">${senderLabel}</div>` : ''}
+                            <div>${escapeHtmlBuyer(msg.message || '')}</div>
+                            ${msg.image_url ? `<img src="${msg.image_url}" alt="Message image" style="max-width: 100%; border-radius: 6px; margin-top: 8px;">` : ''}
+                            <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">${timestamp}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendBuyerMessage() {
+            const textarea = document.getElementById('buyer-messaging-textarea');
+            const message = textarea.value.trim();
+
+            if (!message) return;
+            if (!buyerMessagingState.currentPartyId) {
+                alert('Select a conversation first');
                 return;
             }
-
-            if (!paypalEmail) {
-                showToast('Please enter your PayPal Email address', 'error');
-                return;
-            }
-
-            if (!paypalEmail.includes('@')) {
-                showToast('Please enter a valid PayPal Email address', 'error');
-                return;
-            }
-
-            const btn = document.getElementById('receipt-submit-btn');
-            btn.disabled = true;
-            btn.textContent = 'Uploading...';
 
             try {
-                // Read file and convert to Base64
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        const base64Data = event.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
-
-                        // Update buyer_payables with receipt data, metadata, and PayPal transaction details
-                        const { error: updateError } = await db
-                            .from('buyer_payables')
-                            .update({
-                                buyer_receipt_data: base64Data,
-                                buyer_receipt_filename: selectedReceiptFile.name,
-                                buyer_receipt_filetype: selectedReceiptFile.type,
-                                buyer_receipt_filesize: selectedReceiptFile.size,
-                                buyer_receipt_uploaded_date: new Date().toISOString(),
-                                buyer_paypal_transaction_id: txId,
-                                buyer_paypal_email: paypalEmail,
-                                status: 'received'
-                            })
-                            .eq('id', currentReceiptPayableId);
-
-                        if (updateError) throw new Error(updateError.message);
-
-                        showToast('Receipt uploaded successfully! Payment confirmed.', 'success');
-                        closeReceiptUploadModal();
-                        await loadCommissionsDashboard(currentBuyerId, currentBuyerStringId);
-                    } catch (err) {
-                        console.error('Error updating receipt:', err);
-                        showToast(`Failed to upload receipt: ${err.message}`, 'error');
-                        btn.disabled = false;
-                        btn.textContent = 'Upload Receipt';
-                    }
+                let insertData = {
+                    buyer_id: currentBuyerId,
+                    message: message,
+                    sender_type: 'buyer',
+                    message_type: buyerMessagingState.currentPartyType === 'admin' ? 'admin_message' : 'vendor_response',
+                    status: 'active',
+                    created_at: new Date().toISOString()
                 };
 
-                reader.readAsDataURL(selectedReceiptFile);
+                if (buyerMessagingState.currentPartyType === 'vendor') {
+                    insertData.vendor_id = buyerMessagingState.currentPartyId;
+                }
+
+                const { error } = await db
+                    .from('inquiries')
+                    .insert([insertData]);
+
+                if (error) throw error;
+
+                textarea.value = '';
+                await loadBuyerMessagingMessages();
 
             } catch (err) {
-                console.error('Error processing receipt:', err);
-                showToast(`Failed to process receipt: ${err.message}`, 'error');
-                btn.disabled = false;
-                btn.textContent = 'Upload Receipt';
+                console.error('Error sending message:', err);
+                alert('Failed to send message');
             }
         }
 
-        async function loadPendingReceipts(buyerId) {
-            if (!buyerId) return;
-
-            try {
-                // Get commissions where vendor uploaded receipt but buyer hasn't confirmed
-                const { data: pendingReceipts } = await db
-                    .from('buyer_payables')
-                    .select('id, amount_owed, vendor_receipt_uploaded_date')
-                    .eq('buyer_id', buyerId)
-                    .eq('status', 'paid')
-                    .is('buyer_receipt_data', null);
-
-                const container = document.getElementById('pending-receipts-alert');
-                const list = document.getElementById('pending-receipts-list');
-
-                if (pendingReceipts && pendingReceipts.length > 0) {
-                    container.classList.add('show');
-                    list.innerHTML = pendingReceipts.map(receipt => {
-                        const uploadTime = new Date(receipt.vendor_receipt_uploaded_date);
-                        const deadline = new Date(uploadTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours
-                        const now = new Date();
-                        const hoursLeft = Math.max(0, Math.floor((deadline - now) / (60 * 60 * 1000)));
-                        const minutesLeft = Math.max(0, Math.floor(((deadline - now) % (60 * 60 * 1000)) / (60 * 1000)));
-
-                        return `
-                            <div class="pending-receipt-item">
-                                <div>
-                                    <strong>$${parseFloat(receipt.amount_owed).toFixed(2)}</strong> payment confirmation
-                                    <span style="color: #d97706; margin-left: 10px;"><strong>${hoursLeft}h ${minutesLeft}m left</strong></span>
-                                </div>
-                                <button onclick="showReceiptUploadModal('${receipt.id}', ${receipt.amount_owed}, 'Vendor')" style="background: #1e5aa8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Confirm Receipt</button>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    container.classList.remove('show');
-                }
-            } catch (err) {
-                console.error('Error loading pending receipts:', err);
-            }
-        }
-
-        async function requestPayout() {
-            if (!currentBuyerId) {
-                showToast('Please log in first', 'error');
-                return;
-            }
-
-            try {
-                // Get buyer's pending earnings
-                const { data: payables } = await db
-                    .from('buyer_payables')
-                    .select('*')
-                    .eq('buyer_id', currentBuyerId)
-                    .eq('status', 'pending');
-
-                if (!payables || payables.length === 0) {
-                    showToast('No pending earnings to request payout for', 'info');
-                    return;
-                }
-
-                const totalPending = payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-
-                // Update all pending commissions to payment_requested
-                const { error: updateError } = await db
-                    .from('buyer_payables')
-                    .update({
-                        status: 'payment_requested',
-                        payout_requested_date: new Date().toISOString(),
-                        payout_requested_by: currentBuyerId
-                    })
-                    .eq('buyer_id', currentBuyerId)
-                    .eq('status', 'pending');
-
-                if (updateError) throw new Error(updateError.message);
-
-                showToast(`Payout request for $${totalPending.toFixed(2)} submitted! Vendors will send payment soon.`, 'success');
-                await loadCommissionsDashboard(currentBuyerId, currentBuyerStringId);
-            } catch (err) {
-                console.error('Error requesting payout:', err);
-                showToast('Failed to request payout', 'error');
-            }
-        }
-
-        // ===== PHASE 2: THREAD DISPLAY & REJECTION HANDLING =====
-
-        function renderThreadWithPhases(messages, userRole) {
-            const container = document.getElementById('thread-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const inquiryPhase = messages.filter(m =>
-                !m.vendor_status || m.vendor_status === 'pending' ||
-                (m.message_type !== 'feedback' && !m.related_feedback_id)
+        function filterBuyerMessagingConversations() {
+            const searchTerm = document.getElementById('msg-search-buyer').value.toLowerCase();
+            buyerMessagingState.conversations = buyerMessagingState.allConversations.filter(conv =>
+                conv.name.toLowerCase().includes(searchTerm)
             );
-
-            const approvedFeedback = messages.find(m =>
-                m.message_type === 'feedback' && m.vendor_status === 'approved'
-            );
-
-            const followups = messages.filter(m =>
-                m.related_feedback_id && approvedFeedback && m.related_feedback_id === approvedFeedback.id
-            );
-
-            const pendingFeedback = messages.filter(m =>
-                m.message_type === 'feedback' && m.vendor_status === 'pending'
-            );
-
-            if (inquiryPhase.length > 0) {
-                renderSection('INQUIRY PHASE', inquiryPhase, userRole);
-            }
-
-            if (approvedFeedback) {
-                renderFeedbackApprovalSection(approvedFeedback, userRole);
-            }
-
-            if (followups.length > 0 && approvedFeedback) {
-                renderSection('CONTINUED CONVERSATION', followups, userRole);
-            }
-
-            if (pendingFeedback.length > 0 && !approvedFeedback) {
-                renderPendingFeedbackSection(pendingFeedback, userRole);
-            }
-        }
-
-        function renderSection(sectionTitle, messages, userRole) {
-            const container = document.getElementById('thread-container');
-            const section = document.createElement('div');
-            section.className = 'thread-section';
-            section.innerHTML = `<h3 class="section-title">${sectionTitle}</h3>`;
-
-            messages.forEach(msg => {
-                const bubble = document.createElement('div');
-                bubble.className = `message-bubble ${msg.sender_type}`;
-
-                let content = `
-                    <div class="message-header">
-                        <span class="sender">${msg.sender_name || msg.sender_type}</span>
-                        <span class="timestamp">${new Date(msg.created_at).toLocaleTimeString()}</span>
-                    </div>
-                    <div class="message-content">${escapeHTML(msg.message)}</div>
-                `;
-
-                if (msg.message_type === 'feedback' && msg.image_url) {
-                    content += `<img src="${msg.image_url}" class="feedback-image" alt="Proof">`;
-                }
-
-                if (msg.message_type === 'feedback' && msg.amazon_url) {
-                    content += `<p class="amazon-link"><a href="${msg.amazon_url}" target="_blank">View on Amazon</a></p>`;
-                }
-
-                bubble.innerHTML = content;
-                section.appendChild(bubble);
-            });
-
-            container.appendChild(section);
-        }
-
-        function renderFeedbackApprovalSection(feedback, userRole) {
-            const container = document.getElementById('thread-container');
-            const section = document.createElement('div');
-            section.className = 'thread-section feedback-approval';
-
-            let statusBadge = '<span class="badge approved">✓ APPROVED</span>';
-            let content = `
-                <h3 class="section-title">FEEDBACK & APPROVAL ${statusBadge}</h3>
-                <div class="message-bubble feedback approved">
-                    <div class="message-header">
-                        <span class="sender">Buyer Proof Submission</span>
-                        <span class="timestamp">${new Date(feedback.created_at).toLocaleTimeString()}</span>
-                    </div>
-                    <div class="message-content">${escapeHTML(feedback.message || '(No message)')}</div>
-                    ${feedback.image_url ? `<img src="${feedback.image_url}" class="feedback-image" alt="Proof">` : ''}
-                    ${feedback.amazon_url ? `<p class="amazon-link"><a href="${feedback.amazon_url}" target="_blank">Product Link: ${feedback.amazon_url}</a></p>` : ''}
-                    <div class="feedback-status">
-                        <strong>Status:</strong> Approved by vendor — Commission created — Locked (immutable)
-                    </div>
-                </div>
-            `;
-
-            section.innerHTML = content;
-            container.appendChild(section);
-        }
-
-        function renderPendingFeedbackSection(feedbackList, userRole) {
-            const container = document.getElementById('thread-container');
-            const section = document.createElement('div');
-            section.className = 'thread-section feedback-pending';
-
-            section.innerHTML = '<h3 class="section-title">PENDING FEEDBACK</h3>';
-
-            feedbackList.forEach(feedback => {
-                const bubble = document.createElement('div');
-                bubble.className = 'message-bubble feedback pending';
-
-                let statusBadge = '<span class="badge pending">⏳ PENDING</span>';
-                let rejectNote = feedback.rejection_reason ?
-                    `<div class="rejection-reason"><strong>Rejected:</strong> ${escapeHTML(feedback.rejection_reason)}</div>` : '';
-
-                bubble.innerHTML = `
-                    <div class="message-header">
-                        <span class="sender">Buyer Proof Submission</span>
-                        <span class="timestamp">${new Date(feedback.created_at).toLocaleTimeString()}</span>
-                        ${statusBadge}
-                    </div>
-                    ${rejectNote}
-                    <div class="message-content">${escapeHTML(feedback.message || '(No message)')}</div>
-                    ${feedback.image_url ? `<img src="${feedback.image_url}" class="feedback-image" alt="Proof">` : ''}
-                    ${feedback.amazon_url ? `<p class="amazon-link"><a href="${feedback.amazon_url}" target="_blank">Product Link</a></p>` : ''}
-                `;
-
-                section.appendChild(bubble);
-            });
-
-            container.appendChild(section);
-        }
-
-        function escapeHTML(text) {
-            const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
-            return (text || '').replace(/[&<>"']/g, m => map[m]);
-        }
-
-        async function submitFeedbackWithProof() {
-            const imageUrl = document.getElementById('feedback-image-url')?.value || '';
-            const amazonUrl = document.getElementById('feedback-amazon-url')?.value || '';
-            const message = document.getElementById('feedback-message')?.value || '';
-
-            if (!imageUrl || !amazonUrl) {
-                showToast('Both image URL and Amazon URL are required', 'error');
-                return;
-            }
-
-            if (!amazonUrl.includes('amazon.com')) {
-                showToast('Please provide a valid Amazon product link', 'error');
-                return;
-            }
-
-            try {
-                // Get current inquiry context
-                const productId = document.getElementById('modal-product-id')?.value;
-                const vendorId = document.getElementById('modal-vendor-id')?.value;
-
-                if (!productId || !vendorId) {
-                    showToast('Product or vendor information missing', 'error');
-                    return;
-                }
-
-                if (!currentBuyerId) {
-                    showToast('Buyer ID missing from session', 'error');
-                    return;
-                }
-
-                // Call Phase 3.5 Edge Function: POST /functions/v1/api-feedback-submit
-                const response = await fetch('https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback-submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (SUPABASE_ANON_KEY || 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1')
-                    },
-                    body: JSON.stringify({
-                        buyer_id: currentBuyerId,
-                        vendor_id: vendorId,
-                        product_id: productId,
-                        image_url: imageUrl,
-                        amazon_url: amazonUrl,
-                        message: message
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    showToast('Error: ' + (result.message || result.error || 'Failed to submit feedback'), 'error');
-                    return;
-                }
-
-                showToast('Feedback submitted! Attempt #' + (result.submission_attempt || 1) + ' - Waiting for vendor approval...', 'success');
-                closeFeedbackModal();
-                // Reload inquiries to show new feedback
-                setTimeout(() => {
-                    if (window.toggleInquiriesDrawer) {
-                        window.toggleInquiriesDrawer();
-                        setTimeout(() => window.toggleInquiriesDrawer(), 500);
-                    }
-                }, 800);
-            } catch (error) {
-                console.error('Error submitting feedback:', error);
-                showToast('Failed to submit feedback: ' + error.message, 'error');
-            }
-        }
-
-        async function loadThread(buyerId, vendorId, productId) {
-            try {
-                const response = await fetch(`https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback/thread/${buyerId}/${vendorId}/${productId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (SUPABASE_ANON_KEY || 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1')
-                    }
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    console.error('Error loading thread:', result.message || result.error);
-                    return null;
-                }
-
-                return result;
-            } catch (error) {
-                console.error('Error loading thread:', error);
-                return null;
-            }
-        }
-
-        async function approveFeedback(feedbackId, vendorId) {
-            try {
-                const response = await fetch(`https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback/${feedbackId}/approve`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (SUPABASE_ANON_KEY || 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1')
-                    },
-                    body: JSON.stringify({
-                        vendor_id: vendorId
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    showToast('Error: ' + (result.message || result.error || 'Failed to approve feedback'), 'error');
-                    return false;
-                }
-
-                showToast('Feedback approved successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error approving feedback:', error);
-                showToast('Failed to approve feedback: ' + error.message, 'error');
-                return false;
-            }
-        }
-
-        function resubmitFeedback() {
-            // Clear previous feedback values for resubmission
-            document.getElementById('feedback-image-url').value = '';
-            document.getElementById('feedback-amazon-url').value = '';
-            document.getElementById('feedback-message').value = '';
-
-            closeRejectionModal();
-            document.getElementById('feedback-submit-modal').style.display = 'flex';
-        }
-
-        function closeRejectionModal() {
-            const modal = document.getElementById('rejection-modal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function closeFeedbackModal() {
-            const modal = document.getElementById('feedback-submit-modal');
-            if (modal) modal.style.display = 'none';
+            renderBuyerMessagingConversations();
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -2670,118 +2027,8 @@
             await checkBuyerSession();
             await loadCategories();
             await loadProducts('All');
+            await loadBuyerAlerts(); // Load buyer alert notifications
         });
     </script>
-
-    <!-- Payout Settings Modal -->
-    <div class="modal-overlay" id="payout-settings-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Edit Default Payout Settings</h2>
-                <button class="modal-close" onclick="closePayoutSettingsModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Payout Frequency</label>
-                    <select id="default-frequency-input">
-                        <option value="on-demand">On-Demand (Request anytime)</option>
-                        <option value="weekly">Weekly (Every 7 days)</option>
-                        <option value="bi-weekly">Bi-Weekly (Every 14 days)</option>
-                        <option value="monthly">Monthly (Every month)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Minimum Amount for Automatic Payout</label>
-                    <input type="number" id="default-min-amount-input" placeholder="0.00" step="0.01" min="0">
-                    <small style="color: #718096;">Leave at $0.00 for no minimum requirement</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closePayoutSettingsModal()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
-                <button onclick="savePayoutSettings()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Save Settings</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Receipt Upload Modal -->
-    <div class="modal-overlay receipt-upload-modal" id="receipt-upload-modal" onclick="closeReceiptUploadModal(event)">
-        <div class="receipt-upload-content" onclick="event.stopPropagation()">
-            <div class="receipt-upload-header">
-                <h2>Upload Payment Receipt</h2>
-                <button class="receipt-upload-close" onclick="closeReceiptUploadModal()">&times;</button>
-            </div>
-
-            <div class="receipt-upload-status" id="receipt-status-message">
-                Vendor has sent payment. Please upload your PayPal receipt to confirm.
-            </div>
-
-            <div style="background: #f0f7ff; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #2c3e50;">
-                <strong>Commission Amount:</strong> <span id="receipt-amount" style="font-weight: 700; color: #1e5aa8;">$0.00</span><br>
-                <strong>Vendor:</strong> <span id="receipt-vendor-id" style="font-weight: 600;">Loading...</span><br>
-                <strong>Time Remaining:</strong> <span id="receipt-countdown" style="font-weight: 600; color: #d97706;">8 hours</span>
-            </div>
-
-            <!-- PayPal Transaction Details -->
-            <div style="background: #f8fafc; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                <div style="margin-bottom: 12px;">
-                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">PayPal Transaction ID *</label>
-                    <input type="text" id="buyer-tx-id" placeholder="e.g., 1A234B567C890D" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9em; color: #1e293b;">
-                </div>
-                <div>
-                    <label style="font-size: 0.9em; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Your PayPal Email *</label>
-                    <input type="email" id="buyer-paypal-email" placeholder="your.paypal@email.com" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9em; color: #1e293b;">
-                </div>
-            </div>
-
-            <div class="receipt-upload-file" onclick="document.getElementById('receipt-file-input').click()">
-                <input type="file" id="receipt-file-input" accept="image/*,.pdf" onchange="handleReceiptFileSelect(event)">
-                <div style="font-size: 14px; color: #2c3e50;">
-                    <strong>📎 Click to upload receipt</strong><br>
-                    <small style="color: #718096;">JPG, PNG, or PDF (Max 5MB)</small>
-                </div>
-            </div>
-
-            <div class="receipt-upload-list" id="receipt-file-list"></div>
-
-            <div class="receipt-buttons">
-                <button class="receipt-btn-cancel" onclick="closeReceiptUploadModal()">Cancel</button>
-                <button class="receipt-btn-submit" onclick="submitBuyerReceipt()" id="receipt-submit-btn">Upload Receipt</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Phase 2: Rejection Reason Modal -->
-    <div id="rejection-modal" class="modal-overlay" onclick="if(event.target.id === 'rejection-modal') closeRejectionModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Feedback Rejected</h3>
-            <div id="rejection-reason-text" style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin: 12px 0; color: #92400e; font-size: 14px;"></div>
-            <p id="submission-attempt-info" style="color: #718096; font-size: 13px; margin: 10px 0;"></p>
-            <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button onclick="closeRejectionModal()" style="flex: 1; background: #e2e8f0; color: #4a5568; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
-                <button onclick="resubmitFeedback()" style="flex: 1; background: #1e5aa8; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Submit Again</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Phase 2: Feedback Submission Modal -->
-    <div id="feedback-submit-modal" class="modal-overlay" onclick="if(event.target.id === 'feedback-submit-modal') closeFeedbackModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Submit Feedback Proof</h3>
-            <div style="margin-top: 16px;">
-                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">Image URL (proof of purchase/product) *</label>
-                <input type="text" id="feedback-image-url" placeholder="https://example.com/image.jpg" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; margin-bottom: 12px;">
-
-                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">Amazon Product Link *</label>
-                <input type="text" id="feedback-amazon-url" placeholder="https://amazon.com/dp/B..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; margin-bottom: 12px;">
-
-                <label style="font-size: 13px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">Additional Notes (optional)</label>
-                <textarea id="feedback-message" placeholder="Any additional details..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; resize: vertical;"></textarea>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button onclick="closeFeedbackModal()" style="flex: 1; background: #e2e8f0; color: #4a5568; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
-                <button onclick="submitFeedbackWithProof()" style="flex: 1; background: #1e5aa8; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
