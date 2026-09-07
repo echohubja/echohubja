@@ -206,12 +206,12 @@
 
             <div class="form-group">
                 <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="name@example.com">
+                <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
@@ -365,15 +365,17 @@
                                 id: formattedId,
                                 user_id: authUuid,
                                 email: email,
-                                first_name: firstName,
-                                last_name: lastName,
-                                vendor_type: vendorType,
-                                status: 'ACTIVE',
-                                created_at: new Date()
+                                business_name: firstName + ' ' + lastName,
+                                description: vendorType,
+                                suspension_status: 'active',
+                                created_at: new Date().toISOString()
                             }
                         ]);
 
                         if (insertError) throw new Error('Vendor profile creation error: ' + insertError.message);
+
+                        localStorage.setItem('vendor_id', formattedId);
+                        localStorage.setItem('vendor_email', email);
 
                         showAlert('Registration successful! Redirecting to dashboard...', false);
                         setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
