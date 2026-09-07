@@ -656,17 +656,12 @@
                 <div class="breakdown-item">
                     <div class="breakdown-item-label">Referred Buyers</div>
                     <div class="breakdown-item-value" id="comm-referred-buyer-earnings">$0.00</div>
-                    <div class="breakdown-item-count" id="comm-referred-buyer-count">0 feedbacks</div>
+                    <div class="breakdown-item-count" id="comm-referred-buyer-count">0 referrals</div>
                 </div>
                 <div class="breakdown-item">
                     <div class="breakdown-item-label">Referred Vendors</div>
                     <div class="breakdown-item-value" id="comm-referred-vendor-earnings">$0.00</div>
-                    <div class="breakdown-item-count" id="comm-referred-vendor-count">0 feedbacks</div>
-                </div>
-                <div class="breakdown-item">
-                    <div class="breakdown-item-label">Both-Referred</div>
-                    <div class="breakdown-item-value" id="comm-both-earnings">$0.00</div>
-                    <div class="breakdown-item-count" id="comm-both-count">0 feedbacks</div>
+                    <div class="breakdown-item-count" id="comm-referred-vendor-count">0 referrals</div>
                 </div>
                 <div class="breakdown-item">
                     <div class="breakdown-item-label">Your Feedback</div>
@@ -1581,20 +1576,16 @@
                 let totalEarned = 0;
                 let pending = 0;
                 let paid = 0;
-                let referredBuyer = 0;
-                let referredVendor = 0;
-                let bothReferred = 0;
                 let ownFeedback = 0;
-                let referralEarnings = 0;
+                let referredBuyerEarnings = 0;
+                let referredVendorEarnings = 0;
+                let ownFeedbackCount = 0;
                 let referredBuyerCount = 0;
                 let referredVendorCount = 0;
-                let bothCount = 0;
-                let ownFeedbackCount = 0;
-                let referralCommissionCount = 0;
 
                 // Process own feedback earnings (buyer_payables)
                 if (payables && payables.length > 0) {
-                    ownFeedback = payables.reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
+                    ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
                     totalEarned += ownFeedback;
 
                     const ownPending = payables.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
@@ -1602,28 +1593,61 @@
                     pending += ownPending;
                     paid += ownPaid;
 
-                    referredBuyer = payables.filter(p => p.earning_type === 'referred_buyer').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    referredVendor = payables.filter(p => p.earning_type === 'referred_vendor').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    bothReferred = payables.filter(p => p.earning_type === 'both_referred').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-                    ownFeedback = payables.filter(p => p.earning_type === 'own_feedback').reduce((sum, p) => sum + parseFloat(p.amount_owed || 0), 0);
-
-                    referredBuyerCount = payables.filter(p => p.earning_type === 'referred_buyer').length;
-                    referredVendorCount = payables.filter(p => p.earning_type === 'referred_vendor').length;
-                    bothCount = payables.filter(p => p.earning_type === 'both_referred').length;
                     ownFeedbackCount = payables.filter(p => p.earning_type === 'own_feedback').length;
                 }
 
-                // Process referral commissions (admin_payables buyer_portion)
+                // Process referral commissions (admin_payables buyer_portion) - split by referrer type
                 if (referralPayables && referralPayables.length > 0) {
-                    referralEarnings = referralPayables.reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
-                    totalEarned += referralEarnings;
+                    // Get all inquiries and vendors to categorize referrals
+                    const feedbackIds = referralPayables.map(p => p.related_feedback_id);
+                    const { data: inquiries } = await db
+                        .from('inquiries')
+                        .select('id, buyer_id, vendor_id')
+                        .in('id', feedbackIds);
 
-                    const referralPending = referralPayables.filter(p => p.status !== 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
-                    const referralPaid = referralPayables.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.buyer_portion || 0), 0);
+                    const vendorIds = inquiries ? [...new Set(inquiries.map(i => i.vendor_id).filter(Boolean))] : [];
+                    const { data: vendors } = vendorIds.length > 0 ? await db
+                        .from('vendors')
+                        .select('id, referred_by_buyer_id')
+                        .in('id', vendorIds) : { data: [] };
 
-                    pending += referralPending;
-                    paid += referralPaid;
-                    referralCommissionCount = referralPayables.length;
+                    const buyerIds = inquiries ? [...new Set(inquiries.map(i => i.buyer_id).filter(Boolean))] : [];
+                    const { data: buyers } = buyerIds.length > 0 ? await db
+                        .from('buyers')
+                        .select('id, referred_by')
+                        .in('id', buyerIds) : { data: [] };
+
+                    // Categorize each referral commission
+                    referralPayables.forEach(referral => {
+                        const inquiry = inquiries?.find(i => i.id === referral.related_feedback_id);
+                        if (!inquiry) return;
+
+                        const buyer = buyers?.find(b => b.id === inquiry.buyer_id);
+                        const vendor = vendors?.find(v => v.id === inquiry.vendor_id);
+
+                        const amount = parseFloat(referral.buyer_portion || 0);
+                        const isPending = referral.status !== 'paid';
+
+                        // Check if this is a referred buyer commission
+                        if (buyer && buyer.referred_by === buyerId) {
+                            referredBuyerEarnings += amount;
+                            referredBuyerCount++;
+                        }
+                        // Check if this is a referred vendor commission
+                        else if (vendor && vendor.referred_by_buyer_id === buyerId) {
+                            referredVendorEarnings += amount;
+                            referredVendorCount++;
+                        }
+
+                        // Track pending/paid
+                        if (isPending) {
+                            pending += amount;
+                        } else {
+                            paid += amount;
+                        }
+                    });
+
+                    totalEarned += referredBuyerEarnings + referredVendorEarnings;
                 }
 
                 // Update totals
@@ -1631,17 +1655,15 @@
                 document.getElementById('comm-pending-payouts').textContent = `$${pending.toFixed(2)}`;
                 document.getElementById('comm-paid-this-month').textContent = `$${paid.toFixed(2)}`;
 
-                // Update breakdown - keep own feedback separate from referral earnings
-                document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyer.toFixed(2)}`;
-                document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendor.toFixed(2)}`;
-                document.getElementById('comm-both-earnings').textContent = `$${bothReferred.toFixed(2)}`;
+                // Update breakdown - display referral earnings split by type
+                document.getElementById('comm-referred-buyer-earnings').textContent = `$${referredBuyerEarnings.toFixed(2)}`;
+                document.getElementById('comm-referred-vendor-earnings').textContent = `$${referredVendorEarnings.toFixed(2)}`;
                 document.getElementById('comm-own-feedback-earnings').textContent = `$${ownFeedback.toFixed(2)}`;
 
-                document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} feedbacks`;
-                document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} feedbacks`;
-                document.getElementById('comm-both-count').textContent = `${bothCount} feedbacks`;
+                document.getElementById('comm-referred-buyer-count').textContent = `${referredBuyerCount} referrals`;
+                document.getElementById('comm-referred-vendor-count').textContent = `${referredVendorCount} referrals`;
                 document.getElementById('comm-own-feedback-count').textContent = `${ownFeedbackCount} feedbacks`;
-                document.getElementById('comm-feedback-referred').textContent = referralCommissionCount;
+                document.getElementById('comm-feedback-referred').textContent = referredBuyerCount + referredVendorCount;
             } catch (err) {
                 console.error('Error loading commissions:', err);
             }
