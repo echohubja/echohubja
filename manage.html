@@ -4984,13 +4984,29 @@
             input.value = '';
 
             try {
+                // Get product_id from conversation's last message (original inquiry has product_id)
+                const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
+                if (!conv) {
+                    console.error('Conversation not found');
+                    showToast('Error: Conversation not found', 'error');
+                    return;
+                }
+
+                const productId = conv.lastMessage?.product_id;
+                if (!productId) {
+                    console.error('Product ID not found in conversation');
+                    showToast('Error: Cannot determine product', 'error');
+                    return;
+                }
+
                 // Insert vendor response message into inquiries table
                 const { error } = await sbClient
                     .from('inquiries')
                     .insert([{
+                        product_id: productId,
                         buyer_id: messagingState.currentOtherPartyId,
                         vendor_id: currentVendor.id,
-                        message_type: 'vendor_response', // Preserve message_type
+                        message_type: 'vendor_response',
                         message: message,
                         sender_type: 'vendor',
                         sender_id: currentVendor.id,
