@@ -255,6 +255,18 @@
             }
         }
 
+        // Toggle visibility of role-specific inputs based on selection
+        // ATTACH BEFORE auto-registration so the change event listener is ready
+        accountTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'vendor') {
+                vendorSpecificFields.style.display = 'block';
+                buyerSpecificFields.style.display = 'none';
+            } else {
+                vendorSpecificFields.style.display = 'none';
+                buyerSpecificFields.style.display = 'block';
+            }
+        });
+
         // Check URL parameters for auto-registration mode
         const registerType = urlParams.get('register'); // 'buyer' or 'vendor'
         if (registerType === 'buyer' || registerType === 'vendor') {
@@ -267,24 +279,13 @@
             toggleText.textContent = 'Already have an account?';
             toggleBtn.textContent = 'Sign in';
 
-            // Auto-select account type
+            // Auto-select account type (listener now ready to handle this)
             accountTypeSelect.value = registerType;
             accountTypeSelect.dispatchEvent(new Event('change'));
 
             // Clear URL to avoid confusion
             window.history.replaceState({}, document.title, 'login.html');
         }
-
-        // Toggle visibility of role-specific inputs based on selection
-        accountTypeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'vendor') {
-                vendorSpecificFields.style.display = 'block';
-                buyerSpecificFields.style.display = 'none';
-            } else {
-                vendorSpecificFields.style.display = 'none';
-                buyerSpecificFields.style.display = 'block';
-            }
-        });
 
         // Clear PayPal error when user types
         document.getElementById('paypalEmail').addEventListener('input', () => {
