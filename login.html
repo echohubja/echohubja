@@ -500,11 +500,11 @@
 
                     const authUser = authData.user;
 
-                    // 2. Check if user is a Vendor
+                    // 2. Check if user is a Vendor (query by email)
                     const { data: vendorData, error: vendorError } = await supabaseClient
                         .from('vendors')
                         .select('id, email')
-                        .eq('user_id', authUser.id)
+                        .eq('email', email)
                         .maybeSingle();
 
                     if (vendorData) {
@@ -515,11 +515,11 @@
                         return;
                     }
 
-                    // 3. Check if user is a Buyer
+                    // 3. Check if user is a Buyer (query by email)
                     const { data: buyerData, error: buyerError } = await supabaseClient
                         .from('buyers')
                         .select('id, email, approval_status')
-                        .eq('user_id', authUser.id)
+                        .eq('email', email)
                         .maybeSingle();
 
                     if (buyerData) {
