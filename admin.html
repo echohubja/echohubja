@@ -5964,9 +5964,9 @@ async function loadVendorSubmitterRelationship() {
                 // Get all admin_payables where split_with_buyer_id = this buyer (30% admin split for referrals they caused)
                 const { data: adminPayables } = await db
                     .from('admin_payables')
-                    .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
+                    .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at, unflagged_date, vendor_receipt_uploaded_date, buyer_receipt_uploaded_date')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'completed');
+                    .in('status', ['pending', 'paid', 'completed']);
 
                 if (!adminPayables) throw new Error('Failed to load admin payables');
 
@@ -5982,16 +5982,21 @@ async function loadVendorSubmitterRelationship() {
                 const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
 
                 const tbody = document.getElementById('admin-rb-detail-table');
-                tbody.innerHTML = adminPayables.map(rec => `
-                    <tr class="border-b hover:bg-orange-50">
+                tbody.innerHTML = adminPayables.map(rec => {
+                    const hasVendorReceipt = rec.vendor_receipt_uploaded_date ? '✓' : '✗';
+                    const hasBuyerReceipt = rec.buyer_receipt_uploaded_date ? '✓' : '✗';
+                    const receiptStatus = `Vendor: ${hasVendorReceipt} | Buyer: ${hasBuyerReceipt}`;
+                    return `
+                    <tr class="border-b hover:bg-orange-50 cursor-pointer" onclick="openAdminPayableModal('${rec.id}')">
                         <td class="p-2 text-xs font-mono">${rec.vendor_id.substring(0, 8)}</td>
                         <td class="p-2 text-xs">${vendorMap[rec.vendor_id].substring(0, 15)}</td>
                         <td class="p-2 text-right text-xs font-semibold">$${rec.amount_owed.toFixed(2)}</td>
                         <td class="p-2 text-right text-xs font-bold text-orange-600">$${(rec.amount_owed * 0.30).toFixed(2)}</td>
                         <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${rec.status}</span></td>
+                        <td class="p-2 text-xs text-gray-500">${receiptStatus}</td>
                         <td class="p-2 text-xs text-gray-500">${new Date(rec.created_at).toLocaleDateString()}</td>
                     </tr>
-                `).join('') || '<tr><td colspan="6" class="p-3 text-center text-gray-500">No data</td></tr>';
+                `}).join('') || '<tr><td colspan="7" class="p-3 text-center text-gray-500">No data</td></tr>';
             } catch (error) {
                 console.error('Error loading admin earnings (referred buyer):', error);
                 alert('Error loading data: ' + error.message);
@@ -6309,6 +6314,48 @@ async function loadVendorSubmitterRelationship() {
 
         // MODAL: Commission Detail Functions
         let currentAdminPayableId = null; // Global for approval button
+
+        async function openAdminPayableModal(adminPayableId) {
+            try {
+                // Fetch admin_payables record
+                const { data: adminRec, error } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('id', adminPayableId)
+                    .single();
+
+                if (error) throw error;
+
+                // Fetch related data
+                const { data: vendor } = await db.from('vendors').select('*').eq('id', adminRec.vendor_id).single();
+                const { data: buyer } = adminRec.split_with_buyer_id ?
+                    await db.from('buyers').select('*').eq('id', adminRec.split_with_buyer_id).single() :
+                    { data: null };
+
+                // Format data for modal
+                const modalData = {
+                    adminRecordId: adminRec.id,
+                    hasReferrer: buyer ? 'true' : 'false',
+                    paymentStatus: adminRec.status,
+                    unflaggedDate: adminRec.unflagged_date || '',
+                    vendorReceiptDate: adminRec.vendor_receipt_uploaded_date || '',
+                    buyerReceiptDate: adminRec.buyer_receipt_uploaded_date || '',
+                    vendorFlaggedStatus: adminRec.vendor_flagged ? 'Flagged' : 'Clear',
+                    buyerFlaggedStatus: adminRec.buyer_flagged ? 'Flagged' : 'Clear',
+                    vendorPaypalEmail: adminRec.vendor_paypal_email || '—',
+                    vendorTransactionId: adminRec.vendor_paypal_transaction_id || '—',
+                    buyerPaypalEmail: adminRec.buyer_paypal_email || '—',
+                    buyerTransactionId: adminRec.buyer_paypal_transaction_id || '—',
+                    totalAmount: adminRec.amount_owed || 0,
+                    adminShare: adminRec.admin_commission || 0,
+                    referrerShare: adminRec.buyer_portion || 0
+                };
+
+                openCommissionModal(modalData);
+            } catch (err) {
+                showToast('Error opening record: ' + err.message, 'error');
+            }
+        }
 
         function openCommissionModal(data) {
             // Store admin record ID for approval button
