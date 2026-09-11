@@ -5525,10 +5525,12 @@ async function loadVendorSubmitterRelationship() {
             if (!confirmed) return;
 
             try {
-                const adminId = localStorage.getItem('adminId') || '00000000-0000-0000-0000-000000000001';
+                // Get valid admin ID from admins table
+                const { data: adminData } = await db.from('admins').select('id').limit(1).single();
+                const adminId = adminData?.id || null;
                 const now = new Date().toISOString();
 
-                const { error } = await db.from('admin_payables').update({
+                const updateData = {
                     vendor_flagged: false,
                     vendor_flag_reason: null,
                     buyer_flagged: false,
@@ -5537,9 +5539,15 @@ async function loadVendorSubmitterRelationship() {
                     unflagged_by: adminId,
                     unflag_reason: 'receipt_accepted',
                     status: 'paid',
-                    payment_verified_date: now,
-                    payment_verified_by: adminId
-                }).eq('id', adminPayableId);
+                    payment_verified_date: now
+                };
+
+                // Only set payment_verified_by if admin ID exists
+                if (adminId) {
+                    updateData.payment_verified_by = adminId;
+                }
+
+                const { error } = await db.from('admin_payables').update(updateData).eq('id', adminPayableId);
 
                 if (error) throw error;
 
