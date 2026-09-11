@@ -5552,7 +5552,12 @@ async function loadVendorSubmitterRelationship() {
                 if (error) throw error;
 
                 showToast('✅ Referral payout approved and marked as paid!', 'success');
-                loadCommissionsPortal();
+
+                // V9 FIX: Refresh modal with fresh data to show updated status
+                setTimeout(async () => {
+                    await openAdminPayableModal(adminPayableId);
+                    loadCommissionsPortal();
+                }, 300);
             } catch (err) {
                 showToast(`Error approving payout: ${err.message}`, 'error');
             }
