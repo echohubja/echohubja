@@ -461,27 +461,31 @@
             <h3 class="text-lg font-bold text-green-700 mb-1">Commission Breakdown & Audit: Vendor-Reviewer Ledger</h3>
             <p class="text-xs text-gray-500 mb-4">Complete earnings report for each feedback: what the reviewer earned, the admin share, the inviter commission (if applicable), and receipt verification status. Use this to verify all commission splits are correct.</p>
 
-            <!-- Vendor Smart Input -->
+            <!-- Vendor Selection (Dropdown + Search) -->
             <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Vendor (ID / Full Name / Email / Feedback ID):</label>
-                <div class="relative">
-                    <input type="text" id="vendor-smart-input" placeholder="Enter vendor ID, full name, email, or feedback ID..." class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="handleVendorSmartInput()">
-                    <select id="vendor-submitter-vendor-dropdown" onchange="loadVendorSubmitterRelationship()" class="hidden w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                        <option value="">Select from list</option>
-                    </select>
-                    <div id="vendor-smart-results" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded mt-1 max-h-48 overflow-y-auto z-10 hidden"></div>
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-submitter-vendor-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-submitter-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
+                    <input type="text" id="vendor-submitter-vendor-search-email" placeholder="Search by Vendor Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
                 </div>
             </div>
 
-            <!-- Reviewer Smart Input -->
+            <!-- Buyer Selection (Dropdown + Search) -->
             <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Reviewer (ID / Full Name / Email / Feedback ID):</label>
-                <div class="relative">
-                    <input type="text" id="reviewer-smart-input" placeholder="Enter reviewer ID, full name, email, or feedback ID..." class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="handleReviewerSmartInput()">
-                    <select id="vendor-submitter-buyer-dropdown" onchange="loadVendorSubmitterRelationship()" class="hidden w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                        <option value="">Select from list</option>
-                    </select>
-                    <div id="reviewer-smart-results" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded mt-1 max-h-48 overflow-y-auto z-10 hidden"></div>
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Reviewer (Buyer):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-submitter-buyer-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-submitter-buyer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
+                    <input type="text" id="vendor-submitter-buyer-search-email" placeholder="Search by Buyer Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
                 </div>
             </div>
 
@@ -526,199 +530,20 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-green-50 text-green-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor ID</th>
                             <th class="p-2.5">Reviewer ID</th>
-                            <th class="p-2.5">Reviewer Inviter</th>
-                            <th class="p-2.5">Vendor Inviter</th>
                             <th class="p-2.5 text-right">Reviewer ($)</th>
-                            <th class="p-2.5 text-right">Reviewer Inviter ($)</th>
-                            <th class="p-2.5 text-right">Vendor Inviter ($)</th>
                             <th class="p-2.5 text-right">Admin ($)</th>
+                            <th class="p-2.5 text-right">Buyer Inviter ($)</th>
+                            <th class="p-2.5 text-right">Vendor Inviter ($)</th>
+                            <th class="p-2.5">Receipt Status</th>
                             <th class="p-2.5">Payment Status</th>
                             <th class="p-2.5">Created</th>
                         </tr>
                     </thead>
                     <tbody id="vendor-submitter-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="10" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- ADMIN PAYOUT MANAGEMENT SECTION -->
-        <div id="admin-payout-management-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-indigo-700 mb-1">💳 Admin Payout Management</h3>
-            <p class="text-xs text-gray-500 mb-4">Manage admin payout requests, approve payments, and verify receipt uploads from vendors and referrers.</p>
-
-            <!-- Vendor Selector -->
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Vendor (optional):</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="admin-payout-vendor-selector" onchange="filterAdminPayoutsByVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                        <option value="">-- View All Vendors --</option>
-                    </select>
-                    <input type="text" id="admin-payout-vendor-search" placeholder="Search by vendor name or ID..." class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]" onkeyup="searchAdminPayoutVendors()">
-                    <button onclick="clearAdminPayoutVendorFilter()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Filter</button>
-                </div>
-            </div>
-
-            <!-- Status Filter Tabs -->
-            <div class="mb-4 pb-3 border-b flex flex-wrap gap-2">
-                <button onclick="filterAdminPayouts('all')" id="filter-all" class="px-4 py-2 rounded text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">All</button>
-                <button onclick="filterAdminPayouts('available')" id="filter-available" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Available</button>
-                <button onclick="filterAdminPayouts('pending')" id="filter-pending" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Pending</button>
-                <button onclick="filterAdminPayouts('paid')" id="filter-paid" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Paid</button>
-                <span id="admin-payout-count" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-2 rounded-full font-semibold ml-auto self-center">0 records</span>
-            </div>
-
-            <!-- Admin Payout Metrics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div class="bg-indigo-50 border border-indigo-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Available</div>
-                    <div class="text-lg font-bold text-indigo-600" id="metric-admin-available">$0.00</div>
-                </div>
-                <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Pending</div>
-                    <div class="text-lg font-bold text-yellow-600" id="metric-admin-pending">$0.00</div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Paid</div>
-                    <div class="text-lg font-bold text-green-600" id="metric-admin-paid">$0.00</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Amount</div>
-                    <div class="text-lg font-bold text-gray-600" id="metric-admin-total">$0.00</div>
-                </div>
-            </div>
-
-            <!-- Admin Payouts Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-indigo-50 text-indigo-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor ID</th>
-                            <th class="p-2.5">Amount</th>
-                            <th class="p-2.5">Reason</th>
-                            <th class="p-2.5">Payment Status</th>
-                            <th class="p-2.5">Created</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-payouts-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading admin payouts...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- MODAL: Admin Payout Detail & Receipt Upload -->
-        <div id="adminPayoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-indigo-50 border-b border-indigo-200 p-4 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-indigo-700">Admin Payout Details & Receipt Upload</h2>
-                    <button onclick="closeAdminPayoutModal()" class="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button>
-                </div>
-
-                <div class="p-6 space-y-6">
-                    <!-- Payout Info -->
-                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-indigo-700 mb-3">Payout Information</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <div>
-                                <span class="text-gray-600">Payout ID:</span>
-                                <div class="font-mono bg-gray-100 px-2 py-1 rounded text-[11px] mt-1" id="modal-payout-id">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Vendor ID:</span>
-                                <div class="font-mono bg-gray-100 px-2 py-1 rounded text-[11px] mt-1" id="modal-payout-vendor-id">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Amount:</span>
-                                <div class="font-bold text-lg text-indigo-600 mt-1" id="modal-payout-amount">$0.00</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Reason:</span>
-                                <div class="mt-1" id="modal-payout-reason">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Created:</span>
-                                <div class="font-mono text-[11px] mt-1" id="modal-payout-created">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Payment Status:</span>
-                                <div class="font-bold mt-1" id="modal-payout-status">—</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Receipt Upload Section -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-blue-700 mb-3">📧 PayPal Information & Receipt</h3>
-                        <div class="space-y-4 text-xs">
-                            <!-- PayPal Email -->
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">PayPal Email (for payment):</label>
-                                <input type="email" id="modal-paypal-email" placeholder="admin@example.com" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" readonly>
-                                <div class="text-[11px] text-gray-500 mt-1">This is where payment will be sent</div>
-                            </div>
-
-                            <!-- Transaction ID -->
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">PayPal Transaction ID (Proof of payment):</label>
-                                <input type="text" id="modal-transaction-id" placeholder="Enter PayPal transaction ID..." class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" disabled>
-                                <div class="text-[11px] text-gray-500 mt-1">Admin fills this when uploading payment proof</div>
-                            </div>
-
-                            <!-- Receipt File Upload -->
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Receipt File (PDF/PNG/JPG, max 10MB):</label>
-                                <input type="file" id="modal-receipt-file" accept=".pdf,.png,.jpg,.jpeg" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" disabled>
-                                <div class="text-[11px] text-gray-500 mt-1">Upload PayPal receipt or payment confirmation</div>
-                            </div>
-
-                            <!-- Receipt Upload Status -->
-                            <div class="bg-white border border-blue-200 rounded p-3 text-[11px]">
-                                <div>
-                                    <span class="text-gray-600">Receipt Status:</span>
-                                    <div class="font-bold text-blue-600 mt-1" id="modal-receipt-status">Not uploaded</div>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-gray-600">Upload Date:</span>
-                                    <div class="font-mono text-[11px] mt-1" id="modal-receipt-upload-date">—</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Admin Approval Section -->
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-purple-700 mb-3">✅ Admin Verification</h3>
-                        <div class="space-y-2 text-xs">
-                            <div>
-                                <span class="text-gray-600">Admin Verified:</span>
-                                <div class="font-bold mt-1" id="modal-admin-verified-status">Not verified</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Verification Date:</span>
-                                <div class="font-mono text-[11px] mt-1" id="modal-admin-verified-date">—</div>
-                            </div>
-                            <div class="text-[11px] text-gray-500 mt-2 p-2 bg-white rounded">
-                                ℹ️ Admin can verify this payout after receipt is uploaded. Click "Verify Admin" button below.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <button id="modal-approve-admin-payout-btn" onclick="approveAdminPayout()" class="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-semibold" style="display:none;" title="Approve this payout request">Approve Payout</button>
-                        <button id="modal-upload-admin-receipt-btn" onclick="enableReceiptUpload()" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold" style="display:none;" title="Upload receipt proof">Upload Receipt</button>
-                        <button id="modal-verify-admin-btn" onclick="verifyAdminPayout()" class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-semibold" style="display:none;" title="Mark admin payment as verified">Verify Admin</button>
-                    </div>
-                    <div class="flex justify-end">
-                        <button onclick="closeAdminPayoutModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -760,7 +585,7 @@
                     <!-- Commission Split Section -->
                     <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-gray-300 rounded-lg p-4">
                         <h3 class="text-sm font-bold text-gray-700 mb-3">Earnings Breakdown</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="modal-earnings-grid">
                             <div class="bg-white border-2 border-green-300 rounded p-3">
                                 <div class="text-xs text-gray-600 font-semibold">Reviewer Earning</div>
                                 <div class="text-2xl font-bold text-green-600 mt-1" id="modal-submitter-amount">$0.00</div>
@@ -771,10 +596,23 @@
                                 <div class="text-2xl font-bold text-blue-600 mt-1" id="modal-admin-amount">$0.00</div>
                                 <div class="text-[11px] text-gray-500 mt-1" id="modal-admin-reason">Facility commission</div>
                             </div>
-                            <div class="bg-white border-2 border-orange-300 rounded p-3">
-                                <div class="text-xs text-gray-600 font-semibold">Inviter Share</div>
-                                <div class="text-2xl font-bold text-orange-600 mt-1" id="modal-referrer-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1" id="modal-referrer-reason">—</div>
+                            <!-- Single Inviter (Scenarios B-D) -->
+                            <div class="bg-white border-2 border-orange-300 rounded p-3" id="modal-single-inviter-box">
+                                <div class="text-xs text-gray-600 font-semibold">Inviter Earning</div>
+                                <div class="text-2xl font-bold text-orange-600 mt-1" id="modal-single-inviter-amount">$0.00</div>
+                                <div class="text-[11px] text-gray-500 mt-1" id="modal-single-inviter-reason">—</div>
+                            </div>
+                            <!-- Dual Inviters (Scenario E) - Buyer Inviter -->
+                            <div class="bg-white border-2 border-amber-300 rounded p-3" id="modal-buyer-inviter-box" style="display: none;">
+                                <div class="text-xs text-gray-600 font-semibold">Buyer Inviter Earning</div>
+                                <div class="text-2xl font-bold text-amber-600 mt-1" id="modal-buyer-inviter-amount">$0.00</div>
+                                <div class="text-[11px] text-gray-500 mt-1">Buyer's referrer (35%)</div>
+                            </div>
+                            <!-- Dual Inviters (Scenario E) - Vendor Inviter -->
+                            <div class="bg-white border-2 border-amber-400 rounded p-3" id="modal-vendor-inviter-box" style="display: none;">
+                                <div class="text-xs text-gray-600 font-semibold">Vendor Inviter Earning</div>
+                                <div class="text-2xl font-bold text-amber-700 mt-1" id="modal-vendor-inviter-amount">$0.00</div>
+                                <div class="text-[11px] text-gray-500 mt-1">Vendor's referrer (35%)</div>
                             </div>
                         </div>
                     </div>
@@ -806,71 +644,25 @@
                                 </div>
                             </div>
 
-                            <!-- Reviewer (Feedback Submitter) Proof -->
+                            <!-- Buyer/Referrer Payment Proof -->
                             <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">✍️ Reviewer (Feedback Submitter)</div>
+                                <div class="font-bold text-gray-700 mb-2">👤 Inviter Collection (Who Collected Payment)</div>
                                 <div class="space-y-2 text-[11px]">
                                     <div>
                                         <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-paypal-email">—</div>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-paypal-email">—</div>
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-transaction-id">—</div>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-transaction-id">—</div>
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-reviewer-receipt-status">—</div>
+                                        <div class="mt-1" id="modal-buyer-receipt-status">—</div>
                                     </div>
-                                    <div id="modal-reviewer-flag-info" class="text-red-600" style="display: none;">
+                                    <div id="modal-buyer-flag-info" class="text-red-600" style="display: none;">
                                         <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-reviewer-flag-reason" class="mt-1">—</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Reviewer Inviter Collection Proof (Scenario E) -->
-                            <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">👥 Reviewer Inviter (Referrer Collection)</div>
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-inviter-paypal-email">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-inviter-transaction-id">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-reviewer-inviter-receipt-status">—</div>
-                                    </div>
-                                    <div id="modal-reviewer-inviter-flag-info" class="text-red-600" style="display: none;">
-                                        <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-reviewer-inviter-flag-reason" class="mt-1">—</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Vendor Inviter Collection Proof (Scenario E) -->
-                            <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">🏪 Vendor Inviter (Referrer Collection)</div>
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-inviter-paypal-email">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-inviter-transaction-id">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-vendor-inviter-receipt-status">—</div>
-                                    </div>
-                                    <div id="modal-vendor-inviter-flag-info" class="text-red-600" style="display: none;">
-                                        <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-vendor-inviter-flag-reason" class="mt-1">—</div>
+                                        <div id="modal-buyer-flag-reason" class="mt-1">—</div>
                                     </div>
                                 </div>
                             </div>
@@ -892,56 +684,104 @@
                         </div>
                     </div>
 
-                    <!-- Payment Status Section - Per-Party Tracking -->
+                    <!-- Payment Status Section -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-gray-700 mb-3">Receipt & Verification Status (Per Party)</h3>
-                        <div class="text-xs space-y-4">
-                            <!-- Reviewer -->
-                            <div class="border-b pb-3">
-                                <span class="text-gray-600 font-semibold">Reviewer (Feedback Submitter):</span>
-                                <div class="mt-1.5 ml-2 space-y-1">
-                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-reviewer-payment-status" class="font-bold text-blue-600">—</span></div>
-                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-reviewer-verified" class="text-[11px] text-gray-600">—</span></div>
-                                </div>
-                            </div>
-                            <!-- Reviewer Inviter -->
-                            <div class="border-b pb-3">
-                                <span class="text-gray-600 font-semibold">Reviewer Inviter (Buyer Referrer):</span>
-                                <div class="mt-1.5 ml-2 space-y-1">
-                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-reviewer-inviter-payment-status" class="font-bold text-green-600">—</span></div>
-                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-reviewer-inviter-verified" class="text-[11px] text-gray-600">—</span></div>
-                                </div>
-                            </div>
-                            <!-- Vendor Inviter -->
-                            <div class="border-b pb-3">
-                                <span class="text-gray-600 font-semibold">Vendor Inviter (Vendor Referrer):</span>
-                                <div class="mt-1.5 ml-2 space-y-1">
-                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-vendor-inviter-payment-status" class="font-bold text-purple-600">—</span></div>
-                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-vendor-inviter-verified" class="text-[11px] text-gray-600">—</span></div>
-                                </div>
-                            </div>
-                            <!-- Admin -->
+                        <h3 class="text-sm font-bold text-gray-700 mb-3">Payment Status</h3>
+                        <div class="text-xs">
+                            <span class="text-gray-600">Status:</span>
+                            <div id="modal-payment-status" class="mt-1 font-bold">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
+                    <div>
+                        <button id="modal-approve-btn" onclick="if(currentAdminPayableId) approveAdminPayableReceipt(currentAdminPayableId); else alert('No record selected')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;">✓ Approve & Pay</button>
+                    </div>
+                    <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN PAYOUT MODAL (Transaction Checkbox Selection) -->
+        <div id="adminPayoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 p-4 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-blue-700">Process Payout - Select Transactions</h2>
+                    <button onclick="closeAdminPayoutModal()" class="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <!-- Vendor Info -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-blue-700 mb-2">Vendor</h3>
+                        <div class="flex justify-between items-center text-xs">
                             <div>
-                                <span class="text-gray-600 font-semibold">Admin Facility Commission:</span>
-                                <div class="mt-1.5 ml-2 space-y-1">
-                                    <div><span class="text-gray-500">Status:</span> <span id="modal-admin-payment-status" class="font-bold text-orange-600">—</span></div>
-                                    <div><span class="text-gray-500">Note:</span> <span class="text-[11px] text-gray-500">Admin does not verify own payment</span></div>
-                                </div>
+                                <span class="text-gray-600">Vendor ID:</span>
+                                <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1 text-[11px]" id="payout-vendor-id">—</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-gray-600">Total Available:</span>
+                                <div class="font-bold text-green-600 text-lg mt-1" id="payout-total-available">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Selection Checklist -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-green-700">Available Transactions</h3>
+                            <div class="text-xs font-semibold text-green-700">
+                                <span id="selected-count">0</span> / <span id="total-count">0</span> selected
+                            </div>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto space-y-2 border border-green-300 rounded bg-white p-3" id="transactionChecklistContainer">
+                            <div class="p-4 text-center text-gray-500">Loading transactions...</div>
+                        </div>
+                    </div>
+
+                    <!-- Payout Total Summary -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-amber-700 mb-2">Payout Summary</h3>
+                        <div class="grid grid-cols-3 gap-4 text-xs">
+                            <div>
+                                <span class="text-gray-600">Transactions:</span>
+                                <div class="font-bold text-amber-700 text-lg mt-1" id="payout-tx-count">0</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Per Transaction:</span>
+                                <div class="font-bold text-amber-700 text-lg mt-1" id="payout-per-tx">$0.00</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-gray-600">Total Payout:</span>
+                                <div class="font-bold text-green-600 text-lg mt-1" id="payout-selected-total">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Upload -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-purple-700 mb-3">Receipt Information</h3>
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <label class="font-semibold text-gray-700 block mb-1">PayPal Email:</label>
+                                <input type="email" id="payoutPaypalEmail" placeholder="vendor@email.com" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-gray-700 block mb-1">Transaction ID:</label>
+                                <input type="text" id="payoutTransactionId" placeholder="PayPal transaction ID" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-gray-700 block mb-1">Receipt File (PDF/Image, max 10MB):</label>
+                                <input type="file" id="payoutReceiptFile" accept=".pdf,.png,.jpg,.jpeg" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <button id="modal-approve-reviewer-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'reviewer'); else alert('No record selected')" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold" style="display:none;" title="Mark reviewer (feedback submitter) receipt as verified by admin">Verify Reviewer</button>
-                        <button id="modal-approve-reviewer-inviter-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'reviewer_inviter'); else alert('No record selected')" class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;" title="Mark reviewer inviter (buyer referrer) receipt as verified by admin">Verify Reviewer Inviter</button>
-                        <button id="modal-approve-vendor-inviter-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'vendor_inviter'); else alert('No record selected')" class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-semibold" style="display:none;" title="Mark vendor inviter (vendor referrer) receipt as verified by admin">Verify Vendor Inviter</button>
-                        <button id="modal-approve-admin-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'admin'); else alert('No record selected')" class="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs font-semibold" style="display:none;" title="Admin does not verify own payment">Verify Admin</button>
-                    </div>
-                    <div class="flex justify-end">
-                        <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
-                    </div>
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
+                    <button onclick="submitPayoutRequest()" class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-xs font-semibold transition" id="submitPayoutBtn">Submit Payout</button>
+                    <button onclick="closeAdminPayoutModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-xs font-semibold transition">Cancel</button>
                 </div>
             </div>
         </div>
@@ -1052,7 +892,7 @@
                 <div class="bg-slate-50 border border-slate-200 rounded p-4">
                     <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Share of Vendor Fee (30%)</h4>
                     <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Inviter:</span> <span id="admin-rb-referrer" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-rb-referrer" class="font-mono text-[11px]">—</span></div>
                         <div><span class="text-gray-600">Total Earning:</span> <span id="admin-rb-total" class="font-bold text-slate-600">$0.00</span></div>
                         <div><span class="text-gray-600">Referred Feedback Count:</span> <span id="admin-rb-count" class="font-mono">0</span></div>
                     </div>
@@ -1130,7 +970,7 @@
                     <h4 class="text-xs font-bold text-indigo-700 mb-3">Buyer Status</h4>
                     <div class="text-xs space-y-2">
                         <div><span class="text-gray-600">Is Referred:</span> <span id="admin-fs-referred" class="font-mono">No</span></div>
-                        <div><span class="text-gray-600">Inviter:</span> <span id="admin-fs-referrer" class="font-mono text-[10px]">—</span></div>
+                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-fs-referrer" class="font-mono text-[10px]">—</span></div>
                     </div>
                 </div>
                 <div class="bg-green-50 border border-green-200 rounded p-4">
@@ -1307,6 +1147,73 @@
                         <tbody id="all-vendors-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ADMIN PAYOUT MANAGEMENT SUBSECTION -->
+        <div class="mb-8 pb-8 border-t pt-6 mt-8">
+            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
+                <span>💳 Admin Payout Management</span>
+                <span id="payout-available-count" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">0 available</span>
+            </h3>
+            <p class="text-xs text-gray-500 mb-4">Process vendor payouts with smart validation. Enter payout amount or use Full Payout. System validates against actual available commissions from submitted feedbacks.</p>
+
+            <!-- Payout Metrics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div class="text-[10px] text-green-600 font-bold uppercase">Available</div>
+                    <div id="metric-admin-available" class="text-lg font-bold text-green-700">$0.00</div>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="text-[10px] text-blue-600 font-bold uppercase">Pending</div>
+                    <div id="metric-admin-pending" class="text-lg font-bold text-blue-700">$0.00</div>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <div class="text-[10px] text-purple-600 font-bold uppercase">Paid</div>
+                    <div id="metric-admin-paid" class="text-lg font-bold text-purple-700">$0.00</div>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="text-[10px] text-gray-600 font-bold uppercase">Total</div>
+                    <div id="metric-admin-total" class="text-lg font-bold text-gray-800">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Vendor Selector & Search -->
+            <div class="mb-4 pb-4 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="adminPayoutVendorSelector" onchange="filterAdminPayoutsByVendor()" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                        <option value="">-- All Vendors --</option>
+                    </select>
+                    <input type="text" id="adminPayoutVendorSearch" placeholder="Search by vendor name/ID..." oninput="searchAdminPayoutVendors()" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                    <button onclick="clearAdminPayoutVendorFilter()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded text-xs font-semibold transition">Clear Filter</button>
+                </div>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div class="mb-4 flex gap-2 pb-3 border-b">
+                <button onclick="filterAdminPayouts('available')" class="admin-payout-status-tab active bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold" data-status="available">Available</button>
+                <button onclick="filterAdminPayouts('pending')" class="admin-payout-status-tab bg-blue-200 text-blue-800 px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-300" data-status="pending">Pending</button>
+                <button onclick="filterAdminPayouts('paid')" class="admin-payout-status-tab bg-purple-200 text-purple-800 px-3 py-1.5 rounded text-xs font-semibold hover:bg-purple-300" data-status="paid">Paid</button>
+            </div>
+
+            <!-- Payouts Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor ID</th>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5">Created</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminPayoutsTableBody" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading payouts...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -2968,11 +2875,11 @@
             // Load relationship sections
             await loadVendorSubmitterRelationship();
 
+            // Load admin payout management data
+            await loadAdminPayouts();
+
             // Populate new payouts section dropdowns
             await populateAdminEarningsDropdowns();
-
-            // Load admin payout management
-            await loadAdminPayouts();
         }
 
 async function loadVendorSubmitterRelationship() {
@@ -3014,7 +2921,7 @@ async function loadVendorSubmitterRelationship() {
                 if (commissionViewMode === 'vendor-buyer' && selectedVendorForCommissions) {
                     query = query.eq('vendor_id', selectedVendorForCommissions);
                 } else if (commissionViewMode === 'vendor-buyer') {
-                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-gray-500">Select a vendor to view their submitter relationships.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Select a vendor to view their submitter relationships.</td></tr>`;
                     document.getElementById('vendor-submitter-total-paid').textContent = '$0.00';
                     document.getElementById('vendor-submitter-total-payable').textContent = '$0.00';
                     document.getElementById('vendor-submitter-avg').textContent = '$0.00';
@@ -3025,7 +2932,7 @@ async function loadVendorSubmitterRelationship() {
                 let { data, error } = await query.order('created_at', { ascending: false });
 
                 if (error) {
-                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                     return;
                 }
 
@@ -3129,28 +3036,48 @@ async function loadVendorSubmitterRelationship() {
                         const adminRecord = item.admin;
 
                         const submitterEarning = parseFloat(buyerRecord.amount_owed || 0);
-                        let adminEarning = 0, reviewerInviterEarning = 0, vendorInviterEarning = 0;
+                        let adminEarning = 0, buyerInviterEarning = 0, vendorInviterEarning = 0;
+                        let vendorFlagged = false, buyerFlagged = false;
+                        let receiptStatus = '—';
 
                         if (adminRecord) {
-                            // Use pre-calculated values from database (more reliable than recalculating)
-                            adminEarning = parseFloat(adminRecord.admin_commission || 0);
+                            const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
 
+                            // Scenario E: Different inviters (buyer + vendor have different referrers)
                             if (adminRecord.split_with_buyer_id && adminRecord.split_with_vendor_id) {
-                                // Scenario E: Both inviters (35% buyer, 35% vendor, 30% admin)
-                                reviewerInviterEarning = parseFloat(adminRecord.buyer_portion || 0);
-                                vendorInviterEarning = parseFloat(adminRecord.split_with_vendor_amount || 0);
-                            } else if (adminRecord.split_with_buyer_id) {
-                                // Scenario B/D: Buyer inviter only (70% or split amount, 30% admin)
-                                reviewerInviterEarning = parseFloat(adminRecord.buyer_portion || 0);
+                                // Split 35% buyer inviter / 35% vendor inviter / 30% admin
+                                adminEarning = facilityAmount * 0.3;
+                                buyerInviterEarning = facilityAmount * 0.35;
+                                vendorInviterEarning = facilityAmount * 0.35;
+                            }
+                            // Scenarios B & C: Single referrer (70% / 30%)
+                            else if (adminRecord.split_with_buyer_id) {
+                                // Referral payout: split 30% admin, 70% referrer (goes to buyer inviter only)
+                                adminEarning = facilityAmount * 0.3;
+                                buyerInviterEarning = facilityAmount * 0.7;
                                 vendorInviterEarning = 0;
-                            } else if (adminRecord.split_with_vendor_id) {
-                                // Scenario C: Vendor inviter only (70% split amount, 30% admin)
-                                reviewerInviterEarning = 0;
-                                vendorInviterEarning = parseFloat(adminRecord.split_with_vendor_amount || 0);
+                            }
+                            // Scenario A: Non-referral (100% admin)
+                            else {
+                                adminEarning = facilityAmount;
+                                buyerInviterEarning = 0;
+                                vendorInviterEarning = 0;
+                            }
+
+                            // Check receipt verification status
+                            vendorFlagged = adminRecord.vendor_flagged || false;
+                            buyerFlagged = adminRecord.buyer_flagged || false;
+
+                            if (vendorFlagged || buyerFlagged) {
+                                receiptStatus = vendorFlagged ? '⚠️ Vendor Flagged' : '⚠️ Buyer Flagged';
+                            } else if (adminRecord.vendor_receipt_uploaded_date && adminRecord.buyer_receipt_uploaded_date) {
+                                receiptStatus = '✓ Both Verified';
+                            } else if (adminRecord.vendor_receipt_uploaded_date) {
+                                receiptStatus = '✓ Vendor Uploaded';
+                            } else if (adminRecord.buyer_receipt_uploaded_date) {
+                                receiptStatus = '✓ Buyer Uploaded';
                             } else {
-                                // Scenario A: No inviters (100% admin)
-                                reviewerInviterEarning = 0;
-                                vendorInviterEarning = 0;
+                                receiptStatus = '—';
                             }
                         }
 
@@ -3159,61 +3086,45 @@ async function loadVendorSubmitterRelationship() {
                             ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`
                             : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
 
-                        const vendorId = buyerRecord.vendor_id || 'N/A';
                         const buyerId = buyerRecord.buyer_id || 'N/A';
-                        const reviewerInviterId = adminRecord?.split_with_buyer_id || '—';
-                        const vendorInviterId = adminRecord?.split_with_vendor_id || '—';
-
                         return `
                             <tr class="hover:bg-green-50/50 transition cursor-pointer" onclick="openCommissionModal({
-                                vendorId: '${escapeHtml(vendorId)}',
                                 buyerId: '${escapeHtml(buyerId)}',
-                                reviewerInviterId: '${escapeHtml(reviewerInviterId)}',
                                 submitterAmount: ${submitterEarning},
                                 adminAmount: ${adminEarning},
-                                reviewerInviterAmount: ${reviewerInviterEarning},
+                                buyerInviterAmount: ${buyerInviterEarning},
                                 vendorInviterAmount: ${vendorInviterEarning},
+                                receiptStatus: '${escapeHtml(receiptStatus)}',
                                 paymentStatus: '${status.toUpperCase()}',
                                 createdDate: '${new Date(buyerRecord.created_at).toLocaleDateString()}',
+                                vendorFlagged: ${vendorFlagged},
+                                buyerFlagged: ${buyerFlagged},
+                                vendorReceiptDate: '${adminRecord?.vendor_receipt_uploaded_date || ''}',
+                                buyerReceiptDate: '${adminRecord?.buyer_receipt_uploaded_date || ''}',
+                                hasReferrer: ${adminRecord?.split_with_buyer_id ? 'true' : 'false'},
                                 adminRecordId: '${adminRecord?.id || ''}',
                                 vendorPaypalEmail: '${adminRecord?.vendor_paypal_email || ''}',
                                 vendorTransactionId: '${adminRecord?.vendor_paypal_transaction_id || ''}',
-                                vendorFlagged: ${adminRecord?.vendor_flagged || false},
+                                buyerPaypalEmail: '${adminRecord?.buyer_paypal_email || ''}',
+                                buyerTransactionId: '${adminRecord?.buyer_paypal_transaction_id || ''}',
                                 vendorFlagReason: '${adminRecord?.vendor_flag_reason || ''}',
-                                vendorReceiptDate: '${adminRecord?.vendor_receipt_uploaded_date || ''}',
-                                reviewerPaypalEmail: '${adminRecord?.buyer_paypal_email || ''}',
-                                reviewerTransactionId: '${adminRecord?.buyer_paypal_transaction_id || ''}',
-                                reviewerFlagged: ${adminRecord?.buyer_flagged || false},
-                                reviewerFlagReason: '${adminRecord?.buyer_flag_reason || ''}',
-                                reviewerReceiptDate: '${adminRecord?.buyer_receipt_uploaded_date || ''}',
-                                reviewerInviterPaypalEmail: '${adminRecord?.reviewer_inviter_paypal_email || ''}',
-                                reviewerInviterTransactionId: '${adminRecord?.reviewer_inviter_paypal_transaction_id || ''}',
-                                reviewerInviterFlagged: ${adminRecord?.reviewer_inviter_flagged || false},
-                                reviewerInviterFlagReason: '${adminRecord?.reviewer_inviter_flag_reason || ''}',
-                                reviewerInviterReceiptDate: '${adminRecord?.reviewer_inviter_receipt_uploaded_date || ''}',
-                                vendorInviterPaypalEmail: '${adminRecord?.vendor_inviter_paypal_email || ''}',
-                                vendorInviterTransactionId: '${adminRecord?.vendor_inviter_paypal_transaction_id || ''}',
-                                vendorInviterFlagged: ${adminRecord?.vendor_inviter_flagged || false},
-                                vendorInviterFlagReason: '${adminRecord?.vendor_inviter_flag_reason || ''}',
-                                vendorInviterReceiptDate: '${adminRecord?.vendor_inviter_receipt_uploaded_date || ''}',
+                                buyerFlagReason: '${adminRecord?.buyer_flag_reason || ''}',
                                 unflaggedDate: '${adminRecord?.unflagged_date || ''}',
                                 unflagReason: '${adminRecord?.unflag_reason || ''}'
                             })">
-                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${escapeHtml(vendorId?.substring(0, 8) || 'N/A')}...</td>
-                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
-                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${reviewerInviterId === '—' ? '—' : escapeHtml(reviewerInviterId?.substring(0, 8) || 'N/A') + '...'}</td>
-                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${vendorInviterId}</td>
+                                <td class="p-2.5 text-xs font-mono text-gray-600 hover:text-green-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
                                 <td class="p-2.5 font-bold text-green-700 text-xs text-right">$${submitterEarning.toFixed(2)}</td>
-                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">${reviewerInviterEarning > 0 ? '$' + reviewerInviterEarning.toFixed(2) : '—'}</td>
-                                <td class="p-2.5 font-bold text-purple-700 text-xs text-right">${vendorInviterEarning > 0 ? '$' + vendorInviterEarning.toFixed(2) : '—'}</td>
                                 <td class="p-2.5 font-bold text-blue-700 text-xs text-right">$${adminEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${buyerInviterEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${vendorInviterEarning.toFixed(2)}</td>
+                                <td class="p-2.5 text-xs">${receiptStatus}</td>
                                 <td class="p-2.5">${paymentBadge}</td>
                                 <td class="p-2.5 text-xs text-gray-600">${new Date(buyerRecord.created_at).toLocaleDateString()}</td>
                             </tr>
                         `;
                     }).join('');
                 } else {
-                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
                 }
 
                 const avg = data && data.length > 0 ? (totalPaid + totalPayable) / data.length : 0;
@@ -3223,7 +3134,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('vendor-submitter-count').textContent = data ? data.length : '0';
             } catch (err) {
                 console.error('Error loading vendor-submitter relationship:', err);
-                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="12" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
 
@@ -4585,8 +4496,8 @@ async function loadVendorSubmitterRelationship() {
                     html += '<div class="mb-6"><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">👤 Buyers</h3>';
                     for (const result of buyers) {
                         const buyer = result.data;
-                        const inviterInfo = buyer.referred_by ? await getInviterDetails(buyer.referred_by, 'buyer') : null;
-                        html += formatBuyerCard(buyer, inviterInfo, result.matchedField);
+                        const referrerInfo = buyer.referred_by ? await getReferrerDetails(buyer.referred_by, 'buyer') : null;
+                        html += formatBuyerCard(buyer, referrerInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -4596,8 +4507,8 @@ async function loadVendorSubmitterRelationship() {
                     html += '<div><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">🏪 Vendors</h3>';
                     for (const result of vendors) {
                         const vendor = result.data;
-                        const inviterInfo = vendor.referred_by_buyer_id ? await getInviterDetails(vendor.referred_by_buyer_id, 'vendor') : null;
-                        html += formatVendorCard(vendor, inviterInfo, result.matchedField);
+                        const referrerInfo = vendor.referred_by_buyer_id ? await getReferrerDetails(vendor.referred_by_buyer_id, 'vendor') : null;
+                        html += formatVendorCard(vendor, referrerInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -4610,7 +4521,7 @@ async function loadVendorSubmitterRelationship() {
             }
         }
 
-        async function getInviterDetails(referrerId, type) {
+        async function getReferrerDetails(referrerId, type) {
             try {
                 if (type === 'buyer') {
                     const { data, error } = await db
@@ -5801,7 +5712,7 @@ async function loadVendorSubmitterRelationship() {
         async function approveAdminPayableReceipt(adminPayableId) {
             const confirmed = await showConfirmModal(
                 'Approve Receipt Verification',
-                'Approve all party receipts? This marks reviewer, inviter(s), and admin commission as verified.',
+                'Approve both vendor and buyer receipts? This will mark the referral payout as paid.',
                 'Approve & Pay'
             );
             if (!confirmed) return;
@@ -5821,12 +5732,7 @@ async function loadVendorSubmitterRelationship() {
                     unflagged_by: adminId,
                     unflag_reason: 'receipt_accepted',
                     status: 'paid',
-                    payment_verified_date: now,
-                    // Set per-party payment statuses to 'verified'
-                    reviewer_payment_status: 'verified',
-                    reviewer_inviter_payment_status: 'verified',
-                    vendor_inviter_payment_status: 'verified',
-                    admin_payment_status: 'verified'
+                    payment_verified_date: now
                 };
 
                 // Only set payment_verified_by if admin ID exists
@@ -5838,7 +5744,7 @@ async function loadVendorSubmitterRelationship() {
 
                 if (error) throw error;
 
-                showToast('✅ All party receipts verified and marked as pending payment!', 'success');
+                showToast('✅ Referral payout approved and marked as paid!', 'success');
 
                 // V9 FIX: Refresh modal with fresh data to show updated status
                 setTimeout(async () => {
@@ -5847,60 +5753,6 @@ async function loadVendorSubmitterRelationship() {
                 }, 300);
             } catch (err) {
                 showToast(`Error approving payout: ${err.message}`, 'error');
-            }
-        }
-
-        // V9 NEW: Mark individual party payment as verified by admin (after recipient uploads receipt)
-        async function approvePartyPayment(adminPayableId, partyType) {
-            const partyLabels = {
-                'reviewer': 'Reviewer (Feedback Submitter)',
-                'reviewer_inviter': 'Reviewer Inviter (Buyer Referrer)',
-                'vendor_inviter': 'Vendor Inviter (Vendor Referrer)',
-                'admin': 'Admin Facility Commission'
-            };
-
-            const confirmed = await showConfirmModal(
-                `Verify ${partyLabels[partyType]} Receipt`,
-                `Mark ${partyLabels[partyType]} receipt as verified by admin?`,
-                'Verified'
-            );
-            if (!confirmed) return;
-
-            try {
-                const now = new Date().toISOString();
-
-                // Map party type to admin approval timestamp column
-                // Admin can only verify: reviewer, reviewer_inviter, vendor_inviter
-                // Admin does NOT verify their own payment (no self-approval needed)
-                const verifiedColumnMap = {
-                    'reviewer': 'reviewer_payment_verified_by_admin',
-                    'reviewer_inviter': 'reviewer_inviter_payment_verified_by_admin',
-                    'vendor_inviter': 'vendor_inviter_payment_verified_by_admin'
-                };
-
-                const verifiedColumn = verifiedColumnMap[partyType];
-                if (!verifiedColumn) {
-                    showToast('Admin cannot verify own payment', 'error');
-                    return;
-                }
-
-                const updateData = {
-                    [verifiedColumn]: now
-                };
-
-                const { error } = await db.from('admin_payables').update(updateData).eq('id', adminPayableId);
-
-                if (error) throw error;
-
-                showToast(`✅ ${partyLabels[partyType]} receipt verified by admin!`, 'success');
-
-                // V9 FIX: Refresh modal with fresh data to show updated status
-                setTimeout(async () => {
-                    await openAdminPayableModal(adminPayableId);
-                    loadCommissionsPortal();
-                }, 300);
-            } catch (err) {
-                showToast(`Error verifying ${partyLabels[partyType]} receipt: ${err.message}`, 'error');
             }
         }
 
@@ -6695,7 +6547,7 @@ async function loadVendorSubmitterRelationship() {
                     adminRecordId: adminRec.id,
                     buyerId: buyer?.id || 'N/A',
                     buyerEmail: buyer?.email || 'N/A',
-                    hasInviter: buyer ? 'true' : 'false',
+                    hasReferrer: buyer ? 'true' : 'false',
                     createdDate: new Date(adminRec.created_at).toLocaleDateString(),
                     paymentStatus: (adminRec.status || 'pending').toUpperCase(),
                     submitterAmount: submitterAmount,
@@ -6712,16 +6564,7 @@ async function loadVendorSubmitterRelationship() {
                     buyerFlagged: adminRec.buyer_flagged || false,
                     buyerFlagReason: adminRec.buyer_flag_reason || '',
                     unflaggedDate: adminRec.unflagged_date || '',
-                    unflagReason: adminRec.unflag_reason || '',
-                    // Per-party payment status tracking (V9)
-                    reviewerPaymentStatus: adminRec.reviewer_payment_status || 'pending',
-                    reviewerInviterPaymentStatus: adminRec.reviewer_inviter_payment_status || 'pending',
-                    vendorInviterPaymentStatus: adminRec.vendor_inviter_payment_status || 'pending',
-                    adminPaymentStatus: adminRec.admin_payment_status || 'pending',
-                    // Admin verification timestamps (V9 NEW)
-                    reviewerPaymentVerifiedByAdmin: adminRec.reviewer_payment_verified_by_admin || null,
-                    reviewerInviterPaymentVerifiedByAdmin: adminRec.reviewer_inviter_payment_verified_by_admin || null,
-                    vendorInviterPaymentVerifiedByAdmin: adminRec.vendor_inviter_payment_verified_by_admin || null
+                    unflagReason: adminRec.unflag_reason || ''
                 };
 
                 openCommissionModal(modalData);
@@ -6751,30 +6594,33 @@ async function loadVendorSubmitterRelationship() {
             document.getElementById('modal-submitter-amount').textContent = `$${data.submitterAmount.toFixed(2)}`;
             document.getElementById('modal-admin-amount').textContent = `$${data.adminAmount.toFixed(2)}`;
 
-            // Determine if this is a referral payout
-            const hasReviewerInviter = data.reviewerInviterAmount > 0;
+            // Detect if Scenario E (dual inviters) or single inviter
+            const hasBuyerInviter = data.buyerInviterAmount > 0;
             const hasVendorInviter = data.vendorInviterAmount > 0;
+            const isDualInviter = hasBuyerInviter && hasVendorInviter;
 
-            if (hasReviewerInviter && hasVendorInviter) {
+            if (isDualInviter) {
+                // Scenario E: Show both buyer and vendor inviters
                 document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
-            } else if (hasReviewerInviter || hasVendorInviter) {
+                document.getElementById('modal-single-inviter-box').style.display = 'none';
+                document.getElementById('modal-buyer-inviter-box').style.display = 'block';
+                document.getElementById('modal-vendor-inviter-box').style.display = 'block';
+                document.getElementById('modal-buyer-inviter-amount').textContent = `$${data.buyerInviterAmount.toFixed(2)}`;
+                document.getElementById('modal-vendor-inviter-amount').textContent = `$${data.vendorInviterAmount.toFixed(2)}`;
+            } else if (hasBuyerInviter) {
+                // Scenarios B-D: Single inviter
                 document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
+                document.getElementById('modal-single-inviter-box').style.display = 'block';
+                document.getElementById('modal-buyer-inviter-box').style.display = 'none';
+                document.getElementById('modal-vendor-inviter-box').style.display = 'none';
+                document.getElementById('modal-single-inviter-amount').textContent = `$${data.buyerInviterAmount.toFixed(2)}`;
+                document.getElementById('modal-single-inviter-reason').textContent = 'Inviter earning (70% split)';
             } else {
+                // Scenario A: No inviters
                 document.getElementById('modal-admin-reason').textContent = 'Facility commission (100%)';
-            }
-
-            // Display inviter earnings (could be reviewer inviter, vendor inviter, or both in Scenario E)
-            const totalInviterEarnings = (data.reviewerInviterAmount || 0) + (data.vendorInviterAmount || 0);
-            document.getElementById('modal-referrer-amount').textContent = `$${totalInviterEarnings.toFixed(2)}`;
-
-            if (hasReviewerInviter && hasVendorInviter) {
-                document.getElementById('modal-referrer-reason').textContent = 'Split: 35% buyer + 35% vendor inviters';
-            } else if (hasReviewerInviter) {
-                document.getElementById('modal-referrer-reason').textContent = 'Buyer inviter earning (70% split)';
-            } else if (hasVendorInviter) {
-                document.getElementById('modal-referrer-reason').textContent = 'Vendor inviter earning (70% split)';
-            } else {
-                document.getElementById('modal-referrer-reason').textContent = '—';
+                document.getElementById('modal-single-inviter-box').style.display = 'none';
+                document.getElementById('modal-buyer-inviter-box').style.display = 'none';
+                document.getElementById('modal-vendor-inviter-box').style.display = 'none';
             }
 
             // Vendor Payment Proof
@@ -6794,66 +6640,22 @@ async function loadVendorSubmitterRelationship() {
             }
             document.getElementById('modal-vendor-receipt-status').textContent = vendorReceiptStatus;
 
-            // Reviewer (Feedback Submitter) Payment Proof
-            document.getElementById('modal-reviewer-paypal-email').textContent = data.reviewerPaypalEmail || '—';
-            document.getElementById('modal-reviewer-transaction-id').textContent = data.reviewerTransactionId || '—';
+            // Buyer/Referrer Payment Proof
+            document.getElementById('modal-buyer-paypal-email').textContent = data.buyerPaypalEmail || '—';
+            document.getElementById('modal-buyer-transaction-id').textContent = data.buyerTransactionId || '—';
 
-            let reviewerReceiptStatus = 'Pending';
-            if (data.reviewerFlagged) {
-                reviewerReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
-                document.getElementById('modal-reviewer-flag-info').style.display = 'block';
-                document.getElementById('modal-reviewer-flag-reason').textContent = data.reviewerFlagReason || 'Missing receipt';
-            } else if (data.reviewerReceiptDate) {
-                reviewerReceiptStatus = `✓ Uploaded ${new Date(data.reviewerReceiptDate).toLocaleDateString()}`;
-                document.getElementById('modal-reviewer-flag-info').style.display = 'none';
+            let buyerReceiptStatus = 'Pending';
+            if (data.buyerFlagged) {
+                buyerReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
+                document.getElementById('modal-buyer-flag-info').style.display = 'block';
+                document.getElementById('modal-buyer-flag-reason').textContent = data.buyerFlagReason || 'Missing receipt';
+            } else if (data.buyerReceiptDate) {
+                buyerReceiptStatus = `✓ Uploaded ${new Date(data.buyerReceiptDate).toLocaleDateString()}`;
+                document.getElementById('modal-buyer-flag-info').style.display = 'none';
             } else {
-                document.getElementById('modal-reviewer-flag-info').style.display = 'none';
+                document.getElementById('modal-buyer-flag-info').style.display = 'none';
             }
-            document.getElementById('modal-reviewer-receipt-status').textContent = reviewerReceiptStatus;
-
-            // Reviewer Inviter Collection Proof (Scenario E)
-            document.getElementById('modal-reviewer-inviter-paypal-email').textContent = data.reviewerInviterPaypalEmail || '—';
-            document.getElementById('modal-reviewer-inviter-transaction-id').textContent = data.reviewerInviterTransactionId || '—';
-
-            let reviewerInviterReceiptStatus = 'Not Applicable';
-            if (data.reviewerInviterPaypalEmail && data.reviewerInviterPaypalEmail !== '—') {
-                reviewerInviterReceiptStatus = 'Pending';
-                if (data.reviewerInviterFlagged) {
-                    reviewerInviterReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
-                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'block';
-                    document.getElementById('modal-reviewer-inviter-flag-reason').textContent = data.reviewerInviterFlagReason || 'Missing receipt';
-                } else if (data.reviewerInviterReceiptDate) {
-                    reviewerInviterReceiptStatus = `✓ Uploaded ${new Date(data.reviewerInviterReceiptDate).toLocaleDateString()}`;
-                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
-                } else {
-                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
-                }
-            } else {
-                document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
-            }
-            document.getElementById('modal-reviewer-inviter-receipt-status').textContent = reviewerInviterReceiptStatus;
-
-            // Vendor Inviter Collection Proof (Scenario E)
-            document.getElementById('modal-vendor-inviter-paypal-email').textContent = data.vendorInviterPaypalEmail || '—';
-            document.getElementById('modal-vendor-inviter-transaction-id').textContent = data.vendorInviterTransactionId || '—';
-
-            let vendorInviterReceiptStatus = 'Not Applicable';
-            if (data.vendorInviterPaypalEmail && data.vendorInviterPaypalEmail !== '—') {
-                vendorInviterReceiptStatus = 'Pending';
-                if (data.vendorInviterFlagged) {
-                    vendorInviterReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
-                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'block';
-                    document.getElementById('modal-vendor-inviter-flag-reason').textContent = data.vendorInviterFlagReason || 'Missing receipt';
-                } else if (data.vendorInviterReceiptDate) {
-                    vendorInviterReceiptStatus = `✓ Uploaded ${new Date(data.vendorInviterReceiptDate).toLocaleDateString()}`;
-                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
-                } else {
-                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
-                }
-            } else {
-                document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
-            }
-            document.getElementById('modal-vendor-inviter-receipt-status').textContent = vendorInviterReceiptStatus;
+            document.getElementById('modal-buyer-receipt-status').textContent = buyerReceiptStatus;
 
             // Admin Approval Trail
             if (data.unflaggedDate) {
@@ -6870,49 +6672,22 @@ async function loadVendorSubmitterRelationship() {
                 : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">${data.paymentStatus}</span>`;
             document.getElementById('modal-payment-status').innerHTML = paymentStatusBadge;
 
-            // Per-party payment status tracking (NEW V9)
-            const formatPaymentStatus = (status) => {
-                const statusUpper = (status || 'pending').toUpperCase();
-                if (statusUpper === 'PAID') {
-                    return `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
-                } else if (statusUpper === 'VERIFIED') {
-                    return `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
-                } else {
-                    return `<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
-                }
-            };
+            // V9 FIX: Show approval button only if:
+            // 1. It's a referral payout
+            // 2. Both receipts are uploaded
+            // 3. Not yet approved (unflaggedDate is empty)
+            const hasVendorReceipt = data.vendorReceiptDate && data.vendorReceiptDate.trim() !== '';
+            const hasBuyerReceipt = data.buyerReceiptDate && data.buyerReceiptDate.trim() !== '';
+            const isReferral = data.hasReferrer === 'true';
+            const notYetApproved = !data.unflaggedDate || data.unflaggedDate.trim() === '';
+            const isPending = data.paymentStatus === 'PENDING' || data.paymentStatus === 'pending';
 
-            // Format verification timestamp display
-            const formatVerificationStatus = (timestamp) => {
-                if (!timestamp) return '<span class="text-gray-400">Not verified yet</span>';
-                const date = new Date(timestamp);
-                return `<span class="text-green-600 font-semibold">✓ Verified ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>`;
-            };
-
-            // Populate 4 independent payment status fields + verification timestamps
-            document.getElementById('modal-reviewer-payment-status').innerHTML = formatPaymentStatus(data.reviewerPaymentStatus);
-            document.getElementById('modal-reviewer-verified').innerHTML = formatVerificationStatus(data.reviewerPaymentVerifiedByAdmin);
-
-            document.getElementById('modal-reviewer-inviter-payment-status').innerHTML = formatPaymentStatus(data.reviewerInviterPaymentStatus);
-            document.getElementById('modal-reviewer-inviter-verified').innerHTML = formatVerificationStatus(data.reviewerInviterPaymentVerifiedByAdmin);
-
-            document.getElementById('modal-vendor-inviter-payment-status').innerHTML = formatPaymentStatus(data.vendorInviterPaymentStatus);
-            document.getElementById('modal-vendor-inviter-verified').innerHTML = formatVerificationStatus(data.vendorInviterPaymentVerifiedByAdmin);
-
-            document.getElementById('modal-admin-payment-status').innerHTML = formatPaymentStatus(data.adminPaymentStatus);
-
-            // V9 FIX: Show individual party approval buttons based on payment_status AND verification status
-            // Button visible only if: payment_status='paid' (receipt uploaded) AND not yet verified by admin
-            const showApprovalButton = (paymentStatus, verifiedTimestamp) => {
-                const isReceiptUploaded = paymentStatus && paymentStatus.toLowerCase() === 'paid';
-                const isNotYetVerified = !verifiedTimestamp;
-                return (isReceiptUploaded && isNotYetVerified) ? 'block' : 'none';
-            };
-
-            document.getElementById('modal-approve-reviewer-btn').style.display = showApprovalButton(data.reviewerPaymentStatus, data.reviewerPaymentVerifiedByAdmin);
-            document.getElementById('modal-approve-reviewer-inviter-btn').style.display = showApprovalButton(data.reviewerInviterPaymentStatus, data.reviewerInviterPaymentVerifiedByAdmin);
-            document.getElementById('modal-approve-vendor-inviter-btn').style.display = showApprovalButton(data.vendorInviterPaymentStatus, data.vendorInviterPaymentVerifiedByAdmin);
-            document.getElementById('modal-approve-admin-btn').style.display = 'none'; // Admin never approves own payment
+            const approveBtn = document.getElementById('modal-approve-btn');
+            if (isReferral && hasVendorReceipt && hasBuyerReceipt && notYetApproved && isPending) {
+                approveBtn.style.display = 'block';
+            } else {
+                approveBtn.style.display = 'none';
+            }
 
             // Show modal
             document.getElementById('commissionDetailModal').classList.remove('hidden');
@@ -6931,407 +6706,6 @@ async function loadVendorSubmitterRelationship() {
                 modal.addEventListener('click', function(e) {
                     if (e.target === modal) {
                         closeCommissionModal();
-                    }
-                });
-            }
-        });
-
-        // ==================== ADMIN PAYOUT MANAGEMENT FUNCTIONS ====================
-
-        let currentAdminPayoutFilter = 'all';
-        let allAdminPayouts = [];
-
-        async function loadAdminPayouts() {
-            try {
-                document.getElementById('admin-payouts-body').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading admin payouts...</td></tr>';
-
-                // Fetch admin's own payouts from admin_payables table where admin_payment_status column exists
-                const { data: payouts, error } = await db
-                    .from('admin_payables')
-                    .select(`
-                        id,
-                        vendor_id,
-                        amount_owed,
-                        payable_reason,
-                        admin_payment_status,
-                        created_at,
-                        updated_at
-                    `)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                allAdminPayouts = payouts || [];
-
-                // Populate vendor dropdown with unique vendors
-                const uniqueVendorIds = [...new Set(allAdminPayouts.map(p => p.vendor_id))];
-                if (uniqueVendorIds.length > 0) {
-                    try {
-                        const { data: vendors } = await db
-                            .from('vendors')
-                            .select('id, business_name, email')
-                            .in('id', uniqueVendorIds);
-
-                        const vendorMap = {};
-                        if (vendors) {
-                            vendors.forEach(v => {
-                                vendorMap[v.id] = {
-                                    name: v.business_name || 'Vendor',
-                                    email: v.email || 'N/A'
-                                };
-                            });
-                        }
-
-                        const selector = document.getElementById('admin-payout-vendor-selector');
-                        if (selector) {
-                            selector.innerHTML = '<option value="">-- View All Vendors --</option>' +
-                                uniqueVendorIds.map(vendorId => {
-                                    const vendor = vendorMap[vendorId] || { name: 'Vendor', email: 'N/A' };
-                                    const lastFour = vendorId.slice(-4);
-                                    return `<option value="${vendorId}">${escapeHtml(vendor.name)}, ${escapeHtml(lastFour)}, ${escapeHtml(vendor.email)}</option>`;
-                                }).join('');
-                        }
-                    } catch (err) {
-                        console.warn('Error populating vendor dropdown:', err);
-                    }
-                }
-
-                // Calculate metrics
-                let totalAvailable = 0, totalPending = 0, totalPaid = 0, totalAmount = 0;
-
-                allAdminPayouts.forEach(payout => {
-                    const status = payout.admin_payment_status || 'available';
-                    const amount = parseFloat(payout.amount_owed) || 0;
-                    totalAmount += amount;
-
-                    if (status === 'available') totalAvailable += amount;
-                    else if (status === 'pending') totalPending += amount;
-                    else if (status === 'paid') totalPaid += amount;
-                });
-
-                document.getElementById('metric-admin-available').textContent = `$${totalAvailable.toFixed(2)}`;
-                document.getElementById('metric-admin-pending').textContent = `$${totalPending.toFixed(2)}`;
-                document.getElementById('metric-admin-paid').textContent = `$${totalPaid.toFixed(2)}`;
-                document.getElementById('metric-admin-total').textContent = `$${totalAmount.toFixed(2)}`;
-                document.getElementById('admin-payout-count').textContent = `${allAdminPayouts.length} records`;
-
-                // Render filtered table
-                filterAdminPayouts(currentAdminPayoutFilter);
-
-            } catch (err) {
-                console.error('Error loading admin payouts:', err);
-                showToast('Error loading admin payouts: ' + err.message, 'error');
-                document.getElementById('admin-payouts-body').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-600">Error loading data</td></tr>';
-            }
-        }
-
-        function filterAdminPayouts(status) {
-            currentAdminPayoutFilter = status;
-
-            // Update filter button styles
-            document.querySelectorAll('#admin-payout-management-section button[onclick*="filterAdminPayouts"]').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-            });
-            document.getElementById(`filter-${status}`).classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-            document.getElementById(`filter-${status}`).classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-
-            // Re-render with combined vendor + status filters
-            renderFilteredAdminPayouts();
-        }
-
-        let currentAdminPayoutVendorFilter = '';
-
-        function filterAdminPayoutsByVendor() {
-            const vendorId = document.getElementById('admin-payout-vendor-selector').value;
-            currentAdminPayoutVendorFilter = vendorId;
-            renderFilteredAdminPayouts();
-        }
-
-        function searchAdminPayoutVendors() {
-            const searchTerm = document.getElementById('admin-payout-vendor-search').value.toLowerCase().trim();
-            if (!searchTerm) {
-                document.getElementById('admin-payout-vendor-selector').value = '';
-                currentAdminPayoutVendorFilter = '';
-                renderFilteredAdminPayouts();
-                return;
-            }
-
-            // Find matching vendor in selector
-            const selector = document.getElementById('admin-payout-vendor-selector');
-            const options = Array.from(selector.options);
-            const matchedOption = options.find(opt =>
-                opt.value && (opt.text.toLowerCase().includes(searchTerm) || opt.value.toLowerCase().includes(searchTerm))
-            );
-
-            if (matchedOption) {
-                selector.value = matchedOption.value;
-                currentAdminPayoutVendorFilter = matchedOption.value;
-                renderFilteredAdminPayouts();
-            }
-        }
-
-        function clearAdminPayoutVendorFilter() {
-            document.getElementById('admin-payout-vendor-selector').value = '';
-            document.getElementById('admin-payout-vendor-search').value = '';
-            currentAdminPayoutVendorFilter = '';
-            renderFilteredAdminPayouts();
-        }
-
-        function renderFilteredAdminPayouts() {
-            // Filter by vendor if selected
-            let toRender = allAdminPayouts;
-            if (currentAdminPayoutVendorFilter) {
-                toRender = allAdminPayouts.filter(p => p.vendor_id === currentAdminPayoutVendorFilter);
-            }
-
-            // Apply status filter
-            const statusFiltered = currentAdminPayoutFilter === 'all'
-                ? toRender
-                : toRender.filter(p => (p.admin_payment_status || 'available') === currentAdminPayoutFilter);
-
-            // Render table
-            if (statusFiltered.length === 0) {
-                const vendorMsg = currentAdminPayoutVendorFilter ? ' for this vendor' : '';
-                document.getElementById('admin-payouts-body').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No payouts found${vendorMsg} for status: ${currentAdminPayoutFilter}</td></tr>`;
-                return;
-            }
-
-            const rows = statusFiltered.map(payout => {
-                const status = payout.admin_payment_status || 'available';
-                const statusBadge = {
-                    'available': '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Available</span>',
-                    'pending': '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-semibold">Pending</span>',
-                    'paid': '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">Paid</span>',
-                    'failed': '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Failed</span>'
-                }[status] || '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Unknown</span>';
-
-                const createdDate = new Date(payout.created_at).toLocaleDateString();
-
-                return `<tr class="hover:bg-gray-50 cursor-pointer" onclick="openAdminPayoutModal('${payout.id}')">
-                    <td class="p-3 font-mono text-xs text-gray-600">${payout.vendor_id.substring(0, 8)}...</td>
-                    <td class="p-3 font-bold text-indigo-600">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
-                    <td class="p-3 text-xs text-gray-600">${payout.payable_reason || 'Referral payout'}</td>
-                    <td class="p-3">${statusBadge}</td>
-                    <td class="p-3 text-xs text-gray-500">${createdDate}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="event.stopPropagation(); openAdminPayoutModal('${payout.id}')" class="px-2 py-1 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700">View</button>
-                    </td>
-                </tr>`;
-            }).join('');
-
-            document.getElementById('admin-payouts-body').innerHTML = rows;
-        }
-
-        let currentAdminPayoutId = null;
-
-        async function openAdminPayoutModal(payoutId) {
-            try {
-                currentAdminPayoutId = payoutId;
-
-                // Fetch full payout details
-                const { data: payout, error } = await db
-                    .from('admin_payables')
-                    .select(`*`)
-                    .eq('id', payoutId)
-                    .single();
-
-                if (error) throw error;
-                if (!payout) throw new Error('Payout not found');
-
-                // Populate modal
-                document.getElementById('modal-payout-id').textContent = payout.id;
-                document.getElementById('modal-payout-vendor-id').textContent = payout.vendor_id;
-                document.getElementById('modal-payout-amount').textContent = `$${parseFloat(payout.amount_owed).toFixed(2)}`;
-                document.getElementById('modal-payout-reason').textContent = payout.payable_reason || 'Referral payout';
-                document.getElementById('modal-payout-created').textContent = new Date(payout.created_at).toLocaleString();
-
-                const status = payout.admin_payment_status || 'available';
-                const statusDisplay = {
-                    'available': 'Available',
-                    'pending': 'Pending Approval',
-                    'paid': 'Paid',
-                    'failed': 'Failed'
-                }[status] || 'Unknown';
-                document.getElementById('modal-payout-status').textContent = statusDisplay;
-
-                // Receipt info - admin can fill this
-                document.getElementById('modal-paypal-email').value = payout.vendor_paypal_email || '';
-                document.getElementById('modal-transaction-id').value = payout.vendor_paypal_transaction_id || '';
-
-                const receiptStatus = payout.vendor_receipt_data ? '✓ Uploaded' : 'Not uploaded';
-                document.getElementById('modal-receipt-status').textContent = receiptStatus;
-                document.getElementById('modal-receipt-upload-date').textContent = payout.vendor_receipt_uploaded_date
-                    ? new Date(payout.vendor_receipt_uploaded_date).toLocaleString()
-                    : '—';
-
-                // Admin verification
-                const isVerified = payout.vendor_paypal_email && payout.vendor_paypal_transaction_id;
-                document.getElementById('modal-admin-verified-status').textContent = isVerified ? '✓ Verified' : 'Not verified';
-                document.getElementById('modal-admin-verified-date').textContent = '—';
-
-                // Button visibility logic
-                if (status === 'available') {
-                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'block';
-                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
-                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
-                } else if (status === 'pending') {
-                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
-                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'block';
-                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
-                } else if (status === 'paid') {
-                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
-                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
-                    document.getElementById('modal-verify-admin-btn').style.display = 'block';
-                } else {
-                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
-                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
-                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
-                }
-
-                // Show modal
-                document.getElementById('adminPayoutModal').classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-
-            } catch (err) {
-                console.error('Error opening payout modal:', err);
-                showToast('Error opening payout: ' + err.message, 'error');
-            }
-        }
-
-        function closeAdminPayoutModal() {
-            document.getElementById('adminPayoutModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            currentAdminPayoutId = null;
-        }
-
-        async function approveAdminPayout() {
-            if (!currentAdminPayoutId) {
-                showToast('No payout selected', 'error');
-                return;
-            }
-
-            try {
-                const { error } = await db
-                    .from('admin_payables')
-                    .update({ admin_payment_status: 'pending' })
-                    .eq('id', currentAdminPayoutId);
-
-                if (error) throw error;
-
-                showToast('Payout approved. Status changed to Pending.', 'success');
-                closeAdminPayoutModal();
-                loadAdminPayouts();
-
-            } catch (err) {
-                console.error('Error approving payout:', err);
-                showToast('Error approving payout: ' + err.message, 'error');
-            }
-        }
-
-        function enableReceiptUpload() {
-            document.getElementById('modal-transaction-id').disabled = false;
-            document.getElementById('modal-receipt-file').disabled = false;
-            showToast('Receipt upload fields enabled', 'success');
-        }
-
-        async function uploadAdminReceipt() {
-            if (!currentAdminPayoutId) {
-                showToast('No payout selected', 'error');
-                return;
-            }
-
-            try {
-                const transactionId = document.getElementById('modal-transaction-id').value.trim();
-                const receiptFile = document.getElementById('modal-receipt-file').files[0];
-
-                if (!transactionId) {
-                    showToast('Please enter PayPal Transaction ID', 'error');
-                    return;
-                }
-
-                if (!receiptFile) {
-                    showToast('Please select a receipt file', 'error');
-                    return;
-                }
-
-                // Validate file size (max 10MB)
-                if (receiptFile.size > 10 * 1024 * 1024) {
-                    showToast('File size exceeds 10MB limit', 'error');
-                    return;
-                }
-
-                // Read file as base64
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const base64Data = e.target.result.split(',')[1];
-
-                        const { error } = await db
-                            .from('admin_payables')
-                            .update({
-                                vendor_paypal_transaction_id: transactionId,
-                                vendor_receipt_data: base64Data,
-                                vendor_receipt_filename: receiptFile.name,
-                                vendor_receipt_filetype: receiptFile.type,
-                                vendor_receipt_filesize: receiptFile.size,
-                                vendor_receipt_uploaded_date: new Date().toISOString(),
-                                admin_payment_status: 'paid'
-                            })
-                            .eq('id', currentAdminPayoutId);
-
-                        if (error) throw error;
-
-                        showToast('Receipt uploaded successfully. Status changed to Paid.', 'success');
-                        closeAdminPayoutModal();
-                        loadAdminPayouts();
-
-                    } catch (err) {
-                        console.error('Error updating receipt:', err);
-                        showToast('Error uploading receipt: ' + err.message, 'error');
-                    }
-                };
-                reader.readAsDataURL(receiptFile);
-
-            } catch (err) {
-                console.error('Error uploading receipt:', err);
-                showToast('Error uploading receipt: ' + err.message, 'error');
-            }
-        }
-
-        async function verifyAdminPayout() {
-            if (!currentAdminPayoutId) {
-                showToast('No payout selected', 'error');
-                return;
-            }
-
-            try {
-                const { error } = await db
-                    .from('admin_payables')
-                    .update({
-                        vendor_paypal_email: document.getElementById('modal-paypal-email').value || null
-                    })
-                    .eq('id', currentAdminPayoutId);
-
-                if (error) throw error;
-
-                showToast('Admin payout verified successfully', 'success');
-                closeAdminPayoutModal();
-                loadAdminPayouts();
-
-            } catch (err) {
-                console.error('Error verifying payout:', err);
-                showToast('Error verifying payout: ' + err.message, 'error');
-            }
-        }
-
-        // Close admin payout modal on background click
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('adminPayoutModal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        closeAdminPayoutModal();
                     }
                 });
             }
@@ -7358,387 +6732,337 @@ async function loadVendorSubmitterRelationship() {
             showToast('Date filter cleared', 'success');
         }
 
-        // Smart Input: Vendor (ID / Full Name / Email / Feedback ID)
-        async function handleVendorSmartInput() {
-            const input = document.getElementById('vendor-smart-input').value.trim();
-            const resultsDiv = document.getElementById('vendor-smart-results');
-            const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
+        // ===== ADMIN PAYOUT MANAGEMENT FUNCTIONS =====
+        let adminPayoutsData = [];
 
-            if (!input) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-
+        async function loadAdminPayouts() {
             try {
-                let results = [];
+                const { data, error } = await supabase
+                    .from('admin_payables')
+                    .select('id, vendor_id, amount_owed, payable_reason, admin_payment_status, created_at, updated_at')
+                    .order('created_at', { ascending: false });
 
-                // Check if input is a feedback ID (UUID format)
-                const feedbackIdRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                if (feedbackIdRegex.test(input)) {
-                    // Query inquiries table for feedback_id
-                    const { data: feedback, error } = await db
-                        .from('inquiries')
-                        .select('id, vendor_id, buyer_id')
-                        .eq('id', input)
-                        .limit(1);
+                if (error) throw error;
 
-                    if (!error && feedback && feedback.length > 0) {
-                        const vendorId = feedback[0].vendor_id;
-                        const buyerId = feedback[0].buyer_id;
+                adminPayoutsData = data || [];
 
-                        // Fetch vendor details
-                        const { data: vendor } = await db
-                            .from('vendors')
-                            .select('id, business_name, email')
-                            .eq('id', vendorId)
-                            .limit(1);
+                // Populate vendor dropdown
+                const vendorDropdown = document.getElementById('adminPayoutVendorSelector');
+                const vendors = [...new Set(adminPayoutsData.map(p => p.vendor_id))];
+                vendorDropdown.innerHTML = '<option value="">-- All Vendors --</option>' +
+                    vendors.map(vid => `<option value="${vid}">${vid.substring(0, 8)}...</option>`).join('');
 
-                        // Fetch buyer details
-                        const { data: buyer } = await db
-                            .from('buyers')
-                            .select('id, full_name, email')
-                            .eq('id', buyerId)
-                            .limit(1);
-
-                        if (vendor && vendor.length > 0) {
-                            results.push({
-                                type: 'vendor',
-                                id: vendor[0].id,
-                                name: vendor[0].business_name || 'Vendor',
-                                email: vendor[0].email || 'N/A',
-                                isFeedback: true
-                            });
-                        }
-
-                        if (buyer && buyer.length > 0) {
-                            results.push({
-                                type: 'buyer',
-                                id: buyer[0].id,
-                                name: buyer[0].full_name || 'Buyer',
-                                email: buyer[0].email || 'N/A',
-                                isFeedback: true
-                            });
-                        }
-                    }
-                } else {
-                    // Query vendors table for id, email, or full_name match
-                    let query = db.from('vendors').select('id, business_name, email');
-
-                    if (input.includes('@')) {
-                        query = query.ilike('email', `%${input}%`);
-                    } else if (input.length === 8 || input.includes('-')) {
-                        // Likely a UUID or partial UUID
-                        query = query.ilike('id', `%${input}%`);
-                    } else {
-                        // Search by business name
-                        query = query.ilike('business_name', `%${input}%`);
-                    }
-
-                    const { data: vendors, error } = await query.limit(5);
-
-                    if (!error && vendors && vendors.length > 0) {
-                        results = vendors.map(v => ({
-                            type: 'vendor',
-                            id: v.id,
-                            name: v.business_name || 'Vendor',
-                            email: v.email || 'N/A',
-                            isFeedback: false
-                        }));
-                    }
-                }
-
-                // Display results
-                if (results.length === 0) {
-                    resultsDiv.innerHTML = '<div class="p-2 text-xs text-gray-500">No results found</div>';
-                    resultsDiv.style.display = 'block';
-                    return;
-                }
-
-                resultsDiv.innerHTML = results.map((result, index) => `
-                    <div class="p-2 border-b text-xs cursor-pointer hover:bg-gray-50" onclick="selectVendorSmartResult('${result.id}', '${result.type}', ${result.isFeedback ? 'true' : 'false'}); return false;">
-                        <div class="font-semibold text-gray-800">${escapeHtml(result.name)}</div>
-                        <div class="text-gray-500">${escapeHtml(result.email)} | ${result.id.substring(0, 8)}</div>
-                        ${result.isFeedback ? '<div class="text-green-600 font-semibold">📋 From Feedback ID</div>' : ''}
-                    </div>
-                `).join('');
-                resultsDiv.style.display = 'block';
+                // Render default view (available status)
+                renderFilteredAdminPayouts();
             } catch (err) {
-                resultsDiv.innerHTML = `<div class="p-2 text-xs text-red-500">Error: ${escapeHtml(err.message)}</div>`;
-                resultsDiv.style.display = 'block';
+                console.error('Error loading admin payouts:', err);
+                showToast('Failed to load payouts', 'error');
             }
         }
 
-        // Smart Input: Reviewer (ID / Full Name / Email / Feedback ID)
-        async function handleReviewerSmartInput() {
-            const input = document.getElementById('reviewer-smart-input').value.trim();
-            const resultsDiv = document.getElementById('reviewer-smart-results');
-            const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
+        function filterAdminPayouts(status) {
+            // Update active tab
+            document.querySelectorAll('.admin-payout-status-tab').forEach(btn => {
+                btn.classList.remove('bg-green-600', 'bg-blue-600', 'bg-purple-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+            event.target.classList.add(
+                status === 'available' ? 'bg-green-600' : status === 'pending' ? 'bg-blue-600' : 'bg-purple-600',
+                'text-white'
+            );
+            renderFilteredAdminPayouts();
+        }
 
-            if (!input) {
-                resultsDiv.style.display = 'none';
+        function filterAdminPayoutsByVendor() {
+            renderFilteredAdminPayouts();
+        }
+
+        function searchAdminPayoutVendors() {
+            const search = document.getElementById('adminPayoutVendorSearch').value.toLowerCase();
+            const dropdown = document.getElementById('adminPayoutVendorSelector');
+
+            if (!search) {
+                dropdown.value = '';
+                renderFilteredAdminPayouts();
                 return;
             }
 
-            try {
-                let results = [];
+            const matchingVendor = adminPayoutsData
+                .find(p => p.vendor_id.toLowerCase().includes(search));
 
-                // Check if input is a feedback ID (UUID format)
-                const feedbackIdRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                if (feedbackIdRegex.test(input)) {
-                    // Query inquiries table for feedback_id
-                    const { data: feedback, error } = await db
-                        .from('inquiries')
-                        .select('id, vendor_id, buyer_id')
-                        .eq('id', input)
-                        .limit(1);
-
-                    if (!error && feedback && feedback.length > 0) {
-                        const vendorId = feedback[0].vendor_id;
-                        const buyerId = feedback[0].buyer_id;
-
-                        // Fetch vendor details
-                        const { data: vendor } = await db
-                            .from('vendors')
-                            .select('id, business_name, email')
-                            .eq('id', vendorId)
-                            .limit(1);
-
-                        // Fetch buyer details
-                        const { data: buyer } = await db
-                            .from('buyers')
-                            .select('id, full_name, email')
-                            .eq('id', buyerId)
-                            .limit(1);
-
-                        if (vendor && vendor.length > 0) {
-                            results.push({
-                                type: 'vendor',
-                                id: vendor[0].id,
-                                name: vendor[0].business_name || 'Vendor',
-                                email: vendor[0].email || 'N/A',
-                                isFeedback: true
-                            });
-                        }
-
-                        if (buyer && buyer.length > 0) {
-                            results.push({
-                                type: 'buyer',
-                                id: buyer[0].id,
-                                name: buyer[0].full_name || 'Buyer',
-                                email: buyer[0].email || 'N/A',
-                                isFeedback: true
-                            });
-                        }
-                    }
-                } else {
-                    // Query buyers table for id, email, or full_name match
-                    let query = db.from('buyers').select('id, full_name, email');
-
-                    if (input.includes('@')) {
-                        query = query.ilike('email', `%${input}%`);
-                    } else if (input.length === 8 || input.includes('-')) {
-                        // Likely a UUID or partial UUID
-                        query = query.ilike('id', `%${input}%`);
-                    } else {
-                        // Search by full name
-                        query = query.ilike('full_name', `%${input}%`);
-                    }
-
-                    const { data: buyers, error } = await query.limit(5);
-
-                    if (!error && buyers && buyers.length > 0) {
-                        results = buyers.map(b => ({
-                            type: 'buyer',
-                            id: b.id,
-                            name: b.full_name || 'Buyer',
-                            email: b.email || 'N/A',
-                            isFeedback: false
-                        }));
-                    }
-                }
-
-                // Display results
-                if (results.length === 0) {
-                    resultsDiv.innerHTML = '<div class="p-2 text-xs text-gray-500">No results found</div>';
-                    resultsDiv.style.display = 'block';
-                    return;
-                }
-
-                resultsDiv.innerHTML = results.map((result, index) => `
-                    <div class="p-2 border-b text-xs cursor-pointer hover:bg-gray-50" onclick="selectReviewerSmartResult('${result.id}', '${result.type}', ${result.isFeedback ? 'true' : 'false'})">
-                        <div class="font-semibold text-gray-800">${escapeHtml(result.name)}</div>
-                        <div class="text-gray-500">${escapeHtml(result.email)} | ${result.id.substring(0, 8)}</div>
-                        ${result.isFeedback ? '<div class="text-green-600 font-semibold">📋 From Feedback ID</div>' : ''}
-                    </div>
-                `).join('');
-                resultsDiv.style.display = 'block';
-            } catch (err) {
-                resultsDiv.innerHTML = `<div class="p-2 text-xs text-red-500">Error: ${escapeHtml(err.message)}</div>`;
-                resultsDiv.style.display = 'block';
+            if (matchingVendor) {
+                dropdown.value = matchingVendor.vendor_id;
+                renderFilteredAdminPayouts();
+                showToast(`Found vendor: ${matchingVendor.vendor_id.substring(0, 8)}...`, 'success');
+            } else {
+                showToast('No matching vendor found', 'error');
             }
         }
 
-        // Select vendor from smart input results
-        function selectVendorSmartResult(vendorId, type, isFeedback) {
-            const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
-            const vendorInput = document.getElementById('vendor-smart-input');
-            const vendorResultsDiv = document.getElementById('vendor-smart-results');
+        function clearAdminPayoutVendorFilter() {
+            document.getElementById('adminPayoutVendorSelector').value = '';
+            document.getElementById('adminPayoutVendorSearch').value = '';
+            renderFilteredAdminPayouts();
+            showToast('Vendor filter cleared', 'success');
+        }
 
-            // Set dropdown value immediately
-            vendorDropdown.value = vendorId;
-            vendorResultsDiv.style.display = 'none';
+        function renderFilteredAdminPayouts() {
+            const vendorFilter = document.getElementById('adminPayoutVendorSelector')?.value;
+            const statusFilter = document.querySelector('.admin-payout-status-tab.active')?.dataset.status || 'available';
+            const tableBody = document.getElementById('adminPayoutsTableBody');
 
-            // Get vendor details and update input field
-            db.from('vendors')
-                .select('id, business_name, email')
-                .eq('id', vendorId)
-                .limit(1)
-                .then(({ data: vendor, error }) => {
-                    if (error || !vendor || vendor.length === 0) {
-                        console.error('Error fetching vendor:', error);
-                        return;
+            if (!tableBody || !adminPayoutsData) {
+                return;
+            }
+
+            // Filter data by vendor and status
+            let filteredPayouts = adminPayoutsData.filter(payout => {
+                const vendorMatch = !vendorFilter || vendorFilter === '' || payout.vendor_id === vendorFilter;
+                const statusMatch = payout.admin_payment_status === statusFilter;
+                return vendorMatch && statusMatch;
+            });
+
+            // Recalculate metrics based on filtered data
+            let filteredTotalAvailable = 0;
+            let filteredTotalPending = 0;
+            let filteredTotalPaid = 0;
+            let filteredTotalAmount = 0;
+
+            adminPayoutsData.forEach(payout => {
+                const vendorMatch = !vendorFilter || vendorFilter === '' || payout.vendor_id === vendorFilter;
+                if (!vendorMatch) return;
+
+                filteredTotalAmount += parseFloat(payout.amount_owed) || 0;
+
+                if (payout.admin_payment_status === 'available') {
+                    filteredTotalAvailable += parseFloat(payout.amount_owed) || 0;
+                } else if (payout.admin_payment_status === 'pending') {
+                    filteredTotalPending += parseFloat(payout.amount_owed) || 0;
+                } else if (payout.admin_payment_status === 'paid') {
+                    filteredTotalPaid += parseFloat(payout.amount_owed) || 0;
+                }
+            });
+
+            // Update metric display elements
+            const metricAvailable = document.getElementById('metric-admin-available');
+            const metricPending = document.getElementById('metric-admin-pending');
+            const metricPaid = document.getElementById('metric-admin-paid');
+            const metricTotal = document.getElementById('metric-admin-total');
+
+            if (metricAvailable) metricAvailable.textContent = `$${filteredTotalAvailable.toFixed(2)}`;
+            if (metricPending) metricPending.textContent = `$${filteredTotalPending.toFixed(2)}`;
+            if (metricPaid) metricPaid.textContent = `$${filteredTotalPaid.toFixed(2)}`;
+            if (metricTotal) metricTotal.textContent = `$${filteredTotalAmount.toFixed(2)}`;
+
+            // Render filtered table rows
+            tableBody.innerHTML = filteredPayouts.map(payout => {
+                const statusBadge = {
+                    'available': '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">Available</span>',
+                    'pending': '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">Pending</span>',
+                    'paid': '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[11px] font-semibold">Paid</span>',
+                    'failed': '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">Failed</span>'
+                }[payout.admin_payment_status] || '<span class="badge">Unknown</span>';
+
+                return `
+                    <tr>
+                        <td class="p-2.5">${payout.vendor_id.substring(0, 8)}...</td>
+                        <td class="p-2.5 font-bold text-green-600">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
+                        <td class="p-2.5">${payout.payable_reason || 'Commission'}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5">${new Date(payout.created_at).toLocaleDateString()}</td>
+                        <td class="p-2.5 text-center">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold" onclick="openAdminPayoutModal('${payout.vendor_id}')">Details</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        let selectedTransactionIds = [];
+        let currentVendorId = null;
+        let modalTransactions = [];
+
+        async function openAdminPayoutModal(vendorId) {
+            currentVendorId = vendorId;
+            selectedTransactionIds = [];
+
+            // Clear inputs
+            document.getElementById('payoutPaypalEmail').value = '';
+            document.getElementById('payoutTransactionId').value = '';
+            document.getElementById('payoutReceiptFile').value = '';
+
+            // Set vendor ID
+            document.getElementById('payout-vendor-id').textContent = vendorId.substring(0, 8) + '...';
+
+            // Load transactions for this vendor
+            try {
+                const { data: transactions, error } = await supabase
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('vendor_id', vendorId)
+                    .eq('status', 'pending');
+
+                if (error) throw error;
+
+                modalTransactions = transactions || [];
+
+                // Calculate totals
+                const totalAmount = modalTransactions.reduce((sum, t) => sum + parseFloat(t.amount_owed || 0), 0);
+                document.getElementById('payout-total-available').textContent = `$${totalAmount.toFixed(2)}`;
+
+                // Render transaction checklist
+                renderTransactionChecklist(modalTransactions);
+
+                // Initialize totals
+                updatePayoutSummary();
+
+                document.getElementById('adminPayoutModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } catch (err) {
+                console.error('Error loading transactions:', err);
+                showToast('Failed to load transactions', 'error');
+            }
+        }
+
+        function renderTransactionChecklist(transactions) {
+            const container = document.getElementById('transactionChecklistContainer');
+
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">No available transactions</div>';
+                return;
+            }
+
+            let html = transactions.map((tx, index) => {
+                const reason = tx.payable_reason || 'Commission';
+                const createdDate = new Date(tx.created_at).toLocaleDateString();
+                return `
+                    <div class="flex items-start gap-3 pb-3 border-b border-green-200 last:border-b-0">
+                        <input type="checkbox" id="tx-checkbox-${tx.id}" value="${tx.id}"
+                               onchange="updatePayoutSummary()"
+                               class="mt-2 cursor-pointer w-4 h-4 accent-green-600">
+                        <div class="flex-1 text-xs">
+                            <div class="font-semibold text-gray-700">${reason}</div>
+                            <div class="text-gray-600 mt-0.5">
+                                Amount: <span class="font-bold text-green-700">$${parseFloat(tx.amount_owed || 0).toFixed(2)}</span>
+                            </div>
+                            <div class="text-gray-500 mt-0.5">
+                                <span>ID: ${tx.id.substring(0, 8)}...</span> •
+                                <span>${createdDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function updatePayoutSummary() {
+            // Get all checked transactions
+            const checkboxes = document.querySelectorAll('#transactionChecklistContainer input[type="checkbox"]:checked');
+            selectedTransactionIds = Array.from(checkboxes).map(cb => cb.value);
+
+            // Get checked transactions data
+            const selectedTxs = modalTransactions.filter(tx => selectedTransactionIds.includes(tx.id));
+            const selectedAmount = selectedTxs.reduce((sum, tx) => sum + parseFloat(tx.amount_owed || 0), 0);
+            const perTxAmount = selectedTxs.length > 0 ? selectedAmount / selectedTxs.length : 0;
+
+            // Update UI
+            document.getElementById('total-count').textContent = modalTransactions.length;
+            document.getElementById('selected-count').textContent = selectedTxs.length;
+            document.getElementById('payout-tx-count').textContent = selectedTxs.length;
+            document.getElementById('payout-per-tx').textContent = `$${perTxAmount.toFixed(2)}`;
+            document.getElementById('payout-selected-total').textContent = `$${selectedAmount.toFixed(2)}`;
+        }
+
+        function closeAdminPayoutModal() {
+            document.getElementById('adminPayoutModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            selectedTransactionIds = [];
+            currentVendorId = null;
+            modalTransactions = [];
+        }
+
+        async function submitPayoutRequest() {
+            const paypalEmail = document.getElementById('payoutPaypalEmail').value;
+            const transactionId = document.getElementById('payoutTransactionId').value;
+            const receiptFile = document.getElementById('payoutReceiptFile').files[0];
+
+            // Validation
+            if (selectedTransactionIds.length === 0) {
+                showToast('Please select at least one transaction', 'error');
+                return;
+            }
+
+            if (!paypalEmail || !paypalEmail.includes('@')) {
+                showToast('Please enter a valid PayPal email', 'error');
+                return;
+            }
+
+            if (!transactionId) {
+                showToast('Please enter transaction ID', 'error');
+                return;
+            }
+
+            if (!receiptFile) {
+                showToast('Please upload receipt file', 'error');
+                return;
+            }
+
+            if (receiptFile.size > 10 * 1024 * 1024) {
+                showToast('File size exceeds 10MB limit', 'error');
+                return;
+            }
+
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const receiptData = e.target.result;
+
+                    // Get selected transactions
+                    const selectedTxs = modalTransactions.filter(tx => selectedTransactionIds.includes(tx.id));
+
+                    // Update all selected admin_payables records with vendor disbursement receipt
+                    for (const tx of selectedTxs) {
+                        const { error: updateError } = await supabase
+                            .from('admin_payables')
+                            .update({
+                                admin_payment_status: 'pending',
+                                vendor_paypal_email: paypalEmail,
+                                vendor_paypal_transaction_id: transactionId,
+                                vendor_receipt_data: receiptData,
+                                vendor_receipt_filename: receiptFile.name,
+                                vendor_receipt_filetype: receiptFile.type,
+                                vendor_receipt_filesize: receiptFile.size,
+                                vendor_receipt_uploaded_date: new Date().toISOString()
+                            })
+                            .eq('id', tx.id);
+
+                        if (updateError) throw updateError;
                     }
 
-                    const vendorName = vendor[0].business_name || vendor[0].email || 'Vendor';
+                    showToast(`Payout submitted for ${selectedTxs.length} transaction(s)`, 'success');
+                    closeAdminPayoutModal();
+                    loadAdminPayouts();
+                } catch (err) {
+                    console.error('Error submitting payout:', err);
+                    showToast('Failed to submit payout', 'error');
+                }
+            };
+            reader.readAsDataURL(receiptFile);
+        }
 
-                    // Force display - multiple approaches to ensure it shows
-                    vendorInput.value = vendorName;
-                    vendorInput.textContent = vendorName;
-                    vendorInput.placeholder = '';
-                    vendorInput.setAttribute('data-selected', vendorName);
-
-                    // Trigger change event in case other code is listening
-                    vendorInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    vendorInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-                    console.log('Vendor field set to:', vendorName);
-
-                    // If feedback ID was used, auto-populate reviewer too
-                    if (isFeedback) {
-                        db.from('inquiries')
-                            .select('id, buyer_id')
-                            .eq('vendor_id', vendorId)
-                            .eq('message_type', 'feedback')
-                            .order('created_at', { ascending: false })
-                            .limit(1)
-                            .then(({ data: feedback, error }) => {
-                                if (error || !feedback || feedback.length === 0) return;
-
-                                const buyerId = feedback[0].buyer_id;
-                                const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
-                                const reviewerInput = document.getElementById('reviewer-smart-input');
-                                const reviewerResultsDiv = document.getElementById('reviewer-smart-results');
-
-                                buyerDropdown.value = buyerId;
-
-                                db.from('buyers')
-                                    .select('id, full_name, email')
-                                    .eq('id', buyerId)
-                                    .limit(1)
-                                    .then(({ data: buyer }) => {
-                                        if (buyer && buyer.length > 0) {
-                                            const buyerName = buyer[0].full_name || buyer[0].email || 'Buyer';
-                                            reviewerInput.value = buyerName;
-                                            reviewerInput.textContent = buyerName;
-                                            reviewerInput.placeholder = '';
-                                            reviewerInput.setAttribute('data-selected', buyerName);
-                                            reviewerInput.dispatchEvent(new Event('change', { bubbles: true }));
-                                            reviewerInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                            reviewerResultsDiv.style.display = 'none';
-                                            console.log('Reviewer field set to:', buyerName);
-                                        }
-                                        loadVendorSubmitterRelationship();
-                                    });
-                            });
-                    } else {
-                        loadVendorSubmitterRelationship();
+        // Close modal on background click
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('adminPayoutModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeAdminPayoutModal();
                     }
                 });
-        }
-
-        // Select reviewer (buyer) from smart input results
-        async function selectReviewerSmartResult(buyerId, type, isFeedback) {
-            const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
-            const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
-            const vendorInput = document.getElementById('vendor-smart-input');
-            const reviewerInput = document.getElementById('reviewer-smart-input');
-            const vendorResultsDiv = document.getElementById('vendor-smart-results');
-            const reviewerResultsDiv = document.getElementById('reviewer-smart-results');
-
-            try {
-                // Get buyer details for display
-                const { data: buyer } = await db
-                    .from('buyers')
-                    .select('id, full_name, email')
-                    .eq('id', buyerId)
-                    .limit(1);
-
-                if (buyer && buyer.length > 0) {
-                    const buyerName = buyer[0].full_name || buyer[0].email || 'Buyer';
-                    buyerDropdown.value = buyerId;
-
-                    // Force display - multiple approaches to ensure it shows
-                    reviewerInput.value = buyerName;
-                    reviewerInput.textContent = buyerName;
-                    reviewerInput.placeholder = '';
-                    reviewerInput.setAttribute('data-selected', buyerName);
-                    reviewerInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    reviewerInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-                    reviewerResultsDiv.style.display = 'none';
-
-                    // If feedback ID was used, also auto-populate vendor from the same feedback
-                    if (isFeedback) {
-                        // Query inquiries to find feedback where buyer_id matches and get the vendor_id
-                        const { data: feedback } = await db
-                            .from('inquiries')
-                            .select('id, vendor_id')
-                            .eq('buyer_id', buyerId)
-                            .eq('message_type', 'feedback')
-                            .order('created_at', { ascending: false })
-                            .limit(1);
-
-                        if (feedback && feedback.length > 0) {
-                            const vendorId = feedback[0].vendor_id;
-
-                            // Get vendor details for display
-                            const { data: vendor } = await db
-                                .from('vendors')
-                                .select('id, business_name, email')
-                                .eq('id', vendorId)
-                                .limit(1);
-
-                            if (vendor && vendor.length > 0) {
-                                const vendorName = vendor[0].business_name || vendor[0].email || 'Vendor';
-                                vendorDropdown.value = vendorId;
-
-                                // Force display - multiple approaches to ensure it shows
-                                vendorInput.value = vendorName;
-                                vendorInput.textContent = vendorName;
-                                vendorInput.placeholder = '';
-                                vendorInput.setAttribute('data-selected', vendorName);
-                                vendorInput.dispatchEvent(new Event('change', { bubbles: true }));
-                                vendorInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-                                vendorResultsDiv.style.display = 'none';
-                            }
-                        }
-                    }
-                }
-
-                await loadVendorSubmitterRelationship();
-            } catch (err) {
-                showToast('Error selecting reviewer: ' + err.message, 'error');
-            }
-        }
-
-        // Hide results when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#vendor-smart-input') && !e.target.closest('#vendor-smart-results')) {
-                document.getElementById('vendor-smart-results').style.display = 'none';
-            }
-            if (!e.target.closest('#reviewer-smart-input') && !e.target.closest('#reviewer-smart-results')) {
-                document.getElementById('reviewer-smart-results').style.display = 'none';
             }
         });
     </script>
