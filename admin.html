@@ -2044,7 +2044,7 @@
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
 
-            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
+            const { data, error } = await db.from('admin_payables').select('*').order('created_at', { ascending: false });
             if (error) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
@@ -2061,8 +2061,8 @@
             let totalPaid = 0;
             let totalPayable = 0;
             data.forEach(comm => {
-                const amt = parseFloat(comm.split_amount || 0);
-                const status = (comm.status || 'payable').toLowerCase();
+                const amt = parseFloat(comm.amount_owed || 0);
+                const status = (comm.status || 'pending').toLowerCase();
                 if (status === 'paid') {
                     totalPaid += amt;
                 } else {
@@ -2076,8 +2076,8 @@
             document.getElementById('metric-total-records').textContent = data.length;
 
             tableBody.innerHTML = data.map(comm => {
-                const status = (comm.status || 'payable').toLowerCase();
-                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
+                const status = (comm.status || 'pending').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
                 let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
 
                 if (status === 'paid') {
@@ -2085,9 +2085,9 @@
                     actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
                 }
 
-                let targetDisplay = comm.referred_id;
-                if (comm.referred_role) {
-                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
+                let targetDisplay = comm.split_with_buyer_id || comm.vendor_id || 'N/A';
+                if (comm.payable_reason) {
+                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.payable_reason})</span>`;
                 }
 
                 return `
