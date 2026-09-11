@@ -2677,9 +2677,23 @@ async function loadVendorSubmitterRelationship() {
                     const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
                     const currentSelection = vendorDropdown?.value;
                     if (vendorDropdown) {
-                        vendorDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueVendors.map(vendorId =>
-                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))} (${escapeHtml(vendorId)})</option>`
-                        ).join('');
+                        // Fetch vendor details (business_name, email) for display
+                        const { data: vendorDetails } = await db.from('vendors').select('id, business_name, email').in('id', uniqueVendors);
+                        const vendorMap = {};
+                        if (vendorDetails) {
+                            vendorDetails.forEach(v => {
+                                vendorMap[v.id] = {
+                                    name: v.business_name || 'Vendor',
+                                    email: v.email || 'N/A'
+                                };
+                            });
+                        }
+
+                        vendorDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueVendors.map(vendorId => {
+                            const vendor = vendorMap[vendorId] || { name: 'Vendor', email: 'N/A' };
+                            const lastFour = vendorId.slice(-4);
+                            return `<option value="${vendorId}">${escapeHtml(vendor.name)}, ${escapeHtml(lastFour)}, ${escapeHtml(vendor.email)}</option>`;
+                        }).join('');
                         if (currentSelection) vendorDropdown.value = currentSelection;
                     }
                 }
@@ -2711,9 +2725,23 @@ async function loadVendorSubmitterRelationship() {
                     const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
                     const currentSelection = buyerDropdown?.value;
                     if (buyerDropdown) {
-                        buyerDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueBuyers.map(buyerId =>
-                            `<option value="${buyerId}">${escapeHtml(buyerId.substring(0, 8))} (${escapeHtml(buyerId)})</option>`
-                        ).join('');
+                        // Fetch buyer details (full_name, email) for display
+                        const { data: buyerDetails } = await db.from('buyers').select('id, full_name, email').in('id', uniqueBuyers);
+                        const buyerMap = {};
+                        if (buyerDetails) {
+                            buyerDetails.forEach(b => {
+                                buyerMap[b.id] = {
+                                    name: b.full_name || 'Buyer',
+                                    email: b.email || 'N/A'
+                                };
+                            });
+                        }
+
+                        buyerDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueBuyers.map(buyerId => {
+                            const buyer = buyerMap[buyerId] || { name: 'Buyer', email: 'N/A' };
+                            const lastFour = buyerId.slice(-4);
+                            return `<option value="${buyerId}">${escapeHtml(buyer.name)}, ${escapeHtml(lastFour)}, ${escapeHtml(buyer.email)}</option>`;
+                        }).join('');
                         if (currentSelection) buyerDropdown.value = currentSelection;
                     }
                 }
