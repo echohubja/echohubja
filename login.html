@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echo Hub - Account Portal & Authentication</title>
+    <title>Echo Hub - Login</title>
     <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -59,7 +59,7 @@
             color: #475569;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
@@ -71,7 +71,7 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             border-color: #1e5aa8;
             background: #f8fafc;
@@ -101,7 +101,7 @@
         }
 
         .alert-msg {
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 6px;
             font-size: 0.85em;
             margin-bottom: 20px;
@@ -118,57 +118,27 @@
             color: #b91c1c;
         }
 
-        .toggle-mode {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #64748b;
+        .alert-warning {
+            background: #fef3c7;
+            color: #d97706;
         }
 
-        .toggle-mode a {
+        .register-links {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.85em;
+            color: #64748b;
+            line-height: 1.8;
+        }
+
+        .register-links a {
             color: #1e5aa8;
             text-decoration: none;
             font-weight: 600;
         }
 
-        .toggle-mode a:hover {
+        .register-links a:hover {
             text-decoration: underline;
-        }
-
-        .row-fields {
-            display: flex;
-            gap: 12px;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-            color: #1e293b;
-            background: #fff;
-            transition: border-color 0.2s;
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: #1e5aa8;
-            background: #f8fafc;
-        }
-
-        input[type="radio"] {
-            width: auto;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        small {
-            color: #64748b;
-            font-size: 0.8em;
         }
     </style>
 </head>
@@ -176,110 +146,28 @@
 
     <div class="auth-container">
         <div id="formHeader">
-            <h2 id="formTitle">Account Login</h2>
-            <p class="subtitle" id="formSubtitle">Access your Echo Hub marketplace account or dashboard</p>
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Sign in to your Echo Hub account</p>
         </div>
 
         <div id="authAlert" class="alert-msg"></div>
 
-        <form id="authForm">
-            <!-- Extra Registration Fields (Hidden by default) -->
-            <div id="registerFields" style="display: none;">
-                <div class="form-group">
-                    <label for="accountType">I want to register as a:</label>
-                    <select id="accountType">
-                        <option value="buyer">Buyer / Reviewer</option>
-                        <option value="vendor">Vendor Partner</option>
-                    </select>
-                </div>
-
-                <div class="row-fields">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="India">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Stronghold">
-                    </div>
-                </div>
-
-                <div id="vendorSpecificFields" style="display: none;">
-                    <div class="form-group">
-                        <label>Vendor Type</label>
-                        <div style="display: flex; gap: 20px; margin-top: 8px;">
-                            <label style="margin: 0; font-weight: normal; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="radio" name="vendorType" value="UPFRONT" checked> UPFRONT
-                            </label>
-                            <label style="margin: 0; font-weight: normal; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="radio" name="vendorType" value="REFUND_AFTER_REVIEW"> REFUND_AFTER_REVIEW
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="commissionAmount">Commission Amount (USD) <span style="color: #e74c3c;">*</span></label>
-                        <input type="number" id="commissionAmount" name="commissionAmount" placeholder="5.00" min="5" step="0.01">
-                        <small style="color: #64748b; margin-top: 4px; display: block;">Minimum: $5.00 USD</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="businessDetails">What will you be interested in offering?</label>
-                        <textarea id="businessDetails" placeholder="Describe your business and services..." style="width: 100%; padding: 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; color: #1e293b; resize: vertical; min-height: 100px;"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="referralCodeVendor">Referral Code (Optional)</label>
-                        <input type="text" id="referralCodeVendor" placeholder="Enter referral code if you have one">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="paypalEmailVendor">PayPal Email <span style="color: #e74c3c;">*</span></label>
-                        <input type="email" id="paypalEmailVendor" name="paypalEmailVendor" placeholder="your.paypal@email.com">
-                    </div>
-                    <div id="paypalErrorVendor" class="alert-msg alert-error" style="display: none; margin-bottom: 15px;"></div>
-                </div>
-
-                <div id="buyerSpecificFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="whatsappNumber">WhatsApp Number</label>
-                        <input type="tel" id="whatsappNumber" name="whatsappNumber" placeholder="+1234567890">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="categoriesInterest">Categories of Interest</label>
-                        <input type="text" id="categoriesInterest" name="categoriesInterest" placeholder="e.g., Electronics, Fashion, Food">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="nationalIdFile">National ID File</label>
-                        <input type="file" id="nationalIdFile" name="nationalIdFile" accept=".pdf,.jpg,.jpeg,.png">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="paypalEmail">PayPal Email</label>
-                        <input type="email" id="paypalEmail" name="paypalEmail" placeholder="your.paypal@email.com">
-                    </div>
-                    <div id="paypalError" class="alert-msg alert-error" style="display: none; margin-bottom: 15px;"></div>
-                </div>
-            </div>
-
+        <form id="loginForm">
             <div class="form-group">
-                <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="name@example.com" autocomplete="email">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required placeholder="your@email.com">
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                <input type="password" id="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
         </form>
 
-        <div class="toggle-mode">
-            <span id="toggleText">New to Echo Hub?</span> 
-            <a href="#" id="toggleBtn">Create an account</a>
+        <div class="register-links">
+            Don't have an account? <a href="register.html">Register as Buyer</a>
         </div>
     </div>
 
@@ -288,295 +176,184 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        let isRegisterMode = false;
-
-        const authForm = document.getElementById('authForm');
-        const formTitle = document.getElementById('formTitle');
-        const formSubtitle = document.getElementById('formSubtitle');
+        const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const toggleText = document.getElementById('toggleText');
-        const registerFields = document.getElementById('registerFields');
-        const accountTypeSelect = document.getElementById('accountType');
-        const vendorSpecificFields = document.getElementById('vendorSpecificFields');
-        const buyerSpecificFields = document.getElementById('buyerSpecificFields');
         const authAlert = document.getElementById('authAlert');
 
-        // Handle logout request from index.html
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('logout') === 'true') {
-            localStorage.removeItem('buyer_id');
-            localStorage.removeItem('buyer_email');
-            localStorage.removeItem('vendor_id');
-            localStorage.removeItem('vendor_email');
-            localStorage.removeItem('user_email');
-            if (supabaseClient) {
-                supabaseClient.auth.signOut();
+        // Web Crypto API password verification using PBKDF2
+        async function verifyPassword(password, storedHash) {
+            try {
+                // Decode the stored hash (salt + hash combined in base64)
+                const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
+                const salt = combined.slice(0, 16);
+                const hashToCompare = combined.slice(16);
+
+                // Hash the provided password with the same salt
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    data,
+                    'PBKDF2',
+                    false,
+                    ['deriveBits']
+                );
+
+                const bits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: salt,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    key,
+                    256
+                );
+
+                const computedHash = new Uint8Array(bits);
+
+                // Constant-time comparison to prevent timing attacks
+                let match = true;
+                for (let i = 0; i < hashToCompare.length; i++) {
+                    if (hashToCompare[i] !== computedHash[i]) {
+                        match = false;
+                    }
+                }
+
+                return match;
+            } catch (err) {
+                console.error('[PASSWORD_VERIFY_ERROR]', err);
+                return false;
             }
         }
 
-        // Toggle visibility of role-specific inputs based on selection
-        // ATTACH BEFORE auto-registration so the change event listener is ready
-        accountTypeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'vendor') {
-                vendorSpecificFields.style.display = 'block';
-                buyerSpecificFields.style.display = 'none';
-            } else {
-                vendorSpecificFields.style.display = 'none';
-                buyerSpecificFields.style.display = 'block';
-            }
-        });
-
-        // Check URL parameters for auto-registration mode
-        const registerType = urlParams.get('register'); // 'buyer' or 'vendor'
-        if (registerType === 'buyer' || registerType === 'vendor') {
-            // Auto-toggle to registration mode
-            isRegisterMode = true;
-            formTitle.textContent = 'Create Account';
-            formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
-            submitBtn.textContent = 'Complete Registration';
-            registerFields.style.display = 'block';
-            toggleText.textContent = 'Already have an account?';
-            toggleBtn.textContent = 'Sign in';
-
-            // Auto-select account type (listener now ready to handle this)
-            accountTypeSelect.value = registerType;
-            accountTypeSelect.dispatchEvent(new Event('change'));
-
-            // Clear URL to avoid confusion
-            window.history.replaceState({}, document.title, 'login.html');
-        }
-
-        // Clear PayPal error when user types
-        document.getElementById('paypalEmail').addEventListener('input', () => {
-            document.getElementById('paypalError').style.display = 'none';
-        });
-
-        // Clear Vendor PayPal error when user types
-        document.getElementById('paypalEmailVendor').addEventListener('input', () => {
-            document.getElementById('paypalErrorVendor').style.display = 'none';
-        });
-
-        // Toggle between Login and Registration views
-        toggleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            isRegisterMode = !isRegisterMode;
-            showAlert('', false);
-            document.getElementById('paypalError').style.display = 'none';
-            document.getElementById('paypalErrorVendor').style.display = 'none';
-
-            if (isRegisterMode) {
-                formTitle.textContent = 'Create Account';
-                formSubtitle.textContent = 'Set up your Echo Hub marketplace account';
-                submitBtn.textContent = 'Complete Registration';
-                registerFields.style.display = 'block';
-                toggleText.textContent = 'Already have an account?';
-                toggleBtn.textContent = 'Sign in';
-            } else {
-                formTitle.textContent = 'Account Login';
-                formSubtitle.textContent = 'Access your Echo Hub marketplace account or dashboard';
-                submitBtn.textContent = 'Sign In';
-                registerFields.style.display = 'none';
-                toggleText.textContent = 'New to Echo Hub?';
-                toggleBtn.textContent = 'Create an account';
-            }
-        });
-
-        // Handle Form Submission (Login or Register)
-        authForm.addEventListener('submit', async (e) => {
+        // Handle Login Form Submission
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             showAlert('', false);
             submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
 
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const password = document.getElementById('password').value;
 
             try {
                 if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
 
-                if (isRegisterMode) {
-                    // --- REGISTRATION FLOW ---
-                    const accountType = accountTypeSelect.value;
-                    const firstName = document.getElementById('firstName').value.trim() || (accountType === 'vendor' ? 'Vendor' : 'Buyer');
-                    const lastName = document.getElementById('lastName').value.trim() || 'Partner';
+                // AUTO-DETECT: Try vendor first, then buyer
+                console.log('[LOGIN] Auto-detecting user type for email:', email);
 
-                    submitBtn.textContent = 'Creating account...';
+                // Try vendor
+                const { data: vendorData, error: vendorError } = await supabaseClient
+                    .from('vendors')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
 
-                    // 1. Create Supabase Auth User
-                    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { first_name: firstName, last_name: lastName, role: accountType } }
-                    });
+                if (!vendorError && vendorData) {
+                    // VENDOR LOGIN
+                    console.log('[VENDOR_LOGIN] Found vendor, verifying password');
+                    const passwordMatch = await verifyPassword(password, vendorData.password);
 
-                    if (authError) throw new Error(authError.message);
-                    if (!authData.user) throw new Error('Registration failed to return user session.');
+                    if (!passwordMatch) {
+                        throw new Error('Invalid email or password.');
+                    }
 
-                    const authUuid = authData.user.id;
+                    // Store vendor session
+                    console.log('[VENDOR_LOGIN] Login successful, storing session');
+                    localStorage.setItem('vendor_id', vendorData.id);
+                    localStorage.setItem('vendor_email', vendorData.email);
+                    localStorage.setItem('vendor_is_blocked', vendorData.is_blocked);
+                    localStorage.setItem('vendor_session', JSON.stringify(vendorData));
 
-                    if (accountType === 'vendor') {
-                        // Vendor Registration Path
-                        const vendorType = document.querySelector('input[name="vendorType"]:checked').value;
-                        const commissionAmount = parseFloat(document.getElementById('commissionAmount').value);
-                        const businessDetails = document.getElementById('businessDetails').value.trim();
-                        const referralCode = document.getElementById('referralCodeVendor').value.trim() || null;
-                        const paypalEmail = document.getElementById('paypalEmailVendor').value.trim();
+                    // Check if vendor is flagged
+                    console.log('[VENDOR_LOGIN] Checking flag status');
+                    const { data: vendorFlag } = await supabaseClient
+                        .rpc('check_user_flagged_status', {
+                            p_vendor_id: vendorData.id,
+                            p_buyer_id: null
+                        })
+                        .single();
 
-                        // Validate commission amount
-                        if (isNaN(commissionAmount) || commissionAmount < 5.00) {
-                            throw new Error('Commission amount must be at least $5.00 USD.');
-                        }
-
-                        // Validate PayPal Email
-                        if (!paypalEmail) {
-                            document.getElementById('paypalErrorVendor').textContent = 'PayPal Email is required.';
-                            document.getElementById('paypalErrorVendor').style.display = 'block';
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = 'Complete Registration';
-                            throw new Error('PayPal Email is required for vendor registration.');
-                        }
-
-                        const { error: insertError } = await supabaseClient.from('vendors').insert([
-                            {
-                                id: authUuid,
-                                user_id: authUuid,
-                                email: email,
-                                business_name: firstName + ' ' + lastName,
-                                description: businessDetails,
-                                current_per_feedback_rate: commissionAmount,
-                                paypal_email: paypalEmail,
-                                suspension_status: 'active',
-                                accumulated_balance: 0,
-                                rating: 0,
-                                created_at: new Date().toISOString()
-                            }
-                        ]);
-
-                        if (insertError) throw new Error('Vendor profile creation error: ' + insertError.message);
-
-                        localStorage.setItem('vendor_id', authUuid);
-                        localStorage.setItem('vendor_email', email);
-                        if (referralCode) localStorage.setItem('vendor_referral_code', referralCode);
-
-                        showAlert('Registration successful! Redirecting to dashboard...', false);
-                        setTimeout(() => { window.location.href = 'manage.html'; }, 1000);
-
+                    if (vendorFlag && vendorFlag.is_flagged) {
+                        console.log('[VENDOR_LOGIN] Vendor is flagged, redirecting to restricted portal');
+                        showAlert('Account restricted. Redirecting to restricted portal...', false);
+                        setTimeout(() => {
+                            window.location.href = 'restricted-portal.html';
+                        }, 1000);
+                    } else if (vendorData.is_blocked) {
+                        showAlert('⚠️ Your account is currently blocked. Update your commission to activate.', 'warning');
+                        setTimeout(() => {
+                            window.location.href = 'manage.html';
+                        }, 1500);
                     } else {
-                        // Buyer Registration Path (creates referral code & profile)
-                        const refCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                        const paypalEmail = document.getElementById('paypalEmail').value.trim();
-                        const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
-                        const categoriesInterest = document.getElementById('categoriesInterest').value.trim();
-                        const nationalIdFile = document.getElementById('nationalIdFile').files[0];
-
-                        if (!paypalEmail) {
-                            document.getElementById('paypalError').textContent = 'PayPal Email is required.';
-                            document.getElementById('paypalError').style.display = 'block';
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = 'Complete Registration';
-                            throw new Error('PayPal Email is required for buyer registration.');
-                        }
-
-                        let nationalIdData = null;
-                        let nationalIdFileName = null;
-                        let nationalIdFileType = null;
-                        let nationalIdFileSize = null;
-
-                        if (nationalIdFile) {
-                            nationalIdFileName = nationalIdFile.name;
-                            nationalIdFileType = nationalIdFile.type;
-                            nationalIdFileSize = nationalIdFile.size;
-                            const reader = new FileReader();
-                            nationalIdData = await new Promise((resolve, reject) => {
-                                reader.onload = () => resolve(reader.result);
-                                reader.onerror = reject;
-                                reader.readAsDataURL(nationalIdFile);
-                            });
-                        }
-
-                        const { error: insertError } = await supabaseClient.from('buyers').insert([
-                            {
-                                id: authUuid,
-                                user_id: authUuid,
-                                email: email,
-                                full_name: firstName + ' ' + lastName,
-                                paypal_email: paypalEmail,
-                                whatsapp_number: whatsappNumber || null,
-                                categories_interest: categoriesInterest || null,
-                                national_id_data: nationalIdData,
-                                national_id_file_name: nationalIdFileName,
-                                national_id_file_type: nationalIdFileType,
-                                national_id_file_size: nationalIdFileSize,
-                                referral_code: refCode,
-                                approval_status: 'approved',
-                                accumulated_balance: 0,
-                                created_at: new Date(),
-                                updated_at: new Date()
-                            }
-                        ]);
-
-                        if (insertError) throw new Error('Buyer profile creation error: ' + insertError.message);
-
-                        localStorage.setItem('buyer_id', authUuid);
-                        localStorage.setItem('buyer_email', email);
-
-                        showAlert('Registration successful! Redirecting to storefront...', false);
-                        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                        showAlert('Login successful! Redirecting to dashboard...', false);
+                        setTimeout(() => {
+                            window.location.href = 'manage.html';
+                        }, 1000);
                     }
-
                 } else {
-                    // --- LOGIN FLOW (Supabase Auth only) ---
-                    submitBtn.textContent = 'Signing in...';
-
-                    // 1. Authenticate via Supabase Auth
-                    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-                        email,
-                        password
-                    });
-
-                    if (authError) throw new Error(authError.message);
-                    const authUser = authData.user;
-
-                    // 2. Check if user is a Vendor
-                    const { data: vendorData } = await supabaseClient
-                        .from('vendors')
-                        .select('id, email')
-                        .eq('user_id', authUser.id)
-                        .maybeSingle();
-
-                    if (vendorData) {
-                        localStorage.setItem('vendor_id', vendorData.id);
-                        localStorage.setItem('vendor_email', vendorData.email);
-                        window.location.href = 'manage.html';
-                        return;
-                    }
-
-                    // 3. Check if user is a Buyer
-                    const { data: buyerData } = await supabaseClient
+                    // Try buyer
+                    console.log('[LOGIN] Vendor not found, checking buyers table');
+                    const { data: buyerData, error: buyerError } = await supabaseClient
                         .from('buyers')
-                        .select('id, email, approval_status')
-                        .eq('user_id', authUser.id)
-                        .maybeSingle();
+                        .select('*')
+                        .eq('email', email)
+                        .single();
 
-                    if (buyerData) {
-                        // Check approval status
-                        if (buyerData.approval_status?.toLowerCase() !== 'approved') {
-                            throw new Error(`Your account is ${buyerData.approval_status}. You will receive access once your national ID is verified.`);
-                        }
-                        localStorage.setItem('buyer_id', buyerData.id);
-                        localStorage.setItem('buyer_email', buyerData.email);
-                        window.location.href = 'index.html';
-                        return;
+                    if (buyerError || !buyerData) {
+                        throw new Error('Account not found. Please register first.');
                     }
 
-                    // Fallback: No vendor or buyer profile found
-                    throw new Error('Account authenticated but no vendor or buyer profile found.');
+                    // BUYER LOGIN
+                    console.log('[BUYER_LOGIN] Found buyer, verifying password');
+                    const passwordMatch = await verifyPassword(password, buyerData.password);
+
+                    if (!passwordMatch) {
+                        throw new Error('Invalid email or password.');
+                    }
+
+                    // Check approval status
+                    if (buyerData.approval_status !== 'APPROVED') {
+                        throw new Error('Your account is pending approval. Please check your email for updates.');
+                    }
+
+                    // Store buyer session
+                    console.log('[BUYER_LOGIN] Login successful, storing session');
+                    localStorage.setItem('buyer_id', buyerData.id);
+                    localStorage.setItem('buyer_email', buyerData.email);
+                    localStorage.setItem('buyer_referral_code', buyerData.referral_code);
+                    localStorage.setItem('buyer_session', JSON.stringify(buyerData));
+
+                    // Check if buyer is flagged
+                    console.log('[BUYER_LOGIN] Checking flag status');
+                    const { data: buyerFlag } = await supabaseClient
+                        .rpc('check_user_flagged_status', {
+                            p_vendor_id: null,
+                            p_buyer_id: buyerData.id
+                        })
+                        .single();
+
+                    if (buyerFlag && buyerFlag.is_flagged) {
+                        console.log('[BUYER_LOGIN] Buyer is flagged, redirecting to restricted portal');
+                        showAlert('Account restricted. Redirecting to restricted portal...', false);
+                        setTimeout(() => {
+                            window.location.href = 'restricted-portal.html';
+                        }, 1000);
+                    } else {
+                        showAlert('Login successful! Redirecting to marketplace...', false);
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    }
                 }
 
             } catch (err) {
+                console.error('[LOGIN_ERROR]', err);
                 showAlert(err.message, true);
                 submitBtn.disabled = false;
-                submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
+                submitBtn.textContent = 'Sign In';
             }
         });
 
@@ -586,7 +363,13 @@
                 return;
             }
             authAlert.textContent = msg;
-            authAlert.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
+            if (isError === true) {
+                authAlert.className = 'alert-msg alert-error';
+            } else if (isError === 'warning') {
+                authAlert.className = 'alert-msg alert-warning';
+            } else {
+                authAlert.className = 'alert-msg alert-success';
+            }
             authAlert.style.display = 'block';
         }
     </script>
