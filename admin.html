@@ -1533,7 +1533,7 @@
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             if (!confirm(`Update access status for ${buyerEmail}?`)) return;
             try {
-                const { error } = await db.from('buyers').update({ approval_status: 'approved' }).eq('id', buyerId);
+                const { error } = await db.from('buyers').update({ approval_status: 'APPROVED' }).eq('id', buyerId);
                 if (error) {
                     showToast(`Error: ${error.message}`, 'error');
                     return;
