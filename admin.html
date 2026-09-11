@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo Hub - Unified Admin Management Portal</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -227,7 +226,6 @@
             <button onclick="switchTab('messaging')" id="tab-btn-messaging" class="tab-btn">💬 Messaging</button>
             <button onclick="switchTab('flagged')" id="tab-btn-flagged" class="tab-btn">🚩 Flagged</button>
             <button onclick="switchTab('fraud')" id="tab-btn-fraud" class="tab-btn">🔒 Fraud</button>
-            <button onclick="switchTab('compliance')" id="tab-btn-compliance" class="tab-btn">✓ Compliance</button>
         </nav>
 
         <!-- MAIN CONTENT AREA -->
@@ -791,13 +789,11 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor ID</th>
-                            <th class="p-2.5">Name</th>
-                            <th class="p-2.5">Email</th>
-                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Vendor Details</th>
+                            <th class="p-2.5">Commission Amount</th>
                             <th class="p-2.5">Days Flagged</th>
-                            <th class="p-2.5">Severity</th>
-                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Flag Reason</th>
+                            <th class="p-2.5">Flagged Since</th>
                             <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -820,13 +816,11 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-red-50 text-red-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Buyer ID</th>
-                            <th class="p-2.5">Name</th>
-                            <th class="p-2.5">Email</th>
-                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Buyer Details</th>
+                            <th class="p-2.5">Commission Amount</th>
                             <th class="p-2.5">Hours Flagged</th>
-                            <th class="p-2.5">Severity</th>
-                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Flag Reason</th>
+                            <th class="p-2.5">Flagged Since</th>
                             <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -924,104 +918,6 @@
                 <div id="fraud-investigation-results" class="bg-white border border-gray-300 rounded p-3 min-h-[100px] text-xs text-gray-600 hidden">
                     Investigation results will appear here...
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION: PHASE 2 COMPLIANCE DASHBOARD -->
-    <div id="section-compliance" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">✓ Feedback Quality & Compliance</h2>
-            <button onclick="loadComplianceDashboard()" class="bg-[#1e5aa8] hover:bg-blue-700 text-white text-xs font-semibold py-2 px-3 rounded transition">Refresh</button>
-        </div>
-
-        <!-- Query 1: Resubmission History -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Search Thread Resubmission History</h3>
-            <div class="bg-gray-50 rounded-lg p-4 space-y-3 mb-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" id="search-buyer-id" placeholder="Buyer ID" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                    <input type="text" id="search-vendor-id" placeholder="Vendor ID" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                    <input type="text" id="search-product-id" placeholder="Product ID" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                </div>
-                <button onclick="loadResubmissionHistory()" class="bg-[#1e5aa8] hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded transition">Search</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-blue-50 text-blue-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Attempt</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5">Rejection Reason</th>
-                            <th class="p-2.5">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resubmission-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="4" class="p-4 text-center text-gray-500">Enter search criteria and click Search</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Query 2: Vendor Rejection Metrics -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Vendors with Excessive Rejections (30 days)</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-orange-50 text-orange-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor ID</th>
-                            <th class="p-2.5">Rejections</th>
-                            <th class="p-2.5">Affected Buyers</th>
-                            <th class="p-2.5">Common Reasons</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vendor-compliance-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading vendor metrics...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Query 3: Buyer Friction Indicators -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Buyers Struggling with Approvals (7 days)</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-red-50 text-red-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Buyer ID</th>
-                            <th class="p-2.5">Vendors</th>
-                            <th class="p-2.5">Rejections</th>
-                            <th class="p-2.5">Approvals</th>
-                            <th class="p-2.5">Last Attempt</th>
-                        </tr>
-                    </thead>
-                    <tbody id="buyer-friction-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading buyer friction data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Query 4: Approved Feedback with Audit -->
-        <div>
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3">Approved Feedback with Audit Trail</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-green-50 text-green-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Feedback ID</th>
-                            <th class="p-2.5">Buyer</th>
-                            <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">Attempts</th>
-                            <th class="p-2.5">Approved Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="approved-feedback-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading approved feedback...</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -1289,139 +1185,6 @@
         let currentPaymentProofType = null;
         let currentRequestId = null;
 
-        // Phase 3.5 API Functions
-        async function submitFeedbackWithProof(buyerId, vendorId, productId, imageUrl, amazonUrl, message) {
-            try {
-                if (!buyerId || !vendorId || !productId) {
-                    console.error('Missing required IDs');
-                    return { success: false, message: 'Missing required IDs' };
-                }
-
-                // Call Phase 3.5 Edge Function: POST /functions/v1/api-feedback-submit
-                const response = await fetch('https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback-submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1'
-                    },
-                    body: JSON.stringify({
-                        buyer_id: buyerId,
-                        vendor_id: vendorId,
-                        product_id: productId,
-                        image_url: imageUrl,
-                        amazon_url: amazonUrl,
-                        message: message
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    return { success: false, message: result.message || result.error || 'Failed to submit feedback' };
-                }
-
-                return { success: true, data: result };
-            } catch (error) {
-                console.error('Error submitting feedback:', error);
-                return { success: false, message: error.message };
-            }
-        }
-
-        async function approveFeedback(feedbackId, vendorId) {
-            try {
-                if (!feedbackId || !vendorId) {
-                    console.error('Missing required feedback ID or vendor ID');
-                    return { success: false, message: 'Missing required IDs' };
-                }
-
-                // Call Phase 3.5 Edge Function: PUT /functions/v1/api-feedback/[feedbackId]/approve
-                const response = await fetch(`https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback/${feedbackId}/approve`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1'
-                    },
-                    body: JSON.stringify({
-                        vendor_id: vendorId
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    return { success: false, message: result.message || result.error || 'Failed to approve feedback' };
-                }
-
-                return { success: true, data: result };
-            } catch (error) {
-                console.error('Error approving feedback:', error);
-                return { success: false, message: error.message };
-            }
-        }
-
-        async function submitVendorRejection(feedbackId, vendorId, rejectionReason) {
-            try {
-                if (!feedbackId || !vendorId || !rejectionReason) {
-                    console.error('Missing required rejection data');
-                    return { success: false, message: 'Missing required data' };
-                }
-
-                // Call Phase 3.5 Edge Function: PUT /functions/v1/api-feedback/[feedbackId]/reject
-                const response = await fetch(`https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback/${feedbackId}/reject`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1'
-                    },
-                    body: JSON.stringify({
-                        vendor_id: vendorId,
-                        rejection_reason: rejectionReason
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    return { success: false, message: result.message || result.error || 'Failed to reject feedback' };
-                }
-
-                return { success: true, data: result };
-            } catch (error) {
-                console.error('Error rejecting feedback:', error);
-                return { success: false, message: error.message };
-            }
-        }
-
-        async function loadThread(buyerId, vendorId, productId) {
-            try {
-                if (!buyerId || !vendorId || !productId) {
-                    console.error('Missing required thread IDs');
-                    return null;
-                }
-
-                // Call Phase 3.5 Edge Function: GET /functions/v1/api-feedback/thread/[buyer_id]/[vendor_id]/[product_id]
-                const response = await fetch(`https://nvtqtkllmsiqknogmarc.supabase.co/functions/v1/api-feedback/thread/${buyerId}/${vendorId}/${productId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    console.error('Error loading thread:', result.message || result.error);
-                    return null;
-                }
-
-                return result;
-            } catch (error) {
-                console.error('Error loading thread:', error);
-                return null;
-            }
-        }
-
         window.addEventListener('DOMContentLoaded', async () => {
             if (window.supabase) {
                 const h = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dHF0a2xsbXNpcWtub2dtYXJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzkzMzU0NSwiZXhwIjoyMTAzNTA5NTQ1fQ.84Q_UsQqd4o4maYTkCNBY_v3s5dm-SjwT00BHzphsoA';
@@ -1452,7 +1215,6 @@
             document.getElementById('section-messaging').classList.add('hidden');
             document.getElementById('section-flagged').classList.add('hidden');
             document.getElementById('section-fraud').classList.add('hidden');
-            document.getElementById('section-compliance').classList.add('hidden');
 
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
 
@@ -1469,7 +1231,6 @@
             else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
             else if (tabName === 'flagged') handleFlaggedTabSwitch();
             else if (tabName === 'fraud') setTimeout(() => loadFraudDashboard(), 300);
-            else if (tabName === 'compliance') setTimeout(() => loadComplianceDashboard(), 300);
         }
 
         // BUYERS PORTAL
@@ -1532,9 +1293,17 @@
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             if (!confirm(`Update access status for ${buyerEmail}?`)) return;
-            const { error } = await db.from('buyers').update({ approval_status: 'approved' }).eq('id', buyerId);
-            if (error) { alert('Error: ' + error.message); return; }
-            loadBuyersPortal();
+            try {
+                const { error } = await db.from('buyers').update({ approval_status: 'approved' }).eq('id', buyerId);
+                if (error) {
+                    showToast(`Error: ${error.message}`, 'error');
+                    return;
+                }
+                showToast('Buyer marked as ready successfully', 'success');
+                loadBuyersPortal();
+            } catch (err) {
+                showToast(`Error updating buyer status: ${err.message}`, 'error');
+            }
         }
 
         // INQUIRIES PORTAL
@@ -1884,27 +1653,6 @@
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 px-4 py-3 rounded shadow-lg text-white ${
-                type === 'success' ? 'bg-green-600' :
-                type === 'error' ? 'bg-red-600' :
-                'bg-blue-600'
-            } z-50`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('Copied to clipboard', 'success');
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                showToast('Failed to copy', 'error');
-            });
-        }
-
         function showProductPreview(event, imgUrl, title) {
             const tooltip = document.getElementById('product-hover-tooltip');
             const img = document.getElementById('tooltip-img');
@@ -2044,7 +1792,7 @@
             const tableBody = document.getElementById('commissions-table-body');
             if (!tableBody) return;
 
-            const { data, error } = await db.from('admin_payables').select('*').order('created_at', { ascending: false });
+            const { data, error } = await db.from('commissions').select('*').order('created_at', { ascending: false });
             if (error) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                 return;
@@ -2061,8 +1809,8 @@
             let totalPaid = 0;
             let totalPayable = 0;
             data.forEach(comm => {
-                const amt = parseFloat(comm.amount_owed || 0);
-                const status = (comm.status || 'pending').toLowerCase();
+                const amt = parseFloat(comm.split_amount || 0);
+                const status = (comm.status || 'payable').toLowerCase();
                 if (status === 'paid') {
                     totalPaid += amt;
                 } else {
@@ -2076,8 +1824,8 @@
             document.getElementById('metric-total-records').textContent = data.length;
 
             tableBody.innerHTML = data.map(comm => {
-                const status = (comm.status || 'pending').toLowerCase();
-                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
+                const status = (comm.status || 'payable').toLowerCase();
+                let badge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAYABLE</span>`;
                 let actionBtn = `<button onclick="markCommissionPaid('${comm.id}')" class="bg-green-600 text-white hover:bg-green-700 px-2.5 py-1 rounded text-xs font-semibold transition">Mark Paid</button>`;
 
                 if (status === 'paid') {
@@ -2085,9 +1833,9 @@
                     actionBtn = `<span class="text-[11px] text-gray-400 font-medium">Disbursed</span>`;
                 }
 
-                let targetDisplay = comm.split_with_buyer_id || comm.vendor_id || 'N/A';
-                if (comm.payable_reason) {
-                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.payable_reason})</span>`;
+                let targetDisplay = comm.referred_id;
+                if (comm.referred_role) {
+                    targetDisplay += ` <span class="text-[10px] text-gray-400">(${comm.referred_role})</span>`;
                 }
 
                 return `
@@ -3391,14 +3139,9 @@
             }
 
             html += `
-                        <div class="pt-2 border-t border-gray-200 flex justify-between items-center">
+                        <div class="pt-2 border-t border-gray-200 flex justify-between">
                             <span class="text-gray-600">Balance:</span>
                             <span class="font-bold text-green-600">$${parseFloat(buyer.accumulated_balance || 0).toFixed(2)}</span>
-                        </div>
-                        <div class="pt-3 border-t border-gray-200 flex gap-2">
-                            <button onclick="deleteAccount('buyer', '${escapeHtml(buyer.id)}', '${escapeHtml(buyer.full_name)}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 px-3 rounded transition">
-                                🗑️ Delete Account
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -3475,14 +3218,9 @@
             }
 
             html += `
-                        <div class="pt-2 border-t border-gray-200 flex justify-between items-center">
+                        <div class="pt-2 border-t border-gray-200 flex justify-between">
                             <span class="text-gray-600">Balance:</span>
                             <span class="font-bold text-green-600">$${parseFloat(vendor.accumulated_balance || 0).toFixed(2)}</span>
-                        </div>
-                        <div class="pt-3 border-t border-gray-200 flex gap-2">
-                            <button onclick="deleteAccount('vendor', '${escapeHtml(vendor.id)}', '${escapeHtml(vendor.business_name)}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 px-3 rounded transition">
-                                🗑️ Delete Account
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -3490,37 +3228,20 @@
             return html;
         }
 
-        async function deleteAccount(accountType, accountId, accountName) {
-            const confirmed = confirm(`Are you sure you want to delete this ${accountType} account?\n\n${accountName}\nID: ${accountId}\n\nThis action cannot be undone.`);
-            if (!confirmed) return;
-
-            try {
-                let tableName = accountType === 'buyer' ? 'buyers' : 'vendors';
-
-                const { error: deleteError } = await db
-                    .from(tableName)
-                    .delete()
-                    .eq('id', accountId);
-
-                if (deleteError) throw deleteError;
-
-                // Remove the card from UI
-                const cards = document.querySelectorAll('#account-search-results > div');
-                for (const card of cards) {
-                    if (card.textContent.includes(accountName)) {
-                        card.style.opacity = '0.5';
-                        card.style.pointerEvents = 'none';
-                        setTimeout(() => card.remove(), 300);
-                    }
-                }
-
-                alert(`${accountType.charAt(0).toUpperCase() + accountType.slice(1)} account deleted successfully.`);
-                // Refresh search results
-                await searchAccounts();
-            } catch (err) {
-                console.error('Delete error:', err);
-                alert('Error deleting account: ' + err.message);
+        function copyToClipboard(text) {
+            if (!text || text === '') {
+                return;
             }
+            const button = event.target;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 1500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
         }
 
         // Delegated event handler for copy buttons
@@ -4219,37 +3940,18 @@
                     vendorBody.innerHTML = flaggedVendors.map(flag => {
                         const vendor = vendorMap[flag.vendor_id];
                         const daysFlagged = Math.floor((new Date() - new Date(flag.payout_requested_date)) / (1000 * 60 * 60 * 24));
-
-                        // Determine severity
-                        let severity = 'warning';
-                        let severityBg = 'bg-yellow-100 text-yellow-700';
-                        if (daysFlagged >= 4) {
-                            severity = 'critical';
-                            severityBg = 'bg-red-100 text-red-700';
-                        } else if (daysFlagged >= 3) {
-                            severity = 'high';
-                            severityBg = 'bg-orange-100 text-orange-700';
-                        }
-
-                        const vendorId = flag.vendor_id || 'N/A';
-                        const businessName = vendor?.business_name || 'Unknown';
-                        const email = vendor?.email || 'No email';
+                        const timeRemaining = Math.max(0, 5 - daysFlagged);
 
                         return `
                             <tr class="hover:bg-orange-50">
-                                <td class="p-3 text-xs font-mono">
-                                    <span class="cursor-pointer hover:underline" title="Click to copy" onclick="copyToClipboard('${vendorId}')">${escapeHtml(vendorId.substring(0, 8))}...</span>
-                                </td>
                                 <td class="p-3">
-                                    <span class="cursor-pointer hover:underline text-gray-800 font-semibold" title="Click to copy" onclick="copyToClipboard('${escapeHtml(businessName)}')">${escapeHtml(businessName)}</span>
-                                </td>
-                                <td class="p-3">
-                                    <span class="cursor-pointer hover:underline text-gray-600 text-sm" title="Click to copy" onclick="copyToClipboard('${escapeHtml(email)}')">${escapeHtml(email)}</span>
+                                    <div class="font-semibold text-gray-800">${escapeHtml(vendor?.business_name || 'Unknown')}</div>
+                                    <div class="text-xs text-gray-500">${escapeHtml(vendor?.email || 'No email')}</div>
                                 </td>
                                 <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
                                 <td class="p-3"><span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold">${daysFlagged} days</span></td>
-                                <td class="p-3"><span class="${severityBg} px-2 py-1 rounded text-xs font-semibold">${severity.toUpperCase()}</span></td>
-                                <td class="p-3 text-sm text-gray-600">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3 text-sm">${escapeHtml(flag.vendor_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3 text-xs text-gray-600">${new Date(flag.payout_requested_date).toLocaleDateString()}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex gap-1 justify-center flex-wrap">
                                         <button onclick="unflagAccount('${flag.id}', 'vendor')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
@@ -4277,37 +3979,18 @@
                     buyerBody.innerHTML = flaggedBuyers.map(flag => {
                         const buyer = buyerMap[flag.buyer_id];
                         const hoursFlagged = Math.floor((new Date() - new Date(flag.vendor_receipt_uploaded_date)) / (1000 * 60 * 60));
-
-                        // Determine severity for buyers (T+8h timeout)
-                        let severity = 'warning';
-                        let severityBg = 'bg-yellow-100 text-yellow-700';
-                        if (hoursFlagged >= 7) {
-                            severity = 'critical';
-                            severityBg = 'bg-red-100 text-red-700';
-                        } else if (hoursFlagged >= 5) {
-                            severity = 'high';
-                            severityBg = 'bg-orange-100 text-orange-700';
-                        }
-
-                        const buyerId = flag.buyer_id || 'N/A';
-                        const fullName = buyer?.full_name || 'Unknown';
-                        const email = buyer?.email || 'No email';
+                        const timeRemaining = Math.max(0, 8 - hoursFlagged);
 
                         return `
                             <tr class="hover:bg-red-50">
-                                <td class="p-3 text-xs font-mono">
-                                    <span class="cursor-pointer hover:underline" title="Click to copy" onclick="copyToClipboard('${buyerId}')">${escapeHtml(buyerId.substring(0, 8))}...</span>
-                                </td>
                                 <td class="p-3">
-                                    <span class="cursor-pointer hover:underline text-gray-800 font-semibold" title="Click to copy" onclick="copyToClipboard('${escapeHtml(fullName)}')">${escapeHtml(fullName)}</span>
-                                </td>
-                                <td class="p-3">
-                                    <span class="cursor-pointer hover:underline text-gray-600 text-sm" title="Click to copy" onclick="copyToClipboard('${escapeHtml(email)}')">${escapeHtml(email)}</span>
+                                    <div class="font-semibold text-gray-800">${escapeHtml(buyer?.full_name || 'Unknown')}</div>
+                                    <div class="text-xs text-gray-500">${escapeHtml(buyer?.email || 'No email')}</div>
                                 </td>
                                 <td class="p-3 font-bold text-gray-800">$${parseFloat(flag.amount_owed).toFixed(2)}</td>
-                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h</span></td>
-                                <td class="p-3"><span class="${severityBg} px-2 py-1 rounded text-xs font-semibold">${severity.toUpperCase()}</span></td>
-                                <td class="p-3 text-sm text-gray-600">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">${hoursFlagged}h (${timeRemaining}h left)</span></td>
+                                <td class="p-3 text-sm">${escapeHtml(flag.buyer_flag_reason || 'missing_receipt')}</td>
+                                <td class="p-3 text-xs text-gray-600">${new Date(flag.vendor_receipt_uploaded_date).toLocaleDateString()}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex gap-1 justify-center flex-wrap">
                                         <button onclick="unflagAccount('${flag.id}', 'buyer')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition">✓ Unflag</button>
@@ -4333,71 +4016,12 @@
             }
         }
 
-        // On-screen confirmation modal
-        async function showConfirmModal(title, message, actionType) {
-            return new Promise((resolve) => {
-                const modal = document.createElement('div');
-                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-
-                const content = document.createElement('div');
-                content.className = 'bg-white rounded-lg shadow-xl p-6 max-w-sm';
-
-                const titleEl = document.createElement('h2');
-                titleEl.className = 'text-lg font-bold text-gray-800 mb-2';
-                titleEl.textContent = title;
-
-                const messageEl = document.createElement('p');
-                messageEl.className = 'text-gray-600 mb-6';
-                messageEl.textContent = message;
-
-                const buttonDiv = document.createElement('div');
-                buttonDiv.className = 'flex gap-3 justify-end';
-
-                const cancelBtn = document.createElement('button');
-                cancelBtn.className = 'px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded transition';
-                cancelBtn.textContent = 'Cancel';
-                cancelBtn.addEventListener('click', () => {
-                    modal.remove();
-                    resolve(false);
-                });
-
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition';
-                confirmBtn.textContent = actionType;
-                confirmBtn.addEventListener('click', () => {
-                    modal.remove();
-                    resolve(true);
-                });
-
-                buttonDiv.appendChild(cancelBtn);
-                buttonDiv.appendChild(confirmBtn);
-                content.appendChild(titleEl);
-                content.appendChild(messageEl);
-                content.appendChild(buttonDiv);
-                modal.appendChild(content);
-
-                document.body.appendChild(modal);
-
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.remove();
-                        resolve(false);
-                    }
-                });
-            });
-        }
-
         // Unflag an account
         async function unflagAccount(commissionId, type) {
-            const confirmed = await showConfirmModal(
-                'Unflag Account',
-                `Are you sure you want to unflag this ${type}?`,
-                'Unflag'
-            );
-            if (!confirmed) return;
+            if (!confirm(`Are you sure you want to unflag this ${type}?`)) return;
 
             try {
-                const adminId = localStorage.getItem('adminId') || '00000000-0000-0000-0000-000000000001';
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
                 const updateData = {
                     unflagged_date: new Date().toISOString(),
                     unflagged_by: adminId,
@@ -4426,15 +4050,10 @@
 
         // Approve vendor receipt (admin override)
         async function approveVendorReceipt(commissionId, vendorId) {
-            const confirmed = await showConfirmModal(
-                'Approve Receipt',
-                'Approve this vendor receipt? Status will be set to "paid".',
-                'Approve'
-            );
-            if (!confirmed) return;
+            if (!confirm('Approve this vendor receipt? Status will be set to "paid".')) return;
 
             try {
-                const adminId = localStorage.getItem('adminId') || '00000000-0000-0000-0000-000000000001';
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
                 const { error } = await db
                     .from('buyer_payables')
                     .update({
@@ -4456,15 +4075,10 @@
 
         // Approve buyer receipt (admin override)
         async function approveBuyerReceipt(commissionId, buyerId) {
-            const confirmed = await showConfirmModal(
-                'Approve Receipt',
-                'Approve this buyer receipt? Status will be set to "received".',
-                'Approve'
-            );
-            if (!confirmed) return;
+            if (!confirm('Approve this buyer receipt? Status will be set to "received".')) return;
 
             try {
-                const adminId = localStorage.getItem('adminId') || '00000000-0000-0000-0000-000000000001';
+                const adminId = localStorage.getItem('adminId') || 'admin-system';
                 const { error } = await db
                     .from('buyer_payables')
                     .update({
@@ -4615,174 +4229,6 @@
             } catch (error) {
                 console.error('Error searching payment history:', error);
                 showToast('Error: ' + error.message, 'error');
-            }
-        }
-
-        // PHASE 2: COMPLIANCE DASHBOARD FUNCTIONS
-        async function loadComplianceDashboard() {
-            await loadVendorCompliance();
-            await loadBuyerFriction();
-            await loadApprovedFeedback();
-        }
-
-        async function loadResubmissionHistory() {
-            const buyerId = document.getElementById('search-buyer-id').value.trim();
-            const vendorId = document.getElementById('search-vendor-id').value.trim();
-            const productId = document.getElementById('search-product-id').value.trim();
-
-            if (!buyerId || !vendorId || !productId) {
-                showToast('Please enter Buyer ID, Vendor ID, and Product ID', 'error');
-                return;
-            }
-
-            try {
-                const { data, error } = await db
-                    .from('feedback_submission_audit')
-                    .select('*')
-                    .eq('buyer_id', buyerId)
-                    .eq('vendor_id', vendorId)
-                    .eq('product_id', productId)
-                    .order('submission_attempt', { ascending: true });
-
-                if (error) throw error;
-
-                const body = document.getElementById('resubmission-body');
-                if (!data || data.length === 0) {
-                    body.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No submission history found</td></tr>';
-                    return;
-                }
-
-                body.innerHTML = data.map(record => `
-                    <tr class="hover:bg-blue-50">
-                        <td class="p-3 text-center font-semibold text-blue-700">#${record.submission_attempt}</td>
-                        <td class="p-3"><span style="background: ${record.status === 'approved' ? '#d1fae5' : record.status === 'rejected' ? '#fee2e2' : '#fef3c7'}; color: ${record.status === 'approved' ? '#065f46' : record.status === 'rejected' ? '#7f1d1d' : '#92400e'}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;">${record.status}</span></td>
-                        <td class="p-3 text-xs text-gray-600">${record.rejection_reason || '—'}</td>
-                        <td class="p-3 text-xs text-gray-600">${new Date(record.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading resubmission history:', error);
-                showToast('Error: ' + error.message, 'error');
-            }
-        }
-
-        async function loadVendorCompliance() {
-            try {
-                const { data, error } = await db
-                    .from('feedback_submission_audit')
-                    .select('vendor_id, status, rejection_reason')
-                    .eq('status', 'rejected')
-                    .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
-
-                if (error) throw error;
-
-                // Group by vendor and count rejections
-                const vendorStats = {};
-                (data || []).forEach(record => {
-                    if (!vendorStats[record.vendor_id]) {
-                        vendorStats[record.vendor_id] = { rejections: 0, reasons: {} };
-                    }
-                    vendorStats[record.vendor_id].rejections++;
-                    const reason = record.rejection_reason || 'Unknown';
-                    vendorStats[record.vendor_id].reasons[reason] = (vendorStats[record.vendor_id].reasons[reason] || 0) + 1;
-                });
-
-                const body = document.getElementById('vendor-compliance-body');
-                const excessiveVendors = Object.entries(vendorStats)
-                    .filter(([_, stats]) => stats.rejections > 5)
-                    .sort((a, b) => b[1].rejections - a[1].rejections);
-
-                if (excessiveVendors.length === 0) {
-                    body.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No vendors with excessive rejections</td></tr>';
-                } else {
-                    body.innerHTML = excessiveVendors.map(([vendorId, stats]) => `
-                        <tr class="hover:bg-orange-50">
-                            <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(vendorId)}</td>
-                            <td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">${stats.rejections}</span></td>
-                            <td class="p-3 text-xs text-gray-600">${Object.keys(stats.reasons).length}</td>
-                            <td class="p-3 text-xs text-gray-600">${Object.entries(stats.reasons).map(([r, c]) => `${r} (${c})`).join('; ')}</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading vendor compliance:', error);
-                document.getElementById('vendor-compliance-body').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
-            }
-        }
-
-        async function loadBuyerFriction() {
-            try {
-                const { data, error } = await db
-                    .from('feedback_submission_audit')
-                    .select('buyer_id, vendor_id, status, created_at')
-                    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-                if (error) throw error;
-
-                // Group by buyer and count rejections/approvals
-                const buyerStats = {};
-                (data || []).forEach(record => {
-                    if (!buyerStats[record.buyer_id]) {
-                        buyerStats[record.buyer_id] = { vendors: new Set(), rejections: 0, approvals: 0, lastAttempt: null };
-                    }
-                    buyerStats[record.buyer_id].vendors.add(record.vendor_id);
-                    if (record.status === 'rejected') buyerStats[record.buyer_id].rejections++;
-                    if (record.status === 'approved') buyerStats[record.buyer_id].approvals++;
-                    buyerStats[record.buyer_id].lastAttempt = new Date(record.created_at);
-                });
-
-                const body = document.getElementById('buyer-friction-body');
-                const strugglingBuyers = Object.entries(buyerStats)
-                    .filter(([_, stats]) => stats.rejections >= 3)
-                    .sort((a, b) => b[1].rejections - a[1].rejections);
-
-                if (strugglingBuyers.length === 0) {
-                    body.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No buyers with significant friction</td></tr>';
-                } else {
-                    body.innerHTML = strugglingBuyers.map(([buyerId, stats]) => `
-                        <tr class="hover:bg-red-50">
-                            <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(buyerId)}</td>
-                            <td class="p-3 text-center">${stats.vendors.size}</td>
-                            <td class="p-3 text-center"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">${stats.rejections}</span></td>
-                            <td class="p-3 text-center"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">${stats.approvals}</span></td>
-                            <td class="p-3 text-xs text-gray-600">${stats.lastAttempt ? stats.lastAttempt.toLocaleDateString() : '—'}</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading buyer friction:', error);
-                document.getElementById('buyer-friction-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
-            }
-        }
-
-        async function loadApprovedFeedback() {
-            try {
-                const { data, error } = await db
-                    .from('feedback_submission_audit')
-                    .select('id, buyer_id, vendor_id, submission_attempt, status, created_at')
-                    .eq('status', 'approved')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) throw error;
-
-                const body = document.getElementById('approved-feedback-body');
-                if (!data || data.length === 0) {
-                    body.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No approved feedback found</td></tr>';
-                } else {
-                    body.innerHTML = data.map(record => `
-                        <tr class="hover:bg-green-50">
-                            <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(record.id.substring(0, 8))}</td>
-                            <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(record.buyer_id.substring(0, 8))}</td>
-                            <td class="p-3 text-xs font-mono text-gray-700">${escapeHtml(record.vendor_id.substring(0, 8))}</td>
-                            <td class="p-3 text-center"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">#${record.submission_attempt}</span></td>
-                            <td class="p-3 text-xs text-gray-600">${new Date(record.created_at).toLocaleDateString()}</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading approved feedback:', error);
-                document.getElementById('approved-feedback-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
             }
         }
     </script>
