@@ -1532,12 +1532,16 @@
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
             try {
-                const { error } = await db.from('buyers').update({ approval_status: 'APPROVED' }).eq('id', buyerId);
+                // Map UI status to database status
+                const dbStatus = newStatus === 'BLOCKED' ? 'BLOCKED' : 'APPROVED';
+                const actionMessage = newStatus === 'BLOCKED' ? 'blocked' : 'approved';
+
+                const { error } = await db.from('buyers').update({ approval_status: dbStatus }).eq('id', buyerId);
                 if (error) {
                     showToast(`Error: ${error.message}`, 'error');
                     return;
                 }
-                showToast('Buyer marked as ready successfully', 'success');
+                showToast(`Buyer ${actionMessage} successfully`, 'success');
                 loadBuyersPortal();
             } catch (err) {
                 showToast(`Error updating buyer status: ${err.message}`, 'error');
