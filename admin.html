@@ -2678,7 +2678,7 @@ async function loadVendorSubmitterRelationship() {
                     const currentSelection = vendorDropdown?.value;
                     if (vendorDropdown) {
                         vendorDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueVendors.map(vendorId =>
-                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))}</option>`
+                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))} (${escapeHtml(vendorId)})</option>`
                         ).join('');
                         if (currentSelection) vendorDropdown.value = currentSelection;
                     }
@@ -2705,19 +2705,21 @@ async function loadVendorSubmitterRelationship() {
                     return;
                 }
 
-                // Populate buyer filter dropdown
-                if (data && data.length > 0 && commissionViewMode === 'vendor-buyer') {
+                // Populate buyer dropdown with buyers from selected vendor
+                if (data && data.length > 0) {
                     const uniqueBuyers = [...new Set(data.map(r => r.buyer_id))];
-                    const buyerFilter = document.getElementById('vendor-submitter-buyer-filter');
-                    const currentSelection = buyerFilter.value;
-                    buyerFilter.innerHTML = '<option value="">All Buyers</option>' + uniqueBuyers.map(buyerId =>
-                        `<option value="${buyerId}">${escapeHtml(buyerId)}</option>`
-                    ).join('');
-                    buyerFilter.value = currentSelection;
+                    const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
+                    const currentSelection = buyerDropdown?.value;
+                    if (buyerDropdown) {
+                        buyerDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueBuyers.map(buyerId =>
+                            `<option value="${buyerId}">${escapeHtml(buyerId.substring(0, 8))} (${escapeHtml(buyerId)})</option>`
+                        ).join('');
+                        if (currentSelection) buyerDropdown.value = currentSelection;
+                    }
                 }
 
                 // Apply buyer filter if selected
-                const buyerFilter = document.getElementById('vendor-submitter-buyer-filter');
+                const buyerFilter = document.getElementById('vendor-submitter-buyer-dropdown');
                 if (buyerFilter && buyerFilter.value) {
                     data = data.filter(record => record.buyer_id === buyerFilter.value);
                 }
@@ -2880,12 +2882,14 @@ async function loadVendorSubmitterRelationship() {
                 const { data, error } = await query.limit(1);
 
                 if (error || !data || data.length === 0) {
-                    showToast('Vendor not found', 'error');
+                    const searchTerm = searchId || searchEmail;
+                    showToast(`❌ Vendor not found: "${escapeHtml(searchTerm)}"`, 'error');
                     return;
                 }
 
                 dropdown.value = data[0].id;
                 selectedVendorForCommissions = data[0].id;
+                showToast(`✓ Vendor found: ${escapeHtml(data[0].id.substring(0, 8))}`, 'success');
                 await loadVendorSubmitterRelationship();
             } catch (err) {
                 showToast('Error searching vendor: ' + err.message, 'error');
@@ -2916,11 +2920,13 @@ async function loadVendorSubmitterRelationship() {
                 const { data, error } = await query.limit(1);
 
                 if (error || !data || data.length === 0) {
-                    showToast('Buyer not found', 'error');
+                    const searchTerm = searchId || searchEmail;
+                    showToast(`❌ Buyer not found: "${escapeHtml(searchTerm)}"`, 'error');
                     return;
                 }
 
                 dropdown.value = data[0].id;
+                showToast(`✓ Buyer found: ${escapeHtml(data[0].id.substring(0, 8))}`, 'success');
                 await loadVendorSubmitterRelationship();
             } catch (err) {
                 showToast('Error searching buyer: ' + err.message, 'error');
@@ -5728,16 +5734,16 @@ async function loadVendorSubmitterRelationship() {
         async function populateAdminEarningsDropdowns() {
             try {
                 // Populate admin-vendor-dropdown (vendors with referrals)
-                const { data: vendors } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data: vendors } = await db.from('vendors').select('id, business_name');
                 const vendorSelect = document.getElementById('admin-vendor-dropdown');
                 if (vendorSelect && vendors) {
                     vendorSelect.innerHTML = '<option value="">Select from list</option>' + vendors.map(v =>
-                        `<option value="${v.id}">${v.business_name.substring(0, 30)}</option>`
+                        `<option value="${v.id}">${escapeHtml(v.business_name.substring(0, 30))} (${escapeHtml(v.id.substring(0, 8))})</option>`
                     ).join('');
                 }
 
                 // Populate admin-referrer-dropdown (buyers who are referrers)
-                const { data: buyers } = await supabaseClient.from('buyers').select('id, email');
+                const { data: buyers } = await db.from('buyers').select('id, email');
                 const referrerSelect = document.getElementById('admin-referrer-dropdown');
                 if (referrerSelect && buyers) {
                     referrerSelect.innerHTML = '<option value="">Select from list</option>' + buyers.map(b =>
@@ -5767,11 +5773,11 @@ async function loadVendorSubmitterRelationship() {
 
             try {
                 // Get vendor info
-                const vendor = await supabaseClient.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
+                const vendor = await db.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
                 if (vendor.error) throw vendor.error;
 
                 // Get all feedback to this vendor from any buyer, calculate admin 30% split
-                const { data: adminPayables } = await supabaseClient
+                const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('id, amount_owed, related_feedback_id, status, created_at')
                     .eq('vendor_id', vendorId)
@@ -5810,7 +5816,7 @@ async function loadVendorSubmitterRelationship() {
 
             if (idVal.length < 2 && nameVal.length < 2) return;
 
-            supabaseClient.from('vendors').select('id, business_name').then(({ data }) => {
+            db.from('vendors').select('id, business_name').then(({ data }) => {
                 const filtered = data.filter(v =>
                     v.id.toLowerCase().includes(idVal) ||
                     v.business_name.toLowerCase().includes(nameVal)
@@ -5829,11 +5835,11 @@ async function loadVendorSubmitterRelationship() {
 
             try {
                 // Get referrer info
-                const buyer = await supabaseClient.from('buyers').select('id, full_name, email').eq('id', buyerId).single();
+                const buyer = await db.from('buyers').select('id, full_name, email').eq('id', buyerId).single();
                 if (buyer.error) throw buyer.error;
 
                 // Get all admin_payables where split_with_buyer_id = this buyer (30% admin split for referrals they caused)
-                const { data: adminPayables } = await supabaseClient
+                const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
                     .eq('split_with_buyer_id', buyerId)
@@ -5849,7 +5855,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('admin-rb-referred-count').textContent = new Set(adminPayables.map(r => r.vendor_id)).size;
 
                 // Get detail with vendor names
-                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data: vendorData } = await db.from('vendors').select('id, business_name');
                 const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
 
                 const tbody = document.getElementById('admin-rb-detail-table');
@@ -5875,7 +5881,7 @@ async function loadVendorSubmitterRelationship() {
 
             if (idVal.length < 2 && emailVal.length < 2) return;
 
-            supabaseClient.from('buyers').select('id, email').then(({ data }) => {
+            db.from('buyers').select('id, email').then(({ data }) => {
                 const filtered = data.filter(b =>
                     b.id.toLowerCase().includes(idVal) ||
                     b.email.toLowerCase().includes(emailVal)
@@ -5894,11 +5900,11 @@ async function loadVendorSubmitterRelationship() {
 
             try {
                 // Get buyer info
-                const buyer = await supabaseClient.from('buyers').select('id, full_name, email, referred_by').eq('id', buyerId).single();
+                const buyer = await db.from('buyers').select('id, full_name, email, referred_by').eq('id', buyerId).single();
                 if (buyer.error) throw buyer.error;
 
                 // Get all admin_payables where this buyer gave feedback (check via inquiries)
-                const { data: inquiries } = await supabaseClient
+                const { data: inquiries } = await db
                     .from('inquiries')
                     .select('id, vendor_id')
                     .eq('buyer_id', buyerId)
@@ -5913,7 +5919,7 @@ async function loadVendorSubmitterRelationship() {
                 }
 
                 // Get admin_payables for these feedback IDs
-                const { data: adminPayables } = await supabaseClient
+                const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
                     .in('related_feedback_id', feedbackIds);
@@ -5927,7 +5933,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('admin-fs-avg').textContent = adminPayables.length > 0 ? `$${(totalAdmin / adminPayables.length).toFixed(2)}` : '$0.00';
 
                 // Get vendor names
-                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data: vendorData } = await db.from('vendors').select('id, business_name');
                 const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
 
                 const tbody = document.getElementById('admin-fs-detail-table');
@@ -5953,7 +5959,7 @@ async function loadVendorSubmitterRelationship() {
 
             if (idVal.length < 2 && emailVal.length < 2) return;
 
-            supabaseClient.from('buyers').select('id, email').then(({ data }) => {
+            db.from('buyers').select('id, email').then(({ data }) => {
                 const filtered = data.filter(b =>
                     b.id.toLowerCase().includes(idVal) ||
                     b.email.toLowerCase().includes(emailVal)
@@ -5977,7 +5983,7 @@ async function loadVendorSubmitterRelationship() {
             if (idVal.length < 2 && emailVal.length < 2) return;
 
             try {
-                const { data } = await supabaseClient.from('buyers').select('id, email, referred_by');
+                const { data } = await db.from('buyers').select('id, email, referred_by');
                 const filtered = data.filter(b =>
                     b.id.toLowerCase().includes(idVal) ||
                     b.email.toLowerCase().includes(emailVal)
@@ -5993,11 +5999,11 @@ async function loadVendorSubmitterRelationship() {
 
         async function loadAllBuyersDetail(buyerId) {
             try {
-                const buyer = await supabaseClient.from('buyers').select('id, email, referred_by').eq('id', buyerId).single();
+                const buyer = await db.from('buyers').select('id, email, referred_by').eq('id', buyerId).single();
                 if (buyer.error) throw buyer.error;
 
                 // Get all feedback submissions and earnings
-                const { data: inquiries } = await supabaseClient
+                const { data: inquiries } = await db
                     .from('inquiries')
                     .select('id, vendor_id')
                     .eq('buyer_id', buyerId)
@@ -6011,7 +6017,7 @@ async function loadVendorSubmitterRelationship() {
                 }
 
                 // Get buyer_payables earnings
-                const { data: buyerPayables } = await supabaseClient
+                const { data: buyerPayables } = await db
                     .from('buyer_payables')
                     .select('id, amount_owed, status, created_at')
                     .eq('buyer_id', buyerId);
@@ -6025,7 +6031,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('all-buyers-referred-by').textContent = buyer.data.referred_by ? buyer.data.referred_by.substring(0, 8) : 'Not Referred';
 
                 // Get vendor names
-                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data: vendorData } = await db.from('vendors').select('id, business_name');
                 const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
 
                 const tbody = document.getElementById('all-buyers-detail-table');
@@ -6049,7 +6055,7 @@ async function loadVendorSubmitterRelationship() {
             if (idVal.length < 2 && emailVal.length < 2) return;
 
             try {
-                const { data } = await supabaseClient.from('buyers').select('id, email');
+                const { data } = await db.from('buyers').select('id, email');
                 const filtered = data.filter(b =>
                     b.id.toLowerCase().includes(idVal) ||
                     b.email.toLowerCase().includes(emailVal)
@@ -6065,11 +6071,11 @@ async function loadVendorSubmitterRelationship() {
 
         async function loadAllReferrersDetail(referrerId) {
             try {
-                const referrer = await supabaseClient.from('buyers').select('id, email').eq('id', referrerId).single();
+                const referrer = await db.from('buyers').select('id, email').eq('id', referrerId).single();
                 if (referrer.error) throw referrer.error;
 
                 // Get all admin_payables where this buyer is the referrer (split_with_buyer_id)
-                const { data: adminPayables } = await supabaseClient
+                const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
                     .eq('split_with_buyer_id', referrerId);
@@ -6082,7 +6088,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('all-referrers-count').textContent = adminPayables.length;
 
                 // Get vendor names and unique buyers referred
-                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data: vendorData } = await db.from('vendors').select('id, business_name');
                 const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
 
                 const tbody = document.getElementById('all-referrers-detail-table');
@@ -6111,7 +6117,7 @@ async function loadVendorSubmitterRelationship() {
             if (idVal.length < 2 && nameVal.length < 2) return;
 
             try {
-                const { data } = await supabaseClient.from('vendors').select('id, business_name');
+                const { data } = await db.from('vendors').select('id, business_name');
                 const filtered = data.filter(v =>
                     v.id.toLowerCase().includes(idVal) ||
                     v.business_name.toLowerCase().includes(nameVal)
@@ -6127,11 +6133,11 @@ async function loadVendorSubmitterRelationship() {
 
         async function loadAllVendorsDetail(vendorId) {
             try {
-                const vendor = await supabaseClient.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
+                const vendor = await db.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
                 if (vendor.error) throw vendor.error;
 
                 // Get all approved feedback to this vendor
-                const { data: inquiries } = await supabaseClient
+                const { data: inquiries } = await db
                     .from('inquiries')
                     .select('id, buyer_id')
                     .eq('vendor_id', vendorId)
@@ -6148,7 +6154,7 @@ async function loadVendorSubmitterRelationship() {
                 const totalPayable = feedbackIds.length * vendor.data.current_per_feedback_rate;
 
                 // Get buyer_payables and admin_payables for these feedbacks
-                const { data: buyerPayables } = await supabaseClient
+                const { data: buyerPayables } = await db
                     .from('buyer_payables')
                     .select('id, amount_owed, status, created_at')
                     .in('related_feedback_ids', feedbackIds);
