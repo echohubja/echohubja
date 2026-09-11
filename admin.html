@@ -503,11 +503,32 @@
             <h3 class="text-lg font-bold text-green-700 mb-1">Vendor ↔ Feedback Submitter Relationship</h3>
             <p class="text-xs text-gray-500 mb-4">Feedback submissions and what the vendor paid to each submitter.</p>
 
+            <!-- Vendor Selection (Dropdown + Search) -->
             <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Buyer (Optional):</label>
-                <select id="vendor-submitter-buyer-filter" onchange="loadVendorSubmitterRelationship()" class="w-full md:w-64 border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                    <option value="">All Buyers</option>
-                </select>
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-submitter-vendor-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-submitter-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
+                    <input type="text" id="vendor-submitter-vendor-search-email" placeholder="Search by Vendor Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
+                </div>
+            </div>
+
+            <!-- Buyer Selection (Dropdown + Search) -->
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Feedback Submitter (Buyer):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-submitter-buyer-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-submitter-buyer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
+                    <input type="text" id="vendor-submitter-buyer-search-email" placeholder="Search by Buyer Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
+                </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -548,15 +569,36 @@
         </div>
 
         <!-- RELATIONSHIP SECTION 3: VENDOR ↔ REFERRER -->
-        <div id="relationship-vendor-referrer-section" class="mb-8">
+        <div id="relationship-vendor-referrer-section" class="mb-8 pb-8 border-b">
             <h3 class="text-lg font-bold text-purple-700 mb-1">Vendor ↔ Referrer Relationship</h3>
             <p class="text-xs text-gray-500 mb-4">Referral commissions earned by referrers from this vendor's activity.</p>
 
+            <!-- Vendor Selection (Dropdown + Search) -->
             <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Referrer (Optional):</label>
-                <select id="vendor-referrer-filter" onchange="loadVendorReferrerRelationship()" class="w-full md:w-64 border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600">
-                    <option value="">All Referrers</option>
-                </select>
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-referrer-vendor-dropdown" onchange="loadVendorReferrerRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-referrer-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600" onkeyup="searchVendorReferrerByVendor()">
+                    <input type="text" id="vendor-referrer-vendor-search-email" placeholder="Search by Vendor Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600" onkeyup="searchVendorReferrerByVendor()">
+                </div>
+            </div>
+
+            <!-- Referrer Selection (Dropdown + Search) -->
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Referrer:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <select id="vendor-referrer-referrer-dropdown" onchange="loadVendorReferrerRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600">
+                            <option value="">Select from list</option>
+                        </select>
+                    </div>
+                    <input type="text" id="vendor-referrer-referrer-search-id" placeholder="Search by Referrer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600" onkeyup="searchVendorReferrerByReferrer()">
+                    <input type="text" id="vendor-referrer-referrer-search-email" placeholder="Search by Referrer Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-600" onkeyup="searchVendorReferrerByReferrer()">
+                </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -594,6 +636,79 @@
                         <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor-referrer data...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- COMMISSION DETAIL SECTION: Feedback Submitter → Referrer → Split -->
+        <div id="commission-detail-section" class="mb-8">
+            <h3 class="text-lg font-bold text-indigo-700 mb-1">Commission Detail: Feedback Submitter & Referrer Relationship</h3>
+            <p class="text-xs text-gray-500 mb-4">Detailed commission breakdown for a specific feedback submission, including submitter and their referrer's earnings.</p>
+
+            <!-- Selection Inputs -->
+            <div class="mb-4 pb-3 border-b">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Feedback ID:</label>
+                        <input type="text" id="commission-detail-feedback-id" placeholder="Enter Feedback ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Feedback Submitter ID:</label>
+                        <input type="text" id="commission-detail-buyer-id" placeholder="Enter Buyer ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor ID:</label>
+                        <input type="text" id="commission-detail-vendor-id" placeholder="Enter Vendor ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-indigo-700 mb-3">Feedback Submitter</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">ID:</span> <span id="detail-buyer-id" class="font-mono">—</span></div>
+                        <div><span class="text-gray-600">Email:</span> <span id="detail-buyer-email" class="font-mono text-[10px]">—</span></div>
+                        <div><span class="text-gray-600">Earning:</span> <span id="detail-buyer-earning" class="font-bold text-indigo-600">$0.00</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 border border-orange-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-orange-700 mb-3">Referrer (Who Invited Them)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">ID:</span> <span id="detail-referrer-id" class="font-mono">—</span></div>
+                        <div><span class="text-gray-600">Email:</span> <span id="detail-referrer-email" class="font-mono text-[10px]">—</span></div>
+                        <div><span class="text-gray-600">Earning (70%):</span> <span id="detail-referrer-earning" class="font-bold text-orange-600">$0.00</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin (Facility)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Vendor Commission:</span> <span id="detail-vendor-rate" class="font-bold">$0.00</span></div>
+                        <div><span class="text-gray-600">Admin Earning (30%):</span> <span id="detail-admin-earning" class="font-bold text-slate-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Status:</span> <span id="detail-status" class="text-[11px]">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback & Transaction Details -->
+            <div class="bg-gray-50 border border-gray-200 rounded p-4 mb-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Feedback & Transaction Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <div class="text-gray-600 font-semibold mb-1">Feedback Message:</div>
+                        <div id="detail-feedback-message" class="bg-white p-2 rounded border border-gray-300 text-[11px] min-h-12">—</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-600 font-semibold mb-1">Transaction Timeline:</div>
+                        <div class="bg-white p-2 rounded border border-gray-300 space-y-1 text-[11px]">
+                            <div>Feedback Date: <span id="detail-feedback-date">—</span></div>
+                            <div>Commission Created: <span id="detail-commission-date">—</span></div>
+                            <div>Payment Status: <span id="detail-payment-status">—</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2263,6 +2378,23 @@
             if (!tableBody) return;
 
             try {
+                // Populate vendor selector with unique vendors from admin_payables
+                const { data: allVendors, error: vendorError } = await db.from('admin_payables')
+                    .select('vendor_id')
+                    .is('split_with_buyer_id', null)
+                    .order('vendor_id');
+                if (!vendorError && allVendors && allVendors.length > 0) {
+                    const uniqueVendors = [...new Set(allVendors.map(r => r.vendor_id))];
+                    const selector = document.getElementById('commission-vendor-selector');
+                    const currentSelection = selector?.value;
+                    if (selector) {
+                        selector.innerHTML = '<option value="">-- Select a Vendor --</option>' + uniqueVendors.map(vendorId =>
+                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))}</option>`
+                        ).join('');
+                        if (currentSelection) selector.value = currentSelection;
+                    }
+                }
+
                 let query = db.from('admin_payables').select('*');
 
                 // Filter by selected vendor if in vendor-buyer view
@@ -2340,6 +2472,20 @@
             if (!tableBody) return;
 
             try {
+                // Populate vendor dropdown with unique vendors from buyer_payables
+                const { data: allVendors, error: vendorError } = await db.from('buyer_payables').select('vendor_id').order('vendor_id');
+                if (!vendorError && allVendors && allVendors.length > 0) {
+                    const uniqueVendors = [...new Set(allVendors.map(r => r.vendor_id))];
+                    const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
+                    const currentSelection = vendorDropdown?.value;
+                    if (vendorDropdown) {
+                        vendorDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueVendors.map(vendorId =>
+                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))}</option>`
+                        ).join('');
+                        if (currentSelection) vendorDropdown.value = currentSelection;
+                    }
+                }
+
                 let query = db.from('buyer_payables').select('*');
 
                 // Filter by selected vendor if in vendor-buyer view
@@ -2423,6 +2569,23 @@
             if (!tableBody) return;
 
             try {
+                // Populate vendor dropdown with unique vendors from admin_payables (referrer records)
+                const { data: allReferrerRecords, error: referrerError } = await db.from('admin_payables')
+                    .select('vendor_id')
+                    .not('split_with_buyer_id', 'is', null)
+                    .order('vendor_id');
+                if (!referrerError && allReferrerRecords && allReferrerRecords.length > 0) {
+                    const uniqueVendors = [...new Set(allReferrerRecords.map(r => r.vendor_id))];
+                    const vendorDropdown = document.getElementById('vendor-referrer-vendor-dropdown');
+                    const currentSelection = vendorDropdown?.value;
+                    if (vendorDropdown) {
+                        vendorDropdown.innerHTML = '<option value="">Select from list</option>' + uniqueVendors.map(vendorId =>
+                            `<option value="${vendorId}">${escapeHtml(vendorId.substring(0, 8))}</option>`
+                        ).join('');
+                        if (currentSelection) vendorDropdown.value = currentSelection;
+                    }
+                }
+
                 let query = db.from('admin_payables').select('*');
 
                 // Filter by selected vendor if in vendor-buyer view
@@ -2505,6 +2668,268 @@
             } catch (err) {
                 console.error('Error loading vendor-referrer relationship:', err);
                 document.getElementById('vendor-referrer-body').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function searchVendorSubmitterByVendor() {
+            const searchId = document.getElementById('vendor-submitter-vendor-search-id')?.value || '';
+            const searchEmail = document.getElementById('vendor-submitter-vendor-search-email')?.value || '';
+            const dropdown = document.getElementById('vendor-submitter-vendor-dropdown');
+
+            if (!searchId && !searchEmail) {
+                dropdown.value = '';
+                await loadVendorSubmitterRelationship();
+                return;
+            }
+
+            try {
+                let query = db.from('vendors').select('id, email');
+
+                if (searchId) {
+                    query = query.ilike('id', `%${searchId}%`);
+                }
+                if (searchEmail) {
+                    query = query.ilike('email', `%${searchEmail}%`);
+                }
+
+                const { data, error } = await query.limit(1);
+
+                if (error || !data || data.length === 0) {
+                    showToast('Vendor not found', 'error');
+                    return;
+                }
+
+                dropdown.value = data[0].id;
+                selectedVendorForCommissions = data[0].id;
+                await loadVendorSubmitterRelationship();
+            } catch (err) {
+                showToast('Error searching vendor: ' + err.message, 'error');
+            }
+        }
+
+        async function searchVendorSubmitterByBuyer() {
+            const searchId = document.getElementById('vendor-submitter-buyer-search-id')?.value || '';
+            const searchEmail = document.getElementById('vendor-submitter-buyer-search-email')?.value || '';
+            const dropdown = document.getElementById('vendor-submitter-buyer-dropdown');
+
+            if (!searchId && !searchEmail) {
+                dropdown.value = '';
+                await loadVendorSubmitterRelationship();
+                return;
+            }
+
+            try {
+                let query = db.from('buyers').select('id, email');
+
+                if (searchId) {
+                    query = query.ilike('id', `%${searchId}%`);
+                }
+                if (searchEmail) {
+                    query = query.ilike('email', `%${searchEmail}%`);
+                }
+
+                const { data, error } = await query.limit(1);
+
+                if (error || !data || data.length === 0) {
+                    showToast('Buyer not found', 'error');
+                    return;
+                }
+
+                dropdown.value = data[0].id;
+                await loadVendorSubmitterRelationship();
+            } catch (err) {
+                showToast('Error searching buyer: ' + err.message, 'error');
+            }
+        }
+
+        async function searchVendorReferrerByVendor() {
+            const searchId = document.getElementById('vendor-referrer-vendor-search-id')?.value || '';
+            const searchEmail = document.getElementById('vendor-referrer-vendor-search-email')?.value || '';
+            const dropdown = document.getElementById('vendor-referrer-vendor-dropdown');
+
+            if (!searchId && !searchEmail) {
+                dropdown.value = '';
+                await loadVendorReferrerRelationship();
+                return;
+            }
+
+            try {
+                let query = db.from('vendors').select('id, email');
+
+                if (searchId) {
+                    query = query.ilike('id', `%${searchId}%`);
+                }
+                if (searchEmail) {
+                    query = query.ilike('email', `%${searchEmail}%`);
+                }
+
+                const { data, error } = await query.limit(1);
+
+                if (error || !data || data.length === 0) {
+                    showToast('Vendor not found', 'error');
+                    return;
+                }
+
+                dropdown.value = data[0].id;
+                selectedVendorForCommissions = data[0].id;
+                await loadVendorReferrerRelationship();
+            } catch (err) {
+                showToast('Error searching vendor: ' + err.message, 'error');
+            }
+        }
+
+        async function searchVendorReferrerByReferrer() {
+            const searchId = document.getElementById('vendor-referrer-referrer-search-id')?.value || '';
+            const searchEmail = document.getElementById('vendor-referrer-referrer-search-email')?.value || '';
+            const dropdown = document.getElementById('vendor-referrer-referrer-dropdown');
+
+            if (!searchId && !searchEmail) {
+                dropdown.value = '';
+                await loadVendorReferrerRelationship();
+                return;
+            }
+
+            try {
+                let query = db.from('buyers').select('id, email');
+
+                if (searchId) {
+                    query = query.ilike('id', `%${searchId}%`);
+                }
+                if (searchEmail) {
+                    query = query.ilike('email', `%${searchEmail}%`);
+                }
+
+                const { data, error } = await query.limit(1);
+
+                if (error || !data || data.length === 0) {
+                    showToast('Referrer not found', 'error');
+                    return;
+                }
+
+                dropdown.value = data[0].id;
+                await loadVendorReferrerRelationship();
+            } catch (err) {
+                showToast('Error searching referrer: ' + err.message, 'error');
+            }
+        }
+
+        async function loadCommissionDetail() {
+            const feedbackId = document.getElementById('commission-detail-feedback-id')?.value || '';
+            const buyerId = document.getElementById('commission-detail-buyer-id')?.value || '';
+            const vendorId = document.getElementById('commission-detail-vendor-id')?.value || '';
+
+            // Reset detail display if inputs are empty
+            if (!feedbackId && !buyerId && !vendorId) {
+                document.getElementById('detail-buyer-id').textContent = '—';
+                document.getElementById('detail-buyer-email').textContent = '—';
+                document.getElementById('detail-buyer-earning').textContent = '$0.00';
+                document.getElementById('detail-referrer-id').textContent = '—';
+                document.getElementById('detail-referrer-email').textContent = '—';
+                document.getElementById('detail-referrer-earning').textContent = '$0.00';
+                document.getElementById('detail-vendor-rate').textContent = '$0.00';
+                document.getElementById('detail-admin-earning').textContent = '$0.00';
+                document.getElementById('detail-status').textContent = '—';
+                document.getElementById('detail-feedback-message').textContent = '—';
+                document.getElementById('detail-feedback-date').textContent = '—';
+                document.getElementById('detail-commission-date').textContent = '—';
+                document.getElementById('detail-payment-status').textContent = '—';
+                return;
+            }
+
+            try {
+                // Get buyer details
+                let buyerData = null;
+                if (buyerId) {
+                    const { data: buyer, error: bError } = await db.from('buyers').select('id, email').eq('id', buyerId).single();
+                    if (!bError && buyer) buyerData = buyer;
+                }
+
+                // Get vendor details
+                let vendorData = null;
+                if (vendorId) {
+                    const { data: vendor, error: vError } = await db.from('vendors').select('id, current_per_feedback_rate').eq('id', vendorId).single();
+                    if (!vError && vendor) vendorData = vendor;
+                }
+
+                // Get feedback details
+                let feedbackData = null;
+                let query = db.from('inquiries').select('*');
+                if (feedbackId) query = query.eq('id', feedbackId);
+                if (buyerId) query = query.eq('buyer_id', buyerId);
+                if (vendorId) query = query.eq('vendor_id', vendorId);
+
+                const { data: feedbacks, error: fError } = await query.order('created_at', { ascending: false }).limit(1);
+                if (!fError && feedbacks && feedbacks.length > 0) feedbackData = feedbacks[0];
+
+                if (!feedbackData) {
+                    showToast('Feedback not found', 'error');
+                    return;
+                }
+
+                // Get buyer_payables (submitter commission)
+                const { data: buyerPayables } = await db.from('buyer_payables')
+                    .select('*')
+                    .eq('vendor_id', feedbackData.vendor_id)
+                    .ilike('related_feedback_ids', `%${feedbackData.id}%`)
+                    .single();
+
+                const buyerEarning = buyerPayables ? parseFloat(buyerPayables.amount_owed || 0) : 0;
+
+                // Get admin_payables for referrer and admin split
+                const { data: adminPayables } = await db.from('admin_payables')
+                    .select('*')
+                    .eq('vendor_id', feedbackData.vendor_id)
+                    .eq('related_feedback_id', feedbackData.id)
+                    .single();
+
+                let referrerEarning = 0, adminEarning = 0, referrerData = null, commissionStatus = 'pending';
+                if (adminPayables) {
+                    commissionStatus = adminPayables.status || 'pending';
+                    if (adminPayables.split_with_buyer_id) {
+                        // This is a referral - split between referrer and admin
+                        referrerEarning = parseFloat(adminPayables.amount_owed || 0) * 0.7;
+                        adminEarning = parseFloat(adminPayables.amount_owed || 0) * 0.3;
+
+                        // Get referrer details
+                        const { data: referrer } = await db.from('buyers').select('id, email').eq('id', adminPayables.split_with_buyer_id).single();
+                        if (referrer) referrerData = referrer;
+                    } else {
+                        // No referrer - all to admin
+                        adminEarning = parseFloat(adminPayables.amount_owed || 0);
+                    }
+                }
+
+                // Populate detail cards
+                if (buyerData) {
+                    document.getElementById('detail-buyer-id').textContent = buyerData.id.substring(0, 8) + '...';
+                    document.getElementById('detail-buyer-email').textContent = buyerData.email || '—';
+                }
+                document.getElementById('detail-buyer-earning').textContent = `$${buyerEarning.toFixed(2)}`;
+
+                if (referrerData) {
+                    document.getElementById('detail-referrer-id').textContent = referrerData.id.substring(0, 8) + '...';
+                    document.getElementById('detail-referrer-email').textContent = referrerData.email || '—';
+                }
+                document.getElementById('detail-referrer-earning').textContent = `$${referrerEarning.toFixed(2)}`;
+
+                if (vendorData) {
+                    document.getElementById('detail-vendor-rate').textContent = `$${parseFloat(vendorData.current_per_feedback_rate || 0).toFixed(2)}`;
+                }
+                document.getElementById('detail-admin-earning').textContent = `$${adminEarning.toFixed(2)}`;
+
+                const statusBadge = commissionStatus === 'paid'
+                    ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-semibold">PAID</span>`
+                    : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-semibold">PENDING</span>`;
+                document.getElementById('detail-status').innerHTML = statusBadge;
+
+                // Populate feedback details
+                document.getElementById('detail-feedback-message').textContent = feedbackData.message || '—';
+                document.getElementById('detail-feedback-date').textContent = new Date(feedbackData.created_at).toLocaleDateString();
+                document.getElementById('detail-commission-date').textContent = adminPayables ? new Date(adminPayables.created_at).toLocaleDateString() : '—';
+                document.getElementById('detail-payment-status').textContent = commissionStatus.toUpperCase();
+            } catch (err) {
+                console.error('Error loading commission detail:', err);
+                showToast('Error loading commission details: ' + err.message, 'error');
             }
         }
 
