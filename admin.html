@@ -450,7 +450,7 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Referrer ID</th>
+                            <th class="p-2.5">Inviter ID</th>
                             <th class="p-2.5">Referral Target</th>
                             <th class="p-2.5">Split Amount (20%)</th>
                             <th class="p-2.5">Status</th>
@@ -3283,8 +3283,8 @@
                     html += '<div class="mb-6"><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">👤 Buyers</h3>';
                     for (const result of buyers) {
                         const buyer = result.data;
-                        const referrerInfo = buyer.referred_by ? await getReferrerDetails(buyer.referred_by, 'buyer') : null;
-                        html += formatBuyerCard(buyer, referrerInfo, result.matchedField);
+                        const inviterInfo = buyer.referred_by ? await getInviterDetails(buyer.referred_by, 'buyer') : null;
+                        html += formatBuyerCard(buyer, inviterInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -3294,8 +3294,8 @@
                     html += '<div><h3 class="text-sm font-bold text-[#1e5aa8] mb-3">🏪 Vendors</h3>';
                     for (const result of vendors) {
                         const vendor = result.data;
-                        const referrerInfo = vendor.referred_by_buyer_id ? await getReferrerDetails(vendor.referred_by_buyer_id, 'vendor') : null;
-                        html += formatVendorCard(vendor, referrerInfo, result.matchedField);
+                        const inviterInfo = vendor.referred_by_buyer_id ? await getInviterDetails(vendor.referred_by_buyer_id, 'vendor') : null;
+                        html += formatVendorCard(vendor, inviterInfo, result.matchedField);
                     }
                     html += '</div>';
                 }
@@ -3308,39 +3308,39 @@
             }
         }
 
-        async function getReferrerDetails(referrerId, type) {
+        async function getInviterDetails(inviterId, type) {
             try {
                 if (type === 'buyer') {
                     const { data, error } = await db
                         .from('buyers')
                         .select('id, full_name, email, whatsapp_number')
-                        .eq('id', referrerId)
+                        .eq('id', inviterId)
                         .single();
                     return error ? null : data;
                 } else {
                     const { data, error } = await db
                         .from('vendors')
                         .select('id, business_name, email')
-                        .eq('id', referrerId)
+                        .eq('id', inviterId)
                         .single();
                     return error ? null : data;
                 }
             } catch (err) {
-                console.error('Error fetching referrer details:', err);
+                console.error('Error fetching inviter details:', err);
                 return null;
             }
         }
 
-        function formatBuyerCard(buyer, referrer, matchedField) {
+        function formatBuyerCard(buyer, inviter, matchedField) {
             const statusBadge = buyer.approval_status?.toUpperCase() === 'APPROVED'
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Approved</span>'
                 : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold">Pending</span>';
 
             const email = buyer.email || '';
             const phone = buyer.whatsapp_number || '';
-            const referrerName = referrer ? referrer.full_name || '' : '';
-            const referrerEmail = referrer ? referrer.email || '' : '';
-            const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+            const inviterName = inviter ? inviter.full_name || '' : '';
+            const inviterEmail = inviter ? inviter.email || '' : '';
+            const inviterPhone = inviter ? inviter.whatsapp_number || '' : '';
             const matchBadge = matchedField ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">Matched in: ${matchedField}</span>` : '';
 
             let html = `
@@ -3374,29 +3374,29 @@
                         </div>
             `;
 
-            if (referrer) {
+            if (inviter) {
                 html += `
                         <div class="pt-2 border-t border-gray-200">
-                            <div class="text-xs font-semibold text-gray-700 mb-1">Referred By:</div>
+                            <div class="text-xs font-semibold text-gray-700 mb-1">Invited By:</div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Name:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrerName)}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerName)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(inviterName)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterName)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Email:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrerEmail)}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerEmail)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(inviterEmail)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterEmail)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Phone:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${referrerPhone ? escapeHtml(referrerPhone) : 'N/A'}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerPhone)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${inviterPhone ? escapeHtml(inviterPhone) : 'N/A'}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterPhone)}">Copy</button>
                                 </div>
                             </div>
                         </div>
@@ -3419,15 +3419,15 @@
             return html;
         }
 
-        function formatVendorCard(vendor, referrer, matchedField) {
+        function formatVendorCard(vendor, inviter, matchedField) {
             const statusBadge = vendor.suspension_status === 'active'
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Active</span>'
                 : '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">Suspended</span>';
 
             const email = vendor.email || '';
-            const referrerName = referrer ? referrer.full_name || '' : '';
-            const referrerEmail = referrer ? referrer.email || '' : '';
-            const referrerPhone = referrer ? referrer.whatsapp_number || '' : '';
+            const inviterName = inviter ? inviter.full_name || '' : '';
+            const inviterEmail = inviter ? inviter.email || '' : '';
+            const inviterPhone = inviter ? inviter.whatsapp_number || '' : '';
             const matchBadge = matchedField ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">Matched in: ${matchedField}</span>` : '';
 
             let html = `
@@ -3458,29 +3458,29 @@
                         </div>
             `;
 
-            if (referrer) {
+            if (inviter) {
                 html += `
                         <div class="pt-2 border-t border-gray-200">
-                            <div class="text-xs font-semibold text-gray-700 mb-1">Referred By (Buyer):</div>
+                            <div class="text-xs font-semibold text-gray-700 mb-1">Invited By (Buyer):</div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Name:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrerName)}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerName)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(inviterName)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterName)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Email:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${escapeHtml(referrerEmail)}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerEmail)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${escapeHtml(inviterEmail)}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterEmail)}">Copy</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Phone:</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-gray-800">${referrerPhone ? escapeHtml(referrerPhone) : 'N/A'}</span>
-                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(referrerPhone)}">Copy</button>
+                                    <span class="font-mono text-gray-800">${inviterPhone ? escapeHtml(inviterPhone) : 'N/A'}</span>
+                                    <button class="copy-btn text-blue-600 hover:text-blue-800 text-xs font-semibold" data-copy="${escapeHtml(inviterPhone)}">Copy</button>
                                 </div>
                             </div>
                         </div>
