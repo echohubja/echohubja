@@ -123,6 +123,36 @@
             color: #d97706;
         }
 
+        .account-type-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .account-type-btn {
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .account-type-btn:hover {
+            border-color: #1e5aa8;
+            background: #f8fafc;
+        }
+
+        .account-type-btn.active {
+            background: #1e5aa8;
+            color: white;
+            border-color: #1e5aa8;
+        }
+
         .register-links {
             text-align: center;
             margin-top: 20px;
@@ -314,8 +344,8 @@
                         throw new Error('Invalid email or password.');
                     }
 
-                    // Check approval status
-                    if (buyerData.approval_status !== 'APPROVED') {
+                    // Check approval status (case-insensitive)
+                    if (buyerData.approval_status?.toUpperCase() !== 'APPROVED') {
                         throw new Error('Your account is pending approval. Please check your email for updates.');
                     }
 
