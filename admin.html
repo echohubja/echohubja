@@ -680,7 +680,10 @@
                     </div>
                 </div>
 
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end gap-2">
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
+                    <div>
+                        <button id="modal-approve-btn" onclick="if(currentAdminPayableId) approveAdminPayableReceipt(currentAdminPayableId); else alert('No record selected')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;">✓ Approve & Pay</button>
+                    </div>
                     <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
                 </div>
             </div>
@@ -3019,19 +3022,20 @@ async function loadVendorSubmitterRelationship() {
 
         async function markCommissionPaid(commissionId) {
             try {
-                // Try updating admin_payables first
-                let { error } = await db.from('admin_payables').update({ status: 'paid' }).eq('id', commissionId);
-
-                // If not found in admin_payables, try buyer_payables
-                if (error && error.message.includes('0 rows')) {
-                    ({ error } = await db.from('buyer_payables').update({ status: 'paid' }).eq('id', commissionId));
-                }
+                // V9 FIX: Do NOT set status='paid' here
+                // Only set payment_initiated_date to start the payment process
+                // Status must stay 'pending' for V9 receipt verification workflow
+                // The cron jobs monitor for receipt uploads, and status only changes to 'paid' after admin approval
+                const { error } = await db.from('admin_payables').update({
+                    payment_initiated_date: new Date().toISOString(),
+                    payment_method: 'bank_transfer'
+                }).eq('id', commissionId);
 
                 if (error) {
-                    showToast('Error updating payout status: ' + error.message, 'error');
+                    showToast('Error initiating payment: ' + error.message, 'error');
                     return;
                 }
-                showToast('Commission marked as paid!', 'success');
+                showToast('Payment initiated! Waiting for receipt verification.', 'success');
                 loadCommissionsPortal();
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
@@ -5511,6 +5515,41 @@ async function loadVendorSubmitterRelationship() {
             }
         }
 
+        // V9 FIX: Approve admin_payables receipt verification (referral payout proof)
+        async function approveAdminPayableReceipt(adminPayableId) {
+            const confirmed = await showConfirmModal(
+                'Approve Receipt Verification',
+                'Approve both vendor and buyer receipts? This will mark the referral payout as paid.',
+                'Approve & Pay'
+            );
+            if (!confirmed) return;
+
+            try {
+                const adminId = localStorage.getItem('adminId') || '00000000-0000-0000-0000-000000000001';
+                const now = new Date().toISOString();
+
+                const { error } = await db.from('admin_payables').update({
+                    vendor_flagged: false,
+                    vendor_flag_reason: null,
+                    buyer_flagged: false,
+                    buyer_flag_reason: null,
+                    unflagged_date: now,
+                    unflagged_by: adminId,
+                    unflag_reason: 'receipt_accepted',
+                    status: 'paid',
+                    payment_verified_date: now,
+                    payment_verified_by: adminId
+                }).eq('id', adminPayableId);
+
+                if (error) throw error;
+
+                showToast('✅ Referral payout approved and marked as paid!', 'success');
+                loadCommissionsPortal();
+            } catch (err) {
+                showToast(`Error approving payout: ${err.message}`, 'error');
+            }
+        }
+
         // Load flagged accounts when tab switches
         function handleFlaggedTabSwitch() {
             setTimeout(() => loadFlaggedAccounts(), 100);
@@ -6269,7 +6308,12 @@ async function loadVendorSubmitterRelationship() {
         }
 
         // MODAL: Commission Detail Functions
+        let currentAdminPayableId = null; // Global for approval button
+
         function openCommissionModal(data) {
+            // Store admin record ID for approval button
+            currentAdminPayableId = data.adminRecordId || null;
+
             // Populate buyer info
             document.getElementById('modal-buyer-id').textContent = data.buyerId;
 
@@ -6341,6 +6385,23 @@ async function loadVendorSubmitterRelationship() {
                 ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">${data.paymentStatus}</span>`
                 : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">${data.paymentStatus}</span>`;
             document.getElementById('modal-payment-status').innerHTML = paymentStatusBadge;
+
+            // V9 FIX: Show approval button only if:
+            // 1. It's a referral payout
+            // 2. Both receipts are uploaded
+            // 3. Not yet approved (unflaggedDate is empty)
+            const hasVendorReceipt = data.vendorReceiptDate && data.vendorReceiptDate.trim() !== '';
+            const hasBuyerReceipt = data.buyerReceiptDate && data.buyerReceiptDate.trim() !== '';
+            const isReferral = data.hasReferrer === 'true';
+            const notYetApproved = !data.unflaggedDate || data.unflaggedDate.trim() === '';
+            const isPending = data.paymentStatus === 'PENDING' || data.paymentStatus === 'pending';
+
+            const approveBtn = document.getElementById('modal-approve-btn');
+            if (isReferral && hasVendorReceipt && hasBuyerReceipt && notYetApproved && isPending) {
+                approveBtn.style.display = 'block';
+            } else {
+                approveBtn.style.display = 'none';
+            }
 
             // Show modal
             document.getElementById('commissionDetailModal').classList.remove('hidden');
