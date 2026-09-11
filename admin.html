@@ -526,17 +526,20 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-green-50 text-green-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor ID</th>
                             <th class="p-2.5">Reviewer ID</th>
+                            <th class="p-2.5">Reviewer Inviter</th>
+                            <th class="p-2.5">Vendor Inviter</th>
                             <th class="p-2.5 text-right">Reviewer ($)</th>
+                            <th class="p-2.5 text-right">Reviewer Inviter ($)</th>
+                            <th class="p-2.5 text-right">Vendor Inviter ($)</th>
                             <th class="p-2.5 text-right">Admin ($)</th>
-                            <th class="p-2.5 text-right">Inviter Share ($)</th>
-                            <th class="p-2.5">Receipt Status</th>
                             <th class="p-2.5">Payment Status</th>
                             <th class="p-2.5">Created</th>
                         </tr>
                     </thead>
                     <tbody id="vendor-submitter-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
+                        <tr><td colspan="10" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -626,25 +629,71 @@
                                 </div>
                             </div>
 
-                            <!-- Buyer/Referrer Payment Proof -->
+                            <!-- Reviewer (Feedback Submitter) Proof -->
                             <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">👤 Inviter Collection (Who Collected Payment)</div>
+                                <div class="font-bold text-gray-700 mb-2">✍️ Reviewer (Feedback Submitter)</div>
                                 <div class="space-y-2 text-[11px]">
                                     <div>
                                         <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-paypal-email">—</div>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-paypal-email">—</div>
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-transaction-id">—</div>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-transaction-id">—</div>
                                     </div>
                                     <div>
                                         <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-buyer-receipt-status">—</div>
+                                        <div class="mt-1" id="modal-reviewer-receipt-status">—</div>
                                     </div>
-                                    <div id="modal-buyer-flag-info" class="text-red-600" style="display: none;">
+                                    <div id="modal-reviewer-flag-info" class="text-red-600" style="display: none;">
                                         <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-buyer-flag-reason" class="mt-1">—</div>
+                                        <div id="modal-reviewer-flag-reason" class="mt-1">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reviewer Inviter Collection Proof (Scenario E) -->
+                            <div class="bg-white border border-purple-200 rounded p-3">
+                                <div class="font-bold text-gray-700 mb-2">👥 Reviewer Inviter (Referrer Collection)</div>
+                                <div class="space-y-2 text-[11px]">
+                                    <div>
+                                        <span class="text-gray-600">PayPal Email:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-inviter-paypal-email">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Transaction ID:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-reviewer-inviter-transaction-id">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Receipt Status:</span>
+                                        <div class="mt-1" id="modal-reviewer-inviter-receipt-status">—</div>
+                                    </div>
+                                    <div id="modal-reviewer-inviter-flag-info" class="text-red-600" style="display: none;">
+                                        <span class="font-semibold">Flag Reason:</span>
+                                        <div id="modal-reviewer-inviter-flag-reason" class="mt-1">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vendor Inviter Collection Proof (Scenario E) -->
+                            <div class="bg-white border border-purple-200 rounded p-3">
+                                <div class="font-bold text-gray-700 mb-2">🏪 Vendor Inviter (Referrer Collection)</div>
+                                <div class="space-y-2 text-[11px]">
+                                    <div>
+                                        <span class="text-gray-600">PayPal Email:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-inviter-paypal-email">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Transaction ID:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-inviter-transaction-id">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Receipt Status:</span>
+                                        <div class="mt-1" id="modal-vendor-inviter-receipt-status">—</div>
+                                    </div>
+                                    <div id="modal-vendor-inviter-flag-info" class="text-red-600" style="display: none;">
+                                        <span class="font-semibold">Flag Reason:</span>
+                                        <div id="modal-vendor-inviter-flag-reason" class="mt-1">—</div>
                                     </div>
                                 </div>
                             </div>
@@ -2750,7 +2799,7 @@ async function loadVendorSubmitterRelationship() {
                 if (commissionViewMode === 'vendor-buyer' && selectedVendorForCommissions) {
                     query = query.eq('vendor_id', selectedVendorForCommissions);
                 } else if (commissionViewMode === 'vendor-buyer') {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Select a vendor to view their submitter relationships.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-gray-500">Select a vendor to view their submitter relationships.</td></tr>`;
                     document.getElementById('vendor-submitter-total-paid').textContent = '$0.00';
                     document.getElementById('vendor-submitter-total-payable').textContent = '$0.00';
                     document.getElementById('vendor-submitter-avg').textContent = '$0.00';
@@ -2761,7 +2810,7 @@ async function loadVendorSubmitterRelationship() {
                 let { data, error } = await query.order('created_at', { ascending: false });
 
                 if (error) {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                     return;
                 }
 
@@ -2865,36 +2914,28 @@ async function loadVendorSubmitterRelationship() {
                         const adminRecord = item.admin;
 
                         const submitterEarning = parseFloat(buyerRecord.amount_owed || 0);
-                        let adminEarning = 0, referrerEarning = 0;
-                        let vendorFlagged = false, buyerFlagged = false;
-                        let receiptStatus = '—';
+                        let adminEarning = 0, reviewerInviterEarning = 0, vendorInviterEarning = 0;
 
                         if (adminRecord) {
-                            // Calculate split based on whether there's a referrer
-                            if (adminRecord.split_with_buyer_id) {
-                                // Referral payout: split 30% admin, 70% referrer
-                                const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
-                                adminEarning = facilityAmount * 0.3;
-                                referrerEarning = facilityAmount * 0.7;
-                            } else {
-                                // Non-referral: all to admin
-                                adminEarning = parseFloat(adminRecord.amount_owed || 0);
-                            }
+                            // Use pre-calculated values from database (more reliable than recalculating)
+                            adminEarning = parseFloat(adminRecord.admin_commission || 0);
 
-                            // Check receipt verification status
-                            vendorFlagged = adminRecord.vendor_flagged || false;
-                            buyerFlagged = adminRecord.buyer_flagged || false;
-
-                            if (vendorFlagged || buyerFlagged) {
-                                receiptStatus = vendorFlagged ? '⚠️ Vendor Flagged' : '⚠️ Buyer Flagged';
-                            } else if (adminRecord.vendor_receipt_uploaded_date && adminRecord.buyer_receipt_uploaded_date) {
-                                receiptStatus = '✓ Both Verified';
-                            } else if (adminRecord.vendor_receipt_uploaded_date) {
-                                receiptStatus = '✓ Vendor Uploaded';
-                            } else if (adminRecord.buyer_receipt_uploaded_date) {
-                                receiptStatus = '✓ Buyer Uploaded';
+                            if (adminRecord.split_with_buyer_id && adminRecord.split_with_vendor_id) {
+                                // Scenario E: Both inviters (35% buyer, 35% vendor, 30% admin)
+                                reviewerInviterEarning = parseFloat(adminRecord.buyer_portion || 0);
+                                vendorInviterEarning = parseFloat(adminRecord.split_with_vendor_amount || 0);
+                            } else if (adminRecord.split_with_buyer_id) {
+                                // Scenario B/D: Buyer inviter only (70% or split amount, 30% admin)
+                                reviewerInviterEarning = parseFloat(adminRecord.buyer_portion || 0);
+                                vendorInviterEarning = 0;
+                            } else if (adminRecord.split_with_vendor_id) {
+                                // Scenario C: Vendor inviter only (70% split amount, 30% admin)
+                                reviewerInviterEarning = 0;
+                                vendorInviterEarning = parseFloat(adminRecord.split_with_vendor_amount || 0);
                             } else {
-                                receiptStatus = '—';
+                                // Scenario A: No inviters (100% admin)
+                                reviewerInviterEarning = 0;
+                                vendorInviterEarning = 0;
                             }
                         }
 
@@ -2903,43 +2944,61 @@ async function loadVendorSubmitterRelationship() {
                             ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">PAID</span>`
                             : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">PENDING</span>`;
 
+                        const vendorId = buyerRecord.vendor_id || 'N/A';
                         const buyerId = buyerRecord.buyer_id || 'N/A';
+                        const reviewerInviterId = adminRecord?.split_with_buyer_id || '—';
+                        const vendorInviterId = adminRecord?.split_with_vendor_id || '—';
+
                         return `
                             <tr class="hover:bg-green-50/50 transition cursor-pointer" onclick="openCommissionModal({
+                                vendorId: '${escapeHtml(vendorId)}',
                                 buyerId: '${escapeHtml(buyerId)}',
+                                reviewerInviterId: '${escapeHtml(reviewerInviterId)}',
                                 submitterAmount: ${submitterEarning},
                                 adminAmount: ${adminEarning},
-                                referrerAmount: ${referrerEarning},
-                                receiptStatus: '${escapeHtml(receiptStatus)}',
+                                reviewerInviterAmount: ${reviewerInviterEarning},
+                                vendorInviterAmount: ${vendorInviterEarning},
                                 paymentStatus: '${status.toUpperCase()}',
                                 createdDate: '${new Date(buyerRecord.created_at).toLocaleDateString()}',
-                                vendorFlagged: ${vendorFlagged},
-                                buyerFlagged: ${buyerFlagged},
-                                vendorReceiptDate: '${adminRecord?.vendor_receipt_uploaded_date || ''}',
-                                buyerReceiptDate: '${adminRecord?.buyer_receipt_uploaded_date || ''}',
-                                hasInviter: ${adminRecord?.split_with_buyer_id ? 'true' : 'false'},
                                 adminRecordId: '${adminRecord?.id || ''}',
                                 vendorPaypalEmail: '${adminRecord?.vendor_paypal_email || ''}',
                                 vendorTransactionId: '${adminRecord?.vendor_paypal_transaction_id || ''}',
-                                buyerPaypalEmail: '${adminRecord?.buyer_paypal_email || ''}',
-                                buyerTransactionId: '${adminRecord?.buyer_paypal_transaction_id || ''}',
+                                vendorFlagged: ${adminRecord?.vendor_flagged || false},
                                 vendorFlagReason: '${adminRecord?.vendor_flag_reason || ''}',
-                                buyerFlagReason: '${adminRecord?.buyer_flag_reason || ''}',
+                                vendorReceiptDate: '${adminRecord?.vendor_receipt_uploaded_date || ''}',
+                                reviewerPaypalEmail: '${adminRecord?.buyer_paypal_email || ''}',
+                                reviewerTransactionId: '${adminRecord?.buyer_paypal_transaction_id || ''}',
+                                reviewerFlagged: ${adminRecord?.buyer_flagged || false},
+                                reviewerFlagReason: '${adminRecord?.buyer_flag_reason || ''}',
+                                reviewerReceiptDate: '${adminRecord?.buyer_receipt_uploaded_date || ''}',
+                                reviewerInviterPaypalEmail: '${adminRecord?.reviewer_inviter_paypal_email || ''}',
+                                reviewerInviterTransactionId: '${adminRecord?.reviewer_inviter_paypal_transaction_id || ''}',
+                                reviewerInviterFlagged: ${adminRecord?.reviewer_inviter_flagged || false},
+                                reviewerInviterFlagReason: '${adminRecord?.reviewer_inviter_flag_reason || ''}',
+                                reviewerInviterReceiptDate: '${adminRecord?.reviewer_inviter_receipt_uploaded_date || ''}',
+                                vendorInviterPaypalEmail: '${adminRecord?.vendor_inviter_paypal_email || ''}',
+                                vendorInviterTransactionId: '${adminRecord?.vendor_inviter_paypal_transaction_id || ''}',
+                                vendorInviterFlagged: ${adminRecord?.vendor_inviter_flagged || false},
+                                vendorInviterFlagReason: '${adminRecord?.vendor_inviter_flag_reason || ''}',
+                                vendorInviterReceiptDate: '${adminRecord?.vendor_inviter_receipt_uploaded_date || ''}',
                                 unflaggedDate: '${adminRecord?.unflagged_date || ''}',
                                 unflagReason: '${adminRecord?.unflag_reason || ''}'
                             })">
-                                <td class="p-2.5 text-xs font-mono text-gray-600 hover:text-green-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
+                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${escapeHtml(vendorId?.substring(0, 8) || 'N/A')}...</td>
+                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
+                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${reviewerInviterId === '—' ? '—' : escapeHtml(reviewerInviterId?.substring(0, 8) || 'N/A') + '...'}</td>
+                                <td class="p-2.5 text-xs font-mono text-gray-600 font-semibold">${vendorInviterId}</td>
                                 <td class="p-2.5 font-bold text-green-700 text-xs text-right">$${submitterEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">${reviewerInviterEarning > 0 ? '$' + reviewerInviterEarning.toFixed(2) : '—'}</td>
+                                <td class="p-2.5 font-bold text-purple-700 text-xs text-right">${vendorInviterEarning > 0 ? '$' + vendorInviterEarning.toFixed(2) : '—'}</td>
                                 <td class="p-2.5 font-bold text-blue-700 text-xs text-right">$${adminEarning.toFixed(2)}</td>
-                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${referrerEarning.toFixed(2)}</td>
-                                <td class="p-2.5 text-xs">${receiptStatus}</td>
                                 <td class="p-2.5">${paymentBadge}</td>
                                 <td class="p-2.5 text-xs text-gray-600">${new Date(buyerRecord.created_at).toLocaleDateString()}</td>
                             </tr>
                         `;
                     }).join('');
                 } else {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
                 }
 
                 const avg = data && data.length > 0 ? (totalPaid + totalPayable) / data.length : 0;
@@ -2949,7 +3008,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('vendor-submitter-count').textContent = data ? data.length : '0';
             } catch (err) {
                 console.error('Error loading vendor-submitter relationship:', err);
-                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="12" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
 
@@ -6408,12 +6467,32 @@ async function loadVendorSubmitterRelationship() {
             // Commission split
             document.getElementById('modal-submitter-amount').textContent = `$${data.submitterAmount.toFixed(2)}`;
             document.getElementById('modal-admin-amount').textContent = `$${data.adminAmount.toFixed(2)}`;
-            document.getElementById('modal-admin-reason').textContent =
-                data.hasReferrer === 'true' ? 'Facility commission (30% split)' : 'Facility commission (100%)';
 
-            document.getElementById('modal-referrer-amount').textContent = `$${data.referrerAmount.toFixed(2)}`;
-            document.getElementById('modal-referrer-reason').textContent =
-                data.hasReferrer === 'true' ? 'Referrer earning (70% split)' : '—';
+            // Determine if this is a referral payout
+            const hasReviewerInviter = data.reviewerInviterAmount > 0;
+            const hasVendorInviter = data.vendorInviterAmount > 0;
+
+            if (hasReviewerInviter && hasVendorInviter) {
+                document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
+            } else if (hasReviewerInviter || hasVendorInviter) {
+                document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
+            } else {
+                document.getElementById('modal-admin-reason').textContent = 'Facility commission (100%)';
+            }
+
+            // Display inviter earnings (could be reviewer inviter, vendor inviter, or both in Scenario E)
+            const totalInviterEarnings = (data.reviewerInviterAmount || 0) + (data.vendorInviterAmount || 0);
+            document.getElementById('modal-referrer-amount').textContent = `$${totalInviterEarnings.toFixed(2)}`;
+
+            if (hasReviewerInviter && hasVendorInviter) {
+                document.getElementById('modal-referrer-reason').textContent = 'Split: 35% buyer + 35% vendor inviters';
+            } else if (hasReviewerInviter) {
+                document.getElementById('modal-referrer-reason').textContent = 'Buyer inviter earning (70% split)';
+            } else if (hasVendorInviter) {
+                document.getElementById('modal-referrer-reason').textContent = 'Vendor inviter earning (70% split)';
+            } else {
+                document.getElementById('modal-referrer-reason').textContent = '—';
+            }
 
             // Vendor Payment Proof
             document.getElementById('modal-vendor-paypal-email').textContent = data.vendorPaypalEmail || '—';
@@ -6432,22 +6511,66 @@ async function loadVendorSubmitterRelationship() {
             }
             document.getElementById('modal-vendor-receipt-status').textContent = vendorReceiptStatus;
 
-            // Buyer/Referrer Payment Proof
-            document.getElementById('modal-buyer-paypal-email').textContent = data.buyerPaypalEmail || '—';
-            document.getElementById('modal-buyer-transaction-id').textContent = data.buyerTransactionId || '—';
+            // Reviewer (Feedback Submitter) Payment Proof
+            document.getElementById('modal-reviewer-paypal-email').textContent = data.reviewerPaypalEmail || '—';
+            document.getElementById('modal-reviewer-transaction-id').textContent = data.reviewerTransactionId || '—';
 
-            let buyerReceiptStatus = 'Pending';
-            if (data.buyerFlagged) {
-                buyerReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
-                document.getElementById('modal-buyer-flag-info').style.display = 'block';
-                document.getElementById('modal-buyer-flag-reason').textContent = data.buyerFlagReason || 'Missing receipt';
-            } else if (data.buyerReceiptDate) {
-                buyerReceiptStatus = `✓ Uploaded ${new Date(data.buyerReceiptDate).toLocaleDateString()}`;
-                document.getElementById('modal-buyer-flag-info').style.display = 'none';
+            let reviewerReceiptStatus = 'Pending';
+            if (data.reviewerFlagged) {
+                reviewerReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
+                document.getElementById('modal-reviewer-flag-info').style.display = 'block';
+                document.getElementById('modal-reviewer-flag-reason').textContent = data.reviewerFlagReason || 'Missing receipt';
+            } else if (data.reviewerReceiptDate) {
+                reviewerReceiptStatus = `✓ Uploaded ${new Date(data.reviewerReceiptDate).toLocaleDateString()}`;
+                document.getElementById('modal-reviewer-flag-info').style.display = 'none';
             } else {
-                document.getElementById('modal-buyer-flag-info').style.display = 'none';
+                document.getElementById('modal-reviewer-flag-info').style.display = 'none';
             }
-            document.getElementById('modal-buyer-receipt-status').textContent = buyerReceiptStatus;
+            document.getElementById('modal-reviewer-receipt-status').textContent = reviewerReceiptStatus;
+
+            // Reviewer Inviter Collection Proof (Scenario E)
+            document.getElementById('modal-reviewer-inviter-paypal-email').textContent = data.reviewerInviterPaypalEmail || '—';
+            document.getElementById('modal-reviewer-inviter-transaction-id').textContent = data.reviewerInviterTransactionId || '—';
+
+            let reviewerInviterReceiptStatus = 'Not Applicable';
+            if (data.reviewerInviterPaypalEmail && data.reviewerInviterPaypalEmail !== '—') {
+                reviewerInviterReceiptStatus = 'Pending';
+                if (data.reviewerInviterFlagged) {
+                    reviewerInviterReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
+                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'block';
+                    document.getElementById('modal-reviewer-inviter-flag-reason').textContent = data.reviewerInviterFlagReason || 'Missing receipt';
+                } else if (data.reviewerInviterReceiptDate) {
+                    reviewerInviterReceiptStatus = `✓ Uploaded ${new Date(data.reviewerInviterReceiptDate).toLocaleDateString()}`;
+                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
+                } else {
+                    document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
+                }
+            } else {
+                document.getElementById('modal-reviewer-inviter-flag-info').style.display = 'none';
+            }
+            document.getElementById('modal-reviewer-inviter-receipt-status').textContent = reviewerInviterReceiptStatus;
+
+            // Vendor Inviter Collection Proof (Scenario E)
+            document.getElementById('modal-vendor-inviter-paypal-email').textContent = data.vendorInviterPaypalEmail || '—';
+            document.getElementById('modal-vendor-inviter-transaction-id').textContent = data.vendorInviterTransactionId || '—';
+
+            let vendorInviterReceiptStatus = 'Not Applicable';
+            if (data.vendorInviterPaypalEmail && data.vendorInviterPaypalEmail !== '—') {
+                vendorInviterReceiptStatus = 'Pending';
+                if (data.vendorInviterFlagged) {
+                    vendorInviterReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
+                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'block';
+                    document.getElementById('modal-vendor-inviter-flag-reason').textContent = data.vendorInviterFlagReason || 'Missing receipt';
+                } else if (data.vendorInviterReceiptDate) {
+                    vendorInviterReceiptStatus = `✓ Uploaded ${new Date(data.vendorInviterReceiptDate).toLocaleDateString()}`;
+                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
+                } else {
+                    document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
+                }
+            } else {
+                document.getElementById('modal-vendor-inviter-flag-info').style.display = 'none';
+            }
+            document.getElementById('modal-vendor-inviter-receipt-status').textContent = vendorInviterReceiptStatus;
 
             // Admin Approval Trail
             if (data.unflaggedDate) {
@@ -6621,7 +6744,7 @@ async function loadVendorSubmitterRelationship() {
                 }
 
                 resultsDiv.innerHTML = results.map((result, index) => `
-                    <div class="p-2 border-b text-xs cursor-pointer hover:bg-gray-50" onclick="selectVendorSmartResult('${result.id}', '${result.type}', ${result.isFeedback ? 'true' : 'false'})">
+                    <div class="p-2 border-b text-xs cursor-pointer hover:bg-gray-50" onclick="selectVendorSmartResult('${result.id}', '${result.type}', ${result.isFeedback ? 'true' : 'false'}); return false;">
                         <div class="font-semibold text-gray-800">${escapeHtml(result.name)}</div>
                         <div class="text-gray-500">${escapeHtml(result.email)} | ${result.id.substring(0, 8)}</div>
                         ${result.isFeedback ? '<div class="text-green-600 font-semibold">📋 From Feedback ID</div>' : ''}
@@ -6745,42 +6868,157 @@ async function loadVendorSubmitterRelationship() {
         }
 
         // Select vendor from smart input results
-        async function selectVendorSmartResult(vendorId, type, isFeedback) {
+        function selectVendorSmartResult(vendorId, type, isFeedback) {
             const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
-            const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
             const vendorInput = document.getElementById('vendor-smart-input');
-            const resultsDiv = document.getElementById('vendor-smart-results');
+            const vendorResultsDiv = document.getElementById('vendor-smart-results');
 
+            // Set dropdown value immediately
             vendorDropdown.value = vendorId;
-            resultsDiv.style.display = 'none';
-            vendorInput.value = '';
+            vendorResultsDiv.style.display = 'none';
 
-            // If feedback ID was used, auto-populate both vendor and buyer
-            if (isFeedback) {
-                const feedbackId = vendorInput.placeholder; // Note: This is just for context
-                // The vendor is already set, now we need to find the buyer from the feedback
-                const input = document.getElementById('vendor-smart-input').value.trim();
+            // Get vendor details and update input field
+            db.from('vendors')
+                .select('id, business_name, email')
+                .eq('id', vendorId)
+                .limit(1)
+                .then(({ data: vendor, error }) => {
+                    if (error || !vendor || vendor.length === 0) {
+                        console.error('Error fetching vendor:', error);
+                        return;
+                    }
 
-                // Re-query to get the feedback relationship
-                const feedbackIdRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                // Since this came from feedback, the feedback ID should trigger auto-population in both
-                // This is already handled by the onClick context, so just load the relationship
-            }
+                    const vendorName = vendor[0].business_name || vendor[0].email || 'Vendor';
 
-            await loadVendorSubmitterRelationship();
+                    // Force display - multiple approaches to ensure it shows
+                    vendorInput.value = vendorName;
+                    vendorInput.textContent = vendorName;
+                    vendorInput.placeholder = '';
+                    vendorInput.setAttribute('data-selected', vendorName);
+
+                    // Trigger change event in case other code is listening
+                    vendorInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    vendorInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    console.log('Vendor field set to:', vendorName);
+
+                    // If feedback ID was used, auto-populate reviewer too
+                    if (isFeedback) {
+                        db.from('inquiries')
+                            .select('id, buyer_id')
+                            .eq('vendor_id', vendorId)
+                            .eq('message_type', 'feedback')
+                            .order('created_at', { ascending: false })
+                            .limit(1)
+                            .then(({ data: feedback, error }) => {
+                                if (error || !feedback || feedback.length === 0) return;
+
+                                const buyerId = feedback[0].buyer_id;
+                                const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
+                                const reviewerInput = document.getElementById('reviewer-smart-input');
+                                const reviewerResultsDiv = document.getElementById('reviewer-smart-results');
+
+                                buyerDropdown.value = buyerId;
+
+                                db.from('buyers')
+                                    .select('id, full_name, email')
+                                    .eq('id', buyerId)
+                                    .limit(1)
+                                    .then(({ data: buyer }) => {
+                                        if (buyer && buyer.length > 0) {
+                                            const buyerName = buyer[0].full_name || buyer[0].email || 'Buyer';
+                                            reviewerInput.value = buyerName;
+                                            reviewerInput.textContent = buyerName;
+                                            reviewerInput.placeholder = '';
+                                            reviewerInput.setAttribute('data-selected', buyerName);
+                                            reviewerInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                            reviewerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            reviewerResultsDiv.style.display = 'none';
+                                            console.log('Reviewer field set to:', buyerName);
+                                        }
+                                        loadVendorSubmitterRelationship();
+                                    });
+                            });
+                    } else {
+                        loadVendorSubmitterRelationship();
+                    }
+                });
         }
 
         // Select reviewer (buyer) from smart input results
         async function selectReviewerSmartResult(buyerId, type, isFeedback) {
             const buyerDropdown = document.getElementById('vendor-submitter-buyer-dropdown');
+            const vendorDropdown = document.getElementById('vendor-submitter-vendor-dropdown');
+            const vendorInput = document.getElementById('vendor-smart-input');
             const reviewerInput = document.getElementById('reviewer-smart-input');
-            const resultsDiv = document.getElementById('reviewer-smart-results');
+            const vendorResultsDiv = document.getElementById('vendor-smart-results');
+            const reviewerResultsDiv = document.getElementById('reviewer-smart-results');
 
-            buyerDropdown.value = buyerId;
-            resultsDiv.style.display = 'none';
-            reviewerInput.value = '';
+            try {
+                // Get buyer details for display
+                const { data: buyer } = await db
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .eq('id', buyerId)
+                    .limit(1);
 
-            await loadVendorSubmitterRelationship();
+                if (buyer && buyer.length > 0) {
+                    const buyerName = buyer[0].full_name || buyer[0].email || 'Buyer';
+                    buyerDropdown.value = buyerId;
+
+                    // Force display - multiple approaches to ensure it shows
+                    reviewerInput.value = buyerName;
+                    reviewerInput.textContent = buyerName;
+                    reviewerInput.placeholder = '';
+                    reviewerInput.setAttribute('data-selected', buyerName);
+                    reviewerInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    reviewerInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    reviewerResultsDiv.style.display = 'none';
+
+                    // If feedback ID was used, also auto-populate vendor from the same feedback
+                    if (isFeedback) {
+                        // Query inquiries to find feedback where buyer_id matches and get the vendor_id
+                        const { data: feedback } = await db
+                            .from('inquiries')
+                            .select('id, vendor_id')
+                            .eq('buyer_id', buyerId)
+                            .eq('message_type', 'feedback')
+                            .order('created_at', { ascending: false })
+                            .limit(1);
+
+                        if (feedback && feedback.length > 0) {
+                            const vendorId = feedback[0].vendor_id;
+
+                            // Get vendor details for display
+                            const { data: vendor } = await db
+                                .from('vendors')
+                                .select('id, business_name, email')
+                                .eq('id', vendorId)
+                                .limit(1);
+
+                            if (vendor && vendor.length > 0) {
+                                const vendorName = vendor[0].business_name || vendor[0].email || 'Vendor';
+                                vendorDropdown.value = vendorId;
+
+                                // Force display - multiple approaches to ensure it shows
+                                vendorInput.value = vendorName;
+                                vendorInput.textContent = vendorName;
+                                vendorInput.placeholder = '';
+                                vendorInput.setAttribute('data-selected', vendorName);
+                                vendorInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                vendorInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+                                vendorResultsDiv.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+
+                await loadVendorSubmitterRelationship();
+            } catch (err) {
+                showToast('Error selecting reviewer: ' + err.message, 'error');
+            }
         }
 
         // Hide results when clicking outside
