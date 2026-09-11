@@ -606,19 +606,66 @@
                     <!-- Receipt Verification Section -->
                     <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
                         <h3 class="text-sm font-bold text-purple-700 mb-3">Receipt Verification Status (V9)</h3>
-                        <div class="space-y-3 text-xs">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <span class="text-gray-600 font-semibold">Vendor Receipt Status:</span>
-                                    <div class="mt-1" id="modal-vendor-receipt-status">—</div>
-                                </div>
-                                <div>
-                                    <span class="text-gray-600 font-semibold">Buyer Receipt Status:</span>
-                                    <div class="mt-1" id="modal-buyer-receipt-status">—</div>
+                        <div class="space-y-4 text-xs">
+                            <!-- Vendor Payment Proof -->
+                            <div class="bg-white border border-purple-200 rounded p-3">
+                                <div class="font-bold text-gray-700 mb-2">🏪 Vendor Disbursement (Who Sent Payment)</div>
+                                <div class="space-y-2 text-[11px]">
+                                    <div>
+                                        <span class="text-gray-600">PayPal Email:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-paypal-email">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Transaction ID:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-transaction-id">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Receipt Status:</span>
+                                        <div class="mt-1" id="modal-vendor-receipt-status">—</div>
+                                    </div>
+                                    <div id="modal-vendor-flag-info" class="text-red-600" style="display: none;">
+                                        <span class="font-semibold">Flag Reason:</span>
+                                        <div id="modal-vendor-flag-reason" class="mt-1">—</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div id="modal-receipt-details" class="text-[11px] text-gray-600 bg-white p-2 rounded">
-                                —
+
+                            <!-- Buyer/Referrer Payment Proof -->
+                            <div class="bg-white border border-purple-200 rounded p-3">
+                                <div class="font-bold text-gray-700 mb-2">👤 Referrer Collection (Who Collected Payment)</div>
+                                <div class="space-y-2 text-[11px]">
+                                    <div>
+                                        <span class="text-gray-600">PayPal Email:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-paypal-email">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Transaction ID:</span>
+                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-transaction-id">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Receipt Status:</span>
+                                        <div class="mt-1" id="modal-buyer-receipt-status">—</div>
+                                    </div>
+                                    <div id="modal-buyer-flag-info" class="text-red-600" style="display: none;">
+                                        <span class="font-semibold">Flag Reason:</span>
+                                        <div id="modal-buyer-flag-reason" class="mt-1">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Approval Trail -->
+                            <div id="modal-admin-approval" class="bg-green-50 border border-green-200 rounded p-3" style="display: none;">
+                                <div class="font-bold text-green-700 mb-2">✓ Admin Approval</div>
+                                <div class="space-y-2 text-[11px]">
+                                    <div>
+                                        <span class="text-gray-600">Approved Date:</span>
+                                        <div id="modal-unflag-date" class="font-mono">—</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Reason:</span>
+                                        <div id="modal-unflag-reason" class="mt-1">—</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2859,7 +2906,16 @@ async function loadVendorSubmitterRelationship() {
                                 buyerFlagged: ${buyerFlagged},
                                 vendorReceiptDate: '${adminRecord?.vendor_receipt_uploaded_date || ''}',
                                 buyerReceiptDate: '${adminRecord?.buyer_receipt_uploaded_date || ''}',
-                                hasReferrer: ${adminRecord?.split_with_buyer_id ? 'true' : 'false'}
+                                hasReferrer: ${adminRecord?.split_with_buyer_id ? 'true' : 'false'},
+                                adminRecordId: '${adminRecord?.id || ''}',
+                                vendorPaypalEmail: '${adminRecord?.vendor_paypal_email || ''}',
+                                vendorTransactionId: '${adminRecord?.vendor_paypal_transaction_id || ''}',
+                                buyerPaypalEmail: '${adminRecord?.buyer_paypal_email || ''}',
+                                buyerTransactionId: '${adminRecord?.buyer_paypal_transaction_id || ''}',
+                                vendorFlagReason: '${adminRecord?.vendor_flag_reason || ''}',
+                                buyerFlagReason: '${adminRecord?.buyer_flag_reason || ''}',
+                                unflaggedDate: '${adminRecord?.unflagged_date || ''}',
+                                unflagReason: '${adminRecord?.unflag_reason || ''}'
                             })">
                                 <td class="p-2.5 text-xs font-mono text-gray-600 hover:text-green-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
                                 <td class="p-2.5 font-bold text-green-700 text-xs text-right">$${submitterEarning.toFixed(2)}</td>
@@ -6237,30 +6293,48 @@ async function loadVendorSubmitterRelationship() {
             document.getElementById('modal-referrer-reason').textContent =
                 data.hasReferrer === 'true' ? 'Referrer earning (70% split)' : '—';
 
-            // Receipt verification
-            let vendorReceiptStatus = 'Pending';
-            let buyerReceiptStatus = 'Pending';
-            let receiptDetails = '';
+            // Vendor Payment Proof
+            document.getElementById('modal-vendor-paypal-email').textContent = data.vendorPaypalEmail || '—';
+            document.getElementById('modal-vendor-transaction-id').textContent = data.vendorTransactionId || '—';
 
+            let vendorReceiptStatus = 'Pending';
             if (data.vendorFlagged) {
                 vendorReceiptStatus = '⚠️ Flagged - Missing Receipt (T+48h deadline)';
-                receiptDetails += 'Vendor missed T+48h deadline for receipt upload. ';
+                document.getElementById('modal-vendor-flag-info').style.display = 'block';
+                document.getElementById('modal-vendor-flag-reason').textContent = data.vendorFlagReason || 'Missing receipt';
             } else if (data.vendorReceiptDate) {
-                vendorReceiptStatus = '✓ Receipt Uploaded';
-                receiptDetails += `Vendor uploaded: ${new Date(data.vendorReceiptDate).toLocaleDateString()}. `;
+                vendorReceiptStatus = `✓ Uploaded ${new Date(data.vendorReceiptDate).toLocaleDateString()}`;
+                document.getElementById('modal-vendor-flag-info').style.display = 'none';
+            } else {
+                document.getElementById('modal-vendor-flag-info').style.display = 'none';
             }
+            document.getElementById('modal-vendor-receipt-status').textContent = vendorReceiptStatus;
 
+            // Buyer/Referrer Payment Proof
+            document.getElementById('modal-buyer-paypal-email').textContent = data.buyerPaypalEmail || '—';
+            document.getElementById('modal-buyer-transaction-id').textContent = data.buyerTransactionId || '—';
+
+            let buyerReceiptStatus = 'Pending';
             if (data.buyerFlagged) {
                 buyerReceiptStatus = '⚠️ Flagged - Missing Receipt (T+8h deadline)';
-                receiptDetails += 'Referrer missed T+8h deadline for receipt upload.';
+                document.getElementById('modal-buyer-flag-info').style.display = 'block';
+                document.getElementById('modal-buyer-flag-reason').textContent = data.buyerFlagReason || 'Missing receipt';
             } else if (data.buyerReceiptDate) {
-                buyerReceiptStatus = '✓ Receipt Uploaded';
-                receiptDetails += `Referrer uploaded: ${new Date(data.buyerReceiptDate).toLocaleDateString()}.`;
+                buyerReceiptStatus = `✓ Uploaded ${new Date(data.buyerReceiptDate).toLocaleDateString()}`;
+                document.getElementById('modal-buyer-flag-info').style.display = 'none';
+            } else {
+                document.getElementById('modal-buyer-flag-info').style.display = 'none';
             }
-
-            document.getElementById('modal-vendor-receipt-status').textContent = vendorReceiptStatus;
             document.getElementById('modal-buyer-receipt-status').textContent = buyerReceiptStatus;
-            document.getElementById('modal-receipt-details').textContent = receiptDetails || '—';
+
+            // Admin Approval Trail
+            if (data.unflaggedDate) {
+                document.getElementById('modal-admin-approval').style.display = 'block';
+                document.getElementById('modal-unflag-date').textContent = new Date(data.unflaggedDate).toLocaleDateString();
+                document.getElementById('modal-unflag-reason').textContent = data.unflagReason || 'Approved';
+            } else {
+                document.getElementById('modal-admin-approval').style.display = 'none';
+            }
 
             // Payment status
             const paymentStatusBadge = data.paymentStatus === 'PAID'
