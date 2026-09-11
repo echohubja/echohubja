@@ -533,14 +533,15 @@
                             <th class="p-2.5">Reviewer ID</th>
                             <th class="p-2.5 text-right">Reviewer ($)</th>
                             <th class="p-2.5 text-right">Admin ($)</th>
-                            <th class="p-2.5 text-right">Inviter Share ($)</th>
+                            <th class="p-2.5 text-right">Buyer Inviter ($)</th>
+                            <th class="p-2.5 text-right">Vendor Inviter ($)</th>
                             <th class="p-2.5">Receipt Status</th>
                             <th class="p-2.5">Payment Status</th>
                             <th class="p-2.5">Created</th>
                         </tr>
                     </thead>
                     <tbody id="vendor-submitter-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2869,20 +2870,32 @@ async function loadVendorSubmitterRelationship() {
                         const adminRecord = item.admin;
 
                         const submitterEarning = parseFloat(buyerRecord.amount_owed || 0);
-                        let adminEarning = 0, referrerEarning = 0;
+                        let adminEarning = 0, buyerInviterEarning = 0, vendorInviterEarning = 0;
                         let vendorFlagged = false, buyerFlagged = false;
                         let receiptStatus = '—';
 
                         if (adminRecord) {
-                            // Calculate split based on whether there's a referrer
-                            if (adminRecord.split_with_buyer_id) {
-                                // Referral payout: split 30% admin, 70% referrer
-                                const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
+                            const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
+
+                            // Scenario E: Different inviters (buyer + vendor have different referrers)
+                            if (adminRecord.split_with_buyer_id && adminRecord.split_with_vendor_id) {
+                                // Split 35% buyer inviter / 35% vendor inviter / 30% admin
                                 adminEarning = facilityAmount * 0.3;
-                                referrerEarning = facilityAmount * 0.7;
-                            } else {
-                                // Non-referral: all to admin
-                                adminEarning = parseFloat(adminRecord.amount_owed || 0);
+                                buyerInviterEarning = facilityAmount * 0.35;
+                                vendorInviterEarning = facilityAmount * 0.35;
+                            }
+                            // Scenarios B & C: Single referrer (70% / 30%)
+                            else if (adminRecord.split_with_buyer_id) {
+                                // Referral payout: split 30% admin, 70% referrer (goes to buyer inviter only)
+                                adminEarning = facilityAmount * 0.3;
+                                buyerInviterEarning = facilityAmount * 0.7;
+                                vendorInviterEarning = 0;
+                            }
+                            // Scenario A: Non-referral (100% admin)
+                            else {
+                                adminEarning = facilityAmount;
+                                buyerInviterEarning = 0;
+                                vendorInviterEarning = 0;
                             }
 
                             // Check receipt verification status
@@ -2913,7 +2926,8 @@ async function loadVendorSubmitterRelationship() {
                                 buyerId: '${escapeHtml(buyerId)}',
                                 submitterAmount: ${submitterEarning},
                                 adminAmount: ${adminEarning},
-                                referrerAmount: ${referrerEarning},
+                                buyerInviterAmount: ${buyerInviterEarning},
+                                vendorInviterAmount: ${vendorInviterEarning},
                                 receiptStatus: '${escapeHtml(receiptStatus)}',
                                 paymentStatus: '${status.toUpperCase()}',
                                 createdDate: '${new Date(buyerRecord.created_at).toLocaleDateString()}',
@@ -2935,7 +2949,8 @@ async function loadVendorSubmitterRelationship() {
                                 <td class="p-2.5 text-xs font-mono text-gray-600 hover:text-green-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
                                 <td class="p-2.5 font-bold text-green-700 text-xs text-right">$${submitterEarning.toFixed(2)}</td>
                                 <td class="p-2.5 font-bold text-blue-700 text-xs text-right">$${adminEarning.toFixed(2)}</td>
-                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${referrerEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${buyerInviterEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${vendorInviterEarning.toFixed(2)}</td>
                                 <td class="p-2.5 text-xs">${receiptStatus}</td>
                                 <td class="p-2.5">${paymentBadge}</td>
                                 <td class="p-2.5 text-xs text-gray-600">${new Date(buyerRecord.created_at).toLocaleDateString()}</td>
@@ -2943,7 +2958,7 @@ async function loadVendorSubmitterRelationship() {
                         `;
                     }).join('');
                 } else {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
                 }
 
                 const avg = data && data.length > 0 ? (totalPaid + totalPayable) / data.length : 0;
@@ -2953,7 +2968,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('vendor-submitter-count').textContent = data ? data.length : '0';
             } catch (err) {
                 console.error('Error loading vendor-submitter relationship:', err);
-                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
 
