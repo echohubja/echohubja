@@ -6332,23 +6332,33 @@ async function loadVendorSubmitterRelationship() {
                     await db.from('buyers').select('*').eq('id', adminRec.split_with_buyer_id).single() :
                     { data: null };
 
-                // Format data for modal
+                // Format data for modal - use correct field names for openCommissionModal
+                const submitterAmount = adminRec.amount_owed || 0;
+                const adminAmount = adminRec.admin_commission || 0;
+                const referrerAmount = adminRec.buyer_portion || 0;
+
                 const modalData = {
                     adminRecordId: adminRec.id,
+                    buyerId: buyer?.id || 'N/A',
+                    buyerEmail: buyer?.email || 'N/A',
                     hasReferrer: buyer ? 'true' : 'false',
-                    paymentStatus: adminRec.status,
-                    unflaggedDate: adminRec.unflagged_date || '',
-                    vendorReceiptDate: adminRec.vendor_receipt_uploaded_date || '',
-                    buyerReceiptDate: adminRec.buyer_receipt_uploaded_date || '',
-                    vendorFlaggedStatus: adminRec.vendor_flagged ? 'Flagged' : 'Clear',
-                    buyerFlaggedStatus: adminRec.buyer_flagged ? 'Flagged' : 'Clear',
+                    createdDate: new Date(adminRec.created_at).toLocaleDateString(),
+                    paymentStatus: (adminRec.status || 'pending').toUpperCase(),
+                    submitterAmount: submitterAmount,
+                    adminAmount: adminAmount,
+                    referrerAmount: referrerAmount,
                     vendorPaypalEmail: adminRec.vendor_paypal_email || '—',
                     vendorTransactionId: adminRec.vendor_paypal_transaction_id || '—',
+                    vendorReceiptDate: adminRec.vendor_receipt_uploaded_date || '',
+                    vendorFlagged: adminRec.vendor_flagged || false,
+                    vendorFlagReason: adminRec.vendor_flag_reason || '',
                     buyerPaypalEmail: adminRec.buyer_paypal_email || '—',
                     buyerTransactionId: adminRec.buyer_paypal_transaction_id || '—',
-                    totalAmount: adminRec.amount_owed || 0,
-                    adminShare: adminRec.admin_commission || 0,
-                    referrerShare: adminRec.buyer_portion || 0
+                    buyerReceiptDate: adminRec.buyer_receipt_uploaded_date || '',
+                    buyerFlagged: adminRec.buyer_flagged || false,
+                    buyerFlagReason: adminRec.buyer_flag_reason || '',
+                    unflaggedDate: adminRec.unflagged_date || '',
+                    unflagReason: adminRec.unflag_reason || ''
                 };
 
                 openCommissionModal(modalData);
