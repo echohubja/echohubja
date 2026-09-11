@@ -458,8 +458,8 @@
 
 <!-- RELATIONSHIP SECTION 2: VENDOR ↔ FEEDBACK SUBMITTER -->
         <div id="relationship-vendor-submitter-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-green-700 mb-1">Vendor ↔ Reviewer Relationship</h3>
-            <p class="text-xs text-gray-500 mb-4">Complete commission breakdown for each feedback submission: submitter earning, admin facility commission, referrer earning (if applicable), and receipt verification status.</p>
+            <h3 class="text-lg font-bold text-green-700 mb-1">Commission Breakdown & Audit: Vendor-Reviewer Ledger</h3>
+            <p class="text-xs text-gray-500 mb-4">Complete earnings report for each feedback: what the reviewer earned, the admin share, the inviter commission (if applicable), and receipt verification status. Use this to verify all commission splits are correct.</p>
 
             <!-- Vendor Selection (Dropdown + Search) -->
             <div class="mb-4 pb-3 border-b">
@@ -509,11 +509,11 @@
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 <div class="bg-green-50 border border-green-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Paid to Submitters</div>
+                    <div class="text-xs text-gray-600 font-semibold">Total Paid to Reviewers</div>
                     <div class="text-lg font-bold text-green-600" id="vendor-submitter-total-paid">$0.00</div>
                 </div>
                 <div class="bg-amber-50 border border-amber-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Payable to Submitters</div>
+                    <div class="text-xs text-gray-600 font-semibold">Total Payable to Reviewers</div>
                     <div class="text-lg font-bold text-amber-600" id="vendor-submitter-total-payable">$0.00</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded p-3">
@@ -531,7 +531,7 @@
                     <thead>
                         <tr class="bg-green-50 text-green-700 text-xs uppercase tracking-wider border-b">
                             <th class="p-2.5">Buyer ID</th>
-                            <th class="p-2.5 text-right">Submitter ($)</th>
+                            <th class="p-2.5 text-right">Reviewer ($)</th>
                             <th class="p-2.5 text-right">Admin ($)</th>
                             <th class="p-2.5 text-right">Inviter Share ($)</th>
                             <th class="p-2.5">Receipt Status</th>
@@ -2816,29 +2816,41 @@ async function loadVendorSubmitterRelationship() {
                     data = data.filter(record => new Date(record.created_at) <= toDate);
                 }
 
+                // Fetch all admin_payables for matching vendors in one batch query
+                const vendorIds = [...new Set(data.map(r => r.vendor_id))];
+                const { data: allAdminPayables } = vendorIds.length > 0
+                    ? await db.from('admin_payables').select('*').in('vendor_id', vendorIds)
+                    : { data: [] };
+
+                const adminPayablesMap = {};
+                if (allAdminPayables) {
+                    allAdminPayables.forEach(rec => {
+                        const key = `${rec.vendor_id}_${rec.related_feedback_id}`;
+                        adminPayablesMap[key] = rec;
+                    });
+                }
+
                 // For each buyer_payable, find related admin_payables to show full commission split
                 const enrichedData = [];
                 if (data && data.length > 0) {
                     for (const buyerRecord of data) {
-                        // Get feedback IDs from buyer_payables.related_feedback_ids array
                         const feedbackIds = buyerRecord.related_feedback_ids || [];
 
-                        // Query admin_payables for matching feedback records
-                        let adminRecords = [];
+                        // Find matching admin records for this buyer's feedback IDs
+                        let matchingAdminRecords = [];
                         if (feedbackIds.length > 0) {
-                            const { data: adminData } = await db.from('admin_payables')
-                                .select('*')
-                                .eq('vendor_id', buyerRecord.vendor_id);
-
-                            // Filter client-side for matching feedback IDs
-                            adminRecords = (adminData || []).filter(rec =>
-                                feedbackIds.includes(rec.related_feedback_id)
-                            );
+                            for (const feedbackId of feedbackIds) {
+                                const key = `${buyerRecord.vendor_id}_${feedbackId}`;
+                                if (adminPayablesMap[key]) {
+                                    matchingAdminRecords.push(adminPayablesMap[key]);
+                                }
+                            }
                         }
 
+                        // Use first matching admin record (or null if none found)
                         enrichedData.push({
                             buyer: buyerRecord,
-                            admin: adminRecords[0] || null // Use first matching admin record
+                            admin: matchingAdminRecords.length > 0 ? matchingAdminRecords[0] : null
                         });
                     }
                 }
