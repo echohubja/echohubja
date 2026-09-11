@@ -1491,7 +1491,7 @@
             document.getElementById('buyer-count').textContent = `${data.length} buyer${data.length === 1 ? '' : 's'}`;
 
             tableBody.innerHTML = data.map(buyer => {
-                const rawStatus = (buyer.ready_to_invite || '').trim().toUpperCase();
+                const rawStatus = (buyer.approval_status || '').trim().toUpperCase();
                 let statusBadge = '';
                 let actionButton = '';
 
@@ -1531,7 +1531,6 @@
         }
 
         async function updateBuyerStatus(buyerId, buyerEmail, newStatus) {
-            if (!confirm(`Update access status for ${buyerEmail}?`)) return;
             try {
                 const { error } = await db.from('buyers').update({ approval_status: 'APPROVED' }).eq('id', buyerId);
                 if (error) {
@@ -1947,27 +1946,25 @@
         }
 
         async function verifyInquiry(inquiryId) {
-            if (!confirm("Verify this feedback submission and trigger the automated referral commission?")) return;
-
             try {
                 const { data: inquiry, error: inqError } = await db.from('inquiries').select('id, buyer_id, product_id').eq('id', inquiryId).single();
 
                 if (inqError || !inquiry) {
-                    alert('Error fetching inquiry details');
+                    showToast('Error fetching inquiry details', 'error');
                     return;
                 }
 
                 const { data: product, error: prodError } = await db.from('products').select('vendor_id').eq('id', inquiry.product_id).single();
 
                 if (prodError || !product) {
-                    alert('Error fetching product details');
+                    showToast('Error fetching product details', 'error');
                     return;
                 }
 
                 const { error: updateError } = await db.from('inquiries').update({ status: 'verified' }).eq('id', inquiryId);
 
                 if (updateError) {
-                    alert('Error verifying feedback: ' + updateError.message);
+                    showToast('Error verifying feedback: ' + updateError.message, 'error');
                     return;
                 }
 
@@ -1995,30 +1992,28 @@
 
                 await db.from('alerts').insert([vendorAlertData]);
 
-                alert('✓ Feedback verified! Buyer and vendor notified.');
+                showToast('✓ Feedback verified! Buyer and vendor notified.', 'success');
                 loadInquiriesPortal();
                 loadCommissionsPortal();
             } catch (err) {
                 console.error('Error in verifyInquiry:', err);
-                alert('Unexpected error: ' + err.message);
+                showToast('Unexpected error: ' + err.message, 'error');
             }
         }
 
         async function rejectInquiry(inquiryId) {
-            if (!confirm("Reject this feedback submission? The buyer will need to resubmit.")) return;
-
             try {
                 const { data: inquiry, error: inqError } = await db.from('inquiries').select('id, buyer_id').eq('id', inquiryId).single();
 
                 if (inqError || !inquiry) {
-                    alert('Error fetching inquiry details');
+                    showToast('Error fetching inquiry details', 'error');
                     return;
                 }
 
                 const { error: updateError } = await db.from('inquiries').update({ status: 'rejected' }).eq('id', inquiryId);
 
                 if (updateError) {
-                    alert('Error rejecting feedback: ' + updateError.message);
+                    showToast('Error rejecting feedback: ' + updateError.message, 'error');
                     return;
                 }
 
@@ -2034,11 +2029,11 @@
 
                 await db.from('alerts').insert([buyerAlertData]);
 
-                alert('✓ Feedback rejected. Buyer notified.');
+                showToast('✓ Feedback rejected. Buyer notified.', 'success');
                 loadInquiriesPortal();
             } catch (err) {
                 console.error('Error in rejectInquiry:', err);
-                alert('Unexpected error: ' + err.message);
+                showToast('Unexpected error: ' + err.message, 'error');
             }
         }
 
@@ -2111,11 +2106,17 @@
         }
 
         async function markCommissionPaid(commissionId) {
-            if (!confirm("Mark this referral commission payout as PAID?")) return;
-            const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
-            if (error) { alert('Error updating payout status: ' + error.message); return; }
-            alert('Commission marked as paid!');
-            loadCommissionsPortal();
+            try {
+                const { error } = await db.from('commissions').update({ status: 'paid' }).eq('id', commissionId);
+                if (error) {
+                    showToast('Error updating payout status: ' + error.message, 'error');
+                    return;
+                }
+                showToast('Commission marked as paid!', 'success');
+                loadCommissionsPortal();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
         }
 
         async function loadVendorCommissionSettings() {
@@ -3327,7 +3328,7 @@
         }
 
         function formatBuyerCard(buyer, referrer, matchedField) {
-            const statusBadge = buyer.approval_status === 'approved'
+            const statusBadge = buyer.approval_status?.toUpperCase() === 'APPROVED'
                 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Approved</span>'
                 : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold">Pending</span>';
 
@@ -3499,9 +3500,6 @@
         }
 
         async function deleteAccount(accountType, accountId, accountName) {
-            const confirmed = confirm(`Are you sure you want to delete this ${accountType} account?\n\n${accountName}\nID: ${accountId}\n\nThis action cannot be undone.`);
-            if (!confirmed) return;
-
             try {
                 let tableName = accountType === 'buyer' ? 'buyers' : 'vendors';
 
@@ -3522,12 +3520,12 @@
                     }
                 }
 
-                alert(`${accountType.charAt(0).toUpperCase() + accountType.slice(1)} account deleted successfully.`);
+                showToast(`${accountType.charAt(0).toUpperCase() + accountType.slice(1)} account deleted successfully.`, 'success');
                 // Refresh search results
                 await searchAccounts();
             } catch (err) {
                 console.error('Delete error:', err);
-                alert('Error deleting account: ' + err.message);
+                showToast('Error deleting account: ' + err.message, 'error');
             }
         }
 
@@ -4579,7 +4577,6 @@
         }
 
         async function unsuspendFraudPair(vendorId, buyerId) {
-            if (!confirm('Are you sure you want to unsuspend this vendor-buyer pair?')) return;
             try {
                 const { error } = await db.from('referral_risk_flags').update({ is_suspended: false }).eq('vendor_id', vendorId).eq('buyer_id', buyerId);
                 if (error) throw error;
