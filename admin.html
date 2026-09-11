@@ -545,6 +545,183 @@
             </div>
         </div>
 
+        <!-- ADMIN PAYOUT MANAGEMENT SECTION -->
+        <div id="admin-payout-management-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-indigo-700 mb-1">💳 Admin Payout Management</h3>
+            <p class="text-xs text-gray-500 mb-4">Manage admin payout requests, approve payments, and verify receipt uploads from vendors and referrers.</p>
+
+            <!-- Vendor Selector -->
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Vendor (optional):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="admin-payout-vendor-selector" onchange="filterAdminPayoutsByVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                        <option value="">-- View All Vendors --</option>
+                    </select>
+                    <input type="text" id="admin-payout-vendor-search" placeholder="Search by vendor name or ID..." class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]" onkeyup="searchAdminPayoutVendors()">
+                    <button onclick="clearAdminPayoutVendorFilter()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Filter</button>
+                </div>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div class="mb-4 pb-3 border-b flex flex-wrap gap-2">
+                <button onclick="filterAdminPayouts('all')" id="filter-all" class="px-4 py-2 rounded text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">All</button>
+                <button onclick="filterAdminPayouts('available')" id="filter-available" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Available</button>
+                <button onclick="filterAdminPayouts('pending')" id="filter-pending" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Pending</button>
+                <button onclick="filterAdminPayouts('paid')" id="filter-paid" class="px-4 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">Paid</button>
+                <span id="admin-payout-count" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-2 rounded-full font-semibold ml-auto self-center">0 records</span>
+            </div>
+
+            <!-- Admin Payout Metrics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-indigo-50 border border-indigo-200 rounded p-3">
+                    <div class="text-xs text-gray-600 font-semibold">Total Available</div>
+                    <div class="text-lg font-bold text-indigo-600" id="metric-admin-available">$0.00</div>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                    <div class="text-xs text-gray-600 font-semibold">Total Pending</div>
+                    <div class="text-lg font-bold text-yellow-600" id="metric-admin-pending">$0.00</div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-3">
+                    <div class="text-xs text-gray-600 font-semibold">Total Paid</div>
+                    <div class="text-lg font-bold text-green-600" id="metric-admin-paid">$0.00</div>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded p-3">
+                    <div class="text-xs text-gray-600 font-semibold">Total Amount</div>
+                    <div class="text-lg font-bold text-gray-600" id="metric-admin-total">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Admin Payouts Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-indigo-50 text-indigo-700 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor ID</th>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Payment Status</th>
+                            <th class="p-2.5">Created</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-payouts-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading admin payouts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MODAL: Admin Payout Detail & Receipt Upload -->
+        <div id="adminPayoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-indigo-50 border-b border-indigo-200 p-4 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-indigo-700">Admin Payout Details & Receipt Upload</h2>
+                    <button onclick="closeAdminPayoutModal()" class="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Payout Info -->
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-indigo-700 mb-3">Payout Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <span class="text-gray-600">Payout ID:</span>
+                                <div class="font-mono bg-gray-100 px-2 py-1 rounded text-[11px] mt-1" id="modal-payout-id">—</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Vendor ID:</span>
+                                <div class="font-mono bg-gray-100 px-2 py-1 rounded text-[11px] mt-1" id="modal-payout-vendor-id">—</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Amount:</span>
+                                <div class="font-bold text-lg text-indigo-600 mt-1" id="modal-payout-amount">$0.00</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Reason:</span>
+                                <div class="mt-1" id="modal-payout-reason">—</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Created:</span>
+                                <div class="font-mono text-[11px] mt-1" id="modal-payout-created">—</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Payment Status:</span>
+                                <div class="font-bold mt-1" id="modal-payout-status">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Upload Section -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-blue-700 mb-3">📧 PayPal Information & Receipt</h3>
+                        <div class="space-y-4 text-xs">
+                            <!-- PayPal Email -->
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">PayPal Email (for payment):</label>
+                                <input type="email" id="modal-paypal-email" placeholder="admin@example.com" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" readonly>
+                                <div class="text-[11px] text-gray-500 mt-1">This is where payment will be sent</div>
+                            </div>
+
+                            <!-- Transaction ID -->
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">PayPal Transaction ID (Proof of payment):</label>
+                                <input type="text" id="modal-transaction-id" placeholder="Enter PayPal transaction ID..." class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" disabled>
+                                <div class="text-[11px] text-gray-500 mt-1">Admin fills this when uploading payment proof</div>
+                            </div>
+
+                            <!-- Receipt File Upload -->
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Receipt File (PDF/PNG/JPG, max 10MB):</label>
+                                <input type="file" id="modal-receipt-file" accept=".pdf,.png,.jpg,.jpeg" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-600" disabled>
+                                <div class="text-[11px] text-gray-500 mt-1">Upload PayPal receipt or payment confirmation</div>
+                            </div>
+
+                            <!-- Receipt Upload Status -->
+                            <div class="bg-white border border-blue-200 rounded p-3 text-[11px]">
+                                <div>
+                                    <span class="text-gray-600">Receipt Status:</span>
+                                    <div class="font-bold text-blue-600 mt-1" id="modal-receipt-status">Not uploaded</div>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="text-gray-600">Upload Date:</span>
+                                    <div class="font-mono text-[11px] mt-1" id="modal-receipt-upload-date">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Approval Section -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-purple-700 mb-3">✅ Admin Verification</h3>
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <span class="text-gray-600">Admin Verified:</span>
+                                <div class="font-bold mt-1" id="modal-admin-verified-status">Not verified</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Verification Date:</span>
+                                <div class="font-mono text-[11px] mt-1" id="modal-admin-verified-date">—</div>
+                            </div>
+                            <div class="text-[11px] text-gray-500 mt-2 p-2 bg-white rounded">
+                                ℹ️ Admin can verify this payout after receipt is uploaded. Click "Verify Admin" button below.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button id="modal-approve-admin-payout-btn" onclick="approveAdminPayout()" class="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-semibold" style="display:none;" title="Approve this payout request">Approve Payout</button>
+                        <button id="modal-upload-admin-receipt-btn" onclick="enableReceiptUpload()" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold" style="display:none;" title="Upload receipt proof">Upload Receipt</button>
+                        <button id="modal-verify-admin-btn" onclick="verifyAdminPayout()" class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-semibold" style="display:none;" title="Mark admin payment as verified">Verify Admin</button>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="closeAdminPayoutModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- MODAL: Commission Detail View -->
         <div id="commissionDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -715,21 +892,56 @@
                         </div>
                     </div>
 
-                    <!-- Payment Status Section -->
+                    <!-- Payment Status Section - Per-Party Tracking -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-gray-700 mb-3">Payment Status</h3>
-                        <div class="text-xs">
-                            <span class="text-gray-600">Status:</span>
-                            <div id="modal-payment-status" class="mt-1 font-bold">—</div>
+                        <h3 class="text-sm font-bold text-gray-700 mb-3">Receipt & Verification Status (Per Party)</h3>
+                        <div class="text-xs space-y-4">
+                            <!-- Reviewer -->
+                            <div class="border-b pb-3">
+                                <span class="text-gray-600 font-semibold">Reviewer (Feedback Submitter):</span>
+                                <div class="mt-1.5 ml-2 space-y-1">
+                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-reviewer-payment-status" class="font-bold text-blue-600">—</span></div>
+                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-reviewer-verified" class="text-[11px] text-gray-600">—</span></div>
+                                </div>
+                            </div>
+                            <!-- Reviewer Inviter -->
+                            <div class="border-b pb-3">
+                                <span class="text-gray-600 font-semibold">Reviewer Inviter (Buyer Referrer):</span>
+                                <div class="mt-1.5 ml-2 space-y-1">
+                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-reviewer-inviter-payment-status" class="font-bold text-green-600">—</span></div>
+                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-reviewer-inviter-verified" class="text-[11px] text-gray-600">—</span></div>
+                                </div>
+                            </div>
+                            <!-- Vendor Inviter -->
+                            <div class="border-b pb-3">
+                                <span class="text-gray-600 font-semibold">Vendor Inviter (Vendor Referrer):</span>
+                                <div class="mt-1.5 ml-2 space-y-1">
+                                    <div><span class="text-gray-500">Receipt Status:</span> <span id="modal-vendor-inviter-payment-status" class="font-bold text-purple-600">—</span></div>
+                                    <div><span class="text-gray-500">Admin Verified:</span> <span id="modal-vendor-inviter-verified" class="text-[11px] text-gray-600">—</span></div>
+                                </div>
+                            </div>
+                            <!-- Admin -->
+                            <div>
+                                <span class="text-gray-600 font-semibold">Admin Facility Commission:</span>
+                                <div class="mt-1.5 ml-2 space-y-1">
+                                    <div><span class="text-gray-500">Status:</span> <span id="modal-admin-payment-status" class="font-bold text-orange-600">—</span></div>
+                                    <div><span class="text-gray-500">Note:</span> <span class="text-[11px] text-gray-500">Admin does not verify own payment</span></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
-                    <div>
-                        <button id="modal-approve-btn" onclick="if(currentAdminPayableId) approveAdminPayableReceipt(currentAdminPayableId); else alert('No record selected')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;">✓ Approve & Pay</button>
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button id="modal-approve-reviewer-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'reviewer'); else alert('No record selected')" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold" style="display:none;" title="Mark reviewer (feedback submitter) receipt as verified by admin">Verify Reviewer</button>
+                        <button id="modal-approve-reviewer-inviter-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'reviewer_inviter'); else alert('No record selected')" class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;" title="Mark reviewer inviter (buyer referrer) receipt as verified by admin">Verify Reviewer Inviter</button>
+                        <button id="modal-approve-vendor-inviter-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'vendor_inviter'); else alert('No record selected')" class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-semibold" style="display:none;" title="Mark vendor inviter (vendor referrer) receipt as verified by admin">Verify Vendor Inviter</button>
+                        <button id="modal-approve-admin-btn" onclick="if(currentAdminPayableId) approvePartyPayment(currentAdminPayableId, 'admin'); else alert('No record selected')" class="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs font-semibold" style="display:none;" title="Admin does not verify own payment">Verify Admin</button>
                     </div>
-                    <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
+                    <div class="flex justify-end">
+                        <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2758,6 +2970,9 @@
 
             // Populate new payouts section dropdowns
             await populateAdminEarningsDropdowns();
+
+            // Load admin payout management
+            await loadAdminPayouts();
         }
 
 async function loadVendorSubmitterRelationship() {
@@ -5586,7 +5801,7 @@ async function loadVendorSubmitterRelationship() {
         async function approveAdminPayableReceipt(adminPayableId) {
             const confirmed = await showConfirmModal(
                 'Approve Receipt Verification',
-                'Approve both vendor and buyer receipts? This will mark the referral payout as paid.',
+                'Approve all party receipts? This marks reviewer, inviter(s), and admin commission as verified.',
                 'Approve & Pay'
             );
             if (!confirmed) return;
@@ -5606,7 +5821,12 @@ async function loadVendorSubmitterRelationship() {
                     unflagged_by: adminId,
                     unflag_reason: 'receipt_accepted',
                     status: 'paid',
-                    payment_verified_date: now
+                    payment_verified_date: now,
+                    // Set per-party payment statuses to 'verified'
+                    reviewer_payment_status: 'verified',
+                    reviewer_inviter_payment_status: 'verified',
+                    vendor_inviter_payment_status: 'verified',
+                    admin_payment_status: 'verified'
                 };
 
                 // Only set payment_verified_by if admin ID exists
@@ -5618,7 +5838,7 @@ async function loadVendorSubmitterRelationship() {
 
                 if (error) throw error;
 
-                showToast('✅ Referral payout approved and marked as paid!', 'success');
+                showToast('✅ All party receipts verified and marked as pending payment!', 'success');
 
                 // V9 FIX: Refresh modal with fresh data to show updated status
                 setTimeout(async () => {
@@ -5627,6 +5847,60 @@ async function loadVendorSubmitterRelationship() {
                 }, 300);
             } catch (err) {
                 showToast(`Error approving payout: ${err.message}`, 'error');
+            }
+        }
+
+        // V9 NEW: Mark individual party payment as verified by admin (after recipient uploads receipt)
+        async function approvePartyPayment(adminPayableId, partyType) {
+            const partyLabels = {
+                'reviewer': 'Reviewer (Feedback Submitter)',
+                'reviewer_inviter': 'Reviewer Inviter (Buyer Referrer)',
+                'vendor_inviter': 'Vendor Inviter (Vendor Referrer)',
+                'admin': 'Admin Facility Commission'
+            };
+
+            const confirmed = await showConfirmModal(
+                `Verify ${partyLabels[partyType]} Receipt`,
+                `Mark ${partyLabels[partyType]} receipt as verified by admin?`,
+                'Verified'
+            );
+            if (!confirmed) return;
+
+            try {
+                const now = new Date().toISOString();
+
+                // Map party type to admin approval timestamp column
+                // Admin can only verify: reviewer, reviewer_inviter, vendor_inviter
+                // Admin does NOT verify their own payment (no self-approval needed)
+                const verifiedColumnMap = {
+                    'reviewer': 'reviewer_payment_verified_by_admin',
+                    'reviewer_inviter': 'reviewer_inviter_payment_verified_by_admin',
+                    'vendor_inviter': 'vendor_inviter_payment_verified_by_admin'
+                };
+
+                const verifiedColumn = verifiedColumnMap[partyType];
+                if (!verifiedColumn) {
+                    showToast('Admin cannot verify own payment', 'error');
+                    return;
+                }
+
+                const updateData = {
+                    [verifiedColumn]: now
+                };
+
+                const { error } = await db.from('admin_payables').update(updateData).eq('id', adminPayableId);
+
+                if (error) throw error;
+
+                showToast(`✅ ${partyLabels[partyType]} receipt verified by admin!`, 'success');
+
+                // V9 FIX: Refresh modal with fresh data to show updated status
+                setTimeout(async () => {
+                    await openAdminPayableModal(adminPayableId);
+                    loadCommissionsPortal();
+                }, 300);
+            } catch (err) {
+                showToast(`Error verifying ${partyLabels[partyType]} receipt: ${err.message}`, 'error');
             }
         }
 
@@ -6438,7 +6712,16 @@ async function loadVendorSubmitterRelationship() {
                     buyerFlagged: adminRec.buyer_flagged || false,
                     buyerFlagReason: adminRec.buyer_flag_reason || '',
                     unflaggedDate: adminRec.unflagged_date || '',
-                    unflagReason: adminRec.unflag_reason || ''
+                    unflagReason: adminRec.unflag_reason || '',
+                    // Per-party payment status tracking (V9)
+                    reviewerPaymentStatus: adminRec.reviewer_payment_status || 'pending',
+                    reviewerInviterPaymentStatus: adminRec.reviewer_inviter_payment_status || 'pending',
+                    vendorInviterPaymentStatus: adminRec.vendor_inviter_payment_status || 'pending',
+                    adminPaymentStatus: adminRec.admin_payment_status || 'pending',
+                    // Admin verification timestamps (V9 NEW)
+                    reviewerPaymentVerifiedByAdmin: adminRec.reviewer_payment_verified_by_admin || null,
+                    reviewerInviterPaymentVerifiedByAdmin: adminRec.reviewer_inviter_payment_verified_by_admin || null,
+                    vendorInviterPaymentVerifiedByAdmin: adminRec.vendor_inviter_payment_verified_by_admin || null
                 };
 
                 openCommissionModal(modalData);
@@ -6587,22 +6870,49 @@ async function loadVendorSubmitterRelationship() {
                 : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">${data.paymentStatus}</span>`;
             document.getElementById('modal-payment-status').innerHTML = paymentStatusBadge;
 
-            // V9 FIX: Show approval button only if:
-            // 1. It's a referral payout
-            // 2. Both receipts are uploaded
-            // 3. Not yet approved (unflaggedDate is empty)
-            const hasVendorReceipt = data.vendorReceiptDate && data.vendorReceiptDate.trim() !== '';
-            const hasBuyerReceipt = data.buyerReceiptDate && data.buyerReceiptDate.trim() !== '';
-            const isReferral = data.hasReferrer === 'true';
-            const notYetApproved = !data.unflaggedDate || data.unflaggedDate.trim() === '';
-            const isPending = data.paymentStatus === 'PENDING' || data.paymentStatus === 'pending';
+            // Per-party payment status tracking (NEW V9)
+            const formatPaymentStatus = (status) => {
+                const statusUpper = (status || 'pending').toUpperCase();
+                if (statusUpper === 'PAID') {
+                    return `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
+                } else if (statusUpper === 'VERIFIED') {
+                    return `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
+                } else {
+                    return `<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[11px] font-semibold">${statusUpper}</span>`;
+                }
+            };
 
-            const approveBtn = document.getElementById('modal-approve-btn');
-            if (isReferral && hasVendorReceipt && hasBuyerReceipt && notYetApproved && isPending) {
-                approveBtn.style.display = 'block';
-            } else {
-                approveBtn.style.display = 'none';
-            }
+            // Format verification timestamp display
+            const formatVerificationStatus = (timestamp) => {
+                if (!timestamp) return '<span class="text-gray-400">Not verified yet</span>';
+                const date = new Date(timestamp);
+                return `<span class="text-green-600 font-semibold">✓ Verified ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>`;
+            };
+
+            // Populate 4 independent payment status fields + verification timestamps
+            document.getElementById('modal-reviewer-payment-status').innerHTML = formatPaymentStatus(data.reviewerPaymentStatus);
+            document.getElementById('modal-reviewer-verified').innerHTML = formatVerificationStatus(data.reviewerPaymentVerifiedByAdmin);
+
+            document.getElementById('modal-reviewer-inviter-payment-status').innerHTML = formatPaymentStatus(data.reviewerInviterPaymentStatus);
+            document.getElementById('modal-reviewer-inviter-verified').innerHTML = formatVerificationStatus(data.reviewerInviterPaymentVerifiedByAdmin);
+
+            document.getElementById('modal-vendor-inviter-payment-status').innerHTML = formatPaymentStatus(data.vendorInviterPaymentStatus);
+            document.getElementById('modal-vendor-inviter-verified').innerHTML = formatVerificationStatus(data.vendorInviterPaymentVerifiedByAdmin);
+
+            document.getElementById('modal-admin-payment-status').innerHTML = formatPaymentStatus(data.adminPaymentStatus);
+
+            // V9 FIX: Show individual party approval buttons based on payment_status AND verification status
+            // Button visible only if: payment_status='paid' (receipt uploaded) AND not yet verified by admin
+            const showApprovalButton = (paymentStatus, verifiedTimestamp) => {
+                const isReceiptUploaded = paymentStatus && paymentStatus.toLowerCase() === 'paid';
+                const isNotYetVerified = !verifiedTimestamp;
+                return (isReceiptUploaded && isNotYetVerified) ? 'block' : 'none';
+            };
+
+            document.getElementById('modal-approve-reviewer-btn').style.display = showApprovalButton(data.reviewerPaymentStatus, data.reviewerPaymentVerifiedByAdmin);
+            document.getElementById('modal-approve-reviewer-inviter-btn').style.display = showApprovalButton(data.reviewerInviterPaymentStatus, data.reviewerInviterPaymentVerifiedByAdmin);
+            document.getElementById('modal-approve-vendor-inviter-btn').style.display = showApprovalButton(data.vendorInviterPaymentStatus, data.vendorInviterPaymentVerifiedByAdmin);
+            document.getElementById('modal-approve-admin-btn').style.display = 'none'; // Admin never approves own payment
 
             // Show modal
             document.getElementById('commissionDetailModal').classList.remove('hidden');
@@ -6621,6 +6931,407 @@ async function loadVendorSubmitterRelationship() {
                 modal.addEventListener('click', function(e) {
                     if (e.target === modal) {
                         closeCommissionModal();
+                    }
+                });
+            }
+        });
+
+        // ==================== ADMIN PAYOUT MANAGEMENT FUNCTIONS ====================
+
+        let currentAdminPayoutFilter = 'all';
+        let allAdminPayouts = [];
+
+        async function loadAdminPayouts() {
+            try {
+                document.getElementById('admin-payouts-body').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading admin payouts...</td></tr>';
+
+                // Fetch admin's own payouts from admin_payables table where admin_payment_status column exists
+                const { data: payouts, error } = await db
+                    .from('admin_payables')
+                    .select(`
+                        id,
+                        vendor_id,
+                        amount_owed,
+                        payable_reason,
+                        admin_payment_status,
+                        created_at,
+                        updated_at
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allAdminPayouts = payouts || [];
+
+                // Populate vendor dropdown with unique vendors
+                const uniqueVendorIds = [...new Set(allAdminPayouts.map(p => p.vendor_id))];
+                if (uniqueVendorIds.length > 0) {
+                    try {
+                        const { data: vendors } = await db
+                            .from('vendors')
+                            .select('id, business_name, email')
+                            .in('id', uniqueVendorIds);
+
+                        const vendorMap = {};
+                        if (vendors) {
+                            vendors.forEach(v => {
+                                vendorMap[v.id] = {
+                                    name: v.business_name || 'Vendor',
+                                    email: v.email || 'N/A'
+                                };
+                            });
+                        }
+
+                        const selector = document.getElementById('admin-payout-vendor-selector');
+                        if (selector) {
+                            selector.innerHTML = '<option value="">-- View All Vendors --</option>' +
+                                uniqueVendorIds.map(vendorId => {
+                                    const vendor = vendorMap[vendorId] || { name: 'Vendor', email: 'N/A' };
+                                    const lastFour = vendorId.slice(-4);
+                                    return `<option value="${vendorId}">${escapeHtml(vendor.name)}, ${escapeHtml(lastFour)}, ${escapeHtml(vendor.email)}</option>`;
+                                }).join('');
+                        }
+                    } catch (err) {
+                        console.warn('Error populating vendor dropdown:', err);
+                    }
+                }
+
+                // Calculate metrics
+                let totalAvailable = 0, totalPending = 0, totalPaid = 0, totalAmount = 0;
+
+                allAdminPayouts.forEach(payout => {
+                    const status = payout.admin_payment_status || 'available';
+                    const amount = parseFloat(payout.amount_owed) || 0;
+                    totalAmount += amount;
+
+                    if (status === 'available') totalAvailable += amount;
+                    else if (status === 'pending') totalPending += amount;
+                    else if (status === 'paid') totalPaid += amount;
+                });
+
+                document.getElementById('metric-admin-available').textContent = `$${totalAvailable.toFixed(2)}`;
+                document.getElementById('metric-admin-pending').textContent = `$${totalPending.toFixed(2)}`;
+                document.getElementById('metric-admin-paid').textContent = `$${totalPaid.toFixed(2)}`;
+                document.getElementById('metric-admin-total').textContent = `$${totalAmount.toFixed(2)}`;
+                document.getElementById('admin-payout-count').textContent = `${allAdminPayouts.length} records`;
+
+                // Render filtered table
+                filterAdminPayouts(currentAdminPayoutFilter);
+
+            } catch (err) {
+                console.error('Error loading admin payouts:', err);
+                showToast('Error loading admin payouts: ' + err.message, 'error');
+                document.getElementById('admin-payouts-body').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-600">Error loading data</td></tr>';
+            }
+        }
+
+        function filterAdminPayouts(status) {
+            currentAdminPayoutFilter = status;
+
+            // Update filter button styles
+            document.querySelectorAll('#admin-payout-management-section button[onclick*="filterAdminPayouts"]').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            });
+            document.getElementById(`filter-${status}`).classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            document.getElementById(`filter-${status}`).classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+
+            // Re-render with combined vendor + status filters
+            renderFilteredAdminPayouts();
+        }
+
+        let currentAdminPayoutVendorFilter = '';
+
+        function filterAdminPayoutsByVendor() {
+            const vendorId = document.getElementById('admin-payout-vendor-selector').value;
+            currentAdminPayoutVendorFilter = vendorId;
+            renderFilteredAdminPayouts();
+        }
+
+        function searchAdminPayoutVendors() {
+            const searchTerm = document.getElementById('admin-payout-vendor-search').value.toLowerCase().trim();
+            if (!searchTerm) {
+                document.getElementById('admin-payout-vendor-selector').value = '';
+                currentAdminPayoutVendorFilter = '';
+                renderFilteredAdminPayouts();
+                return;
+            }
+
+            // Find matching vendor in selector
+            const selector = document.getElementById('admin-payout-vendor-selector');
+            const options = Array.from(selector.options);
+            const matchedOption = options.find(opt =>
+                opt.value && (opt.text.toLowerCase().includes(searchTerm) || opt.value.toLowerCase().includes(searchTerm))
+            );
+
+            if (matchedOption) {
+                selector.value = matchedOption.value;
+                currentAdminPayoutVendorFilter = matchedOption.value;
+                renderFilteredAdminPayouts();
+            }
+        }
+
+        function clearAdminPayoutVendorFilter() {
+            document.getElementById('admin-payout-vendor-selector').value = '';
+            document.getElementById('admin-payout-vendor-search').value = '';
+            currentAdminPayoutVendorFilter = '';
+            renderFilteredAdminPayouts();
+        }
+
+        function renderFilteredAdminPayouts() {
+            // Filter by vendor if selected
+            let toRender = allAdminPayouts;
+            if (currentAdminPayoutVendorFilter) {
+                toRender = allAdminPayouts.filter(p => p.vendor_id === currentAdminPayoutVendorFilter);
+            }
+
+            // Apply status filter
+            const statusFiltered = currentAdminPayoutFilter === 'all'
+                ? toRender
+                : toRender.filter(p => (p.admin_payment_status || 'available') === currentAdminPayoutFilter);
+
+            // Render table
+            if (statusFiltered.length === 0) {
+                const vendorMsg = currentAdminPayoutVendorFilter ? ' for this vendor' : '';
+                document.getElementById('admin-payouts-body').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">No payouts found${vendorMsg} for status: ${currentAdminPayoutFilter}</td></tr>`;
+                return;
+            }
+
+            const rows = statusFiltered.map(payout => {
+                const status = payout.admin_payment_status || 'available';
+                const statusBadge = {
+                    'available': '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Available</span>',
+                    'pending': '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-semibold">Pending</span>',
+                    'paid': '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">Paid</span>',
+                    'failed': '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Failed</span>'
+                }[status] || '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Unknown</span>';
+
+                const createdDate = new Date(payout.created_at).toLocaleDateString();
+
+                return `<tr class="hover:bg-gray-50 cursor-pointer" onclick="openAdminPayoutModal('${payout.id}')">
+                    <td class="p-3 font-mono text-xs text-gray-600">${payout.vendor_id.substring(0, 8)}...</td>
+                    <td class="p-3 font-bold text-indigo-600">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
+                    <td class="p-3 text-xs text-gray-600">${payout.payable_reason || 'Referral payout'}</td>
+                    <td class="p-3">${statusBadge}</td>
+                    <td class="p-3 text-xs text-gray-500">${createdDate}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="event.stopPropagation(); openAdminPayoutModal('${payout.id}')" class="px-2 py-1 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700">View</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('admin-payouts-body').innerHTML = rows;
+        }
+
+        let currentAdminPayoutId = null;
+
+        async function openAdminPayoutModal(payoutId) {
+            try {
+                currentAdminPayoutId = payoutId;
+
+                // Fetch full payout details
+                const { data: payout, error } = await db
+                    .from('admin_payables')
+                    .select(`*`)
+                    .eq('id', payoutId)
+                    .single();
+
+                if (error) throw error;
+                if (!payout) throw new Error('Payout not found');
+
+                // Populate modal
+                document.getElementById('modal-payout-id').textContent = payout.id;
+                document.getElementById('modal-payout-vendor-id').textContent = payout.vendor_id;
+                document.getElementById('modal-payout-amount').textContent = `$${parseFloat(payout.amount_owed).toFixed(2)}`;
+                document.getElementById('modal-payout-reason').textContent = payout.payable_reason || 'Referral payout';
+                document.getElementById('modal-payout-created').textContent = new Date(payout.created_at).toLocaleString();
+
+                const status = payout.admin_payment_status || 'available';
+                const statusDisplay = {
+                    'available': 'Available',
+                    'pending': 'Pending Approval',
+                    'paid': 'Paid',
+                    'failed': 'Failed'
+                }[status] || 'Unknown';
+                document.getElementById('modal-payout-status').textContent = statusDisplay;
+
+                // Receipt info - admin can fill this
+                document.getElementById('modal-paypal-email').value = payout.vendor_paypal_email || '';
+                document.getElementById('modal-transaction-id').value = payout.vendor_paypal_transaction_id || '';
+
+                const receiptStatus = payout.vendor_receipt_data ? '✓ Uploaded' : 'Not uploaded';
+                document.getElementById('modal-receipt-status').textContent = receiptStatus;
+                document.getElementById('modal-receipt-upload-date').textContent = payout.vendor_receipt_uploaded_date
+                    ? new Date(payout.vendor_receipt_uploaded_date).toLocaleString()
+                    : '—';
+
+                // Admin verification
+                const isVerified = payout.vendor_paypal_email && payout.vendor_paypal_transaction_id;
+                document.getElementById('modal-admin-verified-status').textContent = isVerified ? '✓ Verified' : 'Not verified';
+                document.getElementById('modal-admin-verified-date').textContent = '—';
+
+                // Button visibility logic
+                if (status === 'available') {
+                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'block';
+                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
+                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
+                } else if (status === 'pending') {
+                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
+                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'block';
+                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
+                } else if (status === 'paid') {
+                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
+                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
+                    document.getElementById('modal-verify-admin-btn').style.display = 'block';
+                } else {
+                    document.getElementById('modal-approve-admin-payout-btn').style.display = 'none';
+                    document.getElementById('modal-upload-admin-receipt-btn').style.display = 'none';
+                    document.getElementById('modal-verify-admin-btn').style.display = 'none';
+                }
+
+                // Show modal
+                document.getElementById('adminPayoutModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+
+            } catch (err) {
+                console.error('Error opening payout modal:', err);
+                showToast('Error opening payout: ' + err.message, 'error');
+            }
+        }
+
+        function closeAdminPayoutModal() {
+            document.getElementById('adminPayoutModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentAdminPayoutId = null;
+        }
+
+        async function approveAdminPayout() {
+            if (!currentAdminPayoutId) {
+                showToast('No payout selected', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('admin_payables')
+                    .update({ admin_payment_status: 'pending' })
+                    .eq('id', currentAdminPayoutId);
+
+                if (error) throw error;
+
+                showToast('Payout approved. Status changed to Pending.', 'success');
+                closeAdminPayoutModal();
+                loadAdminPayouts();
+
+            } catch (err) {
+                console.error('Error approving payout:', err);
+                showToast('Error approving payout: ' + err.message, 'error');
+            }
+        }
+
+        function enableReceiptUpload() {
+            document.getElementById('modal-transaction-id').disabled = false;
+            document.getElementById('modal-receipt-file').disabled = false;
+            showToast('Receipt upload fields enabled', 'success');
+        }
+
+        async function uploadAdminReceipt() {
+            if (!currentAdminPayoutId) {
+                showToast('No payout selected', 'error');
+                return;
+            }
+
+            try {
+                const transactionId = document.getElementById('modal-transaction-id').value.trim();
+                const receiptFile = document.getElementById('modal-receipt-file').files[0];
+
+                if (!transactionId) {
+                    showToast('Please enter PayPal Transaction ID', 'error');
+                    return;
+                }
+
+                if (!receiptFile) {
+                    showToast('Please select a receipt file', 'error');
+                    return;
+                }
+
+                // Validate file size (max 10MB)
+                if (receiptFile.size > 10 * 1024 * 1024) {
+                    showToast('File size exceeds 10MB limit', 'error');
+                    return;
+                }
+
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const base64Data = e.target.result.split(',')[1];
+
+                        const { error } = await db
+                            .from('admin_payables')
+                            .update({
+                                vendor_paypal_transaction_id: transactionId,
+                                vendor_receipt_data: base64Data,
+                                vendor_receipt_filename: receiptFile.name,
+                                vendor_receipt_filetype: receiptFile.type,
+                                vendor_receipt_filesize: receiptFile.size,
+                                vendor_receipt_uploaded_date: new Date().toISOString(),
+                                admin_payment_status: 'paid'
+                            })
+                            .eq('id', currentAdminPayoutId);
+
+                        if (error) throw error;
+
+                        showToast('Receipt uploaded successfully. Status changed to Paid.', 'success');
+                        closeAdminPayoutModal();
+                        loadAdminPayouts();
+
+                    } catch (err) {
+                        console.error('Error updating receipt:', err);
+                        showToast('Error uploading receipt: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsDataURL(receiptFile);
+
+            } catch (err) {
+                console.error('Error uploading receipt:', err);
+                showToast('Error uploading receipt: ' + err.message, 'error');
+            }
+        }
+
+        async function verifyAdminPayout() {
+            if (!currentAdminPayoutId) {
+                showToast('No payout selected', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('admin_payables')
+                    .update({
+                        vendor_paypal_email: document.getElementById('modal-paypal-email').value || null
+                    })
+                    .eq('id', currentAdminPayoutId);
+
+                if (error) throw error;
+
+                showToast('Admin payout verified successfully', 'success');
+                closeAdminPayoutModal();
+                loadAdminPayouts();
+
+            } catch (err) {
+                console.error('Error verifying payout:', err);
+                showToast('Error verifying payout: ' + err.message, 'error');
+            }
+        }
+
+        // Close admin payout modal on background click
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('adminPayoutModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeAdminPayoutModal();
                     }
                 });
             }
