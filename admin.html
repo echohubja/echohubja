@@ -644,21 +644,22 @@
             <h3 class="text-lg font-bold text-indigo-700 mb-1">Commission Detail: Feedback Submitter & Referrer Relationship</h3>
             <p class="text-xs text-gray-500 mb-4">Detailed commission breakdown for a specific feedback submission, including submitter and their referrer's earnings.</p>
 
-            <!-- Selection Inputs -->
+            <!-- Buyer Selection -->
             <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Feedback Submitter (Buyer):</label>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Feedback ID:</label>
-                        <input type="text" id="commission-detail-feedback-id" placeholder="Enter Feedback ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
+                        <select id="commission-detail-buyer-dropdown" onchange="loadCommissionDetailByBuyer()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600">
+                            <option value="">Select from list</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Feedback Submitter ID:</label>
-                        <input type="text" id="commission-detail-buyer-id" placeholder="Enter Buyer ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Vendor ID:</label>
-                        <input type="text" id="commission-detail-vendor-id" placeholder="Enter Vendor ID" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="loadCommissionDetail()">
-                    </div>
+                    <input type="text" id="commission-detail-buyer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchCommissionDetailByBuyer()">
+                    <input type="text" id="commission-detail-buyer-search-email" placeholder="Search by Buyer Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchCommissionDetailByBuyer()">
+                </div>
+
+                <!-- Referrer Info (Auto-loaded) -->
+                <div class="bg-indigo-50 border border-indigo-200 rounded p-3 text-xs">
+                    <div><span class="text-gray-600 font-semibold">Referrer (Who Invited Them):</span> <span id="detail-referrer-info" class="font-mono">—</span></div>
                 </div>
             </div>
 
@@ -708,6 +709,302 @@
                             <div>Payment Status: <span id="detail-payment-status">—</span></div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN EARNINGS - PER REFERRED VENDOR -->
+        <div id="admin-earnings-referred-vendor-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: Per Referred Vendor</h3>
+            <p class="text-xs text-gray-500 mb-4">Admin earnings when referred buyers give feedback to a specific vendor you referred.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor (You Referred):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <select id="admin-vendor-dropdown" onchange="loadAdminEarningsReferredVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
+                        <option value="">Select from list</option>
+                    </select>
+                    <input type="text" id="admin-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredVendor()">
+                    <input type="text" id="admin-vendor-search-name" placeholder="Search by Business Name" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredVendor()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Earnings (30%)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Vendor:</span> <span id="admin-rv-vendor" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-rv-total" class="font-bold text-slate-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Feedbacks:</span> <span id="admin-rv-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-blue-700 mb-3">Vendor Commission (Per Feedback)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Rate:</span> <span id="admin-rv-rate" class="font-bold text-blue-600">$0.00</span></div>
+                        <div><span class="text-gray-600">30% Admin Share:</span> <span id="admin-rv-share" class="font-mono">$0.00</span></div>
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-green-700 mb-3">Payout Status</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Status:</span> <span id="admin-rv-status" class="text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Last Updated:</span> <span id="admin-rv-date" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Per-Feedback Breakdown</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Feedback</th><th class="text-right p-2 font-semibold text-gray-700">Vendor Rate</th><th class="text-right p-2 font-semibold text-gray-700">Admin (30%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="admin-rv-detail-table"><tr><td colspan="5" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN EARNINGS - PER REFERRED BUYER -->
+        <div id="admin-earnings-referred-buyer-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: Per Referred Buyer (Referrer)</h3>
+            <p class="text-xs text-gray-500 mb-4">Admin earnings (30% split) when a buyer you referred gives feedback to any vendor.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Referrer Buyer (Who Invited Others):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <select id="admin-referrer-dropdown" onchange="loadAdminEarningsReferredBuyer()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
+                        <option value="">Select from list</option>
+                    </select>
+                    <input type="text" id="admin-referrer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredBuyer()">
+                    <input type="text" id="admin-referrer-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredBuyer()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Earnings (30% Split)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-rb-referrer" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-rb-total" class="font-bold text-slate-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Referred Feedback Count:</span> <span id="admin-rb-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-orange-50 border border-orange-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-orange-700 mb-3">Referrer's Invites</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Buyers Referred:</span> <span id="admin-rb-referred-count" class="font-mono">0</span></div>
+                        <div><span class="text-gray-600">Avg Admin/Referrer Split:</span> <span id="admin-rb-avg-split" class="font-mono">30% / 70%</span></div>
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-green-700 mb-3">Payout Status</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Status:</span> <span id="admin-rb-status" class="text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Last Updated:</span> <span id="admin-rb-date" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Per-Feedback Breakdown (From Referred Buyers)</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Admin (30%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="admin-rb-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN EARNINGS - PER FEEDBACK SUBMITTER -->
+        <div id="admin-earnings-feedback-submitter-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: Per Feedback Submitter (Any Buyer)</h3>
+            <p class="text-xs text-gray-500 mb-4">Admin earnings from facility commissions for any buyer's feedback across all vendors.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Feedback Submitter (Any Buyer):</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <select id="admin-submitter-dropdown" onchange="loadAdminEarningsSubmitter()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
+                        <option value="">Select from list</option>
+                    </select>
+                    <input type="text" id="admin-submitter-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsSubmitter()">
+                    <input type="text" id="admin-submitter-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsSubmitter()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Total Earning</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Buyer:</span> <span id="admin-fs-buyer" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-fs-total" class="font-bold text-slate-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Feedback Count:</span> <span id="admin-fs-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-indigo-700 mb-3">Buyer Status</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Is Referred:</span> <span id="admin-fs-referred" class="font-mono">No</span></div>
+                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-fs-referrer" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-green-700 mb-3">Avg Per-Feedback</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Avg Admin Earning:</span> <span id="admin-fs-avg" class="font-bold text-green-600">$0.00</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Per-Feedback Breakdown</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Admin Earning</th><th class="text-right p-2 font-semibold text-gray-700">Referrer (70%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="admin-fs-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM-WIDE: ALL BUYERS REPORT -->
+        <div id="all-buyers-report-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-indigo-700 mb-1">System-Wide: All Buyers Report</h3>
+            <p class="text-xs text-gray-500 mb-4">Search and drill into any buyer's cumulative earnings across all feedback.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Buyer:</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="all-buyers-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchAllBuyers()">
+                    <input type="text" id="all-buyers-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchAllBuyers()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-indigo-700 mb-3">Buyer Info</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">ID:</span> <span id="all-buyers-id" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Email:</span> <span id="all-buyers-email" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-green-700 mb-3">Cumulative Earnings</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Total:</span> <span id="all-buyers-total" class="font-bold text-green-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Feedbacks:</span> <span id="all-buyers-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-purple-700 mb-3">Referral Status</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Referred By:</span> <span id="all-buyers-referred-by" class="font-mono text-[11px]">Not Referred</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">All Feedback Breakdown</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Buyer Earning</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="all-buyers-detail-table"><tr><td colspan="4" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM-WIDE: ALL REFERRERS REPORT -->
+        <div id="all-referrers-report-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-orange-700 mb-1">System-Wide: All Referrers Report</h3>
+            <p class="text-xs text-gray-500 mb-4">Search and drill into any referrer's cumulative earnings (70% splits) across all referrals.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Referrer:</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="all-referrers-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-600" onkeyup="searchAllReferrers()">
+                    <input type="text" id="all-referrers-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-600" onkeyup="searchAllReferrers()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-orange-50 border border-orange-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-orange-700 mb-3">Referrer Info</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">ID:</span> <span id="all-referrers-id" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Email:</span> <span id="all-referrers-email" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-green-700 mb-3">Cumulative Earnings (70%)</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Total:</span> <span id="all-referrers-total" class="font-bold text-green-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Referrals:</span> <span id="all-referrers-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-purple-700 mb-3">Referral Network</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Buyers Referred:</span> <span id="all-referrers-buyers" class="font-mono">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Per-Feedback Breakdown (From Referrals)</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Referrer (70%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="all-referrers-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM-WIDE: ALL VENDORS REPORT -->
+        <div id="all-vendors-report-section" class="mb-8 pb-8 border-b">
+            <h3 class="text-lg font-bold text-amber-700 mb-1">System-Wide: All Vendors Report</h3>
+            <p class="text-xs text-gray-500 mb-4">Search and drill into any vendor's total payables across all approved feedback.</p>
+
+            <div class="mb-4 pb-3 border-b">
+                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Vendor:</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="all-vendors-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-600" onkeyup="searchAllVendors()">
+                    <input type="text" id="all-vendors-search-name" placeholder="Search by Business Name" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-600" onkeyup="searchAllVendors()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-amber-50 border border-amber-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-amber-700 mb-3">Vendor Info</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">ID:</span> <span id="all-vendors-id" class="font-mono text-[11px]">—</span></div>
+                        <div><span class="text-gray-600">Business:</span> <span id="all-vendors-name" class="font-mono text-[10px]">—</span></div>
+                    </div>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-red-700 mb-3">Total Payable</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Total Owed:</span> <span id="all-vendors-total" class="font-bold text-red-600">$0.00</span></div>
+                        <div><span class="text-gray-600">Feedbacks:</span> <span id="all-vendors-count" class="font-mono">0</span></div>
+                    </div>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded p-4">
+                    <h4 class="text-xs font-bold text-blue-700 mb-3">Commission Rate</h4>
+                    <div class="text-xs space-y-2">
+                        <div><span class="text-gray-600">Per Feedback:</span> <span id="all-vendors-rate" class="font-bold text-blue-600">$0.00</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+                <h4 class="text-xs font-bold text-gray-700 mb-3">Per-Feedback Breakdown</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Buyer Earning</th><th class="text-right p-2 font-semibold text-gray-700">Facility Commission</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
+                        <tbody id="all-vendors-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -2371,6 +2668,9 @@
             await loadAdminVendorRelationship();
             await loadVendorSubmitterRelationship();
             await loadVendorReferrerRelationship();
+
+            // Populate new payouts section dropdowns
+            await populateAdminEarningsDropdowns();
         }
 
         async function loadAdminVendorRelationship() {
@@ -5724,6 +6024,463 @@
             } catch (error) {
                 console.error('Error loading approved feedback:', error);
                 document.getElementById('approved-feedback-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+            }
+        }
+
+        // ============================================================================
+        // DROPDOWN POPULATION
+        // ============================================================================
+
+        async function populateAdminEarningsDropdowns() {
+            try {
+                // Populate admin-vendor-dropdown (vendors with referrals)
+                const { data: vendors } = await supabaseClient.from('vendors').select('id, business_name');
+                const vendorSelect = document.getElementById('admin-vendor-dropdown');
+                if (vendorSelect && vendors) {
+                    vendorSelect.innerHTML = '<option value="">Select from list</option>' + vendors.map(v =>
+                        `<option value="${v.id}">${v.business_name.substring(0, 30)}</option>`
+                    ).join('');
+                }
+
+                // Populate admin-referrer-dropdown (buyers who are referrers)
+                const { data: buyers } = await supabaseClient.from('buyers').select('id, email');
+                const referrerSelect = document.getElementById('admin-referrer-dropdown');
+                if (referrerSelect && buyers) {
+                    referrerSelect.innerHTML = '<option value="">Select from list</option>' + buyers.map(b =>
+                        `<option value="${b.id}">${b.email.substring(0, 30)}</option>`
+                    ).join('');
+                }
+
+                // Populate admin-submitter-dropdown (all buyers)
+                const submitterSelect = document.getElementById('admin-submitter-dropdown');
+                if (submitterSelect && buyers) {
+                    submitterSelect.innerHTML = '<option value="">Select from list</option>' + buyers.map(b =>
+                        `<option value="${b.id}">${b.email.substring(0, 30)}</option>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('Error populating dropdowns:', error);
+            }
+        }
+
+        // ============================================================================
+        // ADMIN EARNINGS FUNCTIONS
+        // ============================================================================
+
+        async function loadAdminEarningsReferredVendor() {
+            const vendorId = document.getElementById('admin-vendor-dropdown').value;
+            if (!vendorId) return;
+
+            try {
+                // Get vendor info
+                const vendor = await supabaseClient.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
+                if (vendor.error) throw vendor.error;
+
+                // Get all feedback to this vendor from any buyer, calculate admin 30% split
+                const { data: adminPayables } = await supabaseClient
+                    .from('admin_payables')
+                    .select('id, amount_owed, related_feedback_id, status, created_at')
+                    .eq('vendor_id', vendorId)
+                    .eq('status', 'completed');
+
+                if (!adminPayables) throw new Error('Failed to load admin payables');
+
+                const totalAdmin = adminPayables.reduce((sum, rec) => sum + (rec.amount_owed * 0.30), 0);
+
+                document.getElementById('admin-rv-vendor').textContent = vendor.data.business_name.substring(0, 20);
+                document.getElementById('admin-rv-total').textContent = `$${totalAdmin.toFixed(2)}`;
+                document.getElementById('admin-rv-count').textContent = adminPayables.length;
+                document.getElementById('admin-rv-rate').textContent = `$${vendor.data.current_per_feedback_rate.toFixed(2)}`;
+                document.getElementById('admin-rv-share').textContent = `$${(vendor.data.current_per_feedback_rate * 0.30).toFixed(2)}`;
+
+                // Detail table
+                const tbody = document.getElementById('admin-rv-detail-table');
+                tbody.innerHTML = adminPayables.map(rec => `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 text-xs font-mono">${rec.related_feedback_id.substring(0, 8)}</td>
+                        <td class="p-2 text-right text-xs font-semibold">$${rec.amount_owed.toFixed(2)}</td>
+                        <td class="p-2 text-right text-xs font-bold text-slate-600">$${(rec.amount_owed * 0.30).toFixed(2)}</td>
+                        <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${rec.status}</span></td>
+                        <td class="p-2 text-xs text-gray-500">${new Date(rec.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading admin earnings (referred vendor):', error);
+                alert('Error loading data: ' + error.message);
+            }
+        }
+
+        function searchAdminEarningsReferredVendor() {
+            const idVal = document.getElementById('admin-vendor-search-id').value.toLowerCase();
+            const nameVal = document.getElementById('admin-vendor-search-name').value.toLowerCase();
+
+            if (idVal.length < 2 && nameVal.length < 2) return;
+
+            supabaseClient.from('vendors').select('id, business_name').then(({ data }) => {
+                const filtered = data.filter(v =>
+                    v.id.toLowerCase().includes(idVal) ||
+                    v.business_name.toLowerCase().includes(nameVal)
+                );
+
+                if (filtered.length > 0) {
+                    document.getElementById('admin-vendor-dropdown').value = filtered[0].id;
+                    loadAdminEarningsReferredVendor();
+                }
+            });
+        }
+
+        async function loadAdminEarningsReferredBuyer() {
+            const buyerId = document.getElementById('admin-referrer-dropdown').value;
+            if (!buyerId) return;
+
+            try {
+                // Get referrer info
+                const buyer = await supabaseClient.from('buyers').select('id, full_name, email').eq('id', buyerId).single();
+                if (buyer.error) throw buyer.error;
+
+                // Get all admin_payables where split_with_buyer_id = this buyer (30% admin split for referrals they caused)
+                const { data: adminPayables } = await supabaseClient
+                    .from('admin_payables')
+                    .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'completed');
+
+                if (!adminPayables) throw new Error('Failed to load admin payables');
+
+                const totalAdmin = adminPayables.reduce((sum, rec) => sum + (rec.amount_owed * 0.30), 0);
+
+                document.getElementById('admin-rb-referrer').textContent = buyer.data.email.substring(0, 20);
+                document.getElementById('admin-rb-total').textContent = `$${totalAdmin.toFixed(2)}`;
+                document.getElementById('admin-rb-count').textContent = adminPayables.length;
+                document.getElementById('admin-rb-referred-count').textContent = new Set(adminPayables.map(r => r.vendor_id)).size;
+
+                // Get detail with vendor names
+                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
+
+                const tbody = document.getElementById('admin-rb-detail-table');
+                tbody.innerHTML = adminPayables.map(rec => `
+                    <tr class="border-b hover:bg-orange-50">
+                        <td class="p-2 text-xs font-mono">${rec.vendor_id.substring(0, 8)}</td>
+                        <td class="p-2 text-xs">${vendorMap[rec.vendor_id].substring(0, 15)}</td>
+                        <td class="p-2 text-right text-xs font-semibold">$${rec.amount_owed.toFixed(2)}</td>
+                        <td class="p-2 text-right text-xs font-bold text-orange-600">$${(rec.amount_owed * 0.30).toFixed(2)}</td>
+                        <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${rec.status}</span></td>
+                        <td class="p-2 text-xs text-gray-500">${new Date(rec.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading admin earnings (referred buyer):', error);
+                alert('Error loading data: ' + error.message);
+            }
+        }
+
+        function searchAdminEarningsReferredBuyer() {
+            const idVal = document.getElementById('admin-referrer-search-id').value.toLowerCase();
+            const emailVal = document.getElementById('admin-referrer-search-email').value.toLowerCase();
+
+            if (idVal.length < 2 && emailVal.length < 2) return;
+
+            supabaseClient.from('buyers').select('id, email').then(({ data }) => {
+                const filtered = data.filter(b =>
+                    b.id.toLowerCase().includes(idVal) ||
+                    b.email.toLowerCase().includes(emailVal)
+                );
+
+                if (filtered.length > 0) {
+                    document.getElementById('admin-referrer-dropdown').value = filtered[0].id;
+                    loadAdminEarningsReferredBuyer();
+                }
+            });
+        }
+
+        async function loadAdminEarningsSubmitter() {
+            const buyerId = document.getElementById('admin-submitter-dropdown').value;
+            if (!buyerId) return;
+
+            try {
+                // Get buyer info
+                const buyer = await supabaseClient.from('buyers').select('id, full_name, email, referred_by').eq('id', buyerId).single();
+                if (buyer.error) throw buyer.error;
+
+                // Get all admin_payables where this buyer gave feedback (check via inquiries)
+                const { data: inquiries } = await supabaseClient
+                    .from('inquiries')
+                    .select('id, vendor_id')
+                    .eq('buyer_id', buyerId)
+                    .eq('message_type', 'feedback')
+                    .eq('vendor_status', 'approved');
+
+                const feedbackIds = inquiries.map(i => i.id);
+                if (feedbackIds.length === 0) {
+                    document.getElementById('admin-fs-total').textContent = '$0.00';
+                    document.getElementById('admin-fs-count').textContent = '0';
+                    return;
+                }
+
+                // Get admin_payables for these feedback IDs
+                const { data: adminPayables } = await supabaseClient
+                    .from('admin_payables')
+                    .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
+                    .in('related_feedback_id', feedbackIds);
+
+                const totalAdmin = adminPayables.reduce((sum, rec) => sum + rec.amount_owed, 0);
+
+                document.getElementById('admin-fs-buyer').textContent = buyer.data.email.substring(0, 20);
+                document.getElementById('admin-fs-total').textContent = `$${totalAdmin.toFixed(2)}`;
+                document.getElementById('admin-fs-count').textContent = adminPayables.length;
+                document.getElementById('admin-fs-referred').textContent = buyer.data.referred_by ? 'Yes' : 'No';
+                document.getElementById('admin-fs-avg').textContent = adminPayables.length > 0 ? `$${(totalAdmin / adminPayables.length).toFixed(2)}` : '$0.00';
+
+                // Get vendor names
+                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
+
+                const tbody = document.getElementById('admin-fs-detail-table');
+                tbody.innerHTML = adminPayables.map(rec => `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 text-xs">${vendorMap[rec.vendor_id].substring(0, 15)}</td>
+                        <td class="p-2 text-right text-xs font-semibold">$${rec.amount_owed.toFixed(2)}</td>
+                        <td class="p-2 text-right text-xs font-bold text-slate-600">$${rec.amount_owed.toFixed(2)}</td>
+                        <td class="p-2 text-right text-xs font-bold text-orange-600">$${(rec.amount_owed * 0.70).toFixed(2)}</td>
+                        <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${rec.status}</span></td>
+                        <td class="p-2 text-xs text-gray-500">${new Date(rec.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading admin earnings (submitter):', error);
+                alert('Error loading data: ' + error.message);
+            }
+        }
+
+        function searchAdminEarningsSubmitter() {
+            const idVal = document.getElementById('admin-submitter-search-id').value.toLowerCase();
+            const emailVal = document.getElementById('admin-submitter-search-email').value.toLowerCase();
+
+            if (idVal.length < 2 && emailVal.length < 2) return;
+
+            supabaseClient.from('buyers').select('id, email').then(({ data }) => {
+                const filtered = data.filter(b =>
+                    b.id.toLowerCase().includes(idVal) ||
+                    b.email.toLowerCase().includes(emailVal)
+                );
+
+                if (filtered.length > 0) {
+                    document.getElementById('admin-submitter-dropdown').value = filtered[0].id;
+                    loadAdminEarningsSubmitter();
+                }
+            });
+        }
+
+        // ============================================================================
+        // SYSTEM-WIDE REPORT FUNCTIONS
+        // ============================================================================
+
+        async function searchAllBuyers() {
+            const idVal = document.getElementById('all-buyers-search-id').value.toLowerCase();
+            const emailVal = document.getElementById('all-buyers-search-email').value.toLowerCase();
+
+            if (idVal.length < 2 && emailVal.length < 2) return;
+
+            try {
+                const { data } = await supabaseClient.from('buyers').select('id, email, referred_by');
+                const filtered = data.filter(b =>
+                    b.id.toLowerCase().includes(idVal) ||
+                    b.email.toLowerCase().includes(emailVal)
+                );
+
+                if (filtered.length > 0) {
+                    await loadAllBuyersDetail(filtered[0].id);
+                }
+            } catch (error) {
+                console.error('Error searching buyers:', error);
+            }
+        }
+
+        async function loadAllBuyersDetail(buyerId) {
+            try {
+                const buyer = await supabaseClient.from('buyers').select('id, email, referred_by').eq('id', buyerId).single();
+                if (buyer.error) throw buyer.error;
+
+                // Get all feedback submissions and earnings
+                const { data: inquiries } = await supabaseClient
+                    .from('inquiries')
+                    .select('id, vendor_id')
+                    .eq('buyer_id', buyerId)
+                    .eq('message_type', 'feedback')
+                    .eq('vendor_status', 'approved');
+
+                if (!inquiries || inquiries.length === 0) {
+                    document.getElementById('all-buyers-total').textContent = '$0.00';
+                    document.getElementById('all-buyers-count').textContent = '0';
+                    return;
+                }
+
+                // Get buyer_payables earnings
+                const { data: buyerPayables } = await supabaseClient
+                    .from('buyer_payables')
+                    .select('id, amount_owed, status, created_at')
+                    .eq('buyer_id', buyerId);
+
+                const totalEarnings = buyerPayables.reduce((sum, rec) => sum + rec.amount_owed, 0);
+
+                document.getElementById('all-buyers-id').textContent = buyerId.substring(0, 8);
+                document.getElementById('all-buyers-email').textContent = buyer.data.email;
+                document.getElementById('all-buyers-total').textContent = `$${totalEarnings.toFixed(2)}`;
+                document.getElementById('all-buyers-count').textContent = inquiries.length;
+                document.getElementById('all-buyers-referred-by').textContent = buyer.data.referred_by ? buyer.data.referred_by.substring(0, 8) : 'Not Referred';
+
+                // Get vendor names
+                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
+
+                const tbody = document.getElementById('all-buyers-detail-table');
+                tbody.innerHTML = inquiries.map((inq, idx) => `
+                    <tr class="border-b hover:bg-indigo-50">
+                        <td class="p-2 text-xs">${vendorMap[inq.vendor_id].substring(0, 15)}</td>
+                        <td class="p-2 text-right text-xs font-bold text-indigo-600">$${(buyerPayables[idx]?.amount_owed || 0).toFixed(2)}</td>
+                        <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${buyerPayables[idx]?.status || 'pending'}</span></td>
+                        <td class="p-2 text-xs text-gray-500">${buyerPayables[idx] ? new Date(buyerPayables[idx].created_at).toLocaleDateString() : '—'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading buyer detail:', error);
+            }
+        }
+
+        async function searchAllReferrers() {
+            const idVal = document.getElementById('all-referrers-search-id').value.toLowerCase();
+            const emailVal = document.getElementById('all-referrers-search-email').value.toLowerCase();
+
+            if (idVal.length < 2 && emailVal.length < 2) return;
+
+            try {
+                const { data } = await supabaseClient.from('buyers').select('id, email');
+                const filtered = data.filter(b =>
+                    b.id.toLowerCase().includes(idVal) ||
+                    b.email.toLowerCase().includes(emailVal)
+                );
+
+                if (filtered.length > 0) {
+                    await loadAllReferrersDetail(filtered[0].id);
+                }
+            } catch (error) {
+                console.error('Error searching referrers:', error);
+            }
+        }
+
+        async function loadAllReferrersDetail(referrerId) {
+            try {
+                const referrer = await supabaseClient.from('buyers').select('id, email').eq('id', referrerId).single();
+                if (referrer.error) throw referrer.error;
+
+                // Get all admin_payables where this buyer is the referrer (split_with_buyer_id)
+                const { data: adminPayables } = await supabaseClient
+                    .from('admin_payables')
+                    .select('id, amount_owed, related_feedback_id, vendor_id, status, created_at')
+                    .eq('split_with_buyer_id', referrerId);
+
+                const totalEarnings = adminPayables.reduce((sum, rec) => sum + (rec.amount_owed * 0.70), 0);
+
+                document.getElementById('all-referrers-id').textContent = referrerId.substring(0, 8);
+                document.getElementById('all-referrers-email').textContent = referrer.data.email;
+                document.getElementById('all-referrers-total').textContent = `$${totalEarnings.toFixed(2)}`;
+                document.getElementById('all-referrers-count').textContent = adminPayables.length;
+
+                // Get vendor names and unique buyers referred
+                const { data: vendorData } = await supabaseClient.from('vendors').select('id, business_name');
+                const vendorMap = Object.fromEntries(vendorData.map(v => [v.id, v.business_name]));
+
+                const tbody = document.getElementById('all-referrers-detail-table');
+                tbody.innerHTML = adminPayables.map(rec => {
+                    // Need to get buyer info from inquiries
+                    return `
+                        <tr class="border-b hover:bg-orange-50">
+                            <td class="p-2 text-xs font-mono">${rec.related_feedback_id.substring(0, 8)}</td>
+                            <td class="p-2 text-xs">${vendorMap[rec.vendor_id].substring(0, 15)}</td>
+                            <td class="p-2 text-right text-xs font-semibold">$${rec.amount_owed.toFixed(2)}</td>
+                            <td class="p-2 text-right text-xs font-bold text-orange-600">$${(rec.amount_owed * 0.70).toFixed(2)}</td>
+                            <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${rec.status}</span></td>
+                            <td class="p-2 text-xs text-gray-500">${new Date(rec.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="6" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading referrer detail:', error);
+            }
+        }
+
+        async function searchAllVendors() {
+            const idVal = document.getElementById('all-vendors-search-id').value.toLowerCase();
+            const nameVal = document.getElementById('all-vendors-search-name').value.toLowerCase();
+
+            if (idVal.length < 2 && nameVal.length < 2) return;
+
+            try {
+                const { data } = await supabaseClient.from('vendors').select('id, business_name');
+                const filtered = data.filter(v =>
+                    v.id.toLowerCase().includes(idVal) ||
+                    v.business_name.toLowerCase().includes(nameVal)
+                );
+
+                if (filtered.length > 0) {
+                    await loadAllVendorsDetail(filtered[0].id);
+                }
+            } catch (error) {
+                console.error('Error searching vendors:', error);
+            }
+        }
+
+        async function loadAllVendorsDetail(vendorId) {
+            try {
+                const vendor = await supabaseClient.from('vendors').select('id, business_name, current_per_feedback_rate').eq('id', vendorId).single();
+                if (vendor.error) throw vendor.error;
+
+                // Get all approved feedback to this vendor
+                const { data: inquiries } = await supabaseClient
+                    .from('inquiries')
+                    .select('id, buyer_id')
+                    .eq('vendor_id', vendorId)
+                    .eq('message_type', 'feedback')
+                    .eq('vendor_status', 'approved');
+
+                if (!inquiries || inquiries.length === 0) {
+                    document.getElementById('all-vendors-total').textContent = '$0.00';
+                    document.getElementById('all-vendors-count').textContent = '0';
+                    return;
+                }
+
+                const feedbackIds = inquiries.map(i => i.id);
+                const totalPayable = feedbackIds.length * vendor.data.current_per_feedback_rate;
+
+                // Get buyer_payables and admin_payables for these feedbacks
+                const { data: buyerPayables } = await supabaseClient
+                    .from('buyer_payables')
+                    .select('id, amount_owed, status, created_at')
+                    .in('related_feedback_ids', feedbackIds);
+
+                document.getElementById('all-vendors-id').textContent = vendorId.substring(0, 8);
+                document.getElementById('all-vendors-name').textContent = vendor.data.business_name.substring(0, 20);
+                document.getElementById('all-vendors-total').textContent = `$${totalPayable.toFixed(2)}`;
+                document.getElementById('all-vendors-count').textContent = inquiries.length;
+                document.getElementById('all-vendors-rate').textContent = `$${vendor.data.current_per_feedback_rate.toFixed(2)}`;
+
+                const tbody = document.getElementById('all-vendors-detail-table');
+                tbody.innerHTML = inquiries.map((inq, idx) => {
+                    const bp = buyerPayables.find(b => b.related_feedback_ids && b.related_feedback_ids.includes(inq.id));
+                    return `
+                        <tr class="border-b hover:bg-amber-50">
+                            <td class="p-2 text-xs font-mono">${inq.buyer_id.substring(0, 8)}</td>
+                            <td class="p-2 text-right text-xs font-bold text-amber-600">$${vendor.data.current_per_feedback_rate.toFixed(2)}</td>
+                            <td class="p-2 text-right text-xs font-semibold">$${(bp?.amount_owed || 0).toFixed(2)}</td>
+                            <td class="p-2 text-right text-xs text-gray-600">$${(vendor.data.current_per_feedback_rate * 0.50).toFixed(2)}</td>
+                            <td class="p-2 text-xs"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">${bp?.status || 'pending'}</span></td>
+                            <td class="p-2 text-xs text-gray-500">${bp ? new Date(bp.created_at).toLocaleDateString() : '—'}</td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="6" class="p-3 text-center text-gray-500">No data</td></tr>';
+            } catch (error) {
+                console.error('Error loading vendor detail:', error);
             }
         }
     </script>
