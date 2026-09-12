@@ -2261,7 +2261,7 @@
             </div>
 
             <!-- Pending Inquiries Section - OPTION 2B PHASE 1 -->
-            <div class="panel" style="margin-top: 24px;">
+            <div class="panel" style="margin-top: 24px; display: none;">
                 <div class="panel-header">
                     <h2>📬 Pending Customer Inquiries</h2>
                     <span class="badge" id="inquiryCountBadge">0 inquiries</span>
@@ -2329,27 +2329,127 @@
             </div>
 
             <!-- Messaging Hub Section -->
-            <div class="panel" style="margin-top: 24px; display: none;" id="messagingHubPanel">
+            <div class="panel" style="margin-top: 24px;" id="messagingHubPanel">
                 <div class="panel-header">
                     <h2>💬 Messaging Hub</h2>
                 </div>
                 <div style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; min-height: 600px;">
                     <!-- Messaging Sidebar -->
-                    <div style="border-right: 1px solid #e2e8f0; overflow-y: auto;">
-                        <div style="padding: 16px;">
+                    <div style="border-right: 1px solid #e2e8f0; overflow-y: auto; display: flex; flex-direction: column;">
+                        <!-- Real-time Status Indicator -->
+                        <div style="padding: 8px 12px; background: #f0fdf4; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; font-size: 12px;">
+                            <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%; display: inline-block;"></span>
+                            <span style="color: #16a34a; font-weight: 500;" id="messagingRealtimeStatus">🔄 Syncing...</span>
+                        </div>
+
+                        <!-- Search Box -->
+                        <div style="padding: 16px; border-bottom: 1px solid #e2e8f0;">
                             <input type="text" id="messagingSearchInput" placeholder="Search conversations..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
                         </div>
-                        <div id="messagingConversationList" style="padding: 0 8px;">
-                            <div style="padding: 20px 8px; text-align: center; color: #94a3b8; font-size: 13px;">Loading conversations...</div>
+
+                        <!-- Folder Navigation Tabs -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 8px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                            <button class="messaging-folder-tab active" data-folder="all" onclick="filterMessagingByFolder('all')" style="padding: 6px 12px; border: 1px solid #cbd5e1; background: #1e5aa8; color: white; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">📋 All</button>
+                            <button class="messaging-folder-tab" data-folder="inquiry" onclick="filterMessagingByFolder('inquiry')" style="padding: 6px 12px; border: 1px solid #cbd5e1; background: white; color: #64748b; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;">❓ Inquiry</button>
+                            <button class="messaging-folder-tab" data-folder="feedback" onclick="filterMessagingByFolder('feedback')" style="padding: 6px 12px; border: 1px solid #cbd5e1; background: white; color: #64748b; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;">💭 Feedback</button>
+                            <button class="messaging-folder-tab" data-folder="resolved" onclick="filterMessagingByFolder('resolved')" style="padding: 6px 12px; border: 1px solid #cbd5e1; background: white; color: #64748b; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;">✅ Resolved</button>
+                        </div>
+
+                        <!-- Sorting Controls -->
+                        <div style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                            <select id="messagingSortBy" onchange="sortMessagingConversations(this.value)" style="width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; color: #475569; background: white; cursor: pointer;">
+                                <option value="date-newest">📅 Newest First</option>
+                                <option value="date-oldest">📅 Oldest First</option>
+                                <option value="name">🔤 Name A-Z</option>
+                                <option value="commission-high">💰 High Commission</option>
+                                <option value="unread">🔔 Unread First</option>
+                            </select>
+                        </div>
+
+                        <!-- Virtual Scroll Container -->
+                        <div id="messagingConversationList" style="padding: 0 8px; flex: 1; overflow-y: auto; overflow-x: hidden;">
+                            <!-- Sample Thread 1: Inquiry -->
+                            <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; border-left: 3px solid #1e5aa8; background: #dbeafe; transition: background 0.2s; position: relative;" data-folder="inquiry" data-unread="2" onclick="selectVendorMessagingConversation('buyer-001')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 700; font-size: 14px; color: #1e293b; text-truncate;">Sarah Mitchell</div>
+                                        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ID: BUY-001</div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <div style="font-size: 11px; background: #dbeafe; color: #1e5aa8; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Pending</div>
+                                        <div style="background: #ef4444; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">2</div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; text-truncate; margin-top: 4px;">When will the eco-friendly water bottles be back...</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="font-size: 11px; color: #94a3b8;">sarah@email.com</div>
+                                    <div style="font-size: 11px; font-weight: 600; color: #16a34a;">$12.50 commission</div>
+                                </div>
+                            </div>
+                            <!-- Sample Thread 2: Feedback -->
+                            <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; border-left: 3px solid transparent; transition: background 0.2s;" data-folder="feedback" data-unread="1" onclick="selectVendorMessagingConversation('buyer-002')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate;">James Chen</div>
+                                        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ID: BUY-002</div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <div style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Awaiting Response</div>
+                                        <div style="background: #ef4444; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">1</div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; text-truncate; margin-top: 4px;">Great service! Do you offer bulk discounts...</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="font-size: 11px; color: #94a3b8;">james@email.com</div>
+                                    <div style="font-size: 11px; font-weight: 600; color: #16a34a;">$8.75 commission</div>
+                                </div>
+                            </div>
+                            <!-- Sample Thread 3: Resolved -->
+                            <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; border-left: 3px solid transparent; transition: background 0.2s; opacity: 0.7;" data-folder="resolved" data-unread="0" onclick="selectVendorMessagingConversation('buyer-003')">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate;">Emma Rodriguez</div>
+                                        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ID: BUY-003</div>
+                                    </div>
+                                    <div style="font-size: 11px; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Resolved</div>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; text-truncate; margin-top: 4px;">Question about product warranty and return...</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="font-size: 11px; color: #94a3b8;">emma@email.com</div>
+                                    <div style="font-size: 11px; font-weight: 600; color: #16a34a;">$15.00 commission</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <!-- Messaging Chat Area -->
                     <div style="display: flex; flex-direction: column;">
-                        <div id="messagingHeader" style="padding: 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e5aa8;">Select a conversation</div>
+                        <div id="messagingHeader" style="padding: 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e5aa8;">💬 Sarah Mitchell</div>
                         <div id="messagingMessages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc;">
-                            <div style="text-align: center; color: #94a3b8; margin-top: 40px;">Select a conversation to view messages</div>
+                            <!-- Sample Message 1: Buyer Inquiry -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="background: #f1f5f9; color: #1e293b; padding: 12px 16px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
+                                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">👤 Customer</div>
+                                    <div style="font-size: 14px; line-height: 1.4;">Hi there! I was looking for your eco-friendly water bottles. When will they be back in stock? I need them for an event next month.</div>
+                                    <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">9/8/2026, 2:15 PM</div>
+                                </div>
+                            </div>
+                            <!-- Sample Message 2: Vendor Response -->
+                            <div style="display: flex; justify-content: flex-end;">
+                                <div style="background: #1e5aa8; color: white; padding: 12px 16px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
+                                    <div style="font-size: 14px; line-height: 1.4;">Thanks for reaching out! We expect the eco-friendly water bottles to be back in stock within 2 weeks. I'll notify you as soon as they arrive.</div>
+                                    <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">9/8/2026, 3:45 PM</div>
+                                </div>
+                            </div>
+                            <!-- Sample Message 3: Buyer Follow-up -->
+                            <div style="display: flex; justify-content: flex-start;">
+                                <div style="background: #f1f5f9; color: #1e293b; padding: 12px 16px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
+                                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">👤 Customer</div>
+                                    <div style="font-size: 14px; line-height: 1.4;">Perfect! Can you also let me know about the color options once they're available?</div>
+                                    <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">9/10/2026, 10:20 AM</div>
+                                </div>
+                            </div>
                         </div>
-                        <div id="messagingInputArea" style="padding: 16px; border-top: 1px solid #e2e8f0; display: none; gap: 8px; flex-direction: column;">
+                        <div id="messagingInputArea" style="padding: 16px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; flex-direction: column;">
                             <textarea id="messagingTextarea" placeholder="Type your message..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 13px; min-height: 60px; resize: vertical;"></textarea>
                             <button onclick="sendVendorMessage()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-end;">Send Message</button>
                         </div>
@@ -4130,7 +4230,9 @@
         const messagingState = {
             currentConversationId: null,
             allConversations: [],
-            conversations: []
+            conversations: [],
+            currentFolder: 'all',
+            currentSort: 'date-newest'
         };
 
         async function initMessagingHub() {
@@ -4139,6 +4241,8 @@
 
             await loadVendorMessagingConversations();
             setupMessagingListeners();
+            setupVirtualScrolling();
+            initRealtimePolling();
         }
 
         async function loadVendorMessagingConversations() {
@@ -4328,6 +4432,154 @@
             if (searchInput) {
                 searchInput.addEventListener('input', filterVendorMessagingConversations);
             }
+        }
+
+        // Messaging Folder Filter
+        function filterMessagingByFolder(folder) {
+            messagingState.currentFolder = folder;
+
+            // Update active tab styling
+            document.querySelectorAll('.messaging-folder-tab').forEach(btn => {
+                if (btn.dataset.folder === folder) {
+                    btn.style.background = '#1e5aa8';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#1e5aa8';
+                } else {
+                    btn.style.background = 'white';
+                    btn.style.color = '#64748b';
+                    btn.style.borderColor = '#cbd5e1';
+                }
+            });
+
+            // Filter conversations by folder
+            if (folder === 'all') {
+                messagingState.conversations = messagingState.allConversations;
+            } else {
+                messagingState.conversations = messagingState.allConversations.filter(conv => {
+                    const threadEl = document.querySelector(`div[onclick*="'${conv.id}'"]`);
+                    return threadEl && threadEl.dataset.folder === folder;
+                });
+            }
+            renderVendorMessagingConversations();
+        }
+
+        // Messaging Sort Function
+        function sortMessagingConversations(sortType) {
+            const convList = [...messagingState.conversations];
+
+            switch(sortType) {
+                case 'date-newest':
+                    convList.sort((a, b) => new Date(b.lastTime) - new Date(a.lastTime));
+                    break;
+                case 'date-oldest':
+                    convList.sort((a, b) => new Date(a.lastTime) - new Date(b.lastTime));
+                    break;
+                case 'name':
+                    convList.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'commission-high':
+                    convList.sort((a, b) => (b.commission || 0) - (a.commission || 0));
+                    break;
+                case 'unread':
+                    convList.sort((a, b) => (b.unread || 0) - (a.unread || 0));
+                    break;
+            }
+
+            messagingState.conversations = convList;
+            renderVendorMessagingConversations();
+        }
+
+        // Virtual Scrolling Setup for Messaging Conversations
+        function setupVirtualScrolling() {
+            const container = document.getElementById('messagingConversationList');
+            if (!container) return;
+
+            const ITEM_HEIGHT = 110; // Estimated height of each conversation item
+            const BUFFER_SIZE = 3;   // Render 3 items above/below viewport
+
+            container.addEventListener('scroll', debounceVirtualScroll);
+
+            function debounceVirtualScroll() {
+                const scrollTop = container.scrollTop;
+                const containerHeight = container.clientHeight;
+                const firstVisibleIndex = Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE;
+                const lastVisibleIndex = Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + BUFFER_SIZE;
+
+                const items = container.querySelectorAll('[data-folder]');
+                items.forEach((item, index) => {
+                    if (index >= firstVisibleIndex && index <= lastVisibleIndex) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Real-time Status Indicator
+        function updateRealtimeStatus(status) {
+            const statusEl = document.getElementById('messagingRealtimeStatus');
+            if (!statusEl) return;
+
+            switch(status) {
+                case 'synced':
+                    statusEl.textContent = '✅ Synced';
+                    statusEl.parentElement.style.background = '#f0fdf4';
+                    statusEl.style.color = '#16a34a';
+                    break;
+                case 'syncing':
+                    statusEl.textContent = '🔄 Syncing...';
+                    statusEl.parentElement.style.background = '#eff6ff';
+                    statusEl.style.color = '#1e5aa8';
+                    break;
+                case 'error':
+                    statusEl.textContent = '⚠️ Connection Error';
+                    statusEl.parentElement.style.background = '#fef2f2';
+                    statusEl.style.color = '#dc2626';
+                    break;
+            }
+        }
+
+        // Update Unread Badge
+        function updateUnreadBadge(conversationId, unreadCount) {
+            const thread = document.querySelector(`div[onclick*="'${conversationId}'"]`);
+            if (!thread) return;
+
+            thread.dataset.unread = unreadCount;
+            const badge = thread.querySelector('[style*="background: #ef4444"]');
+
+            if (unreadCount > 0) {
+                if (badge) {
+                    badge.textContent = unreadCount;
+                } else {
+                    const statusBadge = thread.querySelector('[style*="background: #"]');
+                    if (statusBadge) {
+                        const newBadge = document.createElement('div');
+                        newBadge.style.cssText = 'background: #ef4444; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;';
+                        newBadge.textContent = unreadCount;
+                        statusBadge.parentElement.appendChild(newBadge);
+                    }
+                }
+                // Make thread bold if unread
+                const nameEl = thread.querySelector('[style*="font-weight: 600"]');
+                if (nameEl) nameEl.style.fontWeight = '700';
+            } else {
+                if (badge) badge.remove();
+                const nameEl = thread.querySelector('[style*="font-weight: 700"]');
+                if (nameEl) nameEl.style.fontWeight = '600';
+            }
+        }
+
+        // Initialize Real-time Polling Status
+        function initRealtimePolling() {
+            updateRealtimeStatus('synced');
+
+            // Simulate polling every 15 seconds (matches backend polling interval)
+            setInterval(() => {
+                if (messagingState.conversations.length > 0) {
+                    updateRealtimeStatus('synced');
+                }
+            }, 15000);
         }
 
         // Logout Handler
