@@ -5779,7 +5779,7 @@
             if (!sbClient || !currentVendor) return;
 
             const tbody = document.getElementById('manage-pending-table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables for pending status records where vendor_id matches current vendor
@@ -5792,16 +5792,38 @@
 
                 if (error) {
                     console.error('Error loading pending payouts:', error);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 if (!payouts || payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">No pending payouts</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = payouts.map(payout => `
+                // Fetch inquiry details for all payouts
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                const inquiriesMap = {};
+
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .in('id', feedbackIds);
+
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
+                        });
+                    }
+                }
+
+                tbody.innerHTML = payouts.map(payout => {
+                    const inquiry = inquiriesMap[payout.related_feedback_id];
+                    const detailsId = `details-${payout.id}`;
+                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+
+                    return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
                         <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
@@ -5809,13 +5831,29 @@
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(payout.created_at).toLocaleDateString()}</td>
                         <td style="padding: 12px; text-align: center;">
+                            <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
                             <button onclick="approveManagePayout('${payout.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Approve</button>
                         </td>
                     </tr>
-                `).join('');
+                    <tr id="${detailsId}" style="display: none; background: #f0f9ff; border-bottom: 1px solid #e2e8f0;">
+                        <td colspan="7" style="padding: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #0c4a6e; margin-bottom: 6px;">📝 Feedback Message:</div>
+                                    <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
+                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #0c4a6e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
             } catch (err) {
                 console.error('Unexpected error:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
             }
         }
 
@@ -5823,7 +5861,7 @@
             if (!sbClient || !currentVendor) return;
 
             const tbody = document.getElementById('manage-awaiting-table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables where vendor_flagged=true OR buyer_flagged=true
@@ -5836,17 +5874,38 @@
 
                 if (error) {
                     console.error('Error loading awaiting receipts:', error);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 if (!payouts || payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
                     return;
+                }
+
+                // Fetch inquiry details for all payouts
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                const inquiriesMap = {};
+
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .in('id', feedbackIds);
+
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
+                        });
+                    }
                 }
 
                 tbody.innerHTML = payouts.map(payout => {
                     const slaTimer = calculateSLATimer(payout.vendor_receipt_uploaded_date || payout.created_at, 'vendor');
+                    const inquiry = inquiriesMap[payout.related_feedback_id];
+                    const detailsId = `awaiting-details-${payout.id}`;
+                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
@@ -5855,14 +5914,29 @@
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;">${slaTimer.displayText}</td>
                         <td style="padding: 12px; text-align: center;">
+                            <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
                             <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                         </td>
                     </tr>
-                `;
+                    <tr id="${detailsId}" style="display: none; background: #fef3c7; border-bottom: 1px solid #e2e8f0;">
+                        <td colspan="7" style="padding: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 6px;">📝 Feedback Message:</div>
+                                    <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
+                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
                 }).join('');
             } catch (err) {
                 console.error('Unexpected error:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
             }
         }
 
@@ -5870,7 +5944,7 @@
             if (!sbClient || !currentVendor) return;
 
             const tbody = document.getElementById('manage-verified-table-body');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables where status='completed' or unflagged_date IS NOT NULL
@@ -5883,29 +5957,67 @@
 
                 if (error) {
                     console.error('Error loading verified payouts:', error);
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 if (!payouts || payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = payouts.map(payout => `
+                // Fetch inquiry details for all payouts
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                const inquiriesMap = {};
+
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .in('id', feedbackIds);
+
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
+                        });
+                    }
+                }
+
+                tbody.innerHTML = payouts.map(payout => {
+                    const inquiry = inquiriesMap[payout.related_feedback_id];
+                    const detailsId = `verified-details-${payout.id}`;
+                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+
+                    return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
                         <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
                         <td style="padding: 12px; text-align: center;">
+                            <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
                             <button onclick="viewManagePayout('${payout.id}')" style="background: #1e5aa8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
                         </td>
                     </tr>
-                `).join('');
+                    <tr id="${detailsId}" style="display: none; background: #f0fdf4; border-bottom: 1px solid #e2e8f0;">
+                        <td colspan="6" style="padding: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
+                                    <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
+                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
             } catch (err) {
                 console.error('Unexpected error:', err);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
             }
         }
 
