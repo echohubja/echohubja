@@ -1862,59 +1862,116 @@
 
             container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">Loading messages...</p>';
 
-            const { data: inquiries, error } = await db
-                .from('inquiries')
-                .select('*, products(id, product_name)')
-                .eq('buyer_id', buyerId)
-                .order('created_at', { ascending: false });
+            try {
+                // Fetch root inquiries only (parent_inquiry_id IS NULL)
+                const { data: inquiries, error } = await db
+                    .from('inquiries')
+                    .select('id, vendor_id, buyer_id, message, message_type, vendor_status, product_url, created_at')
+                    .eq('buyer_id', buyerId)
+                    .is('parent_inquiry_id', null)
+                    .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error('Error loading messages:', error.message);
-                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your messages.</p>';
-                return;
-            }
+                if (error) {
+                    console.error('Error loading messages:', error.message);
+                    container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your messages.</p>';
+                    return;
+                }
 
-            if (!inquiries || inquiries.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No messages yet. Start by submitting an inquiry to a product.</p>';
-                return;
-            }
+                if (!inquiries || inquiries.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No messages yet. Start by submitting an inquiry to a vendor.</p>';
+                    return;
+                }
 
-            let html = '';
-            inquiries.forEach((inquiry, idx) => {
-                const productName = inquiry.products?.product_name || 'General';
-                const messageType = inquiry.message_type === 'feedback' ? '💰 Feedback' : '❓ Inquiry';
-                const timestamp = new Date(inquiry.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                // Fetch vendor details
+                const vendorIds = [...new Set(inquiries.map(i => i.vendor_id).filter(Boolean))];
+                const { data: vendors } = await db
+                    .from('vendors')
+                    .select('id, business_name, email, referred_by_buyer_id')
+                    .in('id', vendorIds);
+
+                const vendorMap = {};
+                (vendors || []).forEach(v => vendorMap[v.id] = v);
+
+                // Fetch buyer referral info for this buyer
+                const { data: buyerData } = await db
+                    .from('buyers')
+                    .select('id, referred_by')
+                    .eq('id', buyerId)
+                    .single();
+
+                // Build referrer map for invitation status
+                const referrerIds = [...new Set([...(vendors || []).map(v => v.referred_by_buyer_id).filter(Boolean), buyerData?.referred_by].filter(Boolean))];
+                const { data: referrers } = await db
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .in('id', referrerIds);
+
+                const referrerMap = {};
+                (referrers || []).forEach(r => referrerMap[r.id] = r);
+
+                // Group conversations by vendor
+                const groupedByVendor = {};
+                inquiries.forEach(inquiry => {
+                    const vendorId = inquiry.vendor_id || 'direct';
+                    if (!groupedByVendor[vendorId]) {
+                        groupedByVendor[vendorId] = [];
+                    }
+                    groupedByVendor[vendorId].push(inquiry);
                 });
-                const status = inquiry.vendor_status === 'approved' ? '✅ Approved' : (inquiry.vendor_status === 'pending' ? '⏳ Pending' : 'Submitted');
-                const statusColor = inquiry.vendor_status === 'approved' ? '#10b981' : (inquiry.vendor_status === 'pending' ? '#f59e0b' : '#6b7280');
 
-                html += `
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; gap: 12px;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                let html = '';
+                for (const [vendorId, convs] of Object.entries(groupedByVendor)) {
+                    const vendor = vendorMap[vendorId] || { business_name: 'Unknown Vendor', email: 'N/A', id: vendorId };
+                    const latestConv = convs[0];
+
+                    // Determine invitation status
+                    const buyerReferrer = buyerData?.referred_by ? referrerMap[buyerData.referred_by] : null;
+                    const vendorReferrer = vendor.referred_by_buyer_id ? referrerMap[vendor.referred_by_buyer_id] : null;
+
+                    let invitationStatus = 'Direct (no invitations)';
+                    if (buyerReferrer && vendorReferrer) {
+                        if (buyerReferrer.id === vendorReferrer.id) {
+                            invitationStatus = `Both invited by same person: ${buyerReferrer.full_name}`;
+                        } else {
+                            invitationStatus = `Both invited by unique: You by ${buyerReferrer.full_name}, Vendor by ${vendorReferrer.full_name}`;
+                        }
+                    } else if (buyerReferrer) {
+                        invitationStatus = `You invited by ${buyerReferrer.full_name} (${buyerReferrer.email})`;
+                    } else if (vendorReferrer) {
+                        invitationStatus = `Vendor invited by ${vendorReferrer.full_name} (${vendorReferrer.email})`;
+                    }
+
+                    const statusBadge = latestConv.vendor_status === 'approved' ? '✓ Approved' : latestConv.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+                    const timestamp = new Date(latestConv.created_at).toLocaleDateString();
+                    const productName = latestConv.product_url ? latestConv.product_url.split('/').slice(-1)[0] : 'Product';
+
+                    html += `
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onclick="expandMessageThread('${latestConv.id}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
                                 <div>
-                                    <h4 style="margin: 0; font-size: 14px; color: #2c3e50; font-weight: 600;">${productName}</h4>
-                                    <p style="margin: 4px 0; font-size: 12px; color: #718096;">${messageType} • ${timestamp}</p>
+                                    <h4 style="margin: 0; font-size: 14px; color: #1e293b; font-weight: 600;">${escapeHtml(vendor.business_name)} (V-${vendorId.substring(0, 6).toUpperCase()})</h4>
+                                    <p style="margin: 2px 0; font-size: 11px; color: #64748b;">📧 ${escapeHtml(vendor.email)}</p>
                                 </div>
-                                <span style="font-size: 11px; background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${status}</span>
+                                <span style="background: ${latestConv.vendor_status === 'approved' ? '#dcfce7' : latestConv.vendor_status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${latestConv.vendor_status === 'approved' ? '#166534' : latestConv.vendor_status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${statusBadge}</span>
                             </div>
-                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #4a5568; line-height: 1.5;">${inquiry.message.substring(0, 200)}${inquiry.message.length > 200 ? '...' : ''}</p>
+                            <p style="margin: 4px 0; font-size: 11px; color: #7c3aed; font-weight: 500;">${escapeHtml(invitationStatus)}</p>
+                            <p style="margin: 6px 0; font-size: 12px; color: #4a5568; line-height: 1.4;">${escapeHtml(latestConv.message.substring(0, 120))}${latestConv.message.length > 120 ? '...' : ''}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #94a3b8;">${timestamp} • ${convs.length} message${convs.length !== 1 ? 's' : ''}</p>
                         </div>
-                    </div>
-                `;
-            });
+                        <div id="thread-${latestConv.id}" style="display: none; margin-top: 8px; margin-left: 20px; border-left: 2px solid #e2e8f0; padding-left: 12px;"></div>
+                    `;
+                }
 
-            container.innerHTML = html;
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading messaging hub:', err);
+                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Error loading messages.</p>';
+            }
         }
 
         function filterMessagingList() {
             const query = document.getElementById('messaging-search-input').value.toLowerCase().trim();
-            const messages = document.querySelectorAll('#messaging-hub-body > div');
+            const messages = document.querySelectorAll('#messaging-hub-body > div:not([id^="thread-"])');
 
             messages.forEach(msg => {
                 const productName = msg.querySelector('h4')?.textContent.toLowerCase() || '';
@@ -1925,6 +1982,55 @@
                     msg.style.display = 'none';
                 }
             });
+        }
+
+        async function expandMessageThread(inquiryId) {
+            const threadContainer = document.getElementById(`thread-${inquiryId}`);
+            if (!threadContainer) return;
+
+            if (threadContainer.style.display === 'block') {
+                threadContainer.style.display = 'none';
+                return;
+            }
+
+            threadContainer.innerHTML = '<p style="font-size: 12px; color: #718096;">Loading follow-ups...</p>';
+            threadContainer.style.display = 'block';
+
+            const { data: followups, error } = await db
+                .from('inquiries')
+                .select('*')
+                .eq('parent_inquiry_id', inquiryId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                threadContainer.innerHTML = '<p style="font-size: 12px; color: #e74c3c;">Failed to load follow-ups.</p>';
+                return;
+            }
+
+            if (!followups || followups.length === 0) {
+                threadContainer.innerHTML = '<p style="font-size: 12px; color: #718096;">No follow-ups yet.</p>';
+                return;
+            }
+
+            let html = '';
+            followups.forEach(msg => {
+                const timestamp = new Date(msg.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const sender = msg.sender_type === 'vendor' ? '🏪 Vendor' : '👤 You';
+
+                html += `
+                    <div style="background: #f8fafc; border-left: 2px solid #cbd5e1; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px;">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600;">${sender} • ${timestamp}</div>
+                        <p style="margin: 0; font-size: 12px; color: #475569; line-height: 1.4;">${msg.message}</p>
+                    </div>
+                `;
+            });
+
+            threadContainer.innerHTML = html;
         }
 
         async function loadBuyerInquiriesHistory(buyerId) {
