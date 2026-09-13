@@ -654,129 +654,6 @@
             .main-tab-btn { padding: 12px 16px; font-size: 13px; }
             .commission-stats-grid { grid-template-columns: 1fr; }
         }
-
-        /* Code Viewer Modal Styles */
-        .code-viewer-floating-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
-            color: white;
-            border: none;
-            padding: 14px 18px;
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 24px;
-            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3);
-            z-index: 1300;
-            transition: all 0.2s ease;
-            font-weight: 600;
-        }
-        .code-viewer-floating-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 18px rgba(30, 90, 168, 0.4);
-        }
-        .code-viewer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none;
-            z-index: 2100;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.2s ease-out;
-        }
-        .code-viewer-overlay.active {
-            display: flex;
-        }
-        .code-viewer-modal {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 90%;
-            width: 1000px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.3s ease-out;
-        }
-        .code-viewer-header {
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8fafc;
-            border-radius: 12px 12px 0 0;
-        }
-        .code-viewer-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .code-viewer-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #718096;
-            transition: color 0.2s ease;
-        }
-        .code-viewer-close:hover {
-            color: #2c3e50;
-        }
-        .code-viewer-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-            background: #f8fafc;
-        }
-        .code-viewer-content {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 16px;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #2c3e50;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 100%;
-            overflow: auto;
-        }
-        .code-viewer-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #e2e8f0;
-            background: #f8fafc;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            border-radius: 0 0 12px 12px;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
     </style>
 </head>
 <body>
@@ -976,13 +853,13 @@
     </div>
 
     <!-- Messaging Hub Section -->
-    <div id="messaging-section" class="tab-section" style="display: flex; flex-direction: column; height: 100vh;">
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+    <div id="messaging-section" class="tab-section">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; height: 600px; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-size: 24px; margin: 0; color: #2c3e50;">💬 Messaging Hub</h2>
                 <input type="text" id="messaging-search-input" placeholder="Search conversations..." oninput="filterMessagingList()" style="width: 250px; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
             </div>
-            <div id="messaging-hub-body" style="display: flex; gap: 12px; flex: 1; min-height: 0; overflow: hidden;">
+            <div id="messaging-hub-body" style="display: flex; gap: 12px; flex: 1; min-height: 0;">
                 <!-- LEFT PANEL: Conversation List -->
                 <div id="messaging-left-panel" style="width: 320px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; overflow-y: auto; flex-shrink: 0;">
                     <p style="text-align: center; color: #718096; padding: 40px 16px;">Loading conversations...</p>
@@ -1341,25 +1218,6 @@
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container"></div>
-
-    <!-- Code Viewer Modal -->
-    <div class="code-viewer-overlay" id="code-viewer-overlay" onclick="closeCodeViewer()"></div>
-    <div class="code-viewer-modal" id="code-viewer-modal" style="display: none;">
-        <div class="code-viewer-header">
-            <h2>📄 Source Code Viewer</h2>
-            <button class="code-viewer-close" onclick="closeCodeViewer()">×</button>
-        </div>
-        <div class="code-viewer-body">
-            <div class="code-viewer-content" id="code-viewer-content">Loading source code...</div>
-        </div>
-        <div class="code-viewer-footer">
-            <button onclick="copyCodeToClipboard()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">📋 Copy Code</button>
-            <button onclick="closeCodeViewer()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
-        </div>
-    </div>
-
-    <!-- Code Viewer Floating Button -->
-    <button class="code-viewer-floating-btn" id="code-viewer-btn" onclick="showCodeViewer()" title="View Source Code">📄</button>
 
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
@@ -2137,36 +1995,30 @@
             });
         }
 
-        let buyerMessagingPollInterval = null;
-
         async function selectBuyerMessagingConversation(inquiryId) {
             const rightPanel = document.getElementById('messaging-right-panel');
             if (!rightPanel) return;
 
-            // Clear existing poll interval if any
-            if (buyerMessagingPollInterval) clearInterval(buyerMessagingPollInterval);
-
             rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #718096;">Loading thread...</div>';
 
-            async function loadBuyerThread() {
-                try {
-                    // Fetch root inquiry
-                    const { data: rootInquiry, error: rootError } = await db
-                        .from('inquiries')
-                        .select('id, vendor_id, buyer_id, message, message_type, vendor_status, product_url, image_data, created_at, sender_id, sender_type')
-                        .eq('id', inquiryId)
-                        .single();
+            try {
+                // Fetch root inquiry
+                const { data: rootInquiry, error: rootError } = await db
+                    .from('inquiries')
+                    .select('id, vendor_id, buyer_id, message, message_type, vendor_status, product_url, image_data, created_at, sender_id, sender_type')
+                    .eq('id', inquiryId)
+                    .single();
 
-                    if (rootError) throw rootError;
+                if (rootError) throw rootError;
 
-                    // Fetch all follow-ups for this thread (including all fields for feedback detection)
-                    const { data: followUps, error: followError } = await db
-                        .from('inquiries')
-                        .select('id, message, message_type, image_data, product_url, vendor_status, created_at, sender_id, sender_type')
-                        .eq('parent_inquiry_id', inquiryId)
-                        .order('created_at', { ascending: true });
+                // Fetch all follow-ups for this thread
+                const { data: followUps, error: followError } = await db
+                    .from('inquiries')
+                    .select('id, message, created_at, sender_id, sender_type')
+                    .eq('parent_inquiry_id', inquiryId)
+                    .order('created_at', { ascending: true });
 
-                    if (followError) throw followError;
+                if (followError) throw followError;
 
                 // Fetch vendor details
                 const { data: vendor } = await db
@@ -2175,32 +2027,22 @@
                     .eq('id', rootInquiry.vendor_id)
                     .single();
 
-                // Check if user is scrolled to bottom before re-render
-                const messagesContainer = rightPanel.querySelector('[data-messages-container]');
-                let wasAtBottom = false;
-                if (messagesContainer) {
-                    wasAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 50;
-                }
-
                 // Build thread view
                 let threadHtml = `
                     <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
                         <h3 style="margin: 0 0 8px 0; color: #1e293b;">${escapeHtml(vendor?.business_name || 'Unknown Vendor')}</h3>
                         <p style="margin: 0; font-size: 13px; color: #64748b;">${escapeHtml(vendor?.email || 'N/A')}</p>
                     </div>
-                    <div data-messages-container style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
                 `;
 
-                // Root message with feedback badge
+                // Root message
                 const rootTime = new Date(rootInquiry.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const rootBadge = rootInquiry.message_type === 'feedback' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 8px;">🎯 Feedback</span>' : '';
-                const rootApprovalBadge = rootInquiry.message_type === 'feedback' ? (rootInquiry.vendor_status === 'approved' ? '<span style="background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 4px;">✓ Vendor Approved</span>' : '<span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 4px;">⏳ Awaiting Vendor Approval</span>') : '';
                 threadHtml += `
                     <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; border-left: 3px solid #0ea5e9;">
-                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center;">You • ${rootTime}${rootBadge}${rootApprovalBadge}</div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">You • ${rootTime}</div>
                         <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${escapeHtml(rootInquiry.message)}</div>
-                        ${rootInquiry.product_url ? `<div style="margin-top: 8px;"><a href="${escapeHtml(rootInquiry.product_url)}" target="_blank" style="color: #0ea5e9; text-decoration: none; font-size: 12px; word-break: break-all;">🔗 ${escapeHtml(rootInquiry.product_url.substring(0, 50))}...</a></div>` : ''}
-                        ${rootInquiry.image_data ? `<div style="margin-top: 8px; cursor: pointer;" onclick="showBuyerImageModal('${escapeHtml(rootInquiry.image_data)}')"><img src="data:image/jpeg;base64,${rootInquiry.image_data}" style="max-width: 100%; max-height: 200px; border-radius: 4px; border: 1px solid #cbd5e0;"></div>` : ''}
+                        ${rootInquiry.image_data ? `<img src="${rootInquiry.image_data}" style="max-width: 100%; max-height: 200px; margin-top: 8px; border-radius: 4px;">` : ''}
                     </div>
                 `;
 
@@ -2210,15 +2052,11 @@
                     const senderLabel = msg.sender_type === 'vendor' ? vendor?.business_name || 'Vendor' : 'You';
                     const senderColor = msg.sender_type === 'vendor' ? '#fef3c7' : '#f1f5f9';
                     const senderBorderColor = msg.sender_type === 'vendor' ? '#f59e0b' : '#0ea5e9';
-                    const msgBadge = msg.message_type === 'feedback' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 8px;">🎯 Feedback</span>' : '';
-                    const msgApprovalBadge = msg.message_type === 'feedback' ? (msg.vendor_status === 'approved' ? '<span style="background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 4px;">✓ Vendor Approved</span>' : '<span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 4px;">⏳ Awaiting Vendor Approval</span>') : '';
 
                     threadHtml += `
                         <div style="background: ${senderColor}; padding: 12px; border-radius: 8px; border-left: 3px solid ${senderBorderColor};">
-                            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center;">${escapeHtml(senderLabel)} • ${msgTime}${msgBadge}${msgApprovalBadge}</div>
+                            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">${escapeHtml(senderLabel)} • ${msgTime}</div>
                             <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${escapeHtml(msg.message)}</div>
-                            ${msg.product_url ? `<div style="margin-top: 8px;"><a href="${escapeHtml(msg.product_url)}" target="_blank" style="color: #0ea5e9; text-decoration: none; font-size: 12px; word-break: break-all;">🔗 ${escapeHtml(msg.product_url.substring(0, 50))}...</a></div>` : ''}
-                            ${msg.image_data ? `<div style="margin-top: 8px; cursor: pointer;" onclick="showBuyerImageModal('${escapeHtml(msg.image_data)}')"><img src="data:image/jpeg;base64,${msg.image_data}" style="max-width: 100%; max-height: 200px; border-radius: 4px; border: 1px solid #cbd5e0;"></div>` : ''}
                         </div>
                     `;
                 });
@@ -2250,38 +2088,11 @@
                 `;
 
                 rightPanel.innerHTML = threadHtml;
-
-                // Smart scroll: only auto-scroll to bottom if user was at bottom before re-render
-                const newMessagesContainer = rightPanel.querySelector('[data-messages-container]');
-                if (newMessagesContainer && wasAtBottom) {
-                    newMessagesContainer.scrollTop = newMessagesContainer.scrollHeight;
-                }
-
                 setupBuyerFeedbackImagePaste('${inquiryId}');
-                } catch (err) {
-                    console.error('Error loading thread:', err);
-                    rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error loading thread</div>';
-                }
+            } catch (err) {
+                console.error('Error loading thread:', err);
+                rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error loading thread</div>';
             }
-
-            // Initial load
-            await loadBuyerThread();
-
-            // Set up polling to refresh thread every 3 seconds
-            buyerMessagingPollInterval = setInterval(loadBuyerThread, 3000);
-        }
-
-        function showBuyerImageModal(imageData) {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-            modal.innerHTML = `
-                <div style="position: relative; background: white; border-radius: 8px; padding: 20px; max-width: 90vw; max-height: 90vh;">
-                    <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;">✕ Close</button>
-                    <img src="data:image/jpeg;base64,${imageData}" style="max-width: 90vw; max-height: 85vh; border-radius: 4px;">
-                </div>
-            `;
-            document.body.appendChild(modal);
         }
 
         async function sendBuyerFeedback(inquiryId) {
@@ -2343,7 +2154,8 @@
             submitBtn.textContent = 'Sending...';
 
             try {
-                const buyerId = currentBuyerId || localStorage.getItem('buyer_id');
+                const currentUser = authState.user;
+                const buyerId = currentUser?.id || currentBuyerId || localStorage.getItem('buyer_id');
                 if (!buyerId) throw new Error('Not authenticated');
 
                 // Encode feedback image to base64 if present
@@ -3631,57 +3443,6 @@
                 console.error('Error requesting info:', err);
             }
         }
-
-        // Code Viewer Functions
-        function showCodeViewer() {
-            const overlay = document.getElementById('code-viewer-overlay');
-            const modal = document.getElementById('code-viewer-modal');
-            const codeContent = document.getElementById('code-viewer-content');
-
-            // Get the full HTML source
-            const fullSource = document.documentElement.outerHTML;
-
-            // Display the source code
-            codeContent.textContent = fullSource;
-
-            // Show modal and overlay
-            overlay.classList.add('active');
-            modal.style.display = 'flex';
-        }
-
-        function closeCodeViewer() {
-            const overlay = document.getElementById('code-viewer-overlay');
-            const modal = document.getElementById('code-viewer-modal');
-
-            // Hide modal and overlay
-            overlay.classList.remove('active');
-            modal.style.display = 'none';
-        }
-
-        function copyCodeToClipboard() {
-            const codeContent = document.getElementById('code-viewer-content');
-            const code = codeContent.textContent;
-
-            navigator.clipboard.writeText(code).then(() => {
-                showToast('✓ Source code copied to clipboard!', 'success');
-            }).catch(err => {
-                showToast('Failed to copy to clipboard', 'error');
-            });
-        }
-
-        // Close code viewer when clicking outside
-        document.getElementById('code-viewer-overlay').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeCodeViewer();
-            }
-        });
-
-        // Allow ESC key to close
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeCodeViewer();
-            }
-        });
 
         window.addEventListener('DOMContentLoaded', async () => {
             captureReferralCode();
