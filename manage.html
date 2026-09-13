@@ -5050,26 +5050,31 @@
         // ========== PHASE 1: MANAGE PAYOUTS DATABASE INTEGRATION ==========
 
         async function loadPayoutDataFromDB() {
+            console.log('[Payout] loadPayoutDataFromDB called, currentVendor:', currentVendor?.id, 'sbClient:', !!sbClient);
             if (!currentVendor || !sbClient) {
-                console.error('Vendor or Supabase client not initialized');
+                console.error('[Payout] Vendor or Supabase client not initialized', {currentVendor, sbClient: !!sbClient});
                 return;
             }
 
             try {
-                console.log('[Payout] Starting load for vendor:', currentVendor.id);
+                console.log('[Payout] ✅ Starting load for vendor:', currentVendor.id);
 
                 // Load vendor payables (completed payouts)
+                console.log('[Payout] 1. Fetching vendor_payables...');
                 const { data: vendorPayables, error: vpError } = await sbClient
                     .from('vendor_payables')
                     .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (vpError) throw vpError;
-                console.log('[Payout] Vendor payables loaded:', vendorPayables?.length || 0);
+                if (vpError) {
+                    console.error('[Payout] vendor_payables ERROR:', vpError);
+                    throw vpError;
+                }
+                console.log('[Payout] 1. ✅ Vendor payables loaded:', vendorPayables?.length || 0);
 
                 // Load admin payables (referral commissions)
-                console.log('[Payout] Fetching admin payables with vendor_id filter:', currentVendor.id);
+                console.log('[Payout] 2. Fetching admin_payables with vendor_id =', currentVendor.id);
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
                     .select('*')
@@ -5077,20 +5082,27 @@
                     .order('created_at', { ascending: false });
 
                 if (apError) {
-                    console.error('[Payout] Admin payables error:', apError);
+                    console.error('[Payout] 2. ❌ Admin payables ERROR:', apError);
                     throw apError;
                 }
-                console.log('[Payout] Admin payables loaded:', adminPayables?.length || 0, 'Records:', adminPayables);
+                console.log('[Payout] 2. ✅ Admin payables loaded:', adminPayables?.length || 0);
+                if (adminPayables && adminPayables.length > 0) {
+                    console.log('[Payout] Sample admin record:', adminPayables[0]);
+                }
 
                 // Load buyer payables (commission earnings)
+                console.log('[Payout] 3. Fetching buyer_payables with vendor_id =', currentVendor.id);
                 const { data: buyerPayables, error: bpError } = await sbClient
                     .from('buyer_payables')
                     .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (bpError) throw bpError;
-                console.log('[Payout] Buyer payables loaded:', buyerPayables?.length || 0);
+                if (bpError) {
+                    console.error('[Payout] 3. ❌ Buyer payables ERROR:', bpError);
+                    throw bpError;
+                }
+                console.log('[Payout] 3. ✅ Buyer payables loaded:', buyerPayables?.length || 0);
 
                 // Store in state
                 messagingState.payoutData = {
