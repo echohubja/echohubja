@@ -1510,6 +1510,9 @@
             const overlay = document.getElementById('inquiry-drawer-overlay');
             drawer.classList.add('open');
             overlay.style.display = 'block';
+
+            // Setup clipboard paste for feedback image
+            setupFeedbackImagePaste();
         }
 
         function closeInquiryDrawer() {
@@ -1517,6 +1520,31 @@
             const overlay = document.getElementById('inquiry-drawer-overlay');
             drawer.classList.remove('open');
             overlay.style.display = 'none';
+        }
+
+        function setupFeedbackImagePaste() {
+            const feedbackImageInput = document.getElementById('feedback-image');
+
+            // Handle paste event
+            document.addEventListener('paste', async (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const blob = item.getAsFile();
+
+                        // Create a DataTransfer object to set the file
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(blob);
+                        feedbackImageInput.files = dataTransfer.files;
+
+                        showToast('✓ Image pasted successfully!', 'success');
+                        return;
+                    }
+                }
+            });
         }
 
         async function submitInquiry() {
