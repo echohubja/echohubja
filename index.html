@@ -567,7 +567,86 @@
             animation: slideOut 0.3s ease-out forwards;
         }
 
+        #notification-center {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .notification {
+            background: white;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .notification.success {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+
+        .notification.info {
+            border-left: 4px solid #0ea5e9;
+            background: #f0f9ff;
+        }
+
+        .notification.warning {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+
+        .notification-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 3px;
+        }
+
+        .notification-message {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .notification-close:hover {
+            color: #6b7280;
+        }
+
         @media (max-width: 768px) {
+            #notification-center {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
             .layout { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 15px; text-align: center; }
             .drawer-container { max-width: 100%; right: -100%; }
@@ -594,6 +673,8 @@
             <a href="portal.html" class="btn-portal" id="portal-btn">Sign In / Account Portal</a>
         </div>
     </header>
+
+    <div id="notification-center"></div>
 
     <!-- Main Navigation Tabs -->
     <div class="main-tabs">
@@ -1074,14 +1155,43 @@
             <input type="hidden" id="modal-vendor-id">
             <input type="hidden" id="modal-product-image-url">
 
-            <div>
-                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question:</label>
-                <textarea id="inquiry-message" placeholder="Ask details about this product..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
+            <!-- Vendor Rate Card -->
+            <div id="vendor-rate-card" style="background: #dbeafe; border: 1px solid #93c5fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; color: #1e40af; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>💰 Earning Potential:</strong><br>
+                        <span id="vendor-rate-display" style="font-size: 14px; font-weight: 600;">$5.00</span> per feedback submission
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 11px; color: #1e40af; opacity: 0.8;">Submitting feedback with image + URL</div>
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <!-- Tip for Feedback -->
+            <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; color: #92400e;">
+                <strong>💡 Tip:</strong> To submit product feedback (and earn commission), include a product image and the product's Amazon URL or direct link. This will be treated as feedback instead of a question.
+            </div>
+
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Your Message / Question / Feedback:</label>
+                <textarea id="inquiry-message" placeholder="Describe your experience with this product..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; resize: vertical; font-size: 14px;"></textarea>
+            </div>
+
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Product Image (Optional - upload or paste from clipboard):</label>
+                <input type="file" id="feedback-image" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
+                <small style="display: block; color: #718096; margin-top: 4px;">Paste image from clipboard: Ctrl+V (or Cmd+V on Mac) after clicking the field</small>
+            </div>
+
+            <div>
+                <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600; margin-top: 12px;">Product URL (Optional - Amazon link or direct product URL):</label>
+                <input type="url" id="feedback-product-url" placeholder="https://www.amazon.com/... or product URL" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
                 <button onclick="closeInquiryDrawer()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #e2e8f0; color: #4a5568;">Cancel</button>
-                <button id="btn-submit-inquiry" onclick="submitInquiry()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #1e5aa8; color: white;">Send Inquiry</button>
+                <button id="btn-submit-inquiry" onclick="submitInquiry()" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; background: #1e5aa8; color: white;">Send</button>
             </div>
         </div>
     </div>
@@ -1144,6 +1254,40 @@
                 setTimeout(() => {
                     toast.remove();
                 }, 300);
+            }
+        }
+
+        function showNotification(title, message, type = 'info', duration = 5000) {
+            const center = document.getElementById('notification-center');
+            const notifId = `notif-${Date.now()}`;
+
+            const iconMap = {
+                'success': '✓',
+                'info': 'ℹ',
+                'warning': '⚠'
+            };
+
+            const notification = document.createElement('div');
+            notification.id = notifId;
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <span class="notification-icon">${iconMap[type] || '✓'}</span>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="document.getElementById('${notifId}').remove();">×</button>
+            `;
+
+            center.appendChild(notification);
+
+            if (duration > 0) {
+                setTimeout(() => {
+                    const notif = document.getElementById(notifId);
+                    if (notif) {
+                        notif.remove();
+                    }
+                }, duration);
             }
         }
 
@@ -1320,7 +1464,7 @@
             loadProducts(categoryQuery, isMainGroup);
         }
 
-        function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
+        async function openInquiryDrawer(productId, productName, vendorId, imageUrl) {
             if (!currentActiveEmail) {
                 showToast('Please sign in through the account portal before sending an inquiry.', 'error');
                 setTimeout(() => { window.location.href = 'portal.html'; }, 1500);
@@ -1335,6 +1479,32 @@
             document.getElementById('modal-vendor-id-display').textContent = vendorId;
 
             document.getElementById('inquiry-message').value = '';
+            document.getElementById('feedback-image').value = '';
+            document.getElementById('feedback-product-url').value = '';
+
+            // Fetch vendor's per-feedback rate
+            if (db && vendorId && vendorId !== 'Echo Hub') {
+                try {
+                    const { data: vendorData, error } = await db
+                        .from('vendors')
+                        .select('current_per_feedback_rate')
+                        .eq('id', vendorId)
+                        .single();
+
+                    if (!error && vendorData) {
+                        const rate = parseFloat(vendorData.current_per_feedback_rate) || 5.00;
+                        document.getElementById('vendor-rate-display').textContent = '$' + rate.toFixed(2);
+                        document.getElementById('vendor-rate-card').style.display = 'block';
+                    } else {
+                        document.getElementById('vendor-rate-card').style.display = 'none';
+                    }
+                } catch (err) {
+                    console.error('Error fetching vendor rate:', err);
+                    document.getElementById('vendor-rate-card').style.display = 'none';
+                }
+            } else {
+                document.getElementById('vendor-rate-card').style.display = 'none';
+            }
 
             const drawer = document.getElementById('inquiry-drawer');
             const overlay = document.getElementById('inquiry-drawer-overlay');
@@ -1352,26 +1522,68 @@
         async function submitInquiry() {
             const productId = document.getElementById('modal-product-id').value;
             const vendorId = document.getElementById('modal-vendor-id').value;
-            const imageUrl = document.getElementById('modal-product-image-url').value;
+            const productImageUrl = document.getElementById('modal-product-image-url').value;
             const message = document.getElementById('inquiry-message').value.trim();
+            const feedbackImageFile = document.getElementById('feedback-image').files[0];
+            const feedbackProductUrl = document.getElementById('feedback-product-url').value.trim();
             const submitBtn = document.getElementById('btn-submit-inquiry');
 
             if (!message) {
-                showToast('Please enter a message or question.', 'error');
+                showToast('Please enter a message or feedback.', 'error');
                 return;
+            }
+
+            // Detect if this has both image and URL (potential feedback)
+            const hasFeedbackImage = feedbackImageFile !== undefined;
+            const hasFeedbackUrl = feedbackProductUrl && feedbackProductUrl.length > 0;
+            const isFeedbackSubmission = hasFeedbackImage && hasFeedbackUrl;
+
+            // If detected as feedback, show confirmation
+            let messageType = 'inquiry';
+            if (isFeedbackSubmission) {
+                const confirmed = await new Promise((resolve) => {
+                    showFeedbackConfirmationDialog(
+                        (result) => resolve(result),
+                        feedbackProductUrl
+                    );
+                });
+                if (!confirmed) {
+                    showToast('Submission cancelled.', 'info');
+                    return;
+                }
+                messageType = 'feedback';
             }
 
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
 
-            // Get buyer ID from localStorage to ensure it's always available
             const buyerId = currentBuyerId || localStorage.getItem('buyer_id');
-
             if (!buyerId) {
                 showToast('Session expired. Please log in again.', 'error');
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Inquiry';
+                submitBtn.textContent = 'Send';
                 return;
+            }
+
+            // Encode feedback image to base64 if present
+            let feedbackImageData = null;
+            let feedbackImageMime = null;
+            if (feedbackImageFile) {
+                try {
+                    feedbackImageData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result.split(',')[1]); // Get base64 without data: prefix
+                        reader.onerror = reject;
+                        reader.readAsDataURL(feedbackImageFile);
+                    });
+                    feedbackImageMime = feedbackImageFile.type;
+                } catch (err) {
+                    console.error('Error encoding image:', err);
+                    showToast('Failed to process image. Please try again.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send';
+                    return;
+                }
             }
 
             const inquiryData = {
@@ -1380,26 +1592,152 @@
                 buyer_id: buyerId,
                 sender_id: buyerId,
                 sender_type: 'buyer',
-                message_type: 'inquiry',
+                message_type: messageType,
                 message: message,
-                image_url: imageUrl && imageUrl.trim() ? imageUrl : null
+                image_url: productImageUrl && productImageUrl.trim() ? productImageUrl : null,
+                feedback_image_data: feedbackImageData,
+                feedback_image_mime: feedbackImageMime,
+                feedback_product_url: feedbackProductUrl || null
             };
 
             const { error } = await db.from('inquiries').insert([inquiryData]);
 
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Send Inquiry';
+            submitBtn.textContent = 'Send';
 
             if (error) {
-                console.error('Error submitting inquiry:', error.message);
-                showToast('Failed to send inquiry. Please try again.', 'error');
+                console.error('Error submitting:', error.message);
+                showToast('Failed to send. Please try again.', 'error');
                 return;
             }
 
-            showToast('Inquiry submitted successfully!', 'success');
+            const typeLabel = messageType === 'feedback' ? 'Feedback submitted' : 'Inquiry sent';
+            showToast(typeLabel + ' successfully!', 'success');
+
+            // Show notification for feedback submission
+            if (messageType === 'feedback') {
+                showNotification(
+                    '💰 Feedback Received',
+                    'Your feedback has been submitted to the vendor. You\'ll earn a commission once they approve it.',
+                    'success',
+                    5000
+                );
+            }
+
+            // Clear form
+            document.getElementById('inquiry-message').value = '';
+            document.getElementById('feedback-image').value = '';
+            document.getElementById('feedback-product-url').value = '';
+
             closeInquiryDrawer();
         }
 
+        function showFeedbackConfirmationDialog(callback, productUrl) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;';
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'background: white; border-radius: 12px; padding: 24px; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);';
+            dialog.innerHTML = `
+                <h3 style="color: #1e5aa8; margin: 0 0 16px 0; font-size: 18px;">Is This Product Feedback?</h3>
+                <p style="color: #4a5568; margin: 0 0 12px 0; font-size: 14px;">
+                    We detected that you're submitting an image and product URL. This will be recorded as <strong>product feedback</strong> and you'll earn a commission for it.
+                </p>
+                <div style="background: #f0f4f8; border-left: 4px solid #1e5aa8; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 13px; color: #4a5568;">
+                    <strong>Product URL:</strong><br>
+                    <code style="word-break: break-all; color: #718096;">${productUrl}</code>
+                </div>
+                <p style="color: #718096; margin: 0 0 20px 0; font-size: 13px;">
+                    Click "Yes, This is Feedback" to submit as feedback, or "No, Just a Question" to submit as a regular inquiry instead.
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove(); arguments[0];" style="padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">No, Just a Question</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove();" style="padding: 10px 16px; border-radius: 6px; border: none; background: #10b981; color: white; font-weight: 600; cursor: pointer;">Yes, This is Feedback</button>
+                </div>
+            `;
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            const buttons = dialog.querySelectorAll('button');
+            buttons[0].onclick = () => {
+                overlay.remove();
+                callback(false);
+            };
+            buttons[1].onclick = () => {
+                overlay.remove();
+                callback(true);
+            };
+        }
+
+        function showReceiptUploadGuidance() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;';
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'background: white; border-radius: 12px; padding: 24px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);';
+            dialog.innerHTML = `
+                <h3 style="color: #1e5aa8; margin: 0 0 16px 0; font-size: 18px;">📋 How to Screenshot Your PayPal Transfer</h3>
+
+                <p style="color: #4a5568; margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
+                    We need proof of your payment transfer to verify receipt collection. Follow these simple steps:
+                </p>
+
+                <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <h4 style="color: #0369a1; margin: 0 0 12px 0; font-size: 13px; font-weight: 600;">🖥️ Desktop Screenshot:</h4>
+                    <ol style="color: #4a5568; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li>Log in to your PayPal account</li>
+                        <li>Go to <strong>Activity</strong> → <strong>All Transactions</strong></li>
+                        <li>Find the transfer matching your Echo Hub referral amount</li>
+                        <li>Click on the transaction to view details</li>
+                        <li>Screenshot the window showing:
+                            <ul style="margin: 8px 0; padding-left: 20px;">
+                                <li>Amount transferred (must match your payout)</li>
+                                <li>Transaction date</li>
+                                <li>Recipient email or PayPal ID</li>
+                                <li>Status: <strong>Completed</strong></li>
+                            </ul>
+                        </li>
+                        <li>Save as PNG, JPG, JPEG, or PDF (max 10MB)</li>
+                    </ol>
+                </div>
+
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <h4 style="color: #92400e; margin: 0 0 12px 0; font-size: 13px; font-weight: 600;">📱 Mobile Screenshot:</h4>
+                    <ol style="color: #4a5568; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li>Open the PayPal app on your phone</li>
+                        <li>Go to <strong>Activity</strong> to find your transfer</li>
+                        <li>Tap on the transaction for full details</li>
+                        <li>Screenshot by pressing: <strong>Power + Volume Down</strong> (Android) or <strong>Side + Volume Up</strong> (iPhone)</li>
+                        <li>Ensure the screenshot shows the transaction details clearly</li>
+                    </ol>
+                </div>
+
+                <div style="background: #dbeafe; border-left: 4px solid #0284c7; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <h4 style="color: #0c4a6e; margin: 0 0 12px 0; font-size: 13px; font-weight: 600;">✓ What Proof We Accept:</h4>
+                    <ul style="color: #4a5568; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li><strong>PayPal Screenshots</strong> - Preferred (shows amount, date, status)</li>
+                        <li><strong>Bank Transfer Confirmations</strong> - Email receipt from your bank</li>
+                        <li><strong>Payment Processor Emails</strong> - Stripe, Wise, or similar</li>
+                        <li><strong>File Formats:</strong> PNG, JPG, JPEG, PDF (max 10MB each)</li>
+                    </ul>
+                </div>
+
+                <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="color: #7f1d1d; margin: 0 0 12px 0; font-size: 13px; font-weight: 600;">⏰ Important: 8-Hour Deadline</h4>
+                    <p style="color: #4a5568; margin: 0; font-size: 13px; line-height: 1.6;">
+                        After the vendor uploads their disbursement proof, you have <strong>8 hours</strong> to upload this collection receipt. Failure to upload within the deadline will flag your account and block further earnings until resolved.
+                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button onclick="this.closest('div').parentElement.remove();" style="padding: 12px 24px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: 600; cursor: pointer; font-size: 14px;">Got It, I Understand</button>
+                </div>
+            `;
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+        }
 
         function toggleInquiriesDrawer() {
             const drawer = document.getElementById('inquiries-drawer');
@@ -1435,6 +1773,31 @@
             }
 
             if (inquiries && inquiries.length > 0) {
+                // Fetch vendor rates for all feedback submissions
+                const vendorIds = [...new Set(inquiries.filter(i => i.vendor_id && (i.message_type === 'feedback' || i.feedback_product_url)).map(i => i.vendor_id))];
+                const vendorRateMap = {};
+
+                if (vendorIds.length > 0) {
+                    const { data: vendorData } = await db
+                        .from('vendors')
+                        .select('id, current_per_feedback_rate')
+                        .in('id', vendorIds);
+
+                    if (vendorData) {
+                        vendorData.forEach(v => {
+                            vendorRateMap[v.id] = parseFloat(v.current_per_feedback_rate) || 5.00;
+                        });
+                    }
+                }
+
+                // Attach vendor rates to inquiries
+                inquiries.forEach(inquiry => {
+                    if (inquiry.vendor_id && vendorRateMap[inquiry.vendor_id]) {
+                        inquiry.vendor_rate = '$' + vendorRateMap[inquiry.vendor_id].toFixed(2);
+                    } else if (inquiry.vendor_id) {
+                        inquiry.vendor_rate = '$5.00';
+                    }
+                });
                 // Fetch all product images
                 const { data: allImages, error: imgError } = await db
                     .from('product-images')
@@ -1572,16 +1935,38 @@
                                 timeZoneName: 'short'
                             });
 
+                            // Determine message type and status badge
+                            const isFeedback = item.message_type === 'feedback' || item.feedback_product_url;
+                            const messageTypeLabel = isFeedback ? '💰 Feedback' : '❓ Inquiry';
+                            const statusLabel = item.vendor_status === 'approved' && isFeedback ? '✓ Approved' : (item.vendor_status === 'pending' && isFeedback ? '⏳ Awaiting Review' : 'Submitted');
+                            const statusColor = item.vendor_status === 'approved' && isFeedback ? '#10b981' : (item.vendor_status === 'pending' && isFeedback ? '#f59e0b' : '#6b7280');
+
                             html += `
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 6px;">
-                                        <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Message Record</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                            <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #718096;">Message Record</span>
+                                            <span style="font-size: 11px; font-weight: 600; background: #dbeafe; color: #0c4a6e; padding: 2px 8px; border-radius: 6px;">${messageTypeLabel}</span>
+                                            ${isFeedback ? `<span style="font-size: 11px; font-weight: 600; background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 6px;">${statusLabel}</span>` : ''}
+                                        </div>
                                         <span style="font-size: 11px; color: #718096; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${timestampFormatted}</span>
                                     </div>
 
                                     <p style="font-size: 13px; color: #2d3748; margin: 0; white-space: pre-line;">${item.message}</p>
 
                                     ${item.image_url ? `<div><a href="${item.image_url}" target="_blank"><img src="${item.image_url}" style="max-width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0;" alt="Feedback Image"></a></div>` : ''}
+
+                                    ${isFeedback ? `
+                                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #10b981; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;">
+                                            <div style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase;">💰 Earning Transparency</div>
+                                            <div style="font-size: 12px; color: #15803d;">
+                                                Vendor Rate: <strong>$${item.vendor_rate || 'Loading...'}</strong> per feedback submission
+                                            </div>
+                                            <div style="font-size: 11px; color: #4b5563; font-style: italic;">
+                                                Status: ${item.vendor_status === 'approved' && isFeedback ? '✓ Verified & Earning' : (item.vendor_status === 'pending' && isFeedback ? '⏳ Pending vendor approval' : 'Submitted')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
 
                                     <div style="background: #fff; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
                                         <label style="font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase;">Follow-up Reply</label>
