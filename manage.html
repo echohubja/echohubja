@@ -5330,52 +5330,28 @@
         // ========== PHASE 1: MANAGE PAYOUTS DATABASE INTEGRATION ==========
 
         async function loadPayoutDataFromDB() {
-            console.log('[Payout] loadPayoutDataFromDB called, currentVendor:', currentVendor?.id, 'sbClient:', !!sbClient);
-            if (!currentVendor || !sbClient) {
-                console.error('[Payout] Vendor or Supabase client not initialized', {currentVendor, sbClient: !!sbClient});
-                return;
-            }
+            if (!currentVendor || !sbClient) return;
 
             try {
-                console.log('[Payout] ✅ Starting load for vendor:', currentVendor.id);
-
                 // Load vendor payables (completed payouts)
-                console.log('[Payout] 1. Fetching vendor_payables...');
                 const { data: vendorPayables, error: vpError } = await sbClient
                     .from('vendor_payables')
                     .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (vpError) {
-                    console.error('[Payout] vendor_payables ERROR:', vpError);
-                    throw vpError;
-                }
-                console.log('[Payout] 1. ✅ Vendor payables loaded:', vendorPayables?.length || 0);
+                if (vpError) throw vpError;
 
-                // Load admin payables (referral commissions) with buyer/vendor names for inviters
-                console.log('[Payout] 2. Fetching admin_payables with vendor_id =', currentVendor.id);
+                // Load admin payables (referral commissions)
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
-                    .select(`
-                        *,
-                        buyer:split_with_buyer_id (id, full_name, email, paypal_email),
-                        inviter_vendor:split_with_vendor_id (id, business_name, email, paypal_email)
-                    `)
+                    .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (apError) {
-                    console.error('[Payout] 2. ❌ Admin payables ERROR:', apError);
-                    throw apError;
-                }
-                console.log('[Payout] 2. ✅ Admin payables loaded:', adminPayables?.length || 0);
-                if (adminPayables && adminPayables.length > 0) {
-                    console.log('[Payout] Sample admin record:', adminPayables[0]);
-                }
+                if (apError) throw apError;
 
                 // Load buyer payables (commission earnings) with buyer names and PayPal email
-                console.log('[Payout] 3. Fetching buyer_payables with vendor_id =', currentVendor.id);
                 const { data: buyerPayables, error: bpError } = await sbClient
                     .from('buyer_payables')
                     .select(`
@@ -5385,26 +5361,7 @@
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (bpError) {
-                    console.error('[Payout] 3. ❌ Buyer payables ERROR:', bpError);
-                    throw bpError;
-                }
-                console.log('[Payout] 3. ✅ Buyer payables loaded:', buyerPayables?.length || 0);
-                if (buyerPayables && buyerPayables.length > 0) {
-                    console.log('[Payout] Sample buyer_payables records:');
-                    buyerPayables.slice(0, 3).forEach((bp, i) => {
-                        console.log(`  Record ${i+1}:`, {
-                            id: bp.id,
-                            buyer_name: bp.buyer?.full_name,
-                            buyer_email: bp.buyer?.email,
-                            buyer_paypal: bp.buyer?.paypal_email,
-                            amount_owed: bp.amount_owed,
-                            earning_type: bp.earning_type,
-                            status: bp.status,
-                            created_at: bp.created_at
-                        });
-                    });
-                }
+                if (bpError) throw bpError;
 
                 // Store in state
                 messagingState.payoutData = {
@@ -5412,17 +5369,6 @@
                     adminPayables: adminPayables || [],
                     buyerPayables: buyerPayables || []
                 };
-
-                console.log('[Payout] Stored in state:', {
-                    admin: adminPayables?.length,
-                    reviewer: buyerPayables?.length,
-                    filters: {
-                        admin: adminPayables?.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id)?.length,
-                        buyer_inviter: adminPayables?.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id)?.length,
-                        vendor_inviter: adminPayables?.filter(ap => ap.split_with_vendor_id)?.length,
-                        reviewer: buyerPayables?.filter(bp => bp.earning_type === 'own_feedback')?.length
-                    }
-                });
 
                 // Update summary cards
                 updatePayoutSummaryCards();
