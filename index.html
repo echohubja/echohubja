@@ -1533,25 +1533,50 @@
                 return;
             }
 
-            // Detect if this has both image and URL (potential feedback)
             const hasFeedbackImage = feedbackImageFile !== undefined;
             const hasFeedbackUrl = feedbackProductUrl && feedbackProductUrl.length > 0;
-            const isFeedbackSubmission = hasFeedbackImage && hasFeedbackUrl;
+            const hasImageOrUrl = hasFeedbackImage || hasFeedbackUrl;
 
-            // If detected as feedback, show confirmation
             let messageType = 'inquiry';
-            if (isFeedbackSubmission) {
-                const confirmed = await new Promise((resolve) => {
-                    showFeedbackConfirmationDialog(
-                        (result) => resolve(result),
-                        feedbackProductUrl
+
+            // If user provided image OR URL, ask if they're submitting feedback
+            if (hasImageOrUrl) {
+                const isFeedback = await new Promise((resolve) => {
+                    showFeedbackIntentDialog(
+                        (result) => resolve(result)
                     );
                 });
-                if (!confirmed) {
-                    showToast('Submission cancelled.', 'info');
-                    return;
+
+                if (isFeedback) {
+                    // User confirmed they're submitting feedback - enforce both fields required
+                    if (!hasFeedbackImage) {
+                        showToast('Feedback requires a product image. Please upload one.', 'error');
+                        return;
+                    }
+                    if (!hasFeedbackUrl) {
+                        showToast('Feedback requires a product URL (Amazon link). Please paste one.', 'error');
+                        return;
+                    }
+
+                    // Show confirmation with product URL preview
+                    const confirmed = await new Promise((resolve) => {
+                        showFeedbackConfirmationDialog(
+                            (result) => resolve(result),
+                            feedbackProductUrl
+                        );
+                    });
+
+                    if (!confirmed) {
+                        showToast('Submission cancelled.', 'info');
+                        return;
+                    }
+
+                    messageType = 'feedback';
+                } else {
+                    // User said they're NOT submitting feedback - submit as inquiry only
+                    messageType = 'inquiry';
+                    // Note: any image/URL data will be discarded, only message submitted
                 }
-                messageType = 'feedback';
             }
 
             submitBtn.disabled = true;
@@ -1653,6 +1678,42 @@
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button onclick="this.parentElement.parentElement.parentElement.remove(); arguments[0];" style="padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">No, Just a Question</button>
                     <button onclick="this.parentElement.parentElement.parentElement.remove();" style="padding: 10px 16px; border-radius: 6px; border: none; background: #10b981; color: white; font-weight: 600; cursor: pointer;">Yes, This is Feedback</button>
+                </div>
+            `;
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            const buttons = dialog.querySelectorAll('button');
+            buttons[0].onclick = () => {
+                overlay.remove();
+                callback(false);
+            };
+            buttons[1].onclick = () => {
+                overlay.remove();
+                callback(true);
+            };
+        }
+
+        function showFeedbackIntentDialog(callback) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;';
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'background: white; border-radius: 12px; padding: 24px; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);';
+            dialog.innerHTML = `
+                <h3 style="color: #1e5aa8; margin: 0 0 16px 0; font-size: 18px;">Submit Product Feedback?</h3>
+                <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 14px; line-height: 1.5;">
+                    It looks like you want to share product feedback. If you're submitting feedback with a product image and Amazon link, you'll earn a commission once the vendor approves it.
+                </p>
+                <p style="color: #4a5568; margin: 0 0 20px 0; font-size: 13px; background: #f0f4f8; padding: 12px; border-radius: 6px; border-left: 4px solid #1e5aa8;">
+                    <strong>Feedback requires:</strong><br>
+                    • Product image (upload or paste from clipboard)<br>
+                    • Amazon product link (paste the URL)
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button style="padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">No, Just a Question</button>
+                    <button style="padding: 10px 16px; border-radius: 6px; border: none; background: #10b981; color: white; font-weight: 600; cursor: pointer;">Yes, I'm Leaving Feedback</button>
                 </div>
             `;
 
