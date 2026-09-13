@@ -1181,7 +1181,20 @@
             <div>
                 <label style="font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; font-weight: 600;">Product Image (Optional - upload or paste from clipboard):</label>
                 <input type="file" id="feedback-image" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
-                <small style="display: block; color: #718096; margin-top: 4px;">Paste image from clipboard: Ctrl+V (or Cmd+V on Mac) after clicking the field</small>
+                <small style="display: block; color: #718096; margin-top: 4px;">Paste image from clipboard: Ctrl+V (or Cmd+V on Mac)</small>
+                <div id="feedback-image-preview" style="margin-top: 10px; display: none;">
+                    <div style="background: #f0f4f8; border-radius: 8px; padding: 12px; border: 2px solid #10b981;">
+                        <div style="display: flex; gap: 12px;">
+                            <img id="preview-img" src="" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px;">
+                            <div style="flex: 1;">
+                                <p style="margin: 0 0 4px 0; color: #1e5aa8; font-weight: 600; font-size: 13px;">✓ Image Ready</p>
+                                <p id="preview-filename" style="margin: 0 0 4px 0; color: #4a5568; font-size: 12px;"></p>
+                                <p id="preview-size" style="margin: 0; color: #718096; font-size: 12px;"></p>
+                            </div>
+                            <button type="button" onclick="clearFeedbackImage()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #4a5568; font-weight: 600; cursor: pointer; height: fit-content;">Remove</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -1525,6 +1538,11 @@
         function setupFeedbackImagePaste() {
             const feedbackImageInput = document.getElementById('feedback-image');
 
+            // Handle file input change (for regular upload)
+            feedbackImageInput.addEventListener('change', () => {
+                displayFeedbackImagePreview();
+            });
+
             // Handle paste event
             document.addEventListener('paste', async (e) => {
                 const items = e.clipboardData?.items;
@@ -1540,11 +1558,40 @@
                         dataTransfer.items.add(blob);
                         feedbackImageInput.files = dataTransfer.files;
 
+                        displayFeedbackImagePreview();
                         showToast('✓ Image pasted successfully!', 'success');
                         return;
                     }
                 }
             });
+        }
+
+        function displayFeedbackImagePreview() {
+            const feedbackImageInput = document.getElementById('feedback-image');
+            const previewDiv = document.getElementById('feedback-image-preview');
+
+            if (feedbackImageInput.files && feedbackImageInput.files[0]) {
+                const file = feedbackImageInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('preview-filename').textContent = file.name;
+                    document.getElementById('preview-size').textContent = (file.size / 1024).toFixed(2) + ' KB';
+                    previewDiv.style.display = 'block';
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        }
+
+        function clearFeedbackImage() {
+            const feedbackImageInput = document.getElementById('feedback-image');
+            feedbackImageInput.value = '';
+            document.getElementById('feedback-image-preview').style.display = 'none';
+            showToast('Image removed', 'info');
         }
 
         async function submitInquiry() {
