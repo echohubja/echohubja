@@ -1731,7 +1731,7 @@
             document.getElementById('feedback-product-url').value = '';
 
             // Reload messages to display the new submission
-            await loadInquiries();
+            await loadBuyerInquiriesHistory(buyerId);
 
             closeInquiryDrawer();
         }
