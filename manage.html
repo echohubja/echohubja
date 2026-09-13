@@ -4654,47 +4654,82 @@
             try {
                 messagingState.allConversations = [];
 
-                // Fetch all inquiries where vendor_id matches
-                const { data: inquiries, error: inquiryError } = await sbClient
+                // Fetch root inquiries only (parent_inquiry_id IS NULL)
+                const { data: rootInquiries, error: inquiryError } = await sbClient
                     .from('inquiries')
-                    .select('id, buyer_id, message, created_at, message_type')
+                    .select('id, buyer_id, product_url, message, message_type, vendor_status, created_at')
                     .eq('vendor_id', currentVendor.id)
+                    .is('parent_inquiry_id', null)
                     .order('created_at', { ascending: false });
 
                 if (inquiryError) throw inquiryError;
 
-                // Group by buyer_id and fetch buyer details
-                const buyerMap = new Map();
-                for (const inq of (inquiries || [])) {
-                    if (!buyerMap.has(inq.buyer_id)) {
-                        buyerMap.set(inq.buyer_id, inq);
-                    }
-                }
+                // Get unique buyer IDs and fetch buyer details with referral info in batch
+                const buyerIds = [...new Set((rootInquiries || []).map(i => i.buyer_id))];
+                const { data: buyers } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name, email, referred_by')
+                    .in('id', buyerIds);
 
-                // Fetch buyer names
-                for (const buyerId of buyerMap.keys()) {
-                    try {
-                        const { data: buyer } = await sbClient
-                            .from('buyers')
-                            .select('id, full_name')
-                            .eq('id', buyerId)
-                            .single();
+                const buyerMap = {};
+                (buyers || []).forEach(b => buyerMap[b.id] = b);
 
-                        if (buyer) {
-                            const inq = buyerMap.get(buyerId);
-                            messagingState.allConversations.push({
-                                id: buyerId,
-                                name: buyer.full_name || 'Unknown Buyer',
-                                email: '',
-                                type: 'buyer',
-                                lastMessage: inq.message?.substring(0, 50) || 'No message',
-                                lastTime: new Date(inq.created_at).toLocaleDateString()
-                            });
+                // Get vendor referral info
+                const { data: vendorData } = await sbClient
+                    .from('vendors')
+                    .select('id, referred_by_buyer_id')
+                    .eq('id', currentVendor.id)
+                    .single();
+
+                // Build referrer name map
+                const referrerIds = [...new Set([...(buyers || []).map(b => b.referred_by).filter(Boolean), vendorData?.referred_by_buyer_id].filter(Boolean))];
+                const { data: referrers } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name, email')
+                    .in('id', referrerIds);
+
+                const referrerMap = {};
+                (referrers || []).forEach(r => referrerMap[r.id] = r);
+
+                // Create conversation entries for each root inquiry
+                (rootInquiries || []).forEach(inq => {
+                    const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id };
+                    const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+
+                    // Determine invitation status
+                    const buyerReferrer = buyer.referred_by ? referrerMap[buyer.referred_by] : null;
+                    const vendorReferrer = vendorData?.referred_by_buyer_id ? referrerMap[vendorData.referred_by_buyer_id] : null;
+
+                    let invitationStatus = 'Direct (no invitations)';
+                    if (buyerReferrer && vendorReferrer) {
+                        if (buyerReferrer.id === vendorReferrer.id) {
+                            invitationStatus = `Both invited by same person: ${buyerReferrer.full_name} (${buyerReferrer.email})`;
+                        } else {
+                            invitationStatus = `Both invited by unique: Buyer by ${buyerReferrer.full_name}, Vendor by ${vendorReferrer.full_name}`;
                         }
-                    } catch (err) {
-                        console.error('Error fetching buyer:', err);
+                    } else if (buyerReferrer) {
+                        invitationStatus = `Buyer invited by ${buyerReferrer.full_name} (${buyerReferrer.email})`;
+                    } else if (vendorReferrer) {
+                        invitationStatus = `Vendor invited by ${vendorReferrer.full_name} (${vendorReferrer.email})`;
                     }
-                }
+
+                    messagingState.allConversations.push({
+                        id: inq.id,
+                        name: `${buyer.full_name}`,
+                        email: buyer.email,
+                        buyerId: inq.buyer_id,
+                        buyerName: buyer.full_name,
+                        buyerEmail: buyer.email,
+                        product: inq.product_url ? inq.product_url.split('/').slice(-1)[0] : 'Product',
+                        type: 'inquiry',
+                        messageType: inq.message_type,
+                        status: inq.vendor_status,
+                        statusBadge: statusBadge,
+                        invitationStatus: invitationStatus,
+                        lastMessage: inq.message?.substring(0, 50) || 'No message',
+                        lastTime: new Date(inq.created_at).toLocaleDateString()
+                    });
+                });
 
                 messagingState.conversations = messagingState.allConversations;
                 renderVendorMessagingConversations();
@@ -4716,15 +4751,20 @@
 
             sidebar.innerHTML = messagingState.conversations.map(conv => `
                 <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${messagingState.currentConversationId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectVendorMessagingConversation('${conv.id}')">
-                    <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate;">${escapeHtml(conv.name)}</div>
-                    <div style="font-size: 12px; color: #64748b; text-truncate; margin-top: 4px;">${escapeHtml(conv.lastMessage)}</div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${conv.lastTime}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate; flex: 1;">${escapeHtml(conv.buyerName)} (B-${conv.buyerId.substring(0, 6).toUpperCase()})</div>
+                        <span style="background: ${conv.status === 'approved' ? '#dcfce7' : conv.status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${conv.status === 'approved' ? '#166534' : conv.status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${conv.statusBadge}</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 3px;">📧 ${escapeHtml(conv.buyerEmail)}</div>
+                    <div style="font-size: 11px; color: #7c3aed; margin-bottom: 3px; font-weight: 500;">${escapeHtml(conv.invitationStatus)}</div>
+                    <div style="font-size: 12px; color: #64748b; text-truncate; margin-bottom: 4px;">${escapeHtml(conv.lastMessage)}</div>
+                    <div style="font-size: 11px; color: #94a3b8;">${conv.lastTime}</div>
                 </div>
             `).join('');
         }
 
-        async function selectVendorMessagingConversation(buyerId) {
-            messagingState.currentConversationId = buyerId;
+        async function selectVendorMessagingConversation(inquiryId) {
+            messagingState.currentConversationId = inquiryId;
             renderVendorMessagingConversations();
             await loadVendorMessagingMessages();
         }
@@ -4740,20 +4780,37 @@
                 const buyerEmailEl = document.getElementById('messagingBuyerEmail');
                 const commissionStatusEl = document.getElementById('messagingCommissionStatus');
 
-                const { data: messages, error } = await sbClient
+                const messages = [];
+
+                // Load root inquiry
+                const { data: rootMessage, error: rootError } = await sbClient
                     .from('inquiries')
                     .select('*')
-                    .eq('vendor_id', currentVendor.id)
-                    .eq('buyer_id', messagingState.currentConversationId)
+                    .eq('id', messagingState.currentConversationId)
+                    .single();
+
+                if (rootError) throw rootError;
+                if (rootMessage) messages.push(rootMessage);
+
+                // Load all follow-ups for this inquiry
+                const { data: followups, error: followupError } = await sbClient
+                    .from('inquiries')
+                    .select('*')
+                    .eq('parent_inquiry_id', messagingState.currentConversationId)
                     .order('created_at', { ascending: true });
 
-                if (error) throw error;
+                if (followupError) throw followupError;
+                messages.push(...(followups || []));
+
+                // Get buyer ID from root inquiry
+                const buyerId = rootMessage?.buyer_id;
+                if (!buyerId) throw new Error('No buyer information found');
 
                 // Fetch buyer details
                 const { data: buyer, error: buyerError } = await sbClient
                     .from('buyers')
                     .select('id, full_name, email')
-                    .eq('id', messagingState.currentConversationId)
+                    .eq('id', buyerId)
                     .single();
 
                 // Fetch commission status from payables
@@ -4766,7 +4823,7 @@
                         .from('admin_payables')
                         .select('status')
                         .eq('vendor_id', currentVendor.id)
-                        .eq('split_with_buyer_id', messagingState.currentConversationId)
+                        .eq('split_with_buyer_id', buyerId)
                         .limit(1)
                         .single();
 
@@ -4777,7 +4834,7 @@
                             .from('buyer_payables')
                             .select('status')
                             .eq('vendor_id', currentVendor.id)
-                            .eq('buyer_id', messagingState.currentConversationId)
+                            .eq('buyer_id', buyerId)
                             .limit(1)
                             .single();
 
@@ -4787,7 +4844,7 @@
                     }
                 } catch (err) {
                     // No commission found, default to pending
-                    console.log('No commission found for this buyer');
+                    console.log('No commission found for this inquiry');
                 }
 
                 // Set status colors based on status
@@ -4803,7 +4860,7 @@
 
                 // Update header elements
                 if (buyerNameEl) buyerNameEl.textContent = buyer?.full_name || 'Unknown Buyer';
-                if (buyerIdEl) buyerIdEl.textContent = messagingState.currentConversationId.substring(0, 8).toUpperCase();
+                if (buyerIdEl) buyerIdEl.textContent = buyerId.substring(0, 8).toUpperCase();
                 if (buyerEmailEl) buyerEmailEl.textContent = buyer?.email || '-';
                 if (commissionStatusEl) {
                     commissionStatusEl.textContent = statusInfo.label;
@@ -4904,14 +4961,28 @@
             }
 
             try {
+                // Get the inquiry details to extract buyer_id and product_id
+                const { data: inquiry } = await sbClient
+                    .from('inquiries')
+                    .select('buyer_id, product_id')
+                    .eq('id', messagingState.currentConversationId)
+                    .single();
+
+                if (!inquiry) {
+                    showToast('Inquiry not found', 'error');
+                    return;
+                }
+
                 const { error } = await sbClient
                     .from('inquiries')
                     .insert([{
                         vendor_id: currentVendor.id,
-                        buyer_id: messagingState.currentConversationId,
+                        buyer_id: inquiry.buyer_id,
+                        product_id: inquiry.product_id,
+                        parent_inquiry_id: messagingState.currentConversationId,
                         message: message,
                         sender_type: 'vendor',
-                        message_type: 'vendor_response',
+                        message_type: 'followup',
                         created_at: new Date().toISOString()
                     }]);
 
