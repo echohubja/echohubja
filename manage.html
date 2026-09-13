@@ -2872,6 +2872,8 @@
                 await loadCommissionStats();
                 // await loadVendorAlerts(); // DISABLED - alerts system removed (Sep 3, 2026)
                 await initMessagingHub();
+                await loadPayoutDataFromDB();
+                await initPayoutDataPolling();
                 await setupPolling();
 
                 loadingState.style.display = 'none';
@@ -4413,7 +4415,8 @@
             allConversations: [],
             conversations: [],
             currentFolder: 'all',
-            currentSort: 'date-newest'
+            currentSort: 'date-newest',
+            payoutData: null
         };
 
         async function initMessagingHub() {
@@ -4863,6 +4866,243 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // ========== PHASE 1: MANAGE PAYOUTS DATABASE INTEGRATION ==========
+
+        async function loadPayoutDataFromDB() {
+            if (!currentVendor || !sbClient) {
+                console.error('Vendor or Supabase client not initialized');
+                return;
+            }
+
+            try {
+                // Load vendor payables (completed payouts)
+                const { data: vendorPayables, error: vpError } = await sbClient
+                    .from('vendor_payables')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('created_at', { ascending: false });
+
+                if (vpError) throw vpError;
+
+                // Load admin payables (referral commissions)
+                const { data: adminPayables, error: apError } = await sbClient
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('created_at', { ascending: false });
+
+                if (apError) throw apError;
+
+                // Load buyer payables (commission earnings)
+                const { data: buyerPayables, error: bpError } = await sbClient
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('created_at', { ascending: false });
+
+                if (bpError) throw bpError;
+
+                // Store in state
+                messagingState.payoutData = {
+                    vendorPayables: vendorPayables || [],
+                    adminPayables: adminPayables || [],
+                    buyerPayables: buyerPayables || []
+                };
+
+                // Update summary cards
+                updatePayoutSummaryCards();
+
+                // Render payout history section
+                renderPayoutHistoryTable();
+
+                console.log('Payout data loaded successfully', messagingState.payoutData);
+
+            } catch (err) {
+                console.error('Error loading payout data:', err);
+            }
+        }
+
+        function updatePayoutSummaryCards() {
+            const data = messagingState.payoutData;
+            if (!data) return;
+
+            // Calculate totals
+            let totalEarnings = 0;
+            let paidOut = 0;
+            let pending = 0;
+
+            // Sum vendor payables (completed payments)
+            data.vendorPayables.forEach(vp => {
+                if (vp.status === 'paid' || vp.status === 'received') {
+                    paidOut += parseFloat(vp.amount_owed || 0);
+                } else if (vp.status === 'pending') {
+                    pending += parseFloat(vp.amount_owed || 0);
+                }
+                totalEarnings += parseFloat(vp.amount_owed || 0);
+            });
+
+            // Sum admin payables for vendor portion
+            data.adminPayables.forEach(ap => {
+                const vendorPortion = parseFloat(ap.admin_commission || 0);
+                if (ap.status === 'paid' || ap.status === 'received') {
+                    paidOut += vendorPortion;
+                } else if (ap.status === 'pending') {
+                    pending += vendorPortion;
+                }
+                totalEarnings += vendorPortion;
+            });
+
+            // Sum buyer payables
+            data.buyerPayables.forEach(bp => {
+                if (bp.status === 'paid' || bp.status === 'received') {
+                    paidOut += parseFloat(bp.amount_owed || 0);
+                } else if (bp.status === 'pending') {
+                    pending += parseFloat(bp.amount_owed || 0);
+                }
+                totalEarnings += parseFloat(bp.amount_owed || 0);
+            });
+
+            // Update DOM with calculated values
+            const summaryCards = document.querySelectorAll('[style*="Total Earnings"], [style*="Pending Payout"], [style*="Paid Out"]');
+
+            // Find and update Total Earnings card
+            const totalCard = Array.from(document.querySelectorAll('div')).find(el =>
+                el.textContent.includes('Total Earnings') && el.closest('.panel')
+            );
+            if (totalCard) {
+                const valueEl = totalCard.querySelector('div[style*="font-size: 28px"]');
+                if (valueEl) valueEl.textContent = `$${totalEarnings.toFixed(2)}`;
+            }
+
+            // Find and update Pending Payout card
+            const pendingCard = Array.from(document.querySelectorAll('div')).find(el =>
+                el.textContent.includes('Pending Payout') && el.closest('.panel')
+            );
+            if (pendingCard) {
+                const valueEl = pendingCard.querySelector('div[style*="font-size: 28px"]');
+                if (valueEl) valueEl.textContent = `$${pending.toFixed(2)}`;
+            }
+
+            // Find and update Paid Out card
+            const paidCard = Array.from(document.querySelectorAll('div')).find(el =>
+                el.textContent.includes('Paid Out') && el.closest('.panel')
+            );
+            if (paidCard) {
+                const valueEl = paidCard.querySelector('div[style*="font-size: 28px"]');
+                if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
+                const countEl = paidCard.querySelector('div[style*="font-size: 11px"]');
+                if (countEl) countEl.textContent = `${data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length} payouts`;
+            }
+        }
+
+        function renderPayoutHistoryTable() {
+            const data = messagingState.payoutData;
+            if (!data) return;
+
+            // Combine all completed payables
+            const allPayables = [];
+
+            // Add vendor payables
+            data.vendorPayables.forEach(vp => {
+                if (vp.status === 'paid' || vp.status === 'received') {
+                    allPayables.push({
+                        id: vp.id,
+                        amount: vp.amount_owed,
+                        date: vp.payment_date || vp.created_at,
+                        status: vp.status,
+                        method: vp.payment_method || 'Bank Transfer',
+                        type: 'vendor'
+                    });
+                }
+            });
+
+            // Add admin payables
+            data.adminPayables.forEach(ap => {
+                if (ap.status === 'paid' || ap.status === 'received') {
+                    allPayables.push({
+                        id: ap.id,
+                        amount: ap.admin_commission,
+                        date: ap.created_at,
+                        status: ap.status,
+                        method: 'PayPal',
+                        type: 'admin'
+                    });
+                }
+            });
+
+            // Sort by date descending
+            allPayables.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Render table
+            const tbody = document.querySelector('#payout-history-section tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = allPayables.length > 0
+                ? allPayables.map(item => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; color: #1e293b;">${new Date(item.date).toLocaleDateString()}</td>
+                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(item.amount).toFixed(2)}</td>
+                        <td style="padding: 12px;">
+                            <span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                ${item.status === 'received' ? 'Received' : 'Completed'}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; color: #64748b;">${item.method}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">No completed payouts yet</td></tr>';
+        }
+
+        function calculateSLATimer(createdAt, stage) {
+            const created = new Date(createdAt);
+            const now = new Date();
+
+            let deadline;
+            if (stage === 'vendor') {
+                // T+48 hours
+                deadline = new Date(created.getTime() + 48 * 60 * 60 * 1000);
+            } else if (stage === 'buyer') {
+                // T+8 hours from vendor receipt upload
+                deadline = new Date(created.getTime() + 8 * 60 * 60 * 1000);
+            } else {
+                return { status: 'completed', timeLeft: 0 };
+            }
+
+            const timeLeft = deadline - now;
+
+            if (timeLeft <= 0) {
+                return { status: 'timeout', timeLeft: 0, deadline: deadline.toISOString() };
+            }
+
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+            let statusColor = '#16a34a'; // green
+            if (minutes < 5 && hours === 0) statusColor = '#dc2626'; // red
+            else if (minutes < 60 && hours < 1) statusColor = '#eab308'; // yellow
+
+            return {
+                status: 'active',
+                timeLeft: timeLeft,
+                hours: hours,
+                minutes: minutes,
+                displayText: hours > 0 ? `⏱️ ${hours}h ${minutes}m` : `⏱️ ${minutes}m`,
+                statusColor: statusColor,
+                deadline: deadline.toISOString()
+            };
+        }
+
+        async function initPayoutDataPolling() {
+            // Poll payout data every 15 seconds
+            setInterval(async () => {
+                try {
+                    await loadPayoutDataFromDB();
+                } catch (err) {
+                    console.error('Error polling payout data:', err);
+                }
+            }, 15000); // 15 second interval
         }
 
         // Logout Handler
