@@ -4982,6 +4982,7 @@
                         parent_inquiry_id: messagingState.currentConversationId,
                         message: message,
                         sender_type: 'vendor',
+                        sender_id: currentVendor.id,
                         message_type: 'followup',
                         created_at: new Date().toISOString()
                     }]);
