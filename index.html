@@ -2154,8 +2154,7 @@
             submitBtn.textContent = 'Sending...';
 
             try {
-                const currentUser = authState.user;
-                const buyerId = currentUser?.id || currentBuyerId || localStorage.getItem('buyer_id');
+                const buyerId = currentBuyerId || localStorage.getItem('buyer_id');
                 if (!buyerId) throw new Error('Not authenticated');
 
                 // Encode feedback image to base64 if present
