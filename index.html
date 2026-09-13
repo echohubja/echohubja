@@ -2064,47 +2064,208 @@
                 threadHtml += `
                     </div>
                     <div style="padding: 16px; border-top: 1px solid #e2e8f0;">
-                        <input type="text" id="buyer-message-input" placeholder="Type your reply..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px;">
-                        <button onclick="sendBuyerMessage('${inquiryId}')" style="width: 100%; margin-top: 8px; padding: 10px; background: #0ea5e9; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Send Reply</button>
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">Message or Feedback</label>
+                            <textarea id="buyer-message-input-${inquiryId}" placeholder="Describe your experience or ask a question..." style="width: 100%; height: 80px; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; resize: vertical; font-family: inherit;"></textarea>
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">📸 Product Image (optional)</label>
+                            <input type="file" id="buyer-feedback-image-${inquiryId}" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px;">
+                            <div id="buyer-image-preview-${inquiryId}" style="margin-top: 8px; display: none;">
+                                <img id="buyer-image-preview-img-${inquiryId}" style="max-width: 100%; max-height: 150px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            </div>
+                            <small style="color: #718096; display: block; margin-top: 4px;">Paste from clipboard or click to upload</small>
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px;">🔗 Product URL (optional)</label>
+                            <input type="url" id="buyer-product-url-${inquiryId}" placeholder="https://www.amazon.com/... or product link" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px;">
+                        </div>
+
+                        <button onclick="sendBuyerFeedback('${inquiryId}')" style="width: 100%; padding: 10px; background: #0ea5e9; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Send</button>
                     </div>
                 `;
 
                 rightPanel.innerHTML = threadHtml;
+                setupBuyerFeedbackImagePaste('${inquiryId}');
             } catch (err) {
                 console.error('Error loading thread:', err);
                 rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error loading thread</div>';
             }
         }
 
-        async function sendBuyerMessage(inquiryId) {
-            const input = document.getElementById('buyer-message-input');
-            if (!input) return;
-            const message = input.value.trim();
-            if (!message) return;
+        async function sendBuyerFeedback(inquiryId) {
+            const messageInput = document.getElementById(`buyer-message-input-${inquiryId}`);
+            const imageInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
+            const urlInput = document.getElementById(`buyer-product-url-${inquiryId}`);
+            const submitBtn = event.target;
+
+            if (!messageInput) return;
+            const message = messageInput.value.trim();
+            if (!message) {
+                showToast('Please enter a message.', 'error');
+                return;
+            }
+
+            const feedbackImageFile = imageInput?.files?.[0];
+            const feedbackProductUrl = urlInput?.value?.trim() || '';
+            const hasFeedbackImage = feedbackImageFile !== undefined;
+            const hasFeedbackUrl = feedbackProductUrl && feedbackProductUrl.length > 0;
+            const hasUrlInMessage = message.includes('amazon.com') || message.includes('http') || message.includes('www.');
+            const hasImageOrUrl = hasFeedbackImage || hasFeedbackUrl || hasUrlInMessage;
+
+            let messageType = 'followup';
+
+            // If user provided image OR URL, ask if they're submitting feedback
+            if (hasImageOrUrl) {
+                const isFeedback = await new Promise((resolve) => {
+                    showFeedbackIntentDialog((result) => resolve(result));
+                });
+
+                if (isFeedback) {
+                    // User confirmed they're submitting feedback - enforce both fields required
+                    if (!hasFeedbackImage) {
+                        showToast('Feedback requires a product image. Please upload one.', 'error');
+                        return;
+                    }
+                    if (!hasFeedbackUrl) {
+                        showToast('Feedback requires a product URL (Amazon link). Please paste one.', 'error');
+                        return;
+                    }
+
+                    // Show confirmation with product URL preview
+                    const confirmed = await new Promise((resolve) => {
+                        showFeedbackConfirmationDialog((result) => resolve(result), feedbackProductUrl);
+                    });
+
+                    if (!confirmed) {
+                        showToast('Submission cancelled.', 'info');
+                        return;
+                    }
+
+                    messageType = 'feedback';
+                } else {
+                    messageType = 'followup';
+                }
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
 
             try {
                 const currentUser = authState.user;
-                const { data, error } = await db
-                    .from('inquiries')
-                    .insert({
-                        parent_inquiry_id: inquiryId,
-                        buyer_id: currentUser.id,
-                        vendor_id: null,
-                        message: message,
-                        message_type: 'followup',
-                        sender_id: currentUser.id,
-                        sender_type: 'buyer',
-                        created_at: new Date().toISOString()
-                    });
+                const buyerId = currentUser?.id || currentBuyerId || localStorage.getItem('buyer_id');
+                if (!buyerId) throw new Error('Not authenticated');
 
+                // Encode feedback image to base64 if present
+                let feedbackImageData = null;
+                if (feedbackImageFile && messageType === 'feedback') {
+                    feedbackImageData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result.split(',')[1]);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(feedbackImageFile);
+                    });
+                }
+
+                // Fetch root inquiry to get vendor_id
+                const { data: rootInquiry } = await db
+                    .from('inquiries')
+                    .select('vendor_id')
+                    .eq('id', inquiryId)
+                    .single();
+
+                const submissionData = {
+                    parent_inquiry_id: inquiryId,
+                    buyer_id: buyerId,
+                    vendor_id: rootInquiry?.vendor_id || null,
+                    sender_id: buyerId,
+                    sender_type: 'buyer',
+                    message_type: messageType,
+                    message: message,
+                    image_data: messageType === 'feedback' && feedbackImageData ? feedbackImageData : null,
+                    product_url: messageType === 'feedback' && feedbackProductUrl ? feedbackProductUrl : null,
+                    created_at: new Date().toISOString()
+                };
+
+                const { error } = await db.from('inquiries').insert([submissionData]);
                 if (error) throw error;
 
-                input.value = '';
+                const typeLabel = messageType === 'feedback' ? 'Feedback submitted' : 'Reply sent';
+                showToast(typeLabel + ' successfully!', 'success');
+
+                if (messageType === 'feedback') {
+                    showNotification(
+                        '💰 Feedback Received',
+                        'Your feedback has been submitted to the vendor. You\'ll earn a commission once they approve it.',
+                        'success',
+                        5000
+                    );
+                }
+
+                messageInput.value = '';
+                imageInput.value = '';
+                urlInput.value = '';
+                document.getElementById(`buyer-image-preview-${inquiryId}`)?.style.setProperty('display', 'none');
+
                 await selectBuyerMessagingConversation(inquiryId);
             } catch (err) {
-                console.error('Error sending message:', err);
-                alert('Failed to send message');
+                console.error('Error sending feedback:', err);
+                showToast('Failed to send. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send';
             }
+        }
+
+        function setupBuyerFeedbackImagePaste(inquiryId) {
+            const imageInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
+            if (!imageInput) return;
+
+            // Handle file input change
+            imageInput.addEventListener('change', () => {
+                displayBuyerFeedbackImagePreview(inquiryId);
+            });
+
+            // Handle paste event for feedback images
+            document.addEventListener('paste', async (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const blob = item.getAsFile();
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(blob);
+                        imageInput.files = dataTransfer.files;
+                        displayBuyerFeedbackImagePreview(inquiryId);
+                        break;
+                    }
+                }
+            });
+        }
+
+        function displayBuyerFeedbackImagePreview(inquiryId) {
+            const imageInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
+            const previewContainer = document.getElementById(`buyer-image-preview-${inquiryId}`);
+            const previewImg = document.getElementById(`buyer-image-preview-img-${inquiryId}`);
+
+            if (!imageInput?.files?.[0] || !previewContainer || !previewImg) return;
+
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function sendBuyerMessage(inquiryId) {
+            // Legacy function - now replaced by sendBuyerFeedback
+            await sendBuyerFeedback(inquiryId);
         }
 
         async function expandMessageThread(inquiryId) {
