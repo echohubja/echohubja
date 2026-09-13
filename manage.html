@@ -1962,6 +1962,129 @@
         .inquiry-empty-state-text {
             margin: 0;
         }
+
+        /* Code Viewer Modal Styles */
+        .code-viewer-floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #1e5aa8 0%, #2e7bb4 100%);
+            color: white;
+            border: none;
+            padding: 14px 18px;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(30, 90, 168, 0.3);
+            z-index: 1300;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+        .code-viewer-floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 18px rgba(30, 90, 168, 0.4);
+        }
+        .code-viewer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            z-index: 2100;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .code-viewer-overlay.active {
+            display: flex;
+        }
+        .code-viewer-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            width: 1000px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+        }
+        .code-viewer-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 12px 12px 0 0;
+        }
+        .code-viewer-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .code-viewer-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+            transition: color 0.2s ease;
+        }
+        .code-viewer-close:hover {
+            color: #2c3e50;
+        }
+        .code-viewer-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            background: #f8fafc;
+        }
+        .code-viewer-content {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 100%;
+            overflow: auto;
+        }
+        .code-viewer-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-radius: 0 0 12px 12px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2820,6 +2943,25 @@
 
         </div>
     </div>
+
+    <!-- Code Viewer Modal -->
+    <div class="code-viewer-overlay" id="code-viewer-overlay" onclick="closeCodeViewer()"></div>
+    <div class="code-viewer-modal" id="code-viewer-modal" style="display: none;">
+        <div class="code-viewer-header">
+            <h2>📄 Source Code Viewer</h2>
+            <button class="code-viewer-close" onclick="closeCodeViewer()">×</button>
+        </div>
+        <div class="code-viewer-body">
+            <div class="code-viewer-content" id="code-viewer-content">Loading source code...</div>
+        </div>
+        <div class="code-viewer-footer">
+            <button onclick="copyCodeToClipboard()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">📋 Copy Code</button>
+            <button onclick="closeCodeViewer()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <!-- Code Viewer Floating Button -->
+    <button class="code-viewer-floating-btn" id="code-viewer-btn" onclick="showCodeViewer()" title="View Source Code">📄</button>
 
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
@@ -4796,10 +4938,20 @@
             `).join('');
         }
 
+        let vendorMessagingPollInterval = null;
+
         async function selectVendorMessagingConversation(inquiryId) {
             messagingState.currentConversationId = inquiryId;
             renderVendorMessagingConversations();
+
+            // Clear existing poll interval if any
+            if (vendorMessagingPollInterval) clearInterval(vendorMessagingPollInterval);
+
+            // Initial load
             await loadVendorMessagingMessages();
+
+            // Set up polling to refresh messages every 3 seconds
+            vendorMessagingPollInterval = setInterval(loadVendorMessagingMessages, 3000);
         }
 
         async function loadVendorMessagingMessages() {
@@ -4948,6 +5100,7 @@
                 const timestamp = new Date(msg.created_at).toLocaleString();
                 const senderLabel = msg.sender_type === 'buyer' ? '👤 Customer' : msg.sender_type === 'vendor' ? '🏪 You' : '👨‍💼 Admin';
                 const messageHTML = renderMarkdown(msg.message || '');
+                const msgBadge = msg.message_type === 'feedback' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-left: 8px;">🎯 Feedback</span>' : '';
 
                 // Render feedback status badge if feedback message
                 const feedbackStatus = msg.message_type === 'feedback' ? `
@@ -4968,9 +5121,10 @@
                 return `
                     <div style="display: flex; ${isVendorSent ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
                         <div style="background: ${isVendorSent ? '#1e5aa8' : '#f1f5f9'}; color: ${isVendorSent ? 'white' : '#1e293b'}; padding: 12px 16px; border-radius: 12px; max-width: 70%; word-wrap: break-word;">
-                            ${!isVendorSent ? `<div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">${senderLabel}</div>` : ''}
+                            ${!isVendorSent ? `<div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; opacity: 0.8; display: flex; align-items: center;">${senderLabel}${msgBadge}</div>` : ''}
                             <div style="font-size: 14px; line-height: 1.4;">${messageHTML}</div>
-                            ${msg.image_url ? `<a href="${msg.image_url}" target="_blank" style="display: inline-block; margin-top: 8px; cursor: pointer;"><img src="${msg.image_url}" alt="Message image" style="max-width: 100%; border-radius: 6px; border: 2px solid rgba(255,255,255,0.3); transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.8)'; this.style.opacity='0.9';" onmouseout="this.style.borderColor='rgba(255,255,255,0.3)'; this.style.opacity='1';"></a>` : ''}
+                            ${msg.product_url ? `<div style="margin-top: 8px;"><a href="${escapeHtml(msg.product_url)}" target="_blank" style="color: ${isVendorSent ? '#fff' : '#0ea5e9'}; text-decoration: none; font-size: 12px; word-break: break-all;">🔗 ${escapeHtml(msg.product_url.substring(0, 50))}...</a></div>` : ''}
+                            ${msg.image_data ? `<div style="margin-top: 8px; cursor: pointer;" onclick="showVendorImageModal('${escapeHtml(msg.image_data)}')"><img src="data:image/jpeg;base64,${msg.image_data}" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid ${isVendorSent ? 'rgba(255,255,255,0.3)' : '#cbd5e0'};"></div>` : ''}
                             <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">${timestamp}</div>
                             ${feedbackStatus}
                             ${approvalButtons}
@@ -4981,6 +5135,19 @@
 
             // Auto-scroll to bottom
             container.scrollTop = container.scrollHeight;
+        }
+
+        function showVendorImageModal(imageData) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            modal.innerHTML = `
+                <div style="position: relative; background: white; border-radius: 8px; padding: 20px; max-width: 90vw; max-height: 90vh;">
+                    <button onclick="this.closest('div').parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;">✕ Close</button>
+                    <img src="data:image/jpeg;base64,${imageData}" style="max-width: 90vw; max-height: 85vh; border-radius: 4px;">
+                </div>
+            `;
+            document.body.appendChild(modal);
         }
 
         async function sendVendorMessage() {
@@ -6248,6 +6415,57 @@
                         window.location.href = 'login.html';
                     }
                 });
+            }
+        });
+
+        // Code Viewer Functions
+        function showCodeViewer() {
+            const overlay = document.getElementById('code-viewer-overlay');
+            const modal = document.getElementById('code-viewer-modal');
+            const codeContent = document.getElementById('code-viewer-content');
+
+            // Get the full HTML source
+            const fullSource = document.documentElement.outerHTML;
+
+            // Display the source code
+            codeContent.textContent = fullSource;
+
+            // Show modal and overlay
+            overlay.classList.add('active');
+            modal.style.display = 'flex';
+        }
+
+        function closeCodeViewer() {
+            const overlay = document.getElementById('code-viewer-overlay');
+            const modal = document.getElementById('code-viewer-modal');
+
+            // Hide modal and overlay
+            overlay.classList.remove('active');
+            modal.style.display = 'none';
+        }
+
+        function copyCodeToClipboard() {
+            const codeContent = document.getElementById('code-viewer-content');
+            const code = codeContent.textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                alert('✓ Source code copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        // Close code viewer when clicking outside
+        document.getElementById('code-viewer-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCodeViewer();
+            }
+        });
+
+        // Allow ESC key to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCodeViewer();
             }
         });
 
