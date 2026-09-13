@@ -663,9 +663,6 @@
             <p>Marketplace Storefront</p>
         </div>
         <div class="header-right">
-            <button id="btn-open-inquiries" onclick="toggleInquiriesDrawer()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: none;">
-                💬 My Inquiries
-            </button>
             <div id="buyer-pill" class="buyer-pill">
                 Active Buyer: <span id="current-buyer-name" style="margin-left: 5px; font-weight: 600;"></span>
                 <button onclick="logoutBuyer()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer; font-size: 13px; margin-left: 10px; font-weight: 600;">Sign Out</button>
@@ -858,13 +855,12 @@
     <!-- Messaging Hub Section -->
     <div id="messaging-section" class="tab-section">
         <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
-            <div class="info-banner">
-                <strong>💬 Messaging Hub:</strong> View and manage all your messages with vendors and the marketplace admin.
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 24px; margin: 0; color: #2c3e50;">💬 Messaging Hub</h2>
+                <input type="text" id="messaging-search-input" placeholder="Search by product..." oninput="filterMessagingList()" style="width: 250px; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
             </div>
-
-            <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); padding: 40px; text-align: center; color: #718096;">
-                <p style="font-size: 16px; margin: 0;">Messages will appear here when you communicate with vendors or receive admin notifications.</p>
-                <p style="font-size: 14px; margin-top: 10px; color: #a0aec0;">Start by submitting an inquiry to a product vendor.</p>
+            <div id="messaging-hub-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <p style="text-align: center; color: #718096; padding: 40px;">Loading your messages...</p>
             </div>
         </div>
     </div>
@@ -1210,23 +1206,6 @@
     </div>
 
 
-    <div class="drawer-overlay" id="inquiries-drawer-overlay" onclick="toggleInquiriesDrawer()"></div>
-    <div class="drawer-container" id="inquiries-drawer">
-        <div class="drawer-header">
-            <h2 style="font-size: 20px; margin: 0;">My Inquiries & Product Feedback</h2>
-            <button class="btn-close-drawer" onclick="toggleInquiriesDrawer()">&times;</button>
-        </div>
-
-        <div class="drawer-body">
-            <div>
-                <input type="text" id="inquiry-search-input" oninput="filterInquiriesList()" placeholder="Search by product name or vendor ID..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: #f8fafc;">
-            </div>
-
-            <div id="buyer-inquiries-body" style="display: flex; flex-direction: column; gap: 12px;">
-                <p style="text-align: center; color: #718096; padding: 20px;">Loading your past inquiries...</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container"></div>
@@ -1730,10 +1709,10 @@
             document.getElementById('feedback-image').value = '';
             document.getElementById('feedback-product-url').value = '';
 
-            // Reload messages to display the new submission
-            await loadBuyerInquiriesHistory(buyerId);
-
             closeInquiryDrawer();
+
+            // Refresh messaging hub to show the new submission
+            await loadMessagingHub(buyerId);
         }
 
         function showFeedbackConfirmationDialog(callback, productUrl) {
@@ -1879,20 +1858,76 @@
             document.body.appendChild(overlay);
         }
 
-        function toggleInquiriesDrawer() {
-            const drawer = document.getElementById('inquiries-drawer');
-            const overlay = document.getElementById('inquiries-drawer-overlay');
+        async function loadMessagingHub(buyerId) {
+            if (!buyerId) return;
+            const container = document.getElementById('messaging-hub-body');
+            if (!container) return;
 
-            const isOpen = drawer.classList.contains('open');
-            if (isOpen) {
-                drawer.classList.remove('open');
-                overlay.style.display = 'none';
-            } else {
-                drawer.classList.add('open');
-                overlay.style.display = 'block';
-                document.getElementById('inquiry-search-input').value = '';
-                loadBuyerInquiriesHistory(currentBuyerId);
+            container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">Loading messages...</p>';
+
+            const { data: inquiries, error } = await db
+                .from('inquiries')
+                .select('*, products(id, product_name)')
+                .eq('buyer_id', buyerId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading messages:', error.message);
+                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your messages.</p>';
+                return;
             }
+
+            if (!inquiries || inquiries.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No messages yet. Start by submitting an inquiry to a product.</p>';
+                return;
+            }
+
+            let html = '';
+            inquiries.forEach((inquiry, idx) => {
+                const productName = inquiry.products?.product_name || 'General';
+                const messageType = inquiry.message_type === 'feedback' ? '💰 Feedback' : '❓ Inquiry';
+                const timestamp = new Date(inquiry.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const status = inquiry.vendor_status === 'approved' ? '✅ Approved' : (inquiry.vendor_status === 'pending' ? '⏳ Pending' : 'Submitted');
+                const statusColor = inquiry.vendor_status === 'approved' ? '#10b981' : (inquiry.vendor_status === 'pending' ? '#f59e0b' : '#6b7280');
+
+                html += `
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; gap: 12px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 14px; color: #2c3e50; font-weight: 600;">${productName}</h4>
+                                    <p style="margin: 4px 0; font-size: 12px; color: #718096;">${messageType} • ${timestamp}</p>
+                                </div>
+                                <span style="font-size: 11px; background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${status}</span>
+                            </div>
+                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #4a5568; line-height: 1.5;">${inquiry.message.substring(0, 200)}${inquiry.message.length > 200 ? '...' : ''}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filterMessagingList() {
+            const query = document.getElementById('messaging-search-input').value.toLowerCase().trim();
+            const messages = document.querySelectorAll('#messaging-hub-body > div');
+
+            messages.forEach(msg => {
+                const productName = msg.querySelector('h4')?.textContent.toLowerCase() || '';
+                const messageText = msg.textContent.toLowerCase();
+                if (productName.includes(query) || messageText.includes(query)) {
+                    msg.style.display = 'flex';
+                } else {
+                    msg.style.display = 'none';
+                }
+            });
         }
 
         async function loadBuyerInquiriesHistory(buyerId) {
@@ -2286,7 +2321,7 @@
             }
 
             showToast('Product feedback (link & image) successfully submitted!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId);
+            loadMessagingHub(currentBuyerId);
         }
 
         async function submitFollowupMessage(inquiryId, productId, vendorId) {
@@ -2318,7 +2353,7 @@
             }
 
             showToast('Follow-up message sent successfully!', 'success');
-            loadBuyerInquiriesHistory(currentBuyerId);
+            loadMessagingHub(currentBuyerId);
         }
 
 
@@ -2344,6 +2379,7 @@
                 loadPayoutSettings(currentBuyerId);
             } else if (tabName === 'messaging') {
                 document.getElementById('messaging-section').classList.add('active');
+                loadMessagingHub(currentBuyerId);
             } else if (tabName === 'approvals-reviewer') {
                 document.getElementById('approvals-reviewer-section').classList.add('active');
                 loadReviewerApprovals(currentBuyerId);
