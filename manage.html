@@ -5056,6 +5056,8 @@
             }
 
             try {
+                console.log('[Payout] Starting load for vendor:', currentVendor.id);
+
                 // Load vendor payables (completed payouts)
                 const { data: vendorPayables, error: vpError } = await sbClient
                     .from('vendor_payables')
@@ -5064,15 +5066,21 @@
                     .order('created_at', { ascending: false });
 
                 if (vpError) throw vpError;
+                console.log('[Payout] Vendor payables loaded:', vendorPayables?.length || 0);
 
                 // Load admin payables (referral commissions)
+                console.log('[Payout] Fetching admin payables with vendor_id filter:', currentVendor.id);
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
                     .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
-                if (apError) throw apError;
+                if (apError) {
+                    console.error('[Payout] Admin payables error:', apError);
+                    throw apError;
+                }
+                console.log('[Payout] Admin payables loaded:', adminPayables?.length || 0, 'Records:', adminPayables);
 
                 // Load buyer payables (commission earnings)
                 const { data: buyerPayables, error: bpError } = await sbClient
@@ -5082,6 +5090,7 @@
                     .order('created_at', { ascending: false });
 
                 if (bpError) throw bpError;
+                console.log('[Payout] Buyer payables loaded:', buyerPayables?.length || 0);
 
                 // Store in state
                 messagingState.payoutData = {
@@ -5090,6 +5099,17 @@
                     buyerPayables: buyerPayables || []
                 };
 
+                console.log('[Payout] Stored in state:', {
+                    admin: adminPayables?.length,
+                    reviewer: buyerPayables?.length,
+                    filters: {
+                        admin: adminPayables?.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id)?.length,
+                        buyer_inviter: adminPayables?.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id)?.length,
+                        vendor_inviter: adminPayables?.filter(ap => ap.split_with_vendor_id)?.length,
+                        reviewer: buyerPayables?.filter(bp => bp.earning_type === 'own_feedback')?.length
+                    }
+                });
+
                 // Update summary cards
                 updatePayoutSummaryCards();
 
@@ -5097,21 +5117,24 @@
                 renderPayoutHistoryTable();
 
                 // Render the 4 commission subsections
+                console.log('[Payout] Rendering commission rows...');
                 renderCommissionRows('admin');
                 renderCommissionRows('reviewer');
                 renderCommissionRows('buyer-inviter');
                 renderCommissionRows('vendor-inviter');
-
-                console.log('Payout data loaded successfully', messagingState.payoutData);
+                console.log('[Payout] Commission rows rendered');
 
             } catch (err) {
-                console.error('Error loading payout data:', err);
+                console.error('[Payout] Error loading payout data:', err);
             }
         }
 
         function renderCommissionRows(section) {
             const data = messagingState.payoutData;
-            if (!data) return;
+            if (!data) {
+                console.warn(`[Render ${section}] No payoutData in state`);
+                return;
+            }
 
             let rows = [];
             let tableBodyId = '';
@@ -5127,6 +5150,7 @@
                     status: ap.status || 'pending',
                     type: 'admin'
                 }));
+                console.log(`[Render admin] Found ${rows.length} records from ${data.adminPayables.length} total`);
             } else if (section === 'reviewer') {
                 tableBodyId = 'reviewer-payments-tbody';
                 // Reviewer Payments: buyer_payables WHERE earning_type = 'own_feedback'
@@ -5139,6 +5163,7 @@
                     slaTimer: calculateSLATimer(bp.created_at, 'vendor'),
                     type: 'reviewer'
                 }));
+                console.log(`[Render reviewer] Found ${rows.length} records from ${data.buyerPayables.length} total`);
             } else if (section === 'buyer-inviter') {
                 tableBodyId = 'buyer-inviter-commissions-tbody';
                 // Buyer Inviter: admin_payables WHERE split_with_buyer_id IS NOT NULL AND split_with_vendor_id IS NULL
@@ -5151,6 +5176,7 @@
                     slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
                     type: 'buyer-inviter'
                 }));
+                console.log(`[Render buyer-inviter] Found ${rows.length} records from ${data.adminPayables.length} total`);
             } else if (section === 'vendor-inviter') {
                 tableBodyId = 'vendor-inviter-commissions-tbody';
                 // Vendor Inviter: admin_payables WHERE split_with_vendor_id IS NOT NULL
@@ -5163,10 +5189,14 @@
                     slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
                     type: 'vendor-inviter'
                 }));
+                console.log(`[Render vendor-inviter] Found ${rows.length} records from ${data.adminPayables.length} total`);
             }
 
             const tbody = document.getElementById(tableBodyId);
-            if (!tbody) return;
+            if (!tbody) {
+                console.warn(`[Render ${section}] Table body not found: ${tableBodyId}`);
+                return;
+            }
 
             if (rows.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">No ${section} commissions yet</td></tr>`;
