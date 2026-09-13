@@ -5414,7 +5414,7 @@
             // Update DOM - Fixed selector for summary cards
             const summaryContainer = document.querySelector('div[style*="grid-template-columns: repeat(auto-fit"]');
             if (summaryContainer) {
-                const cards = summaryContainer.querySelectorAll('> div');
+                const cards = Array.from(summaryContainer.children);
                 cards.forEach(card => {
                     const label = card.querySelector('div[style*="font-size: 12px"]');
                     const value = card.querySelector('div[style*="font-size: 28px"]');
