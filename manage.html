@@ -5355,66 +5355,81 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            // Calculate totals
             let totalEarnings = 0;
             let paidOut = 0;
             let pending = 0;
 
-            // Sum vendor payables (completed payments)
-            data.vendorPayables.forEach(vp => {
-                if (vp.status === 'paid' || vp.status === 'received') {
-                    paidOut += parseFloat(vp.amount_owed || 0);
-                } else if (vp.status === 'pending') {
-                    pending += parseFloat(vp.amount_owed || 0);
-                }
-                totalEarnings += parseFloat(vp.amount_owed || 0);
-            });
+            console.log('[Payout] Calculating summary cards from database...');
 
-            // Sum admin payables for vendor portion
-            data.adminPayables.forEach(ap => {
-                const vendorPortion = parseFloat(ap.admin_commission || 0);
+            // Admin Commissions (no split)
+            data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
+                const amount = parseFloat(ap.amount_owed || 0);
+                totalEarnings += amount;
                 if (ap.status === 'paid' || ap.status === 'received') {
-                    paidOut += vendorPortion;
+                    paidOut += amount;
                 } else if (ap.status === 'pending') {
-                    pending += vendorPortion;
+                    pending += amount;
                 }
-                totalEarnings += vendorPortion;
             });
+            console.log('[Payout] Admin Commissions: earnings added');
 
-            // Sum buyer payables
-            data.buyerPayables.forEach(bp => {
+            // Reviewer Payments (from buyer_payables)
+            data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
+                const amount = parseFloat(bp.amount_owed || 0);
+                totalEarnings += amount;
                 if (bp.status === 'paid' || bp.status === 'received') {
-                    paidOut += parseFloat(bp.amount_owed || 0);
+                    paidOut += amount;
                 } else if (bp.status === 'pending') {
-                    pending += parseFloat(bp.amount_owed || 0);
+                    pending += amount;
                 }
-                totalEarnings += parseFloat(bp.amount_owed || 0);
             });
+            console.log('[Payout] Reviewer Payments: earnings added');
 
-            // Update DOM with calculated values
-            const summaryCards = document.querySelectorAll('[style*="Total Earnings"], [style*="Pending Payout"], [style*="Paid Out"]');
+            // Buyer Inviter Commissions (buyer_portion from admin_payables)
+            data.adminPayables.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
+                const amount = parseFloat(ap.buyer_portion || 0);
+                totalEarnings += amount;
+                if (ap.status === 'paid' || ap.status === 'received') {
+                    paidOut += amount;
+                } else if (ap.status === 'pending') {
+                    pending += amount;
+                }
+            });
+            console.log('[Payout] Buyer Inviter: earnings added');
 
-            // Find and update Total Earnings card
+            // Vendor Inviter Commissions (admin_commission from admin_payables with split_with_vendor_id)
+            data.adminPayables.filter(ap => ap.split_with_vendor_id).forEach(ap => {
+                const amount = parseFloat(ap.admin_commission || 0);
+                totalEarnings += amount;
+                if (ap.status === 'paid' || ap.status === 'received') {
+                    paidOut += amount;
+                } else if (ap.status === 'pending') {
+                    pending += amount;
+                }
+            });
+            console.log('[Payout] Vendor Inviter: earnings added');
+
+            console.log(`[Payout] Summary: Total=$${totalEarnings.toFixed(2)}, Pending=$${pending.toFixed(2)}, PaidOut=$${paidOut.toFixed(2)}`);
+
+            // Update DOM
             const totalCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('Total Earnings') && el.closest('.panel')
+                el.textContent.includes('TOTAL EARNINGS') && el.closest('.panel')
             );
             if (totalCard) {
                 const valueEl = totalCard.querySelector('div[style*="font-size: 28px"]');
                 if (valueEl) valueEl.textContent = `$${totalEarnings.toFixed(2)}`;
             }
 
-            // Find and update Pending Payout card
             const pendingCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('Pending Payout') && el.closest('.panel')
+                el.textContent.includes('PENDING PAYOUT') && el.closest('.panel')
             );
             if (pendingCard) {
                 const valueEl = pendingCard.querySelector('div[style*="font-size: 28px"]');
                 if (valueEl) valueEl.textContent = `$${pending.toFixed(2)}`;
             }
 
-            // Find and update Paid Out card
             const paidCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('Paid Out') && el.closest('.panel')
+                el.textContent.includes('PAID OUT') && el.closest('.panel')
             );
             if (paidCard) {
                 const valueEl = paidCard.querySelector('div[style*="font-size: 28px"]');
