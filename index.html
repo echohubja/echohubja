@@ -1610,11 +1610,12 @@
 
             const hasFeedbackImage = feedbackImageFile !== undefined;
             const hasFeedbackUrl = feedbackProductUrl && feedbackProductUrl.length > 0;
-            const hasImageOrUrl = hasFeedbackImage || hasFeedbackUrl;
+            const hasUrlInMessage = message.includes('amazon.com') || message.includes('http') || message.includes('www.');
+            const hasImageOrUrl = hasFeedbackImage || hasFeedbackUrl || hasUrlInMessage;
 
             let messageType = 'inquiry';
 
-            // If user provided image OR URL, ask if they're submitting feedback
+            // If user provided image OR URL (in any field), ask if they're submitting feedback
             if (hasImageOrUrl) {
                 const isFeedback = await new Promise((resolve) => {
                     showFeedbackIntentDialog(
