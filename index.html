@@ -1969,6 +1969,18 @@
             }
         }
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         function filterMessagingList() {
             const query = document.getElementById('messaging-search-input').value.toLowerCase().trim();
             const messages = document.querySelectorAll('#messaging-hub-body > div:not([id^="thread-"])');
