@@ -1295,14 +1295,12 @@
             const buyerPill = document.getElementById('buyer-pill');
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
-            const btnOpenInquiries = document.getElementById('btn-open-inquiries');
 
             currentActiveEmail = localStorage.getItem('buyer_email') || localStorage.getItem('buyer_id') || '';
 
             if (currentActiveEmail) {
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
-                btnOpenInquiries.style.display = 'flex';
 
                 const { data: buyerData, error } = await db
                     .from('buyers')
@@ -1323,7 +1321,6 @@
             } else {
                 buyerPill.style.display = 'none';
                 portalBtn.style.display = 'inline-block';
-                btnOpenInquiries.style.display = 'none';
                 currentBuyerId = '';
                 currentBuyerStringId = '';
             }
