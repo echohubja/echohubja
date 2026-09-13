@@ -877,7 +877,8 @@
         <div class="flex justify-between items-center mb-4 border-b pb-3">
             <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">💬 Messaging Hub</h2>
             <div class="flex gap-2">
-                <button onclick="switchMessagingCategory('vendors')" id="btn-msg-vendors" class="px-3 py-1 rounded text-xs font-semibold transition bg-blue-100 text-blue-700">Vendors</button>
+                <button onclick="switchMessagingCategory('transactions')" id="btn-msg-transactions" class="px-3 py-1 rounded text-xs font-semibold transition">Transactions</button>
+                <button onclick="switchMessagingCategory('vendors')" id="btn-msg-vendors" class="px-3 py-1 rounded text-xs font-semibold transition">Vendors</button>
                 <button onclick="switchMessagingCategory('buyers')" id="btn-msg-buyers" class="px-3 py-1 rounded text-xs font-semibold transition">Buyers</button>
                 <button onclick="switchMessagingCategory('monitor')" id="btn-msg-monitor" class="px-3 py-1 rounded text-xs font-semibold transition">V↔B Monitor</button>
             </div>
@@ -5264,6 +5265,52 @@ async function loadVendorSubmitterRelationship() {
                             lastTime: new Date(inq.created_at).toLocaleDateString()
                         });
                     }
+
+                } else if (messagingState.currentCategory === 'transactions') {
+                    // Load all root inquiries (transactions) with full buyer+vendor context
+                    const { data: rootInquiries, error: rootError } = await db
+                        .from('inquiries')
+                        .select('id, buyer_id, vendor_id, message_type, vendor_status, message, created_at')
+                        .is('parent_inquiry_id', null)
+                        .order('created_at', { ascending: false });
+
+                    if (rootError) throw rootError;
+
+                    // Fetch all buyer and vendor info needed
+                    const buyerIds = [...new Set((rootInquiries || []).map(i => i.buyer_id))];
+                    const vendorIds = [...new Set((rootInquiries || []).map(i => i.vendor_id))];
+
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                    const { data: vendors } = await db.from('vendors').select('id, business_name, email').in('id', vendorIds);
+
+                    const buyerMap = {};
+                    const vendorMap = {};
+                    (buyers || []).forEach(b => buyerMap[b.id] = b);
+                    (vendors || []).forEach(v => vendorMap[v.id] = v);
+
+                    // Create conversation objects for each transaction
+                    (rootInquiries || []).forEach(inq => {
+                        const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id };
+                        const vendor = vendorMap[inq.vendor_id] || { business_name: 'Unknown', email: 'N/A', id: inq.vendor_id };
+                        const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+
+                        messagingState.allConversations.push({
+                            id: inq.id,
+                            name: `${buyer.full_name} → ${vendor.business_name}`,
+                            buyerId: inq.buyer_id,
+                            buyerName: buyer.full_name,
+                            buyerEmail: buyer.email,
+                            vendorId: inq.vendor_id,
+                            vendorName: vendor.business_name,
+                            vendorEmail: vendor.email,
+                            type: 'transaction',
+                            messageType: inq.message_type,
+                            status: inq.vendor_status,
+                            statusBadge: statusBadge,
+                            lastMessage: inq.message?.substring(0, 50) || 'Message',
+                            lastTime: new Date(inq.created_at).toLocaleDateString()
+                        });
+                    });
                 }
 
                 messagingState.conversations = messagingState.allConversations;
@@ -5351,6 +5398,30 @@ async function loadVendorSubmitterRelationship() {
                     messages.push(...(data || []));
                     const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
                     header.textContent = `Buyer: ${conv?.name || 'Unknown'}`;
+
+                } else if (messagingState.currentOtherPartyType === 'transaction') {
+                    // Load transaction root message and all follow-ups
+                    const { data: rootMessage, error: rootError } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('id', messagingState.currentConversationId)
+                        .single();
+
+                    if (rootError) throw rootError;
+                    if (rootMessage) messages.push(rootMessage);
+
+                    // Load all follow-ups for this transaction
+                    const { data: followups, error: followupError } = await db
+                        .from('inquiries')
+                        .select('*')
+                        .eq('parent_inquiry_id', messagingState.currentConversationId)
+                        .order('created_at', { ascending: true });
+
+                    if (followupError) throw followupError;
+                    messages.push(...(followups || []));
+
+                    const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
+                    header.textContent = `Transaction: ${conv?.buyerName || 'Unknown'} → ${conv?.vendorName || 'Unknown'}`;
                 }
 
                 renderMessagingMessages(messages);
@@ -5418,6 +5489,16 @@ async function loadVendorSubmitterRelationship() {
                     const { buyerId, vendorId } = messagingState.currentOtherPartyId;
                     insertData.buyer_id = buyerId;
                     insertData.vendor_id = vendorId;
+                } else if (messagingState.currentOtherPartyType === 'transaction') {
+                    // Get transaction root to link this as a follow-up
+                    insertData.parent_inquiry_id = messagingState.currentConversationId;
+                    insertData.message_type = 'followup';
+                    // Get buyer and vendor from current transaction
+                    const conv = messagingState.conversations.find(c => c.id === messagingState.currentConversationId);
+                    if (conv) {
+                        insertData.buyer_id = conv.buyerId;
+                        insertData.vendor_id = conv.vendorId;
+                    }
                 }
 
                 const { error } = await db
@@ -5440,7 +5521,7 @@ async function loadVendorSubmitterRelationship() {
             messagingState.currentConversationId = null;
             messagingState.currentOtherPartyId = null;
 
-            ['vendors', 'buyers', 'monitor'].forEach(cat => {
+            ['vendors', 'buyers', 'monitor', 'transactions'].forEach(cat => {
                 const btn = document.getElementById(`btn-msg-${cat}`);
                 if (btn) {
                     if (cat === category) {
