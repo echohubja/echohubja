@@ -5632,51 +5632,46 @@
 
             console.log('[Payout] Calculating summary cards from database...');
 
+            // Helper function to add earnings (excludes flagged items from active totals)
+            const addEarnings = (amount, status) => {
+                // Only count non-flagged items in totalEarnings
+                if (status !== 'flagged') {
+                    totalEarnings += parseFloat(amount || 0);
+                }
+
+                if (status === 'paid' || status === 'received') {
+                    paidOut += parseFloat(amount || 0);
+                } else if (status === 'pending' || status === 'requested') {
+                    // Both 'pending' and 'requested' count as pending payout
+                    pending += parseFloat(amount || 0);
+                }
+            };
+
             // Admin Commissions (no split)
             data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
-                const amount = parseFloat(ap.amount_owed || 0);
-                totalEarnings += amount;
-                if (ap.status === 'paid' || ap.status === 'received') {
-                    paidOut += amount;
-                } else if (ap.status === 'pending') {
-                    pending += amount;
-                }
+                const amount = ap.amount_owed || 0;
+                addEarnings(amount, ap.status);
             });
             console.log('[Payout] Admin Commissions: earnings added');
 
             // Reviewer Payments (from buyer_payables)
             data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
-                const amount = parseFloat(bp.amount_owed || 0);
-                totalEarnings += amount;
-                if (bp.status === 'paid' || bp.status === 'received') {
-                    paidOut += amount;
-                } else if (bp.status === 'pending') {
-                    pending += amount;
-                }
+                const amount = bp.amount_owed || 0;
+                addEarnings(amount, bp.status);
             });
             console.log('[Payout] Reviewer Payments: earnings added');
 
             // Buyer Inviter Commissions (buyer_portion from admin_payables)
             data.adminPayables.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
-                const amount = parseFloat(ap.buyer_portion || 0);
-                totalEarnings += amount;
-                if (ap.status === 'paid' || ap.status === 'received') {
-                    paidOut += amount;
-                } else if (ap.status === 'pending') {
-                    pending += amount;
-                }
+                const amount = ap.buyer_portion || 0;
+                addEarnings(amount, ap.status);
             });
             console.log('[Payout] Buyer Inviter: earnings added');
 
             // Vendor Inviter Commissions (admin_commission from admin_payables with split_with_vendor_id)
             data.adminPayables.filter(ap => ap.split_with_vendor_id).forEach(ap => {
-                const amount = parseFloat(ap.admin_commission || 0);
-                totalEarnings += amount;
-                if (ap.status === 'paid' || ap.status === 'received') {
-                    paidOut += amount;
-                } else if (ap.status === 'pending') {
-                    pending += amount;
-                }
+                const amount = ap.admin_commission || 0;
+                addEarnings(amount, ap.status);
             });
             console.log('[Payout] Vendor Inviter: earnings added');
 
