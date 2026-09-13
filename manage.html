@@ -4691,6 +4691,23 @@
                 const referrerMap = {};
                 (referrers || []).forEach(r => referrerMap[r.id] = r);
 
+                // Fetch follow-ups count and latest message for each conversation
+                const { data: allFollowUps } = await sbClient
+                    .from('inquiries')
+                    .select('id, parent_inquiry_id, message, created_at')
+                    .in('parent_inquiry_id', (rootInquiries || []).map(i => i.id))
+                    .order('created_at', { ascending: false });
+
+                const followUpsByRoot = {};
+                const latestMessageByRoot = {};
+                (allFollowUps || []).forEach(fu => {
+                    if (!followUpsByRoot[fu.parent_inquiry_id]) {
+                        followUpsByRoot[fu.parent_inquiry_id] = [];
+                        latestMessageByRoot[fu.parent_inquiry_id] = fu;
+                    }
+                    followUpsByRoot[fu.parent_inquiry_id].push(fu);
+                });
+
                 // Create conversation entries for each root inquiry
                 (rootInquiries || []).forEach(inq => {
                     const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id };
@@ -4713,6 +4730,14 @@
                         invitationStatus = `Vendor invited by ${vendorReferrer.full_name} (${vendorReferrer.email})`;
                     }
 
+                    // Get latest message (follow-up or root) and follow-up count
+                    const latestMsg = latestMessageByRoot[inq.id] || inq;
+                    const followUpCount = (followUpsByRoot[inq.id] || []).length;
+                    const hasFollowUps = followUpCount > 0;
+                    const msgText = latestMsg.message?.substring(0, 80) || 'No message';
+                    const msgTime = new Date(latestMsg.created_at);
+                    const timeStr = msgTime.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
                     messagingState.allConversations.push({
                         id: inq.id,
                         name: `${buyer.full_name}`,
@@ -4726,11 +4751,16 @@
                         status: inq.vendor_status,
                         statusBadge: statusBadge,
                         invitationStatus: invitationStatus,
-                        lastMessage: inq.message?.substring(0, 50) || 'No message',
-                        lastTime: new Date(inq.created_at).toLocaleDateString()
+                        lastMessage: msgText,
+                        lastTime: timeStr,
+                        lastTimestamp: latestMsg.created_at,
+                        followUpCount: followUpCount,
+                        hasFollowUps: hasFollowUps
                     });
                 });
 
+                // Sort by latest message timestamp DESC
+                messagingState.allConversations.sort((a, b) => new Date(b.lastTimestamp) - new Date(a.lastTimestamp));
                 messagingState.conversations = messagingState.allConversations;
                 renderVendorMessagingConversations();
 
@@ -4750,10 +4780,13 @@
             }
 
             sidebar.innerHTML = messagingState.conversations.map(conv => `
-                <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${messagingState.currentConversationId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectVendorMessagingConversation('${conv.id}')">
+                <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${messagingState.currentConversationId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : conv.hasFollowUps ? 'background: #fff5f5; border-left: 3px solid #ef4444;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectVendorMessagingConversation('${conv.id}')">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
                         <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate; flex: 1;">${escapeHtml(conv.buyerName)} (B-${conv.buyerId.substring(0, 6).toUpperCase()})</div>
-                        <span style="background: ${conv.status === 'approved' ? '#dcfce7' : conv.status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${conv.status === 'approved' ? '#166534' : conv.status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${conv.statusBadge}</span>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            ${conv.hasFollowUps ? `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">🔴 ${conv.followUpCount}</span>` : ''}
+                            <span style="background: ${conv.status === 'approved' ? '#dcfce7' : conv.status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${conv.status === 'approved' ? '#166534' : conv.status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${conv.statusBadge}</span>
+                        </div>
                     </div>
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 3px;">📧 ${escapeHtml(conv.buyerEmail)}</div>
                     <div style="font-size: 11px; color: #7c3aed; margin-bottom: 3px; font-weight: 500;">${escapeHtml(conv.invitationStatus)}</div>
