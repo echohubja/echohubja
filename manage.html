@@ -5581,17 +5581,66 @@
                 return;
             }
 
-            // Build breakdown information as toast notification
-            let toastMessage = `💰 Commission Breakdown | ID: ${commission.id.substring(0, 8)}... | Amount: $${parseFloat(commission.amount_owed || commission.admin_commission || 0).toFixed(2)} | Status: ${commission.status || 'pending'}`;
+            // Format the breakdown details
+            const createdDate = new Date(commission.created_at).toLocaleString();
+            const amount = parseFloat(commission.amount_owed || commission.admin_commission || 0).toFixed(2);
+            const adminPortion = commission.admin_commission ? parseFloat(commission.admin_commission).toFixed(2) : 'N/A';
+            const buyerPortion = commission.buyer_portion ? parseFloat(commission.buyer_portion).toFixed(2) : 'N/A';
+            const feedbackId = commission.related_feedback_id || commission.related_feedback_ids?.[0] || 'N/A';
 
-            if (commission.admin_commission) {
-                toastMessage += ` | Admin: $${parseFloat(commission.admin_commission).toFixed(2)}`;
-                if (commission.buyer_portion) {
-                    toastMessage += ` | Buyer: $${parseFloat(commission.buyer_portion).toFixed(2)}`;
-                }
-            }
+            // Build detailed modal content
+            let modalContent = `
+<div style="padding: 24px; background: white; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    <h3 style="margin: 0 0 20px 0; color: #1e5aa8; font-size: 18px;">💰 Commission Breakdown</h3>
 
-            showToast(toastMessage, 'info', 6000);
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569; width: 40%;">Commission ID</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-family: monospace; font-size: 12px;">${commission.id}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Amount</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600; font-size: 16px;">$${amount}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Status</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; text-transform: capitalize;">${commission.status || 'pending'}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Created Date</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-size: 13px;">${createdDate}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Admin Commission</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600;">$${adminPortion}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Buyer/Inviter Portion</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600;">$${buyerPortion}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; font-weight: 600; color: #475569;">Related Feedback ID</td>
+            <td style="padding: 10px 0; color: #1e293b; font-family: monospace; font-size: 12px;">${feedbackId}</td>
+        </tr>
+    </table>
+
+    <div style="text-align: right;">
+        <button onclick="this.closest('div').parentElement.parentElement.style.display='none'" style="padding: 8px 16px; background: #1e5aa8; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Close</button>
+    </div>
+</div>
+            `;
+
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            modal.innerHTML = modalContent;
+
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+
+            document.body.appendChild(modal);
         }
 
         function updatePayoutSummaryCards() {
