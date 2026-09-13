@@ -1696,9 +1696,9 @@
                 message_type: messageType,
                 message: message,
                 image_url: productImageUrl && productImageUrl.trim() ? productImageUrl : null,
-                feedback_image_data: feedbackImageData,
-                feedback_image_mime: feedbackImageMime,
-                feedback_product_url: feedbackProductUrl || null
+                // Store feedback image (base64) and product URL only for feedback submissions
+                image_data: messageType === 'feedback' && feedbackImageData ? feedbackImageData : null,
+                product_url: messageType === 'feedback' && feedbackProductUrl ? feedbackProductUrl : null
             };
 
             const { error } = await db.from('inquiries').insert([inquiryData]);
@@ -1911,7 +1911,7 @@
 
             if (inquiries && inquiries.length > 0) {
                 // Fetch vendor rates for all feedback submissions
-                const vendorIds = [...new Set(inquiries.filter(i => i.vendor_id && (i.message_type === 'feedback' || i.feedback_product_url)).map(i => i.vendor_id))];
+                const vendorIds = [...new Set(inquiries.filter(i => i.vendor_id && (i.message_type === 'feedback' || i.product_url)).map(i => i.vendor_id))];
                 const vendorRateMap = {};
 
                 if (vendorIds.length > 0) {
@@ -2073,7 +2073,7 @@
                             });
 
                             // Determine message type and status badge
-                            const isFeedback = item.message_type === 'feedback' || item.feedback_product_url;
+                            const isFeedback = item.message_type === 'feedback' || item.product_url;
                             const messageTypeLabel = isFeedback ? '💰 Feedback' : '❓ Inquiry';
                             const statusLabel = item.vendor_status === 'approved' && isFeedback ? '✓ Approved' : (item.vendor_status === 'pending' && isFeedback ? '⏳ Awaiting Review' : 'Submitted');
                             const statusColor = item.vendor_status === 'approved' && isFeedback ? '#10b981' : (item.vendor_status === 'pending' && isFeedback ? '#f59e0b' : '#6b7280');
