@@ -854,13 +854,22 @@
 
     <!-- Messaging Hub Section -->
     <div id="messaging-section" class="tab-section">
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; height: 600px; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-size: 24px; margin: 0; color: #2c3e50;">💬 Messaging Hub</h2>
-                <input type="text" id="messaging-search-input" placeholder="Search by product..." oninput="filterMessagingList()" style="width: 250px; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
+                <input type="text" id="messaging-search-input" placeholder="Search conversations..." oninput="filterMessagingList()" style="width: 250px; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px;">
             </div>
-            <div id="messaging-hub-body" style="display: flex; flex-direction: column; gap: 12px;">
-                <p style="text-align: center; color: #718096; padding: 40px;">Loading your messages...</p>
+            <div id="messaging-hub-body" style="display: flex; gap: 12px; flex: 1; min-height: 0;">
+                <!-- LEFT PANEL: Conversation List -->
+                <div id="messaging-left-panel" style="width: 320px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; overflow-y: auto; flex-shrink: 0;">
+                    <p style="text-align: center; color: #718096; padding: 40px 16px;">Loading conversations...</p>
+                </div>
+                <!-- RIGHT PANEL: Thread View -->
+                <div id="messaging-right-panel" style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; background: white; display: flex; flex-direction: column; min-width: 0;">
+                    <div style="padding: 20px; text-align: center; color: #718096; flex: 1; display: flex; align-items: center; justify-content: center;">
+                        Select a conversation to view messages
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1857,10 +1866,11 @@
 
         async function loadMessagingHub(buyerId) {
             if (!buyerId) return;
-            const container = document.getElementById('messaging-hub-body');
-            if (!container) return;
+            const leftPanel = document.getElementById('messaging-left-panel');
+            const rightPanel = document.getElementById('messaging-right-panel');
+            if (!leftPanel || !rightPanel) return;
 
-            container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">Loading messages...</p>';
+            leftPanel.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px 16px;">Loading conversations...</p>';
 
             try {
                 // Fetch root inquiries only (parent_inquiry_id IS NULL)
@@ -1871,14 +1881,10 @@
                     .is('parent_inquiry_id', null)
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('Error loading messages:', error.message);
-                    container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Failed to load your messages.</p>';
-                    return;
-                }
+                if (error) throw error;
 
                 if (!inquiries || inquiries.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px;">No messages yet. Start by submitting an inquiry to a vendor.</p>';
+                    leftPanel.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px 16px;">No conversations yet</p>';
                     return;
                 }
 
@@ -1892,80 +1898,74 @@
                 const vendorMap = {};
                 (vendors || []).forEach(v => vendorMap[v.id] = v);
 
-                // Fetch buyer referral info for this buyer
-                const { data: buyerData } = await db
-                    .from('buyers')
-                    .select('id, referred_by')
-                    .eq('id', buyerId)
-                    .single();
+                // Fetch follow-ups for all conversations (for unread badge)
+                const { data: allFollowUps } = await db
+                    .from('inquiries')
+                    .select('id, parent_inquiry_id, message, created_at')
+                    .in('parent_inquiry_id', inquiries.map(i => i.id))
+                    .order('created_at', { ascending: false });
 
-                // Build referrer map for invitation status
-                const referrerIds = [...new Set([...(vendors || []).map(v => v.referred_by_buyer_id).filter(Boolean), buyerData?.referred_by].filter(Boolean))];
-                const { data: referrers } = await db
-                    .from('buyers')
-                    .select('id, full_name, email')
-                    .in('id', referrerIds);
-
-                const referrerMap = {};
-                (referrers || []).forEach(r => referrerMap[r.id] = r);
-
-                // Group conversations by vendor
-                const groupedByVendor = {};
-                inquiries.forEach(inquiry => {
-                    const vendorId = inquiry.vendor_id || 'direct';
-                    if (!groupedByVendor[vendorId]) {
-                        groupedByVendor[vendorId] = [];
+                const followUpsByRoot = {};
+                const latestMessageByRoot = {};
+                (allFollowUps || []).forEach(fu => {
+                    if (!followUpsByRoot[fu.parent_inquiry_id]) {
+                        followUpsByRoot[fu.parent_inquiry_id] = [];
+                        latestMessageByRoot[fu.parent_inquiry_id] = fu;
                     }
-                    groupedByVendor[vendorId].push(inquiry);
+                    followUpsByRoot[fu.parent_inquiry_id].push(fu);
                 });
 
-                let html = '';
-                for (const [vendorId, convs] of Object.entries(groupedByVendor)) {
-                    const vendor = vendorMap[vendorId] || { business_name: 'Unknown Vendor', email: 'N/A', id: vendorId };
-                    const latestConv = convs[0];
+                // Build conversation array with latest message info
+                const conversations = inquiries.map(inq => {
+                    const latestMsg = latestMessageByRoot[inq.id] || inq;
+                    const followUpCount = (followUpsByRoot[inq.id] || []).length;
+                    const hasFollowUps = followUpCount > 0;
+                    const msgText = latestMsg.message?.substring(0, 80) || 'No message';
+                    const msgTime = new Date(latestMsg.created_at);
+                    const timeStr = msgTime.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-                    // Determine invitation status
-                    const buyerReferrer = buyerData?.referred_by ? referrerMap[buyerData.referred_by] : null;
-                    const vendorReferrer = vendor.referred_by_buyer_id ? referrerMap[vendor.referred_by_buyer_id] : null;
+                    const vendor = vendorMap[inq.vendor_id] || { business_name: 'Unknown', email: 'N/A', id: inq.vendor_id };
+                    const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
 
-                    let invitationStatus = 'Direct (no invitations)';
-                    if (buyerReferrer && vendorReferrer) {
-                        if (buyerReferrer.id === vendorReferrer.id) {
-                            invitationStatus = `Both invited by same person: ${buyerReferrer.full_name}`;
-                        } else {
-                            invitationStatus = `Both invited by unique: You by ${buyerReferrer.full_name}, Vendor by ${vendorReferrer.full_name}`;
-                        }
-                    } else if (buyerReferrer) {
-                        invitationStatus = `You invited by ${buyerReferrer.full_name} (${buyerReferrer.email})`;
-                    } else if (vendorReferrer) {
-                        invitationStatus = `Vendor invited by ${vendorReferrer.full_name} (${vendorReferrer.email})`;
-                    }
+                    return {
+                        id: inq.id,
+                        vendorId: inq.vendor_id,
+                        vendorName: vendor.business_name,
+                        vendorEmail: vendor.email,
+                        message: msgText,
+                        timestamp: latestMsg.created_at,
+                        timeStr: timeStr,
+                        status: inq.vendor_status,
+                        statusBadge: statusBadge,
+                        hasFollowUps: hasFollowUps,
+                        followUpCount: followUpCount
+                    };
+                });
 
-                    const statusBadge = latestConv.vendor_status === 'approved' ? '✓ Approved' : latestConv.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
-                    const timestamp = new Date(latestConv.created_at).toLocaleDateString();
-                    const productName = latestConv.product_url ? latestConv.product_url.split('/').slice(-1)[0] : 'Product';
+                // Sort by latest message timestamp DESC (unread first)
+                conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-                    html += `
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onclick="expandMessageThread('${latestConv.id}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
-                                <div>
-                                    <h4 style="margin: 0; font-size: 14px; color: #1e293b; font-weight: 600;">${escapeHtml(vendor.business_name)} (V-${vendorId.substring(0, 6).toUpperCase()})</h4>
-                                    <p style="margin: 2px 0; font-size: 11px; color: #64748b;">📧 ${escapeHtml(vendor.email)}</p>
-                                </div>
-                                <span style="background: ${latestConv.vendor_status === 'approved' ? '#dcfce7' : latestConv.vendor_status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${latestConv.vendor_status === 'approved' ? '#166534' : latestConv.vendor_status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${statusBadge}</span>
+                // Render left panel
+                leftPanel.innerHTML = conversations.map((conv, idx) => `
+                    <div class="messaging-conversation-item-buyer" style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${conv.hasFollowUps ? 'background: #fff5f5; border-left: 3px solid #ef4444;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectBuyerMessagingConversation('${conv.id}')">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; font-size: 13px; color: #1e293b; text-truncate;">${escapeHtml(conv.vendorName)}</div>
+                                <div style="font-size: 11px; color: #64748b; text-truncate;">${escapeHtml(conv.vendorEmail)}</div>
                             </div>
-                            <p style="margin: 4px 0; font-size: 11px; color: #7c3aed; font-weight: 500;">${escapeHtml(invitationStatus)}</p>
-                            <p style="margin: 6px 0; font-size: 12px; color: #4a5568; line-height: 1.4;">${escapeHtml(latestConv.message.substring(0, 120))}${latestConv.message.length > 120 ? '...' : ''}</p>
-                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #94a3b8;">${timestamp} • ${convs.length} message${convs.length !== 1 ? 's' : ''}</p>
+                            <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                                ${conv.hasFollowUps ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 700;">🔴 ${conv.followUpCount}</span>` : ''}
+                                <span style="background: ${conv.status === 'approved' ? '#dcfce7' : conv.status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${conv.status === 'approved' ? '#166534' : conv.status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; white-space: nowrap;">${conv.statusBadge}</span>
+                            </div>
                         </div>
-                        <div id="thread-${latestConv.id}" style="display: none; margin-top: 8px; margin-left: 20px; border-left: 2px solid #e2e8f0; padding-left: 12px;"></div>
-                    `;
-                }
+                        <div style="font-size: 12px; color: #4a5568; margin-bottom: 4px; text-truncate;">${escapeHtml(conv.message)}</div>
+                        <div style="font-size: 11px; color: #94a3b8;">${conv.timeStr}</div>
+                    </div>
+                `).join('');
 
-                container.innerHTML = html;
             } catch (err) {
                 console.error('Error loading messaging hub:', err);
-                container.innerHTML = '<p style="color: #e74c3c; text-align: center;">Error loading messages.</p>';
+                leftPanel.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px 16px;">Error loading conversations</p>';
             }
         }
 
@@ -1983,27 +1983,133 @@
 
         function filterMessagingList() {
             const query = document.getElementById('messaging-search-input').value.toLowerCase().trim();
-            const messages = document.querySelectorAll('#messaging-hub-body > div:not([id^="thread-"])');
+            const items = document.querySelectorAll('.messaging-conversation-item-buyer');
 
-            messages.forEach(msg => {
-                const productName = msg.querySelector('h4')?.textContent.toLowerCase() || '';
-                const messageText = msg.textContent.toLowerCase();
-                if (productName.includes(query) || messageText.includes(query)) {
-                    msg.style.display = 'flex';
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = 'block';
                 } else {
-                    msg.style.display = 'none';
+                    item.style.display = 'none';
                 }
             });
         }
 
-        async function expandMessageThread(inquiryId) {
-            const threadContainer = document.getElementById(`thread-${inquiryId}`);
-            if (!threadContainer) return;
+        async function selectBuyerMessagingConversation(inquiryId) {
+            const rightPanel = document.getElementById('messaging-right-panel');
+            if (!rightPanel) return;
 
-            if (threadContainer.style.display === 'block') {
-                threadContainer.style.display = 'none';
-                return;
+            rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #718096;">Loading thread...</div>';
+
+            try {
+                // Fetch root inquiry
+                const { data: rootInquiry, error: rootError } = await db
+                    .from('inquiries')
+                    .select('id, vendor_id, buyer_id, message, message_type, vendor_status, product_url, image_data, created_at, sender_id, sender_type')
+                    .eq('id', inquiryId)
+                    .single();
+
+                if (rootError) throw rootError;
+
+                // Fetch all follow-ups for this thread
+                const { data: followUps, error: followError } = await db
+                    .from('inquiries')
+                    .select('id, message, created_at, sender_id, sender_type')
+                    .eq('parent_inquiry_id', inquiryId)
+                    .order('created_at', { ascending: true });
+
+                if (followError) throw followError;
+
+                // Fetch vendor details
+                const { data: vendor } = await db
+                    .from('vendors')
+                    .select('id, business_name, email')
+                    .eq('id', rootInquiry.vendor_id)
+                    .single();
+
+                // Build thread view
+                let threadHtml = `
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                        <h3 style="margin: 0 0 8px 0; color: #1e293b;">${escapeHtml(vendor?.business_name || 'Unknown Vendor')}</h3>
+                        <p style="margin: 0; font-size: 13px; color: #64748b;">${escapeHtml(vendor?.email || 'N/A')}</p>
+                    </div>
+                    <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                `;
+
+                // Root message
+                const rootTime = new Date(rootInquiry.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                threadHtml += `
+                    <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; border-left: 3px solid #0ea5e9;">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">You • ${rootTime}</div>
+                        <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${escapeHtml(rootInquiry.message)}</div>
+                        ${rootInquiry.image_data ? `<img src="${rootInquiry.image_data}" style="max-width: 100%; max-height: 200px; margin-top: 8px; border-radius: 4px;">` : ''}
+                    </div>
+                `;
+
+                // Follow-ups
+                (followUps || []).forEach(msg => {
+                    const msgTime = new Date(msg.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const senderLabel = msg.sender_type === 'vendor' ? vendor?.business_name || 'Vendor' : 'You';
+                    const senderColor = msg.sender_type === 'vendor' ? '#fef3c7' : '#f1f5f9';
+                    const senderBorderColor = msg.sender_type === 'vendor' ? '#f59e0b' : '#0ea5e9';
+
+                    threadHtml += `
+                        <div style="background: ${senderColor}; padding: 12px; border-radius: 8px; border-left: 3px solid ${senderBorderColor};">
+                            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">${escapeHtml(senderLabel)} • ${msgTime}</div>
+                            <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${escapeHtml(msg.message)}</div>
+                        </div>
+                    `;
+                });
+
+                threadHtml += `
+                    </div>
+                    <div style="padding: 16px; border-top: 1px solid #e2e8f0;">
+                        <input type="text" id="buyer-message-input" placeholder="Type your reply..." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px;">
+                        <button onclick="sendBuyerMessage('${inquiryId}')" style="width: 100%; margin-top: 8px; padding: 10px; background: #0ea5e9; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Send Reply</button>
+                    </div>
+                `;
+
+                rightPanel.innerHTML = threadHtml;
+            } catch (err) {
+                console.error('Error loading thread:', err);
+                rightPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error loading thread</div>';
             }
+        }
+
+        async function sendBuyerMessage(inquiryId) {
+            const input = document.getElementById('buyer-message-input');
+            if (!input) return;
+            const message = input.value.trim();
+            if (!message) return;
+
+            try {
+                const currentUser = authState.user;
+                const { data, error } = await db
+                    .from('inquiries')
+                    .insert({
+                        parent_inquiry_id: inquiryId,
+                        buyer_id: currentUser.id,
+                        vendor_id: null,
+                        message: message,
+                        message_type: 'followup',
+                        sender_id: currentUser.id,
+                        sender_type: 'buyer',
+                        created_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+
+                input.value = '';
+                await selectBuyerMessagingConversation(inquiryId);
+            } catch (err) {
+                console.error('Error sending message:', err);
+                alert('Failed to send message');
+            }
+        }
+
+        async function expandMessageThread(inquiryId) {
+            // Legacy function - now replaced by selectBuyerMessagingConversation
+            await selectBuyerMessagingConversation(inquiryId);
 
             threadContainer.innerHTML = '<p style="font-size: 12px; color: #718096;">Loading follow-ups...</p>';
             threadContainer.style.display = 'block';
