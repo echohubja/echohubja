@@ -2713,7 +2713,7 @@
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Name</th>
-                                        <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Vendor PayPal Email</th>
+                                        <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Reviewer PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Amount</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">SLA Window</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Action</th>
@@ -5353,11 +5353,15 @@
                 }
                 console.log('[Payout] 1. ✅ Vendor payables loaded:', vendorPayables?.length || 0);
 
-                // Load admin payables (referral commissions)
+                // Load admin payables (referral commissions) with buyer/vendor names for inviters
                 console.log('[Payout] 2. Fetching admin_payables with vendor_id =', currentVendor.id);
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
-                    .select('*')
+                    .select(`
+                        *,
+                        buyer:split_with_buyer_id (id, full_name, email, paypal_email),
+                        inviter_vendor:split_with_vendor_id (id, business_name, email, paypal_email)
+                    `)
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
@@ -5370,11 +5374,14 @@
                     console.log('[Payout] Sample admin record:', adminPayables[0]);
                 }
 
-                // Load buyer payables (commission earnings)
+                // Load buyer payables (commission earnings) with buyer names and PayPal email
                 console.log('[Payout] 3. Fetching buyer_payables with vendor_id =', currentVendor.id);
                 const { data: buyerPayables, error: bpError } = await sbClient
                     .from('buyer_payables')
-                    .select('*')
+                    .select(`
+                        *,
+                        buyer:buyer_id (id, full_name, email, paypal_email)
+                    `)
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
@@ -5383,6 +5390,21 @@
                     throw bpError;
                 }
                 console.log('[Payout] 3. ✅ Buyer payables loaded:', buyerPayables?.length || 0);
+                if (buyerPayables && buyerPayables.length > 0) {
+                    console.log('[Payout] Sample buyer_payables records:');
+                    buyerPayables.slice(0, 3).forEach((bp, i) => {
+                        console.log(`  Record ${i+1}:`, {
+                            id: bp.id,
+                            buyer_name: bp.buyer?.full_name,
+                            buyer_email: bp.buyer?.email,
+                            buyer_paypal: bp.buyer?.paypal_email,
+                            amount_owed: bp.amount_owed,
+                            earning_type: bp.earning_type,
+                            status: bp.status,
+                            created_at: bp.created_at
+                        });
+                    });
+                }
 
                 // Store in state
                 messagingState.payoutData = {
@@ -5446,23 +5468,27 @@
             } else if (section === 'reviewer') {
                 tableBodyId = 'reviewer-payments-tbody';
                 // Reviewer Payments: buyer_payables WHERE earning_type = 'own_feedback'
-                rows = data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').map(bp => ({
+                const reviewerPayables = data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback');
+                rows = reviewerPayables.map(bp => ({
                     id: bp.id,
-                    name: 'Reviewer',
-                    email: bp.buyer_paypal_email || '',
+                    name: (bp.buyer && bp.buyer.full_name) || 'Reviewer',  // Extract from joined buyer object
+                    email: (bp.buyer && bp.buyer.paypal_email) || (bp.buyer && bp.buyer.email) || '',  // Use PayPal email preferred, fallback to regular email
                     amount: bp.amount_owed || 0,
                     status: bp.status || 'pending',
                     slaTimer: calculateSLATimer(bp.created_at, 'vendor'),
                     type: 'reviewer'
                 }));
-                console.log(`[Render reviewer] Found ${rows.length} records from ${data.buyerPayables.length} total`);
+                console.log(`[Render reviewer] Found ${rows.length} records from ${data.buyerPayables.length} total (filtered by earning_type='own_feedback')`);
+                if (reviewerPayables.length > 0) {
+                    console.log('[Render reviewer] Sample records:', reviewerPayables.slice(0, 2).map(bp => ({name: bp.buyer?.full_name, amount: bp.amount_owed, type: bp.earning_type})));
+                }
             } else if (section === 'buyer-inviter') {
                 tableBodyId = 'buyer-inviter-commissions-tbody';
                 // Buyer Inviter: admin_payables WHERE split_with_buyer_id IS NOT NULL AND split_with_vendor_id IS NULL
                 rows = data.adminPayables.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id).map(ap => ({
                     id: ap.id,
-                    name: 'Buyer Inviter',
-                    email: ap.buyer_paypal_email || '',
+                    name: (ap.buyer && ap.buyer.full_name) || 'Buyer Inviter',  // Extract from joined buyer
+                    email: (ap.buyer && ap.buyer.paypal_email) || (ap.buyer && ap.buyer.email) || '',  // Use PayPal email preferred
                     amount: ap.buyer_portion || 0,
                     status: ap.status || 'pending',
                     slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
@@ -5474,8 +5500,8 @@
                 // Vendor Inviter: admin_payables WHERE split_with_vendor_id IS NOT NULL
                 rows = data.adminPayables.filter(ap => ap.split_with_vendor_id).map(ap => ({
                     id: ap.id,
-                    name: 'Vendor Inviter',
-                    email: ap.vendor_paypal_email || '',
+                    name: (ap.inviter_vendor && ap.inviter_vendor.business_name) || 'Vendor Inviter',  // Extract from joined vendor
+                    email: (ap.inviter_vendor && ap.inviter_vendor.paypal_email) || (ap.inviter_vendor && ap.inviter_vendor.email) || '',  // PayPal email preferred
                     amount: ap.admin_commission || 0,
                     status: ap.status || 'pending',
                     slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
