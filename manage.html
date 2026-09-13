@@ -3765,7 +3765,9 @@
                 if (error) throw error;
 
                 console.log('✅ Feedback approved');
-                loadPendingInquiries();
+                // Reload both messaging and payout data to reflect approval
+                await loadVendorMessagingMessages();
+                await loadPayoutDataFromDB();
             } catch (error) {
                 console.error('❌ Error approving feedback:', error);
                 buttonElement.disabled = false;
@@ -3786,7 +3788,9 @@
                 if (error) throw error;
 
                 console.log('✅ Feedback rejected');
-                loadPendingInquiries();
+                // Reload both messaging and payout data to reflect rejection
+                await loadVendorMessagingMessages();
+                await loadPayoutDataFromDB();
             } catch (error) {
                 console.error('❌ Error rejecting feedback:', error);
                 buttonElement.disabled = false;
