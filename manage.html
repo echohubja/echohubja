@@ -2668,19 +2668,30 @@
                             </select>
                         </div>
 
+                        <!-- Selection Summary Bar -->
+                        <div id="admin-selection-summary" style="display: none; background: #e3f2fd; border: 1px solid #1e5aa8; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="color: #1e5aa8; font-weight: 600;">
+                                <span id="admin-selected-count">0</span> selected • Total: <span id="admin-selected-total">$0.00</span>
+                            </div>
+                            <button onclick="batchRequestPayout('admin')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Request Payout</button>
+                        </div>
+
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
+                                        <th style="padding: 12px; text-align: center; color: #475569; font-weight: 600; width: 30px;">
+                                            <input type="checkbox" id="adminSelectAllCheckbox" onchange="toggleSelectAllCheckboxes('admin')" style="cursor: pointer;">
+                                        </th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Name</th>
-                                        <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Vendor PayPal Email</th>
+                                        <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Admin PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Amount</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Status</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="admin-commissions-tbody">
-                                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">Loading admin commissions...</td></tr>
+                                    <tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">Loading admin commissions...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2708,10 +2719,21 @@
                             </select>
                         </div>
 
+                        <!-- Selection Summary Bar -->
+                        <div id="reviewer-selection-summary" style="display: none; background: #e3f2fd; border: 1px solid #1e5aa8; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="color: #1e5aa8; font-weight: 600;">
+                                <span id="reviewer-selected-count">0</span> selected • Total: <span id="reviewer-selected-total">$0.00</span>
+                            </div>
+                            <button onclick="batchRequestPayout('reviewer')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Request Payout</button>
+                        </div>
+
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
+                                        <th style="padding: 12px; text-align: center; color: #475569; font-weight: 600; width: 30px;">
+                                            <input type="checkbox" id="reviewerSelectAllCheckbox" onchange="toggleSelectAllCheckboxes('reviewer')" style="cursor: pointer;">
+                                        </th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Name</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Reviewer PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Amount</th>
@@ -2721,7 +2743,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="reviewer-payments-tbody">
-                                    <tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">Loading reviewer payments...</td></tr>
+                                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #94a3b8;">Loading reviewer payments...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2749,10 +2771,21 @@
                             </select>
                         </div>
 
+                        <!-- Selection Summary Bar -->
+                        <div id="buyer-inviter-selection-summary" style="display: none; background: #e3f2fd; border: 1px solid #1e5aa8; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="color: #1e5aa8; font-weight: 600;">
+                                <span id="buyer-inviter-selected-count">0</span> selected • Total: <span id="buyer-inviter-selected-total">$0.00</span>
+                            </div>
+                            <button onclick="batchRequestPayout('buyer-inviter')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Request Payout</button>
+                        </div>
+
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
+                                        <th style="padding: 12px; text-align: center; color: #475569; font-weight: 600; width: 30px;">
+                                            <input type="checkbox" id="buyerInviterSelectAllCheckbox" onchange="toggleSelectAllCheckboxes('buyer-inviter')" style="cursor: pointer;">
+                                        </th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Name</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Buyer PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Amount</th>
@@ -2762,7 +2795,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="buyer-inviter-commissions-tbody">
-                                    <tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">Loading buyer inviter commissions...</td></tr>
+                                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #94a3b8;">Loading buyer inviter commissions...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2790,10 +2823,21 @@
                             </select>
                         </div>
 
+                        <!-- Selection Summary Bar -->
+                        <div id="vendor-inviter-selection-summary" style="display: none; background: #e3f2fd; border: 1px solid #1e5aa8; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="color: #1e5aa8; font-weight: 600;">
+                                <span id="vendor-inviter-selected-count">0</span> selected • Total: <span id="vendor-inviter-selected-total">$0.00</span>
+                            </div>
+                            <button onclick="batchRequestPayout('vendor-inviter')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Request Payout</button>
+                        </div>
+
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
+                                        <th style="padding: 12px; text-align: center; color: #475569; font-weight: 600; width: 30px;">
+                                            <input type="checkbox" id="vendorInviterSelectAllCheckbox" onchange="toggleSelectAllCheckboxes('vendor-inviter')" style="cursor: pointer;">
+                                        </th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Name</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Vendor Inviter PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; color: #475569; font-weight: 600;">Amount</th>
@@ -2803,7 +2847,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="vendor-inviter-commissions-tbody">
-                                    <tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">Loading vendor inviter commissions...</td></tr>
+                                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #94a3b8;">Loading vendor inviter commissions...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -5406,7 +5450,7 @@
                 rows = data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).map(ap => ({
                     id: ap.id,
                     name: 'Admin Facility',
-                    email: ap.vendor_paypal_email || '',
+                    email: ap.admin_paypal_email || ap.vendor_paypal_email || 'No email provided',
                     amount: ap.amount_owed || 0,
                     status: ap.admin_payment_status || 'pending',
                     type: 'admin'
@@ -5457,7 +5501,8 @@
             }
 
             if (rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">No ${section} commissions yet</td></tr>`;
+                const colspanCount = section === 'admin' ? 6 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colspanCount}" style="padding: 20px; text-align: center; color: #94a3b8;">No ${section} commissions yet</td></tr>`;
                 return;
             }
 
@@ -5479,17 +5524,21 @@
 
                 const statusColor = statusBadgeColor[row.status] || '#f0f0f0';
                 const textColor = statusTextColor[row.status] || '#64748b';
+                const checkboxId = `${section}-row-${row.id}`;
 
-                // Admin section: Show Status column (5 columns total: Name | Email | Amount | Status | Action)
+                // Admin section: Show Status column (6 columns total: Checkbox | Name | Email | Amount | Status | Action)
                 if (section === 'admin') {
-                    // Action buttons - Request Payout for pending, View Source for all
-                    let adminActionButtons = `<button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View Source</button>`;
+                    // Action buttons - Both View Source and Request Payout visible
+                    let adminActionButtons = `<button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 11px; text-decoration: underline; margin-right: 8px;">View Source</button>`;
                     if (row.status === 'pending') {
-                        adminActionButtons = `<button onclick="requestPayout('${row.id}', '${row.type}')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s;">Request Payout</button>`;
+                        adminActionButtons += `<button onclick="requestPayout('${row.id}', '${row.type}')" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.2s;">Request</button>`;
                     }
 
                     return `
                         <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px; text-align: center;">
+                                <input type="checkbox" class="admin-row-checkbox" value="${row.id}" data-amount="${row.amount}" onchange="updateSelectionSummary('admin')" style="cursor: pointer;">
+                            </td>
                             <td style="padding: 12px; color: #1e293b; font-weight: 500;">${row.name}</td>
                             <td style="padding: 12px; color: #64748b; font-size: 12px; font-family: monospace;">${row.email}</td>
                             <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(row.amount).toFixed(2)}</td>
@@ -5505,7 +5554,7 @@
                     `;
                 }
 
-                // Reviewer/Inviter sections: Show Status + SLA Window (6 columns total: Name | Email | Amount | Status | SLA Window | Action)
+                // Reviewer/Inviter sections: Show Status + SLA Window (7 columns total: Checkbox | Name | Email | Amount | Status | SLA Window | Action)
                 let slaDisplay = '';
                 if (row.slaTimer) {
                     if (row.slaTimer.status === 'timeout') {
@@ -5524,14 +5573,17 @@
                     ${row.status === 'pending' ? '⏳ Pending' : row.status === 'requested' ? '📤 Requested' : row.status === 'paid' ? '✅ Paid' : row.status === 'received' ? '📥 Received' : '🚩 Flagged'}
                 </span>`;
 
-                // Action buttons - Request Payout for pending, View Source for all
-                let actionButtons = `<button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View Source</button>`;
+                // Action buttons - Both View Source and Request Payout visible
+                let actionButtons = `<button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 11px; text-decoration: underline; margin-right: 8px;">View Source</button>`;
                 if (row.status === 'pending') {
-                    actionButtons = `<button onclick="requestPayout('${row.id}', '${row.type}')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s;">Request Payout</button>`;
+                    actionButtons += `<button onclick="requestPayout('${row.id}', '${row.type}')" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.2s;">Request</button>`;
                 }
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; text-align: center;">
+                            <input type="checkbox" class="${section}-row-checkbox" value="${row.id}" data-amount="${row.amount}" onchange="updateSelectionSummary('${section}')" style="cursor: pointer;">
+                        </td>
                         <td style="padding: 12px; color: #1e293b; font-weight: 500;">${row.name}</td>
                         <td style="padding: 12px; color: #64748b; font-size: 12px; font-family: monospace;">${row.email}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(row.amount).toFixed(2)}</td>
@@ -5564,13 +5616,13 @@
             const rows = tbody.querySelectorAll('tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                if (cells.length < 4) return;
+                if (cells.length < 5) return;
 
-                const name = cells[0]?.textContent.toLowerCase() || '';
-                const email = cells[1]?.textContent.toLowerCase() || '';
-                const amount = cells[2]?.textContent.toLowerCase() || '';
-                // Admin: Status is at index 3, Reviewer/Inviter: Status is at index 3, SLA is at index 4
-                const statusCell = cells[3]?.textContent.toLowerCase() || '';
+                // Updated indices: Checkbox at 0, Name at 1, Email at 2, Amount at 3, Status at 4, SLA at 5, Action at 6
+                const name = cells[1]?.textContent.toLowerCase() || '';
+                const email = cells[2]?.textContent.toLowerCase() || '';
+                const amount = cells[3]?.textContent.toLowerCase() || '';
+                const statusCell = cells[4]?.textContent.toLowerCase() || '';
 
                 const searchMatch = searchQuery === '' || name.includes(searchQuery) || email.includes(searchQuery) || amount.includes(searchQuery);
                 const statusMatch = statusValue === '' || statusCell.includes(statusValue);
@@ -5654,6 +5706,67 @@
             });
 
             document.body.appendChild(modal);
+        }
+
+        function toggleSelectAllCheckboxes(section) {
+            const selectAllCheckbox = document.getElementById(`${section}SelectAllCheckbox`);
+            const rowCheckboxes = document.querySelectorAll(`.${section}-row-checkbox`);
+            const isChecked = selectAllCheckbox.checked;
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            updateSelectionSummary(section);
+        }
+
+        function updateSelectionSummary(section) {
+            const rowCheckboxes = document.querySelectorAll(`.${section}-row-checkbox:checked`);
+            const selectedCount = rowCheckboxes.length;
+            let selectedTotal = 0;
+
+            rowCheckboxes.forEach(checkbox => {
+                const amount = parseFloat(checkbox.dataset.amount) || 0;
+                selectedTotal += amount;
+            });
+
+            const summaryDiv = document.getElementById(`${section}-selection-summary`);
+            const countSpan = document.getElementById(`${section}-selected-count`);
+            const totalSpan = document.getElementById(`${section}-selected-total`);
+
+            if (countSpan) countSpan.textContent = selectedCount;
+            if (totalSpan) totalSpan.textContent = `$${selectedTotal.toFixed(2)}`;
+            if (summaryDiv) {
+                summaryDiv.style.display = selectedCount > 0 ? 'flex' : 'none';
+            }
+
+            // Update select all checkbox state
+            const selectAllCheckbox = document.getElementById(`${section}SelectAllCheckbox`);
+            const totalCheckboxes = document.querySelectorAll(`.${section}-row-checkbox`).length;
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = selectedCount === totalCheckboxes && totalCheckboxes > 0;
+                selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCheckboxes;
+            }
+        }
+
+        async function batchRequestPayout(section) {
+            const rowCheckboxes = document.querySelectorAll(`.${section}-row-checkbox:checked`);
+            const selectedIds = Array.from(rowCheckboxes).map(cb => cb.value);
+
+            if (selectedIds.length === 0) {
+                showToast('Please select at least one item', 'error');
+                return;
+            }
+
+            showToast(`Requesting payout for ${selectedIds.length} items...`, 'info');
+
+            // Process each selected commission in sequence
+            for (const commissionId of selectedIds) {
+                await requestPayout(commissionId, section);
+                await new Promise(resolve => setTimeout(resolve, 300)); // Small delay between requests
+            }
+
+            // Uncheck all boxes and hide summary
+            rowCheckboxes.forEach(cb => cb.checked = false);
+            updateSelectionSummary(section);
         }
 
         async function requestPayout(commissionId, commissionType) {
