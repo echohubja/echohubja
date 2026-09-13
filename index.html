@@ -600,6 +600,9 @@
         <button class="main-tab-btn active" onclick="switchTab('marketplace', this)">🛍️ Marketplace</button>
         <button class="main-tab-btn" onclick="switchTab('commissions', this)">💰 Referral Commissions</button>
         <button class="main-tab-btn" onclick="switchTab('messaging', this)">💬 Messaging Hub</button>
+        <button class="main-tab-btn" onclick="switchTab('approvals-reviewer', this)">👤 Reviewer Approvals</button>
+        <button class="main-tab-btn" onclick="switchTab('approvals-buyer-inviter', this)">👥 Buyer Inviter Approvals</button>
+        <button class="main-tab-btn" onclick="switchTab('approvals-vendor-inviter', this)">🏢 Vendor Inviter Approvals</button>
     </div>
 
     <!-- Marketplace Section -->
@@ -714,12 +717,12 @@
             <div class="commission-scenario">
                 <div class="scenario-header">
                     <div class="scenario-title">Your Feedback Submission</div>
-                    <div class="scenario-rate">Per Vendor</div>
+                    <div class="scenario-rate">Variable</div>
                 </div>
                 <div class="scenario-detail">
-                    You submit feedback on a product. Each vendor sets their own per-feedback rate (default minimum $5). You earn whatever that vendor's rate is.
+                    You submit feedback on a product. You earn a per-feedback commission agreed between you and the vendor (default minimum $5).
                     <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
-                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor sets rate at $7 → You earn $7.00 per feedback</small>
+                    <small style="display: block; margin-top: 8px; color: #718096;">Example: Vendor's per-feedback rate $7 → You earn $7.00 per feedback</small>
                 </div>
             </div>
 
@@ -781,6 +784,273 @@
             <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(30, 90, 168, 0.05); padding: 40px; text-align: center; color: #718096;">
                 <p style="font-size: 16px; margin: 0;">Messages will appear here when you communicate with vendors or receive admin notifications.</p>
                 <p style="font-size: 14px; margin-top: 10px; color: #a0aec0;">Start by submitting an inquiry to a product vendor.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviewer Approvals Section -->
+    <div id="approvals-reviewer-section" class="tab-section">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <h2 style="font-size: 24px; margin-bottom: 8px; color: #2c3e50;">📋 Your Payout Approvals (Reviewer Role)</h2>
+            <p style="color: #718096; margin-bottom: 24px; font-size: 14px;">Commissions earned for reviewing and approving feedback submissions.</p>
+
+            <!-- Lifecycle Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
+                <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-awaiting-tab">📤 Awaiting Receipts</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-verified-tab">✅ Verified</button>
+            </div>
+
+            <!-- Pending Approval Table -->
+            <div id="reviewer-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchApproveReviewerPending()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Approve Selected</button>
+                        <button onclick="batchDenyReviewerPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="reviewer-pending-select-all" onchange="toggleReviewerPendingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewer-pending-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Awaiting Receipts Table -->
+            <div id="reviewer-awaiting-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Awaiting Receipt Uploads</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestInfoReviewerAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="reviewer-awaiting-select-all" onchange="toggleReviewerAwaitingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Timer</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewer-awaiting-table-body">
+                            <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verified Section -->
+            <div id="reviewer-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Verified Date</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewer-verified-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buyer Inviter Approvals Section -->
+    <div id="approvals-buyer-inviter-section" class="tab-section">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <h2 style="font-size: 24px; margin-bottom: 8px; color: #2c3e50;">💳 Your Payout Approvals (Buyer Inviter Role)</h2>
+            <p style="color: #718096; margin-bottom: 24px; font-size: 14px;">Commissions earned for referring buyers who submit feedback.</p>
+
+            <!-- Lifecycle Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
+                <button class="lifecycle-tab-btn active" onclick="switchBuyerInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-awaiting-tab">📤 Awaiting Receipts</button>
+                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-verified-tab">✅ Verified</button>
+            </div>
+
+            <!-- Pending Approval Table -->
+            <div id="buyer-inviter-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchApproveBuyerInviterPending()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Approve Selected</button>
+                        <button onclick="batchDenyBuyerInviterPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="buyer-inviter-pending-select-all" onchange="toggleBuyerInviterPendingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-inviter-pending-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Awaiting Receipts Table -->
+            <div id="buyer-inviter-awaiting-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Awaiting Receipt Uploads</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestInfoBuyerInviterAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="buyer-inviter-awaiting-select-all" onchange="toggleBuyerInviterAwaitingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Timer</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-inviter-awaiting-table-body">
+                            <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verified Section -->
+            <div id="buyer-inviter-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Verified Date</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-inviter-verified-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Inviter Approvals Section -->
+    <div id="approvals-vendor-inviter-section" class="tab-section">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <h2 style="font-size: 24px; margin-bottom: 8px; color: #2c3e50;">🏭 Your Payout Approvals (Vendor Inviter Role)</h2>
+            <p style="color: #718096; margin-bottom: 24px; font-size: 14px;">Commissions earned for referring vendors to the marketplace.</p>
+
+            <!-- Lifecycle Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
+                <button class="lifecycle-tab-btn active" onclick="switchVendorInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-awaiting-tab">📤 Awaiting Receipts</button>
+                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-verified-tab">✅ Verified</button>
+            </div>
+
+            <!-- Pending Approval Table -->
+            <div id="vendor-inviter-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchApproveVendorInviterPending()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Approve Selected</button>
+                        <button onclick="batchDenyVendorInviterPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="vendor-inviter-pending-select-all" onchange="toggleVendorInviterPendingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-inviter-pending-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Awaiting Receipts Table -->
+            <div id="vendor-inviter-awaiting-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Awaiting Receipt Uploads</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestInfoVendorInviterAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
+                    </div>
+                </div>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="vendor-inviter-awaiting-select-all" onchange="toggleVendorInviterAwaitingSelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Timer</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-inviter-awaiting-table-body">
+                            <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verified Section -->
+            <div id="vendor-inviter-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Verified Date</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-inviter-verified-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -1532,6 +1802,10 @@
             // Hide all sections
             document.getElementById('marketplace-section').classList.remove('active');
             document.getElementById('commissions-section').classList.remove('active');
+            document.getElementById('messaging-section').classList.remove('active');
+            document.getElementById('approvals-reviewer-section').classList.remove('active');
+            document.getElementById('approvals-buyer-inviter-section').classList.remove('active');
+            document.getElementById('approvals-vendor-inviter-section').classList.remove('active');
 
             // Remove active from all buttons
             document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1545,6 +1819,15 @@
                 loadPayoutSettings(currentBuyerId);
             } else if (tabName === 'messaging') {
                 document.getElementById('messaging-section').classList.add('active');
+            } else if (tabName === 'approvals-reviewer') {
+                document.getElementById('approvals-reviewer-section').classList.add('active');
+                loadReviewerApprovals(currentBuyerId);
+            } else if (tabName === 'approvals-buyer-inviter') {
+                document.getElementById('approvals-buyer-inviter-section').classList.add('active');
+                loadBuyerInviterApprovals(currentBuyerId);
+            } else if (tabName === 'approvals-vendor-inviter') {
+                document.getElementById('approvals-vendor-inviter-section').classList.add('active');
+                loadVendorInviterApprovals(currentBuyerId);
             }
 
             // Mark button as active
@@ -1846,6 +2129,375 @@
             } catch (err) {
                 console.error('Error requesting payout:', err);
                 showToast('Failed to request payout', 'error');
+            }
+        }
+
+        // ========== REVIEWER APPROVALS ==========
+        async function loadReviewerApprovals(buyerId) {
+            if (!buyerId) return;
+            await loadReviewerPendingApprovals(buyerId);
+        }
+
+        async function loadReviewerPendingApprovals(buyerId) {
+            const tbody = document.getElementById('reviewer-pending-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(comm => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
+                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading reviewer pending approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function switchReviewerLifecycleTab(tab) {
+            document.querySelectorAll('#reviewer-pending-section, #reviewer-awaiting-section, #reviewer-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#reviewer-pending-tab, #reviewer-awaiting-tab, #reviewer-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+
+            if (tab === 'pending') {
+                document.getElementById('reviewer-pending-section').style.display = 'block';
+                document.getElementById('reviewer-pending-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'awaiting') {
+                document.getElementById('reviewer-awaiting-section').style.display = 'block';
+                document.getElementById('reviewer-awaiting-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'verified') {
+                document.getElementById('reviewer-verified-section').style.display = 'block';
+                document.getElementById('reviewer-verified-tab').style.borderBottomColor = '#10b981';
+            }
+        }
+
+        function toggleReviewerPendingSelectAll() {
+            const checkbox = document.getElementById('reviewer-pending-select-all');
+            document.querySelectorAll('.reviewer-pending-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchApproveReviewerPending() {
+            const selected = Array.from(document.querySelectorAll('.reviewer-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await approvePayout(commissionId);
+            }
+            await loadReviewerPendingApprovals(currentBuyerId);
+        }
+
+        async function batchDenyReviewerPending() {
+            const selected = Array.from(document.querySelectorAll('.reviewer-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await denyPayout(commissionId);
+            }
+            await loadReviewerPendingApprovals(currentBuyerId);
+        }
+
+        async function batchRequestInfoReviewerAwaiting() {
+            const selected = Array.from(document.querySelectorAll('.reviewer-awaiting-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await requestPayoutInfo(commissionId);
+            }
+            showToast(`Info requests sent for ${selected.length} items`, 'success');
+        }
+
+        // ========== BUYER INVITER APPROVALS ==========
+        async function loadBuyerInviterApprovals(buyerId) {
+            if (!buyerId) return;
+            await loadBuyerInviterPendingApprovals(buyerId);
+        }
+
+        async function loadBuyerInviterPendingApprovals(buyerId) {
+            const tbody = document.getElementById('buyer-inviter-pending-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(comm => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-pending-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
+                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading buyer inviter pending approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function switchBuyerInviterLifecycleTab(tab) {
+            document.querySelectorAll('#buyer-inviter-pending-section, #buyer-inviter-awaiting-section, #buyer-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#buyer-inviter-pending-tab, #buyer-inviter-awaiting-tab, #buyer-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+
+            if (tab === 'pending') {
+                document.getElementById('buyer-inviter-pending-section').style.display = 'block';
+                document.getElementById('buyer-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'awaiting') {
+                document.getElementById('buyer-inviter-awaiting-section').style.display = 'block';
+                document.getElementById('buyer-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'verified') {
+                document.getElementById('buyer-inviter-verified-section').style.display = 'block';
+                document.getElementById('buyer-inviter-verified-tab').style.borderBottomColor = '#10b981';
+            }
+        }
+
+        function toggleBuyerInviterPendingSelectAll() {
+            const checkbox = document.getElementById('buyer-inviter-pending-select-all');
+            document.querySelectorAll('.buyer-inviter-pending-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        function toggleBuyerInviterAwaitingSelectAll() {
+            const checkbox = document.getElementById('buyer-inviter-awaiting-select-all');
+            document.querySelectorAll('.buyer-inviter-awaiting-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchApproveBuyerInviterPending() {
+            const selected = Array.from(document.querySelectorAll('.buyer-inviter-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await approvePayout(commissionId);
+            }
+            await loadBuyerInviterPendingApprovals(currentBuyerId);
+        }
+
+        async function batchDenyBuyerInviterPending() {
+            const selected = Array.from(document.querySelectorAll('.buyer-inviter-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await denyPayout(commissionId);
+            }
+            await loadBuyerInviterPendingApprovals(currentBuyerId);
+        }
+
+        async function batchRequestInfoBuyerInviterAwaiting() {
+            const selected = Array.from(document.querySelectorAll('.buyer-inviter-awaiting-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await requestPayoutInfo(commissionId);
+            }
+            showToast(`Info requests sent for ${selected.length} items`, 'success');
+        }
+
+        // ========== VENDOR INVITER APPROVALS ==========
+        async function loadVendorInviterApprovals(buyerId) {
+            if (!buyerId) return;
+            await loadVendorInviterPendingApprovals(buyerId);
+        }
+
+        async function loadVendorInviterPendingApprovals(buyerId) {
+            const tbody = document.getElementById('vendor-inviter-pending-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                // Get vendors referred by this buyer
+                const { data: vendors } = await db
+                    .from('vendors')
+                    .select('id')
+                    .eq('referred_by_buyer_id', buyerId);
+
+                if (!vendors || vendors.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    return;
+                }
+
+                const vendorIds = vendors.map(v => v.id);
+
+                // Get commissions from those vendors
+                const { data: commissions } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .in('vendor_id', vendorIds)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (!commissions || commissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = commissions.map(comm => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-pending-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
+                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
+                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading vendor inviter pending approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function switchVendorInviterLifecycleTab(tab) {
+            document.querySelectorAll('#vendor-inviter-pending-section, #vendor-inviter-awaiting-section, #vendor-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#vendor-inviter-pending-tab, #vendor-inviter-awaiting-tab, #vendor-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+
+            if (tab === 'pending') {
+                document.getElementById('vendor-inviter-pending-section').style.display = 'block';
+                document.getElementById('vendor-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'awaiting') {
+                document.getElementById('vendor-inviter-awaiting-section').style.display = 'block';
+                document.getElementById('vendor-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
+            } else if (tab === 'verified') {
+                document.getElementById('vendor-inviter-verified-section').style.display = 'block';
+                document.getElementById('vendor-inviter-verified-tab').style.borderBottomColor = '#10b981';
+            }
+        }
+
+        function toggleVendorInviterPendingSelectAll() {
+            const checkbox = document.getElementById('vendor-inviter-pending-select-all');
+            document.querySelectorAll('.vendor-inviter-pending-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        function toggleVendorInviterAwaitingSelectAll() {
+            const checkbox = document.getElementById('vendor-inviter-awaiting-select-all');
+            document.querySelectorAll('.vendor-inviter-awaiting-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchApproveVendorInviterPending() {
+            const selected = Array.from(document.querySelectorAll('.vendor-inviter-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await approvePayout(commissionId);
+            }
+            await loadVendorInviterPendingApprovals(currentBuyerId);
+        }
+
+        async function batchDenyVendorInviterPending() {
+            const selected = Array.from(document.querySelectorAll('.vendor-inviter-pending-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await denyPayout(commissionId);
+            }
+            await loadVendorInviterPendingApprovals(currentBuyerId);
+        }
+
+        async function batchRequestInfoVendorInviterAwaiting() {
+            const selected = Array.from(document.querySelectorAll('.vendor-inviter-awaiting-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            for (const commissionId of selected) {
+                await requestPayoutInfo(commissionId);
+            }
+            showToast(`Info requests sent for ${selected.length} items`, 'success');
+        }
+
+        // ========== SHARED PAYOUT FUNCTIONS ==========
+        async function approvePayout(commissionId) {
+            try {
+                const { error } = await db
+                    .from('admin_payables')
+                    .update({ status: 'approved' })
+                    .eq('id', commissionId);
+
+                if (error) throw error;
+                showToast('Payout approved successfully', 'success');
+            } catch (err) {
+                console.error('Error approving payout:', err);
+                showToast('Failed to approve payout', 'error');
+            }
+        }
+
+        async function denyPayout(commissionId) {
+            try {
+                const { error } = await db
+                    .from('admin_payables')
+                    .update({ status: 'denied' })
+                    .eq('id', commissionId);
+
+                if (error) throw error;
+                showToast('Payout denied', 'success');
+            } catch (err) {
+                console.error('Error denying payout:', err);
+                showToast('Failed to deny payout', 'error');
+            }
+        }
+
+        async function requestPayoutInfo(commissionId) {
+            try {
+                // In a real implementation, this would send a message or notification
+                console.log(`Info request sent for commission ${commissionId}`);
+            } catch (err) {
+                console.error('Error requesting info:', err);
             }
         }
 
