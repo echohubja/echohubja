@@ -1730,6 +1730,9 @@
             document.getElementById('feedback-image').value = '';
             document.getElementById('feedback-product-url').value = '';
 
+            // Reload messages to display the new submission
+            await loadInquiries();
+
             closeInquiryDrawer();
         }
 
