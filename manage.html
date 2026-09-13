@@ -5411,31 +5411,36 @@
 
             console.log(`[Payout] Summary: Total=$${totalEarnings.toFixed(2)}, Pending=$${pending.toFixed(2)}, PaidOut=$${paidOut.toFixed(2)}`);
 
-            // Update DOM
-            const totalCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('TOTAL EARNINGS') && el.closest('.panel')
-            );
-            if (totalCard) {
-                const valueEl = totalCard.querySelector('div[style*="font-size: 28px"]');
-                if (valueEl) valueEl.textContent = `$${totalEarnings.toFixed(2)}`;
-            }
+            // Update DOM - Fixed selector for summary cards
+            const summaryContainer = document.querySelector('div[style*="grid-template-columns: repeat(auto-fit"]');
+            if (summaryContainer) {
+                const cards = summaryContainer.querySelectorAll('> div');
+                cards.forEach(card => {
+                    const label = card.querySelector('div[style*="font-size: 12px"]');
+                    const value = card.querySelector('div[style*="font-size: 28px"]');
 
-            const pendingCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('PENDING PAYOUT') && el.closest('.panel')
-            );
-            if (pendingCard) {
-                const valueEl = pendingCard.querySelector('div[style*="font-size: 28px"]');
-                if (valueEl) valueEl.textContent = `$${pending.toFixed(2)}`;
-            }
+                    if (label && value) {
+                        const labelText = label.textContent.toLowerCase();
 
-            const paidCard = Array.from(document.querySelectorAll('div')).find(el =>
-                el.textContent.includes('PAID OUT') && el.closest('.panel')
-            );
-            if (paidCard) {
-                const valueEl = paidCard.querySelector('div[style*="font-size: 28px"]');
-                if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
-                const countEl = paidCard.querySelector('div[style*="font-size: 11px"]');
-                if (countEl) countEl.textContent = `${data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length} payouts`;
+                        if (labelText.includes('total earnings')) {
+                            value.textContent = `$${totalEarnings.toFixed(2)}`;
+                            console.log('[Payout] ✅ Updated TOTAL EARNINGS to:', `$${totalEarnings.toFixed(2)}`);
+                        } else if (labelText.includes('pending payout')) {
+                            value.textContent = `$${pending.toFixed(2)}`;
+                            console.log('[Payout] ✅ Updated PENDING PAYOUT to:', `$${pending.toFixed(2)}`);
+                        } else if (labelText.includes('paid out')) {
+                            value.textContent = `$${paidOut.toFixed(2)}`;
+                            const subtitleEl = card.querySelector('div[style*="font-size: 11px"]:not([style*="font-size: 12px"])');
+                            if (subtitleEl) {
+                                const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length;
+                                subtitleEl.textContent = `${payoutCount} payouts`;
+                            }
+                            console.log('[Payout] ✅ Updated PAID OUT to:', `$${paidOut.toFixed(2)}`);
+                        }
+                    }
+                });
+            } else {
+                console.error('[Payout] ❌ Summary container not found! Selector failed.');
             }
         }
 
