@@ -5276,23 +5276,37 @@ async function loadVendorSubmitterRelationship() {
 
                     if (rootError) throw rootError;
 
-                    // Fetch all buyer and vendor info needed
+                    // Fetch all buyer and vendor info needed (including referral info)
                     const buyerIds = [...new Set((rootInquiries || []).map(i => i.buyer_id))];
                     const vendorIds = [...new Set((rootInquiries || []).map(i => i.vendor_id))];
 
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
-                    const { data: vendors } = await db.from('vendors').select('id, business_name, email').in('id', vendorIds);
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email, referred_by').in('id', buyerIds);
+                    const { data: vendors } = await db.from('vendors').select('id, business_name, email, referred_by_buyer_id').in('id', vendorIds);
 
                     const buyerMap = {};
                     const vendorMap = {};
                     (buyers || []).forEach(b => buyerMap[b.id] = b);
                     (vendors || []).forEach(v => vendorMap[v.id] = v);
 
-                    // Create conversation objects for each transaction
+                    // Create conversation objects for each transaction with invitation status
                     (rootInquiries || []).forEach(inq => {
-                        const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id };
-                        const vendor = vendorMap[inq.vendor_id] || { business_name: 'Unknown', email: 'N/A', id: inq.vendor_id };
+                        const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id, referred_by: null };
+                        const vendor = vendorMap[inq.vendor_id] || { business_name: 'Unknown', email: 'N/A', id: inq.vendor_id, referred_by_buyer_id: null };
                         const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+
+                        // Determine invitation status (5-scenario logic)
+                        let invitationStatus = 'Neither invited';
+                        if (buyer.referred_by && vendor.referred_by_buyer_id) {
+                            if (buyer.referred_by === vendor.referred_by_buyer_id) {
+                                invitationStatus = 'Both invited by same';
+                            } else {
+                                invitationStatus = 'Both invited by unique inviters';
+                            }
+                        } else if (buyer.referred_by) {
+                            invitationStatus = 'Buyer invited';
+                        } else if (vendor.referred_by_buyer_id) {
+                            invitationStatus = 'Vendor invited';
+                        }
 
                         messagingState.allConversations.push({
                             id: inq.id,
@@ -5307,6 +5321,7 @@ async function loadVendorSubmitterRelationship() {
                             messageType: inq.message_type,
                             status: inq.vendor_status,
                             statusBadge: statusBadge,
+                            invitationStatus: invitationStatus,
                             lastMessage: inq.message?.substring(0, 50) || 'Message',
                             lastTime: new Date(inq.created_at).toLocaleDateString()
                         });
@@ -5331,14 +5346,46 @@ async function loadVendorSubmitterRelationship() {
                 return;
             }
 
-            sidebar.innerHTML = messagingState.conversations.map(conv => `
-                <div class="messaging-conversation-item ${messagingState.currentConversationId === conv.id ? 'active' : ''}"
-                     onclick="selectMessagingConversation('${conv.id}', '${conv.type}')">
-                    <div class="font-semibold text-sm text-gray-800 truncate">${conv.name}</div>
-                    <div class="text-xs text-gray-500 truncate">${conv.lastMessage}</div>
-                    <div class="text-xs text-gray-400 mt-1">${conv.lastTime}</div>
-                </div>
-            `).join('');
+            sidebar.innerHTML = messagingState.conversations.map(conv => {
+                // For transactions category, show full buyer/vendor context with invitation status
+                if (conv.type === 'transaction') {
+                    const buyerId = conv.buyerId.substring(0, 6).toUpperCase();
+                    const vendorId = conv.vendorId.substring(0, 6).toUpperCase();
+                    return `
+                        <div class="messaging-conversation-item ${messagingState.currentConversationId === conv.id ? 'active' : ''}"
+                             onclick="selectMessagingConversation('${conv.id}', '${conv.type}')">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm text-gray-800">
+                                        ${conv.buyerName} (B-${buyerId}) → ${conv.vendorName} (V-${vendorId})
+                                    </div>
+                                    <div class="text-xs text-gray-600 mt-1">
+                                        ${conv.buyerEmail} | ${conv.vendorEmail}
+                                    </div>
+                                </div>
+                                <div class="text-xs font-medium text-purple-700 whitespace-nowrap">
+                                    ${conv.invitationStatus}
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mt-2 gap-2">
+                                <div class="text-xs text-gray-500 truncate flex-1">${conv.lastMessage}</div>
+                                <div class="text-xs text-gray-400 whitespace-nowrap">${conv.statusBadge}</div>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">${conv.lastTime}</div>
+                        </div>
+                    `;
+                } else {
+                    // For other categories, use simple format
+                    return `
+                        <div class="messaging-conversation-item ${messagingState.currentConversationId === conv.id ? 'active' : ''}"
+                             onclick="selectMessagingConversation('${conv.id}', '${conv.type}')">
+                            <div class="font-semibold text-sm text-gray-800 truncate">${conv.name}</div>
+                            <div class="text-xs text-gray-500 truncate">${conv.lastMessage}</div>
+                            <div class="text-xs text-gray-400 mt-1">${conv.lastTime}</div>
+                        </div>
+                    `;
+                }
+            }).join('');
         }
 
         async function selectMessagingConversation(conversationId, type) {
