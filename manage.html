@@ -5345,13 +5345,10 @@
 
                 if (vpError) throw vpError;
 
-                // Load admin payables with admin details via RLS
+                // Load admin payables
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
-                    .select(`
-                        *,
-                        admin:admin_id (id, email, paypal_email)
-                    `)
+                    .select('*')
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
@@ -5409,7 +5406,7 @@
                 rows = data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).map(ap => ({
                     id: ap.id,
                     name: 'Admin Facility',
-                    email: (ap.admin && ap.admin.paypal_email) || '',
+                    email: ap.vendor_paypal_email || '',
                     amount: ap.amount_owed || 0,
                     status: ap.admin_payment_status || 'pending',
                     type: 'admin'
