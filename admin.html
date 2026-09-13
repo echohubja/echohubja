@@ -202,6 +202,21 @@
             color: #999;
             margin-top: 4px;
         }
+        /* Lifecycle Tab Styles */
+        .lifecycle-tab-btn {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .lifecycle-tab-btn.active {
+            border-bottom-color: currentColor !important;
+        }
+        .lifecycle-section {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -219,6 +234,7 @@
             <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active">Requests</button>
             <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn">Verification</button>
             <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn">Payouts</button>
+            <button onclick="switchTab('vendor-settings')" id="tab-btn-vendor-settings" class="tab-btn">⚙️ Vendor Settings</button>
             <button onclick="switchTab('payments')" id="tab-btn-payments" class="tab-btn">Payments</button>
             <button onclick="switchTab('alerts')" id="tab-btn-alerts" class="tab-btn">🔔 Alerts</button>
             <button onclick="switchTab('reversals')" id="tab-btn-reversals" class="tab-btn">💳 Reversals</button>
@@ -313,908 +329,285 @@
     <!-- SECTION: COMMISSIONS & PAYOUTS -->
     <div id="section-commissions" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Referral Commissions & Payouts</h2>
-            <span id="commission-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 records</span>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Commission Lifecycle Hub</h2>
+            <button onclick="refreshCommissionLifecycle()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition">🔄 Refresh</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Paid Out</div>
-                <div id="metric-total-paid" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
-            </div>
+        <!-- LIFECYCLE STATUS METRICS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div class="text-[11px] text-amber-600 font-semibold uppercase">Total Payable Balance</div>
-                <div id="metric-total-payable" class="text-xl font-bold text-gray-800 mt-0.5">$0.00 USD</div>
+                <div class="text-[11px] text-amber-600 font-semibold uppercase">Pending Approvals</div>
+                <div id="metric-pending-approvals" class="text-xl font-bold text-amber-700 mt-0.5">0</div>
             </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <div class="text-[11px] text-gray-600 font-semibold uppercase">Total Processed Records</div>
-                <div id="metric-total-records" class="text-xl font-bold text-gray-800 mt-0.5">0</div>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <div class="text-[11px] text-orange-600 font-semibold uppercase">Awaiting Receipts</div>
+                <div id="metric-awaiting-receipts" class="text-xl font-bold text-orange-700 mt-0.5">0</div>
+            </div>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div class="text-[11px] text-green-600 font-semibold uppercase">Verified</div>
+                <div id="metric-verified" class="text-xl font-bold text-green-700 mt-0.5">0</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[11px] text-blue-600 font-semibold uppercase">Total Verified Amount</div>
+                <div id="metric-total-verified-amount" class="text-xl font-bold text-blue-700 mt-0.5">$0.00</div>
             </div>
         </div>
 
-        <!-- VIEW MODE TOGGLE -->
-        <div class="mb-4 flex gap-3 items-center pb-4 border-b">
-            <span class="text-xs font-semibold text-gray-600">View Mode:</span>
-            <button onclick="switchCommissionView('admin-vendor')" id="view-btn-admin-vendor" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-700 transition">Admin-Vendor Overview</button>
-            <button onclick="switchCommissionView('vendor-buyer')" id="view-btn-vendor-buyer" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold hover:bg-gray-300 transition">Vendor-Buyer Relationships</button>
+        <!-- LIFECYCLE TABS -->
+        <div class="flex gap-2 mb-6 border-b">
+            <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-amber-500 text-amber-700">Pending Approvals</button>
+            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Awaiting Receipts</button>
+            <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Verified</button>
         </div>
 
-        <!-- VENDOR SELECTOR (for Vendor-Buyer View) -->
-        <div id="vendor-selector-container" class="mb-4 hidden pb-4 border-b">
-            <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor to View Their Buyer Relationships:</label>
-            <select id="commission-vendor-selector" onchange="loadCommissionsPortal()" class="w-full md:w-64 border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                <option value="">-- Select a Vendor --</option>
-            </select>
-        </div>
+        <!-- PENDING APPROVALS SECTION -->
+        <div id="lifecycle-pending" class="lifecycle-section">
+            <h3 class="text-md font-bold text-amber-700 mb-3">Payment Requests Awaiting Your Approval</h3>
+            <p class="text-xs text-gray-500 mb-4">Vendors or recipients have requested payout. Review, approve, deny, or request additional information.</p>
 
-        <!-- VENDOR COMMISSION SETTINGS SECTION -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>⚙️ Vendor Commission Settings</span>
-                <span id="alert-count" class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">0 alerts</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-3">Manage vendor commission amounts and payout thresholds. Alert count shows vendors at 80%+ threshold.</p>
-
-            <!-- Threshold Alert Monitor -->
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4" id="alert-monitor">
-                <p class="text-xs text-orange-700 font-semibold mb-2">🚨 Vendors Reaching Threshold:</p>
-                <div id="alert-list" class="text-xs text-gray-600">No alerts at this time</div>
+            <!-- Selection Bar -->
+            <div id="pending-selection-bar" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 hidden">
+                <div class="flex justify-between items-center text-xs">
+                    <span id="pending-selected-count" class="font-semibold text-amber-700">0 selected</span>
+                    <div class="flex gap-2">
+                        <button onclick="batchApprovePending()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold transition">✓ Approve Selected</button>
+                        <button onclick="batchDenyPending()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold transition">✗ Deny Selected</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- Vendor Settings Table -->
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
+                <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-blue-50 text-blue-700 text-xs uppercase tracking-wider border-b">
+                        <tr class="bg-amber-50 text-amber-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5"><input type="checkbox" id="pending-select-all" onchange="togglePendingSelectAll()" class="rounded"></th>
                             <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">Commission/Fee</th>
-                            <th class="p-2.5">Threshold</th>
-                            <th class="p-2.5">Accumulated Balance</th>
-                            <th class="p-2.5 text-center">Progress</th>
-                            <th class="p-2.5 text-center">Action</th>
+                            <th class="p-2.5">Recipient Type</th>
+                            <th class="p-2.5">Recipient</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Submitted</th>
+                            <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="vendor-settings-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading vendor settings...</td></tr>
+                    <tbody id="pending-approvals-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading pending approvals...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- VENDOR PER-FEEDBACK RATE MANAGEMENT (NEW) -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>💰 Vendor Fees</span>
-                <span id="rate-change-count" class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">0 pending</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-3">Manage per-feedback commission rates and review rate change requests from vendors.</p>
+        <!-- AWAITING RECEIPTS SECTION -->
+        <div id="lifecycle-awaiting" class="lifecycle-section hidden">
+            <h3 class="text-md font-bold text-orange-700 mb-3">Approved Payouts Awaiting Receipt Uploads</h3>
+            <p class="text-xs text-gray-500 mb-4">These payments have been approved. Waiting for receipt verification uploads (SLA timers shown below).</p>
 
-            <!-- Vendor Rate Table -->
-            <div class="overflow-x-auto mb-4">
-                <table class="w-full text-left border-collapse text-sm">
+            <!-- Selection Bar -->
+            <div id="awaiting-selection-bar" class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4 hidden">
+                <div class="flex justify-between items-center text-xs">
+                    <span id="awaiting-selected-count" class="font-semibold text-orange-700">0 selected</span>
+                    <button onclick="batchRequestInfoAwaiting()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition">💬 Request Info</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-purple-50 text-purple-700 text-xs uppercase tracking-wider border-b">
+                        <tr class="bg-orange-50 text-orange-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5"><input type="checkbox" id="awaiting-select-all" onchange="toggleAwaitingSelectAll()" class="rounded"></th>
                             <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">Current Rate</th>
-                            <th class="p-2.5">Last Changed</th>
-                            <th class="p-2.5 text-center">Action</th>
+                            <th class="p-2.5">Recipient Type</th>
+                            <th class="p-2.5">Recipient</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Approved Date</th>
+                            <th class="p-2.5">SLA Timer</th>
+                            <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="vendor-rates-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading vendor rates...</td></tr>
+                    <tbody id="awaiting-receipts-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading awaiting receipts...</td></tr>
                     </tbody>
                 </table>
             </div>
+        </div>
 
-            <!-- Rate Change Requests Section -->
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <h4 class="text-sm font-bold text-[#1e5aa8] mb-3">Pending Rate Change Requests</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr class="bg-white text-gray-600 text-xs uppercase tracking-wider border-b">
-                                <th class="p-2.5">Vendor</th>
-                                <th class="p-2.5">Current Rate</th>
-                                <th class="p-2.5">Requested Rate</th>
-                                <th class="p-2.5">Reason</th>
-                                <th class="p-2.5 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rate-requests-body" class="divide-y divide-gray-100">
-                            <tr><td colspan="5" class="p-4 text-center text-gray-500">No pending rate change requests</td></tr>
-                        </tbody>
-                    </table>
+        <!-- VERIFIED SECTION -->
+        <div id="lifecycle-verified" class="lifecycle-section hidden">
+            <h3 class="text-md font-bold text-green-700 mb-3">Verified & Completed Payments</h3>
+            <p class="text-xs text-gray-500 mb-4">Payments have been approved, receipts verified, and proof documented. Archive only.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-green-50 text-green-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Recipient Type</th>
+                            <th class="p-2.5">Recipient</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Verified Date</th>
+                            <th class="p-2.5">Receipt</th>
+                            <th class="p-2.5 text-center">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verified-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading verified payments...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SECTION: VENDOR SETTINGS -->
+    <div id="section-vendor-settings" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Vendor Settings & Configuration</h2>
+            <button onclick="refreshVendorSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition">🔄 Refresh</button>
+        </div>
+
+        <!-- VENDOR SELECTOR SECTION -->
+        <div class="mb-6 pb-6 border-b">
+            <h3 class="text-md font-bold text-[#1e5aa8] mb-3">Step 1: Select Vendor</h3>
+            <p class="text-xs text-gray-500 mb-4">Find vendor by dropdown, email, ID, or business name.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Dropdown Selection -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-2">Vendor List (Dropdown):</label>
+                    <select id="vendor-selector-dropdown" onchange="selectVendorFromDropdown()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
+                        <option value="">Select a vendor...</option>
+                    </select>
+                </div>
+
+                <!-- Email Search -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-2">Search by Email:</label>
+                    <input type="text" id="vendor-search-email" placeholder="vendor@example.com" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]" onkeyup="searchVendorByEmail()">
+                </div>
+
+                <!-- ID/Name Search -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-2">Search by ID or Name:</label>
+                    <input type="text" id="vendor-search-id-name" placeholder="Vendor ID or name" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]" onkeyup="searchVendorByIdOrName()">
+                </div>
+            </div>
+
+            <!-- Selected Vendor Display -->
+            <div id="vendor-selected-display" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div><span class="font-semibold text-gray-600">Vendor ID:</span> <span id="selected-vendor-id" class="font-mono">—</span></div>
+                    <div><span class="font-semibold text-gray-600">Name:</span> <span id="selected-vendor-name">—</span></div>
+                    <div><span class="font-semibold text-gray-600">Email:</span> <span id="selected-vendor-email">—</span></div>
+                </div>
+                <button onclick="clearVendorSelection()" class="mt-3 bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-1 rounded text-xs font-semibold transition">Clear Selection</button>
+            </div>
+        </div>
+
+        <!-- GENERAL VENDOR SETTINGS SECTION -->
+        <div id="general-settings-section" class="mb-6 pb-6 border-b hidden">
+            <h3 class="text-md font-bold text-[#1e5aa8] mb-3">General Vendor Settings (Applies to All Users)</h3>
+            <p class="text-xs text-gray-500 mb-4">Configure the general per-feedback rate that applies to all transactions.</p>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-2">Current Per-Feedback Rate:</label>
+                        <div id="general-rate-display" class="text-2xl font-bold text-blue-700">$5.00</div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-2">Last Changed:</label>
+                        <div id="general-rate-last-changed" class="text-sm text-gray-600">—</div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-2">Changed By:</label>
+                        <div id="general-rate-changed-by" class="text-sm text-gray-600">—</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t">
+                    <button onclick="openEditGeneralRate()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-xs font-semibold transition">Edit Rate</button>
                 </div>
             </div>
         </div>
 
-        <!-- THRESHOLD CHANGE REQUESTS SECTION -->
-        <div class="mb-6 pb-6 border-b">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>📋 Vendor Threshold Change Requests</span>
-                <span id="pending-requests-count" class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">0 pending</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-3">Review and approve/reject vendor requests to change their payout thresholds.</p>
+        <!-- PENDING RATE CHANGE REQUESTS SECTION -->
+        <div id="rate-requests-section" class="mb-6 pb-6 border-b hidden">
+            <h3 class="text-md font-bold text-[#1e5aa8] mb-3">Pending Rate Change Requests</h3>
+            <p class="text-xs text-gray-500 mb-4">Vendor has requested to change their per-feedback rate. Approve, deny, or request more information.</p>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
+                <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-amber-50 text-amber-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor</th>
+                        <tr class="bg-purple-50 text-purple-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">Current Rate</th>
+                            <th class="p-2.5">Requested Rate</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Submitted</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rate-requests-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="p-4 text-center text-gray-500">No pending rate change requests</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CUSTOM AGREEMENTS SECTION -->
+        <div id="custom-agreements-section" class="mb-6 pb-6 border-b hidden">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-md font-bold text-[#1e5aa8]">Custom Agreements with Individual Users</h3>
+                <span id="custom-agreement-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-2 py-1 rounded-full font-semibold">0 agreements</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">View and manage custom per-feedback rates and payout thresholds for specific vendor-user relationships.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-indigo-50 text-indigo-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">User / Buyer</th>
+                            <th class="p-2.5">User Email</th>
+                            <th class="p-2.5">Custom Rate</th>
+                            <th class="p-2.5">Custom Threshold</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="custom-agreements-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading custom agreements...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PENDING THRESHOLD CHANGE REQUESTS SECTION -->
+        <div id="threshold-requests-section" class="mb-6 pb-6 border-b hidden">
+            <h3 class="text-md font-bold text-[#1e5aa8] mb-3">Pending Threshold Change Requests</h3>
+            <p class="text-xs text-gray-500 mb-4">Vendor or users have requested changes to payout thresholds for specific relationships. Review and approve/deny.</p>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-amber-50 text-amber-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">Recipient Type</th>
+                            <th class="p-2.5">Recipient / User</th>
                             <th class="p-2.5">Current Threshold</th>
                             <th class="p-2.5">Requested Threshold</th>
                             <th class="p-2.5">Reason</th>
                             <th class="p-2.5">Submitted</th>
-                            <th class="p-2.5">Status</th>
                             <th class="p-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="threshold-requests-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading threshold requests...</td></tr>
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">No pending threshold change requests</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-<!-- RELATIONSHIP SECTION 2: VENDOR ↔ FEEDBACK SUBMITTER -->
-        <div id="relationship-vendor-submitter-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-green-700 mb-1">Commission Breakdown & Audit: Vendor-Reviewer Ledger</h3>
-            <p class="text-xs text-gray-500 mb-4">Complete earnings report for each feedback: what the reviewer earned, the admin share, the inviter commission (if applicable), and receipt verification status. Use this to verify all commission splits are correct.</p>
-
-            <!-- Vendor Selection (Dropdown + Search) -->
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div>
-                        <select id="vendor-submitter-vendor-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                            <option value="">Select from list</option>
-                        </select>
-                    </div>
-                    <input type="text" id="vendor-submitter-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
-                    <input type="text" id="vendor-submitter-vendor-search-email" placeholder="Search by Vendor Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByVendor()">
-                </div>
-            </div>
-
-            <!-- Buyer Selection (Dropdown + Search) -->
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Reviewer (Buyer):</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div>
-                        <select id="vendor-submitter-buyer-dropdown" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                            <option value="">Select from list</option>
-                        </select>
-                    </div>
-                    <input type="text" id="vendor-submitter-buyer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
-                    <input type="text" id="vendor-submitter-buyer-search-email" placeholder="Search by Buyer Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600" onkeyup="searchVendorSubmitterByBuyer()">
-                </div>
-            </div>
-
-            <!-- Date Range Filter -->
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Date Range:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">From Date:</label>
-                        <input type="date" id="vendor-submitter-date-from" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">To Date:</label>
-                        <input type="date" id="vendor-submitter-date-to" onchange="loadVendorSubmitterRelationship()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-600">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="clearDateFilter()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Dates</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div class="bg-green-50 border border-green-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Paid to Reviewers</div>
-                    <div class="text-lg font-bold text-green-600" id="vendor-submitter-total-paid">$0.00</div>
-                </div>
-                <div class="bg-amber-50 border border-amber-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Total Payable to Reviewers</div>
-                    <div class="text-lg font-bold text-amber-600" id="vendor-submitter-total-payable">$0.00</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Avg Per Feedback</div>
-                    <div class="text-lg font-bold text-gray-600" id="vendor-submitter-avg">$0.00</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded p-3">
-                    <div class="text-xs text-gray-600 font-semibold">Records</div>
-                    <div class="text-lg font-bold text-gray-600" id="vendor-submitter-count">0</div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-green-50 text-green-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Reviewer ID</th>
-                            <th class="p-2.5 text-right">Reviewer ($)</th>
-                            <th class="p-2.5 text-right">Admin ($)</th>
-                            <th class="p-2.5 text-right">Buyer Inviter ($)</th>
-                            <th class="p-2.5 text-right">Vendor Inviter ($)</th>
-                            <th class="p-2.5">Receipt Status</th>
-                            <th class="p-2.5">Payment Status</th>
-                            <th class="p-2.5">Created</th>
-                        </tr>
-                    </thead>
-                    <tbody id="vendor-submitter-body" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading vendor-submitter data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- MODAL: Commission Detail View -->
-        <div id="commissionDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-green-50 border-b border-green-200 p-4 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-green-700">Commission Detail</h2>
-                    <button onclick="closeCommissionModal()" class="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button>
-                </div>
-
-                <div class="p-6 space-y-6">
-                    <!-- Buyer Info Section -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-blue-700 mb-3">Reviewer Information</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <div>
-                                <span class="text-gray-600">Buyer ID:</span>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span id="modal-buyer-id" class="font-mono bg-gray-100 px-2 py-1 rounded text-[11px] break-all">—</span>
-                                    <button onclick="copyToClipboard('modal-buyer-id')" class="text-blue-600 hover:text-blue-700 font-semibold text-xs">Copy</button>
-                                </div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Buyer Email:</span>
-                                <div class="mt-1 font-mono bg-gray-100 px-2 py-1 rounded text-[11px]" id="modal-buyer-email">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Scenario Type:</span>
-                                <div id="modal-scenario-type" class="mt-1 font-bold text-[11px]">—</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Created:</span>
-                                <div class="mt-1 font-mono text-[11px]" id="modal-created-date">—</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Commission Split Section -->
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-gray-300 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-gray-700 mb-3">Earnings Breakdown</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="modal-earnings-grid">
-                            <div class="bg-white border-2 border-green-300 rounded p-3">
-                                <div class="text-xs text-gray-600 font-semibold">Reviewer Earning</div>
-                                <div class="text-2xl font-bold text-green-600 mt-1" id="modal-submitter-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1">Feedback reward</div>
-                            </div>
-                            <div class="bg-white border-2 border-blue-300 rounded p-3">
-                                <div class="text-xs text-gray-600 font-semibold">Admin Earning</div>
-                                <div class="text-2xl font-bold text-blue-600 mt-1" id="modal-admin-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1" id="modal-admin-reason">Facility commission</div>
-                            </div>
-                            <!-- Single Inviter (Scenarios B-D) -->
-                            <div class="bg-white border-2 border-orange-300 rounded p-3" id="modal-single-inviter-box">
-                                <div class="text-xs text-gray-600 font-semibold">Inviter Earning</div>
-                                <div class="text-2xl font-bold text-orange-600 mt-1" id="modal-single-inviter-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1" id="modal-single-inviter-reason">—</div>
-                            </div>
-                            <!-- Dual Inviters (Scenario E) - Buyer Inviter -->
-                            <div class="bg-white border-2 border-amber-300 rounded p-3" id="modal-buyer-inviter-box" style="display: none;">
-                                <div class="text-xs text-gray-600 font-semibold">Buyer Inviter Earning</div>
-                                <div class="text-2xl font-bold text-amber-600 mt-1" id="modal-buyer-inviter-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1">Buyer's referrer (35%)</div>
-                            </div>
-                            <!-- Dual Inviters (Scenario E) - Vendor Inviter -->
-                            <div class="bg-white border-2 border-amber-400 rounded p-3" id="modal-vendor-inviter-box" style="display: none;">
-                                <div class="text-xs text-gray-600 font-semibold">Vendor Inviter Earning</div>
-                                <div class="text-2xl font-bold text-amber-700 mt-1" id="modal-vendor-inviter-amount">$0.00</div>
-                                <div class="text-[11px] text-gray-500 mt-1">Vendor's referrer (35%)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Receipt Verification Section -->
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-purple-700 mb-3">Receipt Verification Status (V9)</h3>
-                        <div class="space-y-4 text-xs">
-                            <!-- Vendor Payment Proof -->
-                            <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">🏪 Vendor Disbursement (Who Sent Payment)</div>
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-paypal-email">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-vendor-transaction-id">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-vendor-receipt-status">—</div>
-                                    </div>
-                                    <div id="modal-vendor-flag-info" class="text-red-600" style="display: none;">
-                                        <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-vendor-flag-reason" class="mt-1">—</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Buyer/Referrer Payment Proof -->
-                            <div class="bg-white border border-purple-200 rounded p-3">
-                                <div class="font-bold text-gray-700 mb-2">👤 Inviter Collection (Who Collected Payment)</div>
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-gray-600">PayPal Email:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-paypal-email">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Transaction ID:</span>
-                                        <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1" id="modal-buyer-transaction-id">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Receipt Status:</span>
-                                        <div class="mt-1" id="modal-buyer-receipt-status">—</div>
-                                    </div>
-                                    <div id="modal-buyer-flag-info" class="text-red-600" style="display: none;">
-                                        <span class="font-semibold">Flag Reason:</span>
-                                        <div id="modal-buyer-flag-reason" class="mt-1">—</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Admin Approval Trail -->
-                            <div id="modal-admin-approval" class="bg-green-50 border border-green-200 rounded p-3" style="display: none;">
-                                <div class="font-bold text-green-700 mb-2">✓ Admin Approval</div>
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-gray-600">Approved Date:</span>
-                                        <div id="modal-unflag-date" class="font-mono">—</div>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600">Reason:</span>
-                                        <div id="modal-unflag-reason" class="mt-1">—</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment Status Section -->
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-gray-700 mb-3">Payment Status</h3>
-                        <div class="text-xs">
-                            <span class="text-gray-600">Status:</span>
-                            <div id="modal-payment-status" class="mt-1 font-bold">—</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
-                    <div>
-                        <button id="modal-approve-btn" onclick="if(currentAdminPayableId) approveAdminPayableReceipt(currentAdminPayableId); else alert('No record selected')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-semibold" style="display:none;">✓ Approve & Pay</button>
-                    </div>
-                    <button onclick="closeCommissionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-semibold">Close</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN PAYOUT MODAL (Transaction Checkbox Selection) -->
-        <div id="adminPayoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 p-4 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-blue-700">Process Payout - Select Transactions</h2>
-                    <button onclick="closeAdminPayoutModal()" class="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button>
-                </div>
-
-                <div class="p-6 space-y-4">
-                    <!-- Vendor Info -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-blue-700 mb-2">Vendor</h3>
-                        <div class="flex justify-between items-center text-xs">
-                            <div>
-                                <span class="text-gray-600">Vendor ID:</span>
-                                <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-1 text-[11px]" id="payout-vendor-id">—</div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-gray-600">Total Available:</span>
-                                <div class="font-bold text-green-600 text-lg mt-1" id="payout-total-available">$0.00</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transaction Selection Checklist -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-green-700">Available Transactions</h3>
-                            <div class="text-xs font-semibold text-green-700">
-                                <span id="selected-count">0</span> / <span id="total-count">0</span> selected
-                            </div>
-                        </div>
-                        <div class="max-h-64 overflow-y-auto space-y-2 border border-green-300 rounded bg-white p-3" id="transactionChecklistContainer">
-                            <div class="p-4 text-center text-gray-500">Loading transactions...</div>
-                        </div>
-                    </div>
-
-                    <!-- Payout Total Summary -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-amber-700 mb-2">Payout Summary</h3>
-                        <div class="grid grid-cols-3 gap-4 text-xs">
-                            <div>
-                                <span class="text-gray-600">Transactions:</span>
-                                <div class="font-bold text-amber-700 text-lg mt-1" id="payout-tx-count">0</div>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Per Transaction:</span>
-                                <div class="font-bold text-amber-700 text-lg mt-1" id="payout-per-tx">$0.00</div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-gray-600">Total Payout:</span>
-                                <div class="font-bold text-green-600 text-lg mt-1" id="payout-selected-total">$0.00</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Receipt Upload -->
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h3 class="text-sm font-bold text-purple-700 mb-3">Receipt Information</h3>
-                        <div class="space-y-3 text-xs">
-                            <div>
-                                <label class="font-semibold text-gray-700 block mb-1">PayPal Email:</label>
-                                <input type="email" id="payoutPaypalEmail" placeholder="vendor@email.com" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </div>
-                            <div>
-                                <label class="font-semibold text-gray-700 block mb-1">Transaction ID:</label>
-                                <input type="text" id="payoutTransactionId" placeholder="PayPal transaction ID" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </div>
-                            <div>
-                                <label class="font-semibold text-gray-700 block mb-1">Receipt File (PDF/Image, max 10MB):</label>
-                                <input type="file" id="payoutReceiptFile" accept=".pdf,.png,.jpg,.jpeg" class="w-full border border-purple-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-between gap-2">
-                    <button onclick="submitPayoutRequest()" class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-xs font-semibold transition" id="submitPayoutBtn">Submit Payout</button>
-                    <button onclick="closeAdminPayoutModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-xs font-semibold transition">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN EARNINGS - PER REFERRED VENDOR -->
-        <div id="admin-earnings-referred-vendor-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: Per Referred Vendor</h3>
-            <p class="text-xs text-gray-500 mb-4">Admin earnings when referred buyers give feedback to a specific vendor you referred.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor (You Referred):</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <select id="admin-vendor-dropdown" onchange="loadAdminEarningsReferredVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                        <option value="">Select from list</option>
-                    </select>
-                    <input type="text" id="admin-vendor-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredVendor()">
-                    <input type="text" id="admin-vendor-search-name" placeholder="Search by Business Name" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredVendor()">
-                </div>
-            </div>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Date Range:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">From Date:</label>
-                        <input type="date" id="admin-vendor-date-from" onchange="loadAdminEarningsReferredVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">To Date:</label>
-                        <input type="date" id="admin-vendor-date-to" onchange="loadAdminEarningsReferredVendor()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="clearAdminVendorDateFilter()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Dates</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Earnings (30%)</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Vendor:</span> <span id="admin-rv-vendor" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-rv-total" class="font-bold text-slate-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Feedbacks:</span> <span id="admin-rv-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-blue-50 border border-blue-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-blue-700 mb-3">Vendor Commission (Per Feedback)</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Rate:</span> <span id="admin-rv-rate" class="font-bold text-blue-600">$0.00</span></div>
-                        <div><span class="text-gray-600">30% Admin Share:</span> <span id="admin-rv-share" class="font-mono">$0.00</span></div>
-                    </div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-green-700 mb-3">Payout Status</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Status:</span> <span id="admin-rv-status" class="text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Last Updated:</span> <span id="admin-rv-date" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">Earnings Breakdown</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Feedback</th><th class="text-right p-2 font-semibold text-gray-700">Vendor Rate</th><th class="text-right p-2 font-semibold text-gray-700">Admin (30%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="admin-rv-detail-table"><tr><td colspan="5" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN EARNINGS - PER REFERRED BUYER -->
-        <div id="admin-earnings-referred-buyer-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: From Inviters</h3>
-            <p class="text-xs text-gray-500 mb-4">Admin earnings (30% split) when a buyer you referred gives feedback to any vendor.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Inviter (Who Invited Others):</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <select id="admin-referrer-dropdown" onchange="loadAdminEarningsReferredBuyer()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                        <option value="">Select from list</option>
-                    </select>
-                    <input type="text" id="admin-referrer-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredBuyer()">
-                    <input type="text" id="admin-referrer-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsReferredBuyer()">
-                </div>
-            </div>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Date Range:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">From Date:</label>
-                        <input type="date" id="admin-referrer-date-from" onchange="loadAdminEarningsReferredBuyer()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">To Date:</label>
-                        <input type="date" id="admin-referrer-date-to" onchange="loadAdminEarningsReferredBuyer()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="clearAdminInviterDateFilter()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Dates</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Share of Vendor Fee (30%)</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-rb-referrer" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-rb-total" class="font-bold text-slate-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Referred Feedback Count:</span> <span id="admin-rb-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-orange-50 border border-orange-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-orange-700 mb-3">People Invited</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Buyers Referred:</span> <span id="admin-rb-referred-count" class="font-mono">0</span></div>
-                        <div><span class="text-gray-600">Avg Admin Share / Inviter Share:</span> <span id="admin-rb-avg-split" class="font-mono">30% / 70%</span></div>
-                    </div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-green-700 mb-3">Payout Status</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Status:</span> <span id="admin-rb-status" class="text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Last Updated:</span> <span id="admin-rb-date" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">Vendor Fee Breakdown (From Referred Buyers)</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Admin (30%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="admin-rb-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN EARNINGS - PER FEEDBACK SUBMITTER -->
-        <div id="admin-earnings-feedback-submitter-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-slate-700 mb-1">Admin Earnings: Per Reviewer (Any Buyer)</h3>
-            <p class="text-xs text-gray-500 mb-4">Admin earnings from facility commissions for any buyer's feedback across all vendors.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Reviewer (Any Buyer):</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <select id="admin-submitter-dropdown" onchange="loadAdminEarningsSubmitter()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                        <option value="">Select from list</option>
-                    </select>
-                    <input type="text" id="admin-submitter-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsSubmitter()">
-                    <input type="text" id="admin-submitter-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600" onkeyup="searchAdminEarningsSubmitter()">
-                </div>
-            </div>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Date Range:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">From Date:</label>
-                        <input type="date" id="admin-submitter-date-from" onchange="loadAdminEarningsSubmitter()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">To Date:</label>
-                        <input type="date" id="admin-submitter-date-to" onchange="loadAdminEarningsSubmitter()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-slate-600">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="clearAdminSubmitterDateFilter()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Dates</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-slate-50 border border-slate-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-slate-700 mb-3">Admin Total Earning</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Buyer:</span> <span id="admin-fs-buyer" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Total Earning:</span> <span id="admin-fs-total" class="font-bold text-slate-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Feedback Count:</span> <span id="admin-fs-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-indigo-700 mb-3">Buyer Status</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Is Referred:</span> <span id="admin-fs-referred" class="font-mono">No</span></div>
-                        <div><span class="text-gray-600">Referrer:</span> <span id="admin-fs-referrer" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-green-700 mb-3">Avg Vendor Fee</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Avg Admin Earning:</span> <span id="admin-fs-avg" class="font-bold text-green-600">$0.00</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">Earnings Breakdown</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Admin Share of Vendor Fee</th><th class="text-right p-2 font-semibold text-gray-700">Inviter Share (70%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="admin-fs-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- SYSTEM-WIDE: ALL BUYERS REPORT -->
-        <div id="all-buyers-report-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-indigo-700 mb-1">System-Wide: All Buyers Report</h3>
-            <p class="text-xs text-gray-500 mb-4">Search and drill into any buyer's cumulative earnings across all feedback.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Buyer:</label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="all-buyers-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchAllBuyers()">
-                    <input type="text" id="all-buyers-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600" onkeyup="searchAllBuyers()">
-                </div>
-            </div>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Filter by Date Range:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">From Date:</label>
-                        <input type="date" id="all-buyers-date-from" onchange="searchAllBuyers()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-1">To Date:</label>
-                        <input type="date" id="all-buyers-date-to" onchange="searchAllBuyers()" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="clearAllBuyersDateFilter()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 rounded text-xs font-semibold transition">Clear Dates</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-indigo-700 mb-3">Buyer Info</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">ID:</span> <span id="all-buyers-id" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Email:</span> <span id="all-buyers-email" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-green-700 mb-3">Cumulative Earnings</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Total:</span> <span id="all-buyers-total" class="font-bold text-green-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Feedbacks:</span> <span id="all-buyers-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-purple-50 border border-purple-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-purple-700 mb-3">Referral Status</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Referred By:</span> <span id="all-buyers-referred-by" class="font-mono text-[11px]">Not Referred</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">All Feedback Breakdown</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Reviewer Earning</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="all-buyers-detail-table"><tr><td colspan="4" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- SYSTEM-WIDE: ALL REFERRERS REPORT -->
-        <div id="all-referrers-report-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-orange-700 mb-1">System-Wide: All Inviters Report</h3>
-            <p class="text-xs text-gray-500 mb-4">Search and drill into any referrer's cumulative earnings (70% splits) across all referrals.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Inviter:</label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="all-referrers-search-id" placeholder="Search by Buyer ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-600" onkeyup="searchAllReferrers()">
-                    <input type="text" id="all-referrers-search-email" placeholder="Search by Email" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-600" onkeyup="searchAllReferrers()">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-orange-50 border border-orange-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-orange-700 mb-3">Inviter Info</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">ID:</span> <span id="all-referrers-id" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Email:</span> <span id="all-referrers-email" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-green-700 mb-3">Cumulative Earnings (70%)</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Total:</span> <span id="all-referrers-total" class="font-bold text-green-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Referrals:</span> <span id="all-referrers-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-purple-50 border border-purple-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-purple-700 mb-3">Referral Network</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Buyers Referred:</span> <span id="all-referrers-buyers" class="font-mono">0</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">Vendor Fee Breakdown (From Referrals)</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-left p-2 font-semibold text-gray-700">Vendor</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Inviter Share (70%)</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="all-referrers-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- SYSTEM-WIDE: ALL VENDORS REPORT -->
-        <div id="all-vendors-report-section" class="mb-8 pb-8 border-b">
-            <h3 class="text-lg font-bold text-amber-700 mb-1">System-Wide: All Vendors Report</h3>
-            <p class="text-xs text-gray-500 mb-4">Search and drill into any vendor's total payables across all approved feedback.</p>
-
-            <div class="mb-4 pb-3 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select/Search Any Vendor:</label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="all-vendors-search-id" placeholder="Search by Vendor ID" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-600" onkeyup="searchAllVendors()">
-                    <input type="text" id="all-vendors-search-name" placeholder="Search by Business Name" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-600" onkeyup="searchAllVendors()">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-amber-50 border border-amber-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-amber-700 mb-3">Vendor Info</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">ID:</span> <span id="all-vendors-id" class="font-mono text-[11px]">—</span></div>
-                        <div><span class="text-gray-600">Business:</span> <span id="all-vendors-name" class="font-mono text-[10px]">—</span></div>
-                    </div>
-                </div>
-                <div class="bg-red-50 border border-red-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-red-700 mb-3">Total Payable</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Total Owed:</span> <span id="all-vendors-total" class="font-bold text-red-600">$0.00</span></div>
-                        <div><span class="text-gray-600">Feedbacks:</span> <span id="all-vendors-count" class="font-mono">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-blue-50 border border-blue-200 rounded p-4">
-                    <h4 class="text-xs font-bold text-blue-700 mb-3">Commission Rate</h4>
-                    <div class="text-xs space-y-2">
-                        <div><span class="text-gray-600">Per Feedback:</span> <span id="all-vendors-rate" class="font-bold text-blue-600">$0.00</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 border border-gray-200 rounded p-4">
-                <h4 class="text-xs font-bold text-gray-700 mb-3">Earnings Breakdown</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead><tr class="border-b-2 border-gray-300"><th class="text-left p-2 font-semibold text-gray-700">Buyer</th><th class="text-right p-2 font-semibold text-gray-700">Commission</th><th class="text-right p-2 font-semibold text-gray-700">Reviewer Earning</th><th class="text-right p-2 font-semibold text-gray-700">Admin Share of Vendor Fee</th><th class="text-left p-2 font-semibold text-gray-700">Status</th><th class="text-left p-2 font-semibold text-gray-700">Date</th></tr></thead>
-                        <tbody id="all-vendors-detail-table"><tr><td colspan="6" class="p-3 text-gray-500 text-center">—</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN PAYOUT MANAGEMENT SUBSECTION -->
-        <div class="mb-8 pb-8 border-t pt-6 mt-8">
-            <h3 class="text-lg font-bold text-[#1e5aa8] mb-3 flex items-center gap-2">
-                <span>💳 Admin Payout Management</span>
-                <span id="payout-available-count" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">0 available</span>
-            </h3>
-            <p class="text-xs text-gray-500 mb-4">Process vendor payouts with smart validation. Enter payout amount or use Full Payout. System validates against actual available commissions from submitted feedbacks.</p>
-
-            <!-- Payout Metrics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div class="text-[10px] text-green-600 font-bold uppercase">Available</div>
-                    <div id="metric-admin-available" class="text-lg font-bold text-green-700">$0.00</div>
-                </div>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div class="text-[10px] text-blue-600 font-bold uppercase">Pending</div>
-                    <div id="metric-admin-pending" class="text-lg font-bold text-blue-700">$0.00</div>
-                </div>
-                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                    <div class="text-[10px] text-purple-600 font-bold uppercase">Paid</div>
-                    <div id="metric-admin-paid" class="text-lg font-bold text-purple-700">$0.00</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <div class="text-[10px] text-gray-600 font-bold uppercase">Total</div>
-                    <div id="metric-admin-total" class="text-lg font-bold text-gray-800">$0.00</div>
-                </div>
-            </div>
-
-            <!-- Vendor Selector & Search -->
-            <div class="mb-4 pb-4 border-b">
-                <label class="text-xs font-semibold text-gray-600 block mb-2">Select Vendor:</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="adminPayoutVendorSelector" onchange="filterAdminPayoutsByVendor()" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                        <option value="">-- All Vendors --</option>
-                    </select>
-                    <input type="text" id="adminPayoutVendorSearch" placeholder="Search by vendor name/ID..." oninput="searchAdminPayoutVendors()" class="border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#1e5aa8]">
-                    <button onclick="clearAdminPayoutVendorFilter()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded text-xs font-semibold transition">Clear Filter</button>
-                </div>
-            </div>
-
-            <!-- Status Filter Tabs -->
-            <div class="mb-4 flex gap-2 pb-3 border-b">
-                <button onclick="filterAdminPayouts('available')" class="admin-payout-status-tab active bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold" data-status="available">Available</button>
-                <button onclick="filterAdminPayouts('pending')" class="admin-payout-status-tab bg-blue-200 text-blue-800 px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-300" data-status="pending">Pending</button>
-                <button onclick="filterAdminPayouts('paid')" class="admin-payout-status-tab bg-purple-200 text-purple-800 px-3 py-1.5 rounded text-xs font-semibold hover:bg-purple-300" data-status="paid">Paid</button>
-            </div>
-
-            <!-- Payouts Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-700 text-xs uppercase tracking-wider border-b">
-                            <th class="p-2.5">Vendor ID</th>
-                            <th class="p-2.5">Amount</th>
-                            <th class="p-2.5">Reason</th>
-                            <th class="p-2.5">Status</th>
-                            <th class="p-2.5">Created</th>
-                            <th class="p-2.5 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminPayoutsTableBody" class="divide-y divide-gray-100">
-                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading payouts...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- NO VENDOR SELECTED MESSAGE -->
+        <div id="vendor-not-selected-message" class="text-center py-12">
+            <div class="text-gray-500 text-sm mb-4">👆 Select a vendor above to view and manage their settings</div>
         </div>
     </div>
 
@@ -2197,6 +1590,7 @@
             document.getElementById('section-buyers').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
+            document.getElementById('section-vendor-settings').classList.add('hidden');
             document.getElementById('section-payments').classList.add('hidden');
             document.getElementById('section-alerts').classList.add('hidden');
             document.getElementById('section-reversals').classList.add('hidden');
@@ -2218,11 +1612,780 @@
             else if (tabName === 'balance') loadBalanceHealthReport();
             else if (tabName === 'inquiries') loadInquiriesPortal();
             else if (tabName === 'commissions') loadCommissionsPortal();
+            else if (tabName === 'vendor-settings') initVendorSettingsTab();
             else if (tabName === 'payments') loadPaymentProofsPortal();
             else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
             else if (tabName === 'flagged') handleFlaggedTabSwitch();
             else if (tabName === 'fraud') setTimeout(() => loadFraudDashboard(), 300);
             else if (tabName === 'compliance') setTimeout(() => loadComplianceDashboard(), 300);
+        }
+
+        // LIFECYCLE TAB SWITCHING
+        function switchLifecycleTab(tabName) {
+            // Hide all lifecycle sections
+            document.querySelectorAll('.lifecycle-section').forEach(s => s.classList.add('hidden'));
+            // Remove active class from all tabs
+            document.querySelectorAll('.lifecycle-tab-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.borderBottomColor = 'transparent';
+                b.style.color = '#888';
+            });
+
+            // Show selected section and mark tab active
+            document.getElementById(`lifecycle-${tabName}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`lifecycle-tab-${tabName}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+                if (tabName === 'pending') {
+                    activeTab.style.borderBottomColor = '#f59e0b';
+                    activeTab.style.color = '#b45309';
+                } else if (tabName === 'awaiting') {
+                    activeTab.style.borderBottomColor = '#fb923c';
+                    activeTab.style.color = '#92400e';
+                } else if (tabName === 'verified') {
+                    activeTab.style.borderBottomColor = '#16a34a';
+                    activeTab.style.color = '#15803d';
+                }
+            }
+
+            // Load data for the selected tab
+            if (tabName === 'pending') loadPendingApprovals();
+            else if (tabName === 'awaiting') loadAwaitingReceipts();
+            else if (tabName === 'verified') loadVerifiedPayments();
+        }
+
+        // LIFECYCLE HUB DATA LOADING
+        async function refreshCommissionLifecycle() {
+            await loadPendingApprovals();
+            await loadAwaitingReceipts();
+            await loadVerifiedPayments();
+        }
+
+        async function loadPendingApprovals() {
+            const tbody = document.getElementById('pending-approvals-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Loading pending approvals...</td></tr>';
+
+            try {
+                // Query admin_payables where status='pending' (awaiting admin approval)
+                const { data, error } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, payable_reason, admin_commission,
+                        buyer_portion, split_with_buyer_id, created_at, status
+                    `)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending approvals</td></tr>';
+                    document.getElementById('metric-pending-approvals').textContent = '0';
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const vendorMap = {};
+                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+
+                const rows = data.map((record, idx) => {
+                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
+                    const submittedDate = new Date(record.created_at).toLocaleDateString();
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    const amount = parseFloat(record.amount_owed || 0).toFixed(2);
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-2.5"><input type="checkbox" class="pending-checkbox rounded" data-id="${record.id}"></td>
+                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                            <td class="p-2.5">${recipientType}</td>
+                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer ID' : 'System'}</td>
+                            <td class="p-2.5 text-right">$${amount}</td>
+                            <td class="p-2.5 text-xs">${escapeHtml(record.payable_reason || 'Feedback Commission')}</td>
+                            <td class="p-2.5">${submittedDate}</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="approvePendingCommission('${record.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
+                                <button onclick="denyPendingCommission('${record.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
+                                <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+                document.getElementById('metric-pending-approvals').textContent = data.length;
+
+                // Add checkbox change listeners
+                document.querySelectorAll('.pending-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updatePendingSelectionBar);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function loadAwaitingReceipts() {
+            const tbody = document.getElementById('awaiting-receipts-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Loading awaiting receipts...</td></tr>';
+
+            try {
+                // Query admin_payables where status='approved' and vendor_receipt_data IS NULL or buyer_receipt_data IS NULL
+                const { data, error } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, admin_commission, split_with_buyer_id,
+                        created_at, vendor_receipt_uploaded_date, vendor_flagged,
+                        buyer_receipt_uploaded_date, buyer_flagged
+                    `)
+                    .eq('status', 'approved')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending receipts</td></tr>';
+                    document.getElementById('metric-awaiting-receipts').textContent = '0';
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const vendorMap = {};
+                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+
+                const rows = data.map(record => {
+                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
+                    const approvedDate = new Date(record.created_at).toLocaleDateString();
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    const amount = parseFloat(record.amount_owed || 0).toFixed(2);
+
+                    // Calculate SLA timer
+                    let slaStatus = '⏱️ Active';
+                    let slaColor = 'text-blue-600';
+                    if (record.vendor_flagged) {
+                        slaStatus = '🚨 Vendor Overdue';
+                        slaColor = 'text-red-600';
+                    } else if (record.buyer_flagged) {
+                        slaStatus = '🚨 Recipient Overdue';
+                        slaColor = 'text-red-600';
+                    }
+
+                    return `
+                        <tr class="hover:bg-orange-50">
+                            <td class="p-2.5"><input type="checkbox" class="awaiting-checkbox rounded" data-id="${record.id}"></td>
+                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                            <td class="p-2.5">${recipientType}</td>
+                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
+                            <td class="p-2.5 text-right">$${amount}</td>
+                            <td class="p-2.5">${approvedDate}</td>
+                            <td class="p-2.5 ${slaColor}">${slaStatus}</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+                document.getElementById('metric-awaiting-receipts').textContent = data.length;
+
+                // Add checkbox change listeners
+                document.querySelectorAll('.awaiting-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateAwaitingSelectionBar);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function loadVerifiedPayments() {
+            const tbody = document.getElementById('verified-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Loading verified payments...</td></tr>';
+
+            try {
+                // Query admin_payables where status='completed'
+                const { data, error } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, split_with_buyer_id,
+                        created_at, vendor_receipt_uploaded_date, unflagged_date
+                    `)
+                    .eq('status', 'completed')
+                    .order('unflagged_date', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No verified payments yet</td></tr>';
+                    document.getElementById('metric-verified').textContent = '0';
+                    document.getElementById('metric-total-verified-amount').textContent = '$0.00';
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const vendorMap = {};
+                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+
+                let totalAmount = 0;
+                const rows = data.map(record => {
+                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
+                    const verifiedDate = record.unflagged_date ? new Date(record.unflagged_date).toLocaleDateString() : 'N/A';
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    const amount = parseFloat(record.amount_owed || 0);
+                    totalAmount += amount;
+
+                    return `
+                        <tr class="hover:bg-green-50">
+                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                            <td class="p-2.5">${recipientType}</td>
+                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
+                            <td class="p-2.5 text-right">$${amount.toFixed(2)}</td>
+                            <td class="p-2.5">${verifiedDate}</td>
+                            <td class="p-2.5 text-xs">✓ Verified</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="viewCommissionDetails('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">View</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+                document.getElementById('metric-verified').textContent = data.length;
+                document.getElementById('metric-total-verified-amount').textContent = `$${totalAmount.toFixed(2)}`;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        // CHECKBOX & SELECTION MANAGEMENT
+        function updatePendingSelectionBar() {
+            const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
+            const selectionBar = document.getElementById('pending-selection-bar');
+            const selectAll = document.getElementById('pending-select-all');
+
+            if (checkboxes.length > 0) {
+                selectionBar.classList.remove('hidden');
+                document.getElementById('pending-selected-count').textContent = `${checkboxes.length} selected`;
+            } else {
+                selectionBar.classList.add('hidden');
+            }
+
+            const allCheckboxes = document.querySelectorAll('.pending-checkbox');
+            selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkboxes.length;
+        }
+
+        function updateAwaitingSelectionBar() {
+            const checkboxes = document.querySelectorAll('.awaiting-checkbox:checked');
+            const selectionBar = document.getElementById('awaiting-selection-bar');
+            const selectAll = document.getElementById('awaiting-select-all');
+
+            if (checkboxes.length > 0) {
+                selectionBar.classList.remove('hidden');
+                document.getElementById('awaiting-selected-count').textContent = `${checkboxes.length} selected`;
+            } else {
+                selectionBar.classList.add('hidden');
+            }
+
+            const allCheckboxes = document.querySelectorAll('.awaiting-checkbox');
+            selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkboxes.length;
+        }
+
+        function togglePendingSelectAll() {
+            const selectAll = document.getElementById('pending-select-all');
+            document.querySelectorAll('.pending-checkbox').forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updatePendingSelectionBar();
+        }
+
+        function toggleAwaitingSelectAll() {
+            const selectAll = document.getElementById('awaiting-select-all');
+            document.querySelectorAll('.awaiting-checkbox').forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updateAwaitingSelectionBar();
+        }
+
+        // BATCH OPERATIONS
+        async function batchApprovePending() {
+            const checkedIds = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.dataset.id);
+            if (checkedIds.length === 0) {
+                alert('Please select at least one commission');
+                return;
+            }
+
+            if (!confirm(`Approve ${checkedIds.length} commission(s)?`)) return;
+
+            try {
+                for (const id of checkedIds) {
+                    await db.from('admin_payables').update({ status: 'approved' }).eq('id', id);
+                }
+                await loadPendingApprovals();
+                alert(`${checkedIds.length} commission(s) approved`);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function batchDenyPending() {
+            const checkedIds = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.dataset.id);
+            if (checkedIds.length === 0) {
+                alert('Please select at least one commission');
+                return;
+            }
+
+            if (!confirm(`Deny ${checkedIds.length} commission(s)?`)) return;
+
+            try {
+                for (const id of checkedIds) {
+                    await db.from('admin_payables').update({ status: 'denied' }).eq('id', id);
+                }
+                await loadPendingApprovals();
+                alert(`${checkedIds.length} commission(s) denied`);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function batchRequestInfoAwaiting() {
+            const checkedIds = Array.from(document.querySelectorAll('.awaiting-checkbox:checked')).map(cb => cb.dataset.id);
+            if (checkedIds.length === 0) {
+                alert('Please select at least one commission');
+                return;
+            }
+
+            // Open messaging modal for first selected item
+            openCommissionMessaging(checkedIds[0]);
+        }
+
+        // SINGLE COMMISSION ACTIONS
+        async function approvePendingCommission(id) {
+            if (!confirm('Approve this commission?')) return;
+            try {
+                await db.from('admin_payables').update({ status: 'approved' }).eq('id', id);
+                await loadPendingApprovals();
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function denyPendingCommission(id) {
+            if (!confirm('Deny this commission?')) return;
+            try {
+                await db.from('admin_payables').update({ status: 'denied' }).eq('id', id);
+                await loadPendingApprovals();
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        function requestInfoCommission(id) {
+            openCommissionMessaging(id);
+        }
+
+        function viewCommissionDetails(id) {
+            alert('Commission details for ID: ' + id + '\n(Details modal to be implemented)');
+        }
+
+        function openCommissionMessaging(id) {
+            alert('Messaging for commission ID: ' + id + '\n(Messaging modal to be implemented)');
+        }
+
+        // VENDOR SETTINGS TAB
+        let selectedVendorId = null;
+        let vendorsList = [];
+
+        async function initVendorSettingsTab() {
+            // Load all vendors for dropdown and searches
+            try {
+                const { data, error } = await db.from('vendors').select('id, business_name, email, current_per_feedback_rate');
+                if (!error && data) {
+                    vendorsList = data;
+                    populateVendorDropdown();
+                } else {
+                    console.error('Error loading vendors:', error);
+                }
+            } catch (err) {
+                console.error('Error initializing vendor settings:', err);
+            }
+        }
+
+        function populateVendorDropdown() {
+            const dropdown = document.getElementById('vendor-selector-dropdown');
+            if (!dropdown) return;
+
+            dropdown.innerHTML = '<option value="">Select a vendor...</option>' + vendorsList.map(v => {
+                const lastFour = v.id.slice(-4);
+                return `<option value="${v.id}">${escapeHtml(v.business_name)} (${escapeHtml(lastFour)}) - ${escapeHtml(v.email)}</option>`;
+            }).join('');
+        }
+
+        function selectVendorFromDropdown() {
+            const dropdown = document.getElementById('vendor-selector-dropdown');
+            if (dropdown.value) {
+                selectVendor(dropdown.value);
+            }
+        }
+
+        async function searchVendorByEmail() {
+            const searchInput = document.getElementById('vendor-search-email');
+            const searchTerm = searchInput.value.toLowerCase();
+
+            if (!searchTerm) {
+                document.getElementById('vendor-selector-dropdown').value = '';
+                return;
+            }
+
+            const vendor = vendorsList.find(v => v.email && v.email.toLowerCase().includes(searchTerm));
+            if (vendor) {
+                selectVendor(vendor.id);
+                document.getElementById('vendor-selector-dropdown').value = vendor.id;
+            }
+        }
+
+        async function searchVendorByIdOrName() {
+            const searchInput = document.getElementById('vendor-search-id-name');
+            const searchTerm = searchInput.value.toLowerCase();
+
+            if (!searchTerm) {
+                document.getElementById('vendor-selector-dropdown').value = '';
+                return;
+            }
+
+            const vendor = vendorsList.find(v =>
+                v.id.toLowerCase().includes(searchTerm) ||
+                (v.business_name && v.business_name.toLowerCase().includes(searchTerm))
+            );
+            if (vendor) {
+                selectVendor(vendor.id);
+                document.getElementById('vendor-selector-dropdown').value = vendor.id;
+            }
+        }
+
+        async function selectVendor(vendorId) {
+            selectedVendorId = vendorId;
+            const vendor = vendorsList.find(v => v.id === vendorId);
+
+            if (!vendor) return;
+
+            // Show selected vendor display
+            document.getElementById('vendor-selected-display').classList.remove('hidden');
+            document.getElementById('selected-vendor-id').textContent = vendorId;
+            document.getElementById('selected-vendor-name').textContent = vendor.business_name || 'Unknown';
+            document.getElementById('selected-vendor-email').textContent = vendor.email || 'N/A';
+
+            // Hide "not selected" message and show setting sections
+            document.getElementById('vendor-not-selected-message').classList.add('hidden');
+            document.getElementById('general-settings-section').classList.remove('hidden');
+            document.getElementById('rate-requests-section').classList.remove('hidden');
+            document.getElementById('custom-agreements-section').classList.remove('hidden');
+            document.getElementById('threshold-requests-section').classList.remove('hidden');
+
+            // Load vendor data
+            await loadVendorGeneralSettings(vendorId);
+            await loadVendorRateChangeRequests(vendorId);
+            await loadCustomAgreements(vendorId);
+            await loadThresholdChangeRequests(vendorId);
+        }
+
+        function clearVendorSelection() {
+            selectedVendorId = null;
+            document.getElementById('vendor-selector-dropdown').value = '';
+            document.getElementById('vendor-search-email').value = '';
+            document.getElementById('vendor-search-id-name').value = '';
+            document.getElementById('vendor-selected-display').classList.add('hidden');
+            document.getElementById('general-settings-section').classList.add('hidden');
+            document.getElementById('rate-requests-section').classList.add('hidden');
+            document.getElementById('custom-agreements-section').classList.add('hidden');
+            document.getElementById('threshold-requests-section').classList.add('hidden');
+            document.getElementById('vendor-not-selected-message').classList.remove('hidden');
+        }
+
+        async function loadVendorGeneralSettings(vendorId) {
+            const vendor = vendorsList.find(v => v.id === vendorId);
+            if (!vendor) return;
+
+            try {
+                document.getElementById('general-rate-display').textContent = `$${parseFloat(vendor.current_per_feedback_rate || 5.00).toFixed(2)}`;
+
+                // Fetch rate change history to show last change date
+                const { data: rateHistory } = await db.from('rate_change_requests')
+                    .select('created_at, status')
+                    .eq('vendor_id', vendorId)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (rateHistory && rateHistory.length > 0) {
+                    document.getElementById('general-rate-last-changed').textContent = new Date(rateHistory[0].created_at).toLocaleDateString();
+                }
+            } catch (err) {
+                console.error('Error loading general settings:', err);
+            }
+        }
+
+        async function loadVendorRateChangeRequests(vendorId) {
+            const tbody = document.getElementById('rate-requests-body');
+            if (!tbody) return;
+
+            try {
+                const { data, error } = await db.from('rate_change_requests')
+                    .select('id, current_rate, requested_rate, reason, created_at, status')
+                    .eq('vendor_id', vendorId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No pending rate change requests</td></tr>';
+                    document.getElementById('rate-requests-section').classList.add('hidden');
+                    return;
+                }
+
+                document.getElementById('rate-requests-section').classList.remove('hidden');
+                const rows = data.map(record => {
+                    const submittedDate = new Date(record.created_at).toLocaleDateString();
+                    return `
+                        <tr class="hover:bg-purple-50">
+                            <td class="p-2.5">$${parseFloat(record.current_rate || 0).toFixed(2)}</td>
+                            <td class="p-2.5">$${parseFloat(record.requested_rate || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-xs">${escapeHtml(record.reason || 'N/A')}</td>
+                            <td class="p-2.5">${submittedDate}</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="approveRateChange('${record.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
+                                <button onclick="denyRateChange('${record.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
+                                <button onclick="requestRateChangeInfo('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function loadCustomAgreements(vendorId) {
+            const tbody = document.getElementById('custom-agreements-body');
+            if (!tbody) return;
+
+            try {
+                const { data, error } = await db.from('vendor_buyer_agreements')
+                    .select(`
+                        id, buyer_id, commission_amount_per_feedback, payout_threshold,
+                        agreement_status
+                    `)
+                    .eq('vendor_id', vendorId)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No custom agreements</td></tr>';
+                    document.getElementById('custom-agreement-count').textContent = '0';
+                    return;
+                }
+
+                // Fetch buyer details
+                const buyerIds = [...new Set(data.map(d => d.buyer_id))];
+                const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                const buyerMap = {};
+                if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+
+                const rows = data.map(record => {
+                    const buyer = buyerMap[record.buyer_id] || { name: 'Unknown', email: 'N/A' };
+                    const customRate = parseFloat(record.commission_amount_per_feedback || 0).toFixed(2);
+                    const customThreshold = parseFloat(record.payout_threshold || 0).toFixed(2);
+
+                    return `
+                        <tr class="hover:bg-indigo-50">
+                            <td class="p-2.5">${escapeHtml(buyer.name)}</td>
+                            <td class="p-2.5 text-xs">${escapeHtml(buyer.email)}</td>
+                            <td class="p-2.5">$${customRate}</td>
+                            <td class="p-2.5">$${customThreshold}</td>
+                            <td class="p-2.5 text-xs"><span class="bg-green-100 text-green-700 px-2 py-1 rounded">${record.agreement_status}</span></td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="viewAgreement('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">View</button>
+                                <button onclick="editAgreement('${record.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs font-semibold transition">Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+                document.getElementById('custom-agreement-count').textContent = data.length;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function loadThresholdChangeRequests(vendorId) {
+            const tbody = document.getElementById('threshold-requests-body');
+            if (!tbody) return;
+
+            try {
+                const { data, error } = await db.from('threshold_change_requests')
+                    .select('id, buyer_id, current_threshold, requested_threshold, reason, created_at, status')
+                    .eq('vendor_id', vendorId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending threshold change requests</td></tr>';
+                    document.getElementById('threshold-requests-section').classList.add('hidden');
+                    return;
+                }
+
+                document.getElementById('threshold-requests-section').classList.remove('hidden');
+
+                // Fetch buyer details for recipient names
+                const buyerIds = [...new Set(data.map(d => d.buyer_id))];
+                const { data: buyers } = await db.from('buyers').select('id, full_name').in('id', buyerIds);
+                const buyerMap = {};
+                if (buyers) buyers.forEach(b => buyerMap[b.id] = b.full_name || 'Unknown');
+
+                const rows = data.map(record => {
+                    const submittedDate = new Date(record.created_at).toLocaleDateString();
+                    const buyerName = buyerMap[record.buyer_id] || 'Unknown';
+
+                    return `
+                        <tr class="hover:bg-amber-50">
+                            <td class="p-2.5">Buyer/Reviewer</td>
+                            <td class="p-2.5">${escapeHtml(buyerName)}</td>
+                            <td class="p-2.5">$${parseFloat(record.current_threshold || 0).toFixed(2)}</td>
+                            <td class="p-2.5">$${parseFloat(record.requested_threshold || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-xs">${escapeHtml(record.reason || 'N/A')}</td>
+                            <td class="p-2.5">${submittedDate}</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="approveThresholdChange('${record.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
+                                <button onclick="denyThresholdChange('${record.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
+                                <button onclick="requestThresholdChangeInfo('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function refreshVendorSettings() {
+            if (selectedVendorId) {
+                await loadVendorGeneralSettings(selectedVendorId);
+                await loadVendorRateChangeRequests(selectedVendorId);
+                await loadCustomAgreements(selectedVendorId);
+                await loadThresholdChangeRequests(selectedVendorId);
+            }
+        }
+
+        // ACTION HANDLERS
+        function openEditGeneralRate() {
+            const vendor = vendorsList.find(v => v.id === selectedVendorId);
+            if (!vendor) return;
+
+            const newRate = prompt(`Edit per-feedback rate for ${vendor.business_name}\nCurrent: $${parseFloat(vendor.current_per_feedback_rate || 5).toFixed(2)}\nNew rate:`, parseFloat(vendor.current_per_feedback_rate || 5).toFixed(2));
+            if (newRate !== null) {
+                updateVendorRate(selectedVendorId, parseFloat(newRate));
+            }
+        }
+
+        async function updateVendorRate(vendorId, newRate) {
+            try {
+                await db.from('vendors').update({ current_per_feedback_rate: newRate }).eq('id', vendorId);
+                const idx = vendorsList.findIndex(v => v.id === vendorId);
+                if (idx >= 0) vendorsList[idx].current_per_feedback_rate = newRate;
+                await loadVendorGeneralSettings(vendorId);
+                alert('Rate updated successfully');
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function approveRateChange(requestId) {
+            if (!confirm('Approve this rate change?')) return;
+            try {
+                await db.from('rate_change_requests').update({ status: 'accepted' }).eq('id', requestId);
+                await loadVendorRateChangeRequests(selectedVendorId);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function denyRateChange(requestId) {
+            if (!confirm('Deny this rate change?')) return;
+            try {
+                await db.from('rate_change_requests').update({ status: 'rejected' }).eq('id', requestId);
+                await loadVendorRateChangeRequests(selectedVendorId);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        function requestRateChangeInfo(requestId) {
+            alert('Messaging for rate change request: ' + requestId + '\n(Messaging modal to be implemented)');
+        }
+
+        async function approveThresholdChange(requestId) {
+            if (!confirm('Approve this threshold change?')) return;
+            try {
+                await db.from('threshold_change_requests').update({ status: 'accepted' }).eq('id', requestId);
+                await loadThresholdChangeRequests(selectedVendorId);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        async function denyThresholdChange(requestId) {
+            if (!confirm('Deny this threshold change?')) return;
+            try {
+                await db.from('threshold_change_requests').update({ status: 'rejected' }).eq('id', requestId);
+                await loadThresholdChangeRequests(selectedVendorId);
+            } catch (err) {
+                alert(`Error: ${escapeHtml(err.message)}`);
+            }
+        }
+
+        function requestThresholdChangeInfo(requestId) {
+            alert('Messaging for threshold change request: ' + requestId + '\n(Messaging modal to be implemented)');
+        }
+
+        function viewAgreement(agreementId) {
+            alert('View agreement: ' + agreementId + '\n(Details modal to be implemented)');
+        }
+
+        function editAgreement(agreementId) {
+            alert('Edit agreement: ' + agreementId + '\n(Edit modal to be implemented)');
         }
 
         // BUYERS PORTAL
@@ -2858,28 +3021,13 @@
             }
         }
 
-        // COMMISSIONS PORTAL
+        // COMMISSIONS PORTAL - LIFECYCLE HUB
         async function loadCommissionsPortal() {
-            // Get current view mode and selected vendor
-            const selector = document.getElementById('commission-vendor-selector');
-            if (commissionViewMode === 'vendor-buyer' && selector) {
-                selectedVendorForCommissions = selector.value;
-            }
+            // Load the lifecycle hub with all three sections
+            await refreshCommissionLifecycle();
 
-            // Load vendor commission settings with context-aware filtering
-            await loadVendorCommissionSettings();
-            await loadVendorRates();
-            await loadRateChangeRequests();
-            await loadThresholdChangeRequests();
-
-            // Load relationship sections
-            await loadVendorSubmitterRelationship();
-
-            // Load admin payout management data
-            await loadAdminPayouts();
-
-            // Populate new payouts section dropdowns
-            await populateAdminEarningsDropdowns();
+            // Display pending approvals tab by default
+            switchLifecycleTab('pending');
         }
 
 async function loadVendorSubmitterRelationship() {
@@ -3036,32 +3184,20 @@ async function loadVendorSubmitterRelationship() {
                         const adminRecord = item.admin;
 
                         const submitterEarning = parseFloat(buyerRecord.amount_owed || 0);
-                        let adminEarning = 0, buyerInviterEarning = 0, vendorInviterEarning = 0;
+                        let adminEarning = 0, referrerEarning = 0;
                         let vendorFlagged = false, buyerFlagged = false;
                         let receiptStatus = '—';
 
                         if (adminRecord) {
-                            const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
-
-                            // Scenario E: Different inviters (buyer + vendor have different referrers)
-                            if (adminRecord.split_with_buyer_id && adminRecord.split_with_vendor_id) {
-                                // Split 35% buyer inviter / 35% vendor inviter / 30% admin
+                            // Calculate split based on whether there's a referrer
+                            if (adminRecord.split_with_buyer_id) {
+                                // Referral payout: split 30% admin, 70% referrer
+                                const facilityAmount = parseFloat(adminRecord.amount_owed || 0);
                                 adminEarning = facilityAmount * 0.3;
-                                buyerInviterEarning = facilityAmount * 0.35;
-                                vendorInviterEarning = facilityAmount * 0.35;
-                            }
-                            // Scenarios B & C: Single referrer (70% / 30%)
-                            else if (adminRecord.split_with_buyer_id) {
-                                // Referral payout: split 30% admin, 70% referrer (goes to buyer inviter only)
-                                adminEarning = facilityAmount * 0.3;
-                                buyerInviterEarning = facilityAmount * 0.7;
-                                vendorInviterEarning = 0;
-                            }
-                            // Scenario A: Non-referral (100% admin)
-                            else {
-                                adminEarning = facilityAmount;
-                                buyerInviterEarning = 0;
-                                vendorInviterEarning = 0;
+                                referrerEarning = facilityAmount * 0.7;
+                            } else {
+                                // Non-referral: all to admin
+                                adminEarning = parseFloat(adminRecord.amount_owed || 0);
                             }
 
                             // Check receipt verification status
@@ -3092,8 +3228,7 @@ async function loadVendorSubmitterRelationship() {
                                 buyerId: '${escapeHtml(buyerId)}',
                                 submitterAmount: ${submitterEarning},
                                 adminAmount: ${adminEarning},
-                                buyerInviterAmount: ${buyerInviterEarning},
-                                vendorInviterAmount: ${vendorInviterEarning},
+                                referrerAmount: ${referrerEarning},
                                 receiptStatus: '${escapeHtml(receiptStatus)}',
                                 paymentStatus: '${status.toUpperCase()}',
                                 createdDate: '${new Date(buyerRecord.created_at).toLocaleDateString()}',
@@ -3115,8 +3250,7 @@ async function loadVendorSubmitterRelationship() {
                                 <td class="p-2.5 text-xs font-mono text-gray-600 hover:text-green-600 font-semibold">${escapeHtml(buyerId?.substring(0, 8) || 'N/A')}...</td>
                                 <td class="p-2.5 font-bold text-green-700 text-xs text-right">$${submitterEarning.toFixed(2)}</td>
                                 <td class="p-2.5 font-bold text-blue-700 text-xs text-right">$${adminEarning.toFixed(2)}</td>
-                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${buyerInviterEarning.toFixed(2)}</td>
-                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${vendorInviterEarning.toFixed(2)}</td>
+                                <td class="p-2.5 font-bold text-orange-700 text-xs text-right">$${referrerEarning.toFixed(2)}</td>
                                 <td class="p-2.5 text-xs">${receiptStatus}</td>
                                 <td class="p-2.5">${paymentBadge}</td>
                                 <td class="p-2.5 text-xs text-gray-600">${new Date(buyerRecord.created_at).toLocaleDateString()}</td>
@@ -3124,7 +3258,7 @@ async function loadVendorSubmitterRelationship() {
                         `;
                     }).join('');
                 } else {
-                    tableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No submitter payments found.</td></tr>`;
                 }
 
                 const avg = data && data.length > 0 ? (totalPaid + totalPayable) / data.length : 0;
@@ -3134,7 +3268,7 @@ async function loadVendorSubmitterRelationship() {
                 document.getElementById('vendor-submitter-count').textContent = data ? data.length : '0';
             } catch (err) {
                 console.error('Error loading vendor-submitter relationship:', err);
-                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                document.getElementById('vendor-submitter-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
 
@@ -6593,35 +6727,12 @@ async function loadVendorSubmitterRelationship() {
             // Commission split
             document.getElementById('modal-submitter-amount').textContent = `$${data.submitterAmount.toFixed(2)}`;
             document.getElementById('modal-admin-amount').textContent = `$${data.adminAmount.toFixed(2)}`;
+            document.getElementById('modal-admin-reason').textContent =
+                data.hasReferrer === 'true' ? 'Facility commission (30% split)' : 'Facility commission (100%)';
 
-            // Detect if Scenario E (dual inviters) or single inviter
-            const hasBuyerInviter = data.buyerInviterAmount > 0;
-            const hasVendorInviter = data.vendorInviterAmount > 0;
-            const isDualInviter = hasBuyerInviter && hasVendorInviter;
-
-            if (isDualInviter) {
-                // Scenario E: Show both buyer and vendor inviters
-                document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
-                document.getElementById('modal-single-inviter-box').style.display = 'none';
-                document.getElementById('modal-buyer-inviter-box').style.display = 'block';
-                document.getElementById('modal-vendor-inviter-box').style.display = 'block';
-                document.getElementById('modal-buyer-inviter-amount').textContent = `$${data.buyerInviterAmount.toFixed(2)}`;
-                document.getElementById('modal-vendor-inviter-amount').textContent = `$${data.vendorInviterAmount.toFixed(2)}`;
-            } else if (hasBuyerInviter) {
-                // Scenarios B-D: Single inviter
-                document.getElementById('modal-admin-reason').textContent = 'Facility commission (30% split)';
-                document.getElementById('modal-single-inviter-box').style.display = 'block';
-                document.getElementById('modal-buyer-inviter-box').style.display = 'none';
-                document.getElementById('modal-vendor-inviter-box').style.display = 'none';
-                document.getElementById('modal-single-inviter-amount').textContent = `$${data.buyerInviterAmount.toFixed(2)}`;
-                document.getElementById('modal-single-inviter-reason').textContent = 'Inviter earning (70% split)';
-            } else {
-                // Scenario A: No inviters
-                document.getElementById('modal-admin-reason').textContent = 'Facility commission (100%)';
-                document.getElementById('modal-single-inviter-box').style.display = 'none';
-                document.getElementById('modal-buyer-inviter-box').style.display = 'none';
-                document.getElementById('modal-vendor-inviter-box').style.display = 'none';
-            }
+            document.getElementById('modal-referrer-amount').textContent = `$${data.referrerAmount.toFixed(2)}`;
+            document.getElementById('modal-referrer-reason').textContent =
+                data.hasReferrer === 'true' ? 'Referrer earning (70% split)' : '—';
 
             // Vendor Payment Proof
             document.getElementById('modal-vendor-paypal-email').textContent = data.vendorPaypalEmail || '—';
@@ -6731,340 +6842,6 @@ async function loadVendorSubmitterRelationship() {
             loadVendorSubmitterRelationship();
             showToast('Date filter cleared', 'success');
         }
-
-        // ===== ADMIN PAYOUT MANAGEMENT FUNCTIONS =====
-        let adminPayoutsData = [];
-
-        async function loadAdminPayouts() {
-            try {
-                const { data, error } = await supabase
-                    .from('admin_payables')
-                    .select('id, vendor_id, amount_owed, payable_reason, admin_payment_status, created_at, updated_at')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                adminPayoutsData = data || [];
-
-                // Populate vendor dropdown
-                const vendorDropdown = document.getElementById('adminPayoutVendorSelector');
-                const vendors = [...new Set(adminPayoutsData.map(p => p.vendor_id))];
-                vendorDropdown.innerHTML = '<option value="">-- All Vendors --</option>' +
-                    vendors.map(vid => `<option value="${vid}">${vid.substring(0, 8)}...</option>`).join('');
-
-                // Render default view (available status)
-                renderFilteredAdminPayouts();
-            } catch (err) {
-                console.error('Error loading admin payouts:', err);
-                showToast('Failed to load payouts', 'error');
-            }
-        }
-
-        function filterAdminPayouts(status) {
-            // Update active tab
-            document.querySelectorAll('.admin-payout-status-tab').forEach(btn => {
-                btn.classList.remove('bg-green-600', 'bg-blue-600', 'bg-purple-600', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-            });
-            event.target.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-            event.target.classList.add(
-                status === 'available' ? 'bg-green-600' : status === 'pending' ? 'bg-blue-600' : 'bg-purple-600',
-                'text-white'
-            );
-            renderFilteredAdminPayouts();
-        }
-
-        function filterAdminPayoutsByVendor() {
-            renderFilteredAdminPayouts();
-        }
-
-        function searchAdminPayoutVendors() {
-            const search = document.getElementById('adminPayoutVendorSearch').value.toLowerCase();
-            const dropdown = document.getElementById('adminPayoutVendorSelector');
-
-            if (!search) {
-                dropdown.value = '';
-                renderFilteredAdminPayouts();
-                return;
-            }
-
-            const matchingVendor = adminPayoutsData
-                .find(p => p.vendor_id.toLowerCase().includes(search));
-
-            if (matchingVendor) {
-                dropdown.value = matchingVendor.vendor_id;
-                renderFilteredAdminPayouts();
-                showToast(`Found vendor: ${matchingVendor.vendor_id.substring(0, 8)}...`, 'success');
-            } else {
-                showToast('No matching vendor found', 'error');
-            }
-        }
-
-        function clearAdminPayoutVendorFilter() {
-            document.getElementById('adminPayoutVendorSelector').value = '';
-            document.getElementById('adminPayoutVendorSearch').value = '';
-            renderFilteredAdminPayouts();
-            showToast('Vendor filter cleared', 'success');
-        }
-
-        function renderFilteredAdminPayouts() {
-            const vendorFilter = document.getElementById('adminPayoutVendorSelector')?.value;
-            const statusFilter = document.querySelector('.admin-payout-status-tab.active')?.dataset.status || 'available';
-            const tableBody = document.getElementById('adminPayoutsTableBody');
-
-            if (!tableBody || !adminPayoutsData) {
-                return;
-            }
-
-            // Filter data by vendor and status
-            let filteredPayouts = adminPayoutsData.filter(payout => {
-                const vendorMatch = !vendorFilter || vendorFilter === '' || payout.vendor_id === vendorFilter;
-                const statusMatch = payout.admin_payment_status === statusFilter;
-                return vendorMatch && statusMatch;
-            });
-
-            // Recalculate metrics based on filtered data
-            let filteredTotalAvailable = 0;
-            let filteredTotalPending = 0;
-            let filteredTotalPaid = 0;
-            let filteredTotalAmount = 0;
-
-            adminPayoutsData.forEach(payout => {
-                const vendorMatch = !vendorFilter || vendorFilter === '' || payout.vendor_id === vendorFilter;
-                if (!vendorMatch) return;
-
-                filteredTotalAmount += parseFloat(payout.amount_owed) || 0;
-
-                if (payout.admin_payment_status === 'available') {
-                    filteredTotalAvailable += parseFloat(payout.amount_owed) || 0;
-                } else if (payout.admin_payment_status === 'pending') {
-                    filteredTotalPending += parseFloat(payout.amount_owed) || 0;
-                } else if (payout.admin_payment_status === 'paid') {
-                    filteredTotalPaid += parseFloat(payout.amount_owed) || 0;
-                }
-            });
-
-            // Update metric display elements
-            const metricAvailable = document.getElementById('metric-admin-available');
-            const metricPending = document.getElementById('metric-admin-pending');
-            const metricPaid = document.getElementById('metric-admin-paid');
-            const metricTotal = document.getElementById('metric-admin-total');
-
-            if (metricAvailable) metricAvailable.textContent = `$${filteredTotalAvailable.toFixed(2)}`;
-            if (metricPending) metricPending.textContent = `$${filteredTotalPending.toFixed(2)}`;
-            if (metricPaid) metricPaid.textContent = `$${filteredTotalPaid.toFixed(2)}`;
-            if (metricTotal) metricTotal.textContent = `$${filteredTotalAmount.toFixed(2)}`;
-
-            // Render filtered table rows
-            tableBody.innerHTML = filteredPayouts.map(payout => {
-                const statusBadge = {
-                    'available': '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[11px] font-semibold">Available</span>',
-                    'pending': '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">Pending</span>',
-                    'paid': '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[11px] font-semibold">Paid</span>',
-                    'failed': '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-semibold">Failed</span>'
-                }[payout.admin_payment_status] || '<span class="badge">Unknown</span>';
-
-                return `
-                    <tr>
-                        <td class="p-2.5">${payout.vendor_id.substring(0, 8)}...</td>
-                        <td class="p-2.5 font-bold text-green-600">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
-                        <td class="p-2.5">${payout.payable_reason || 'Commission'}</td>
-                        <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5">${new Date(payout.created_at).toLocaleDateString()}</td>
-                        <td class="p-2.5 text-center">
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold" onclick="openAdminPayoutModal('${payout.vendor_id}')">Details</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        let selectedTransactionIds = [];
-        let currentVendorId = null;
-        let modalTransactions = [];
-
-        async function openAdminPayoutModal(vendorId) {
-            currentVendorId = vendorId;
-            selectedTransactionIds = [];
-
-            // Clear inputs
-            document.getElementById('payoutPaypalEmail').value = '';
-            document.getElementById('payoutTransactionId').value = '';
-            document.getElementById('payoutReceiptFile').value = '';
-
-            // Set vendor ID
-            document.getElementById('payout-vendor-id').textContent = vendorId.substring(0, 8) + '...';
-
-            // Load transactions for this vendor
-            try {
-                const { data: transactions, error } = await supabase
-                    .from('admin_payables')
-                    .select('*')
-                    .eq('vendor_id', vendorId)
-                    .eq('status', 'pending');
-
-                if (error) throw error;
-
-                modalTransactions = transactions || [];
-
-                // Calculate totals
-                const totalAmount = modalTransactions.reduce((sum, t) => sum + parseFloat(t.amount_owed || 0), 0);
-                document.getElementById('payout-total-available').textContent = `$${totalAmount.toFixed(2)}`;
-
-                // Render transaction checklist
-                renderTransactionChecklist(modalTransactions);
-
-                // Initialize totals
-                updatePayoutSummary();
-
-                document.getElementById('adminPayoutModal').classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            } catch (err) {
-                console.error('Error loading transactions:', err);
-                showToast('Failed to load transactions', 'error');
-            }
-        }
-
-        function renderTransactionChecklist(transactions) {
-            const container = document.getElementById('transactionChecklistContainer');
-
-            if (!transactions || transactions.length === 0) {
-                container.innerHTML = '<div class="p-4 text-center text-gray-500">No available transactions</div>';
-                return;
-            }
-
-            let html = transactions.map((tx, index) => {
-                const reason = tx.payable_reason || 'Commission';
-                const createdDate = new Date(tx.created_at).toLocaleDateString();
-                return `
-                    <div class="flex items-start gap-3 pb-3 border-b border-green-200 last:border-b-0">
-                        <input type="checkbox" id="tx-checkbox-${tx.id}" value="${tx.id}"
-                               onchange="updatePayoutSummary()"
-                               class="mt-2 cursor-pointer w-4 h-4 accent-green-600">
-                        <div class="flex-1 text-xs">
-                            <div class="font-semibold text-gray-700">${reason}</div>
-                            <div class="text-gray-600 mt-0.5">
-                                Amount: <span class="font-bold text-green-700">$${parseFloat(tx.amount_owed || 0).toFixed(2)}</span>
-                            </div>
-                            <div class="text-gray-500 mt-0.5">
-                                <span>ID: ${tx.id.substring(0, 8)}...</span> •
-                                <span>${createdDate}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = html;
-        }
-
-        function updatePayoutSummary() {
-            // Get all checked transactions
-            const checkboxes = document.querySelectorAll('#transactionChecklistContainer input[type="checkbox"]:checked');
-            selectedTransactionIds = Array.from(checkboxes).map(cb => cb.value);
-
-            // Get checked transactions data
-            const selectedTxs = modalTransactions.filter(tx => selectedTransactionIds.includes(tx.id));
-            const selectedAmount = selectedTxs.reduce((sum, tx) => sum + parseFloat(tx.amount_owed || 0), 0);
-            const perTxAmount = selectedTxs.length > 0 ? selectedAmount / selectedTxs.length : 0;
-
-            // Update UI
-            document.getElementById('total-count').textContent = modalTransactions.length;
-            document.getElementById('selected-count').textContent = selectedTxs.length;
-            document.getElementById('payout-tx-count').textContent = selectedTxs.length;
-            document.getElementById('payout-per-tx').textContent = `$${perTxAmount.toFixed(2)}`;
-            document.getElementById('payout-selected-total').textContent = `$${selectedAmount.toFixed(2)}`;
-        }
-
-        function closeAdminPayoutModal() {
-            document.getElementById('adminPayoutModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            selectedTransactionIds = [];
-            currentVendorId = null;
-            modalTransactions = [];
-        }
-
-        async function submitPayoutRequest() {
-            const paypalEmail = document.getElementById('payoutPaypalEmail').value;
-            const transactionId = document.getElementById('payoutTransactionId').value;
-            const receiptFile = document.getElementById('payoutReceiptFile').files[0];
-
-            // Validation
-            if (selectedTransactionIds.length === 0) {
-                showToast('Please select at least one transaction', 'error');
-                return;
-            }
-
-            if (!paypalEmail || !paypalEmail.includes('@')) {
-                showToast('Please enter a valid PayPal email', 'error');
-                return;
-            }
-
-            if (!transactionId) {
-                showToast('Please enter transaction ID', 'error');
-                return;
-            }
-
-            if (!receiptFile) {
-                showToast('Please upload receipt file', 'error');
-                return;
-            }
-
-            if (receiptFile.size > 10 * 1024 * 1024) {
-                showToast('File size exceeds 10MB limit', 'error');
-                return;
-            }
-
-            // Convert file to base64
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const receiptData = e.target.result;
-
-                    // Get selected transactions
-                    const selectedTxs = modalTransactions.filter(tx => selectedTransactionIds.includes(tx.id));
-
-                    // Update all selected admin_payables records with vendor disbursement receipt
-                    for (const tx of selectedTxs) {
-                        const { error: updateError } = await supabase
-                            .from('admin_payables')
-                            .update({
-                                admin_payment_status: 'pending',
-                                vendor_paypal_email: paypalEmail,
-                                vendor_paypal_transaction_id: transactionId,
-                                vendor_receipt_data: receiptData,
-                                vendor_receipt_filename: receiptFile.name,
-                                vendor_receipt_filetype: receiptFile.type,
-                                vendor_receipt_filesize: receiptFile.size,
-                                vendor_receipt_uploaded_date: new Date().toISOString()
-                            })
-                            .eq('id', tx.id);
-
-                        if (updateError) throw updateError;
-                    }
-
-                    showToast(`Payout submitted for ${selectedTxs.length} transaction(s)`, 'success');
-                    closeAdminPayoutModal();
-                    loadAdminPayouts();
-                } catch (err) {
-                    console.error('Error submitting payout:', err);
-                    showToast('Failed to submit payout', 'error');
-                }
-            };
-            reader.readAsDataURL(receiptFile);
-        }
-
-        // Close modal on background click
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('adminPayoutModal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        closeAdminPayoutModal();
-                    }
-                });
-            }
-        });
     </script>
 
 </body>
