@@ -6853,9 +6853,11 @@
                 // there would be a separate "payout_requests" table or similar
                 const { data: incomingRequests, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id')
+                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'requested')
+                    .eq('status', 'pending')
+                    .not('split_with_buyer_id', 'is', null)
+                    .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -7551,7 +7553,7 @@
             // Query rate_change_requests where vendor_id = currentVendor and status = 'pending'
             const { data: requests, error } = await sbClient
                 .from('rate_change_requests')
-                .select('id, buyer_id, change_type, current_value, requested_value, reason, created_at, status')
+                .select('id, change_type, current_value, requested_value, reason, created_at, status')
                 .eq('vendor_id', currentVendor.id)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
