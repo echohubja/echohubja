@@ -5577,6 +5577,14 @@ async function loadVendorSubmitterRelationship() {
                     `;
                 }
 
+                // Admin approval status badge
+                let approvalStatusBadge = '';
+                if (msg.message_type === 'feedback' && msg.status === 'approved') {
+                    approvalStatusBadge = `<div style="background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✓ Admin Verified</div>`;
+                } else if (msg.message_type === 'feedback' && msg.status === 'rejected') {
+                    approvalStatusBadge = `<div style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✕ Admin Rejected</div>`;
+                }
+
                 return `
                     <div class="${isAdminSent ? 'flex justify-end' : 'flex justify-start'}">
                         <div class="messaging-bubble ${isAdminSent ? 'sent' : 'received'}" style="${msg.message_type === 'feedback' ? 'border: 2px solid #dcfce7;' : ''}">
@@ -5585,6 +5593,7 @@ async function loadVendorSubmitterRelationship() {
                             ${imageHtml}
                             ${productUrlHtml}
                             ${actionButtons}
+                            ${approvalStatusBadge}
                             <div class="messaging-timestamp">${timestamp}</div>
                         </div>
                     </div>
