@@ -6934,12 +6934,12 @@
                 // Step 2: Apply filters step by step
                 console.log('[Incoming] STEP 2: Applying filters step by step...');
 
-                // Filter 1: status='pending'
+                // Filter 1: status='pending' or 'payment_requested' (includes both admin-created and reviewer-initiated requests)
                 let step1 = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending');
+                    .in('status', ['pending', 'payment_requested']);
                 console.log('[Incoming] After status=pending:', step1.data?.length || 0, 'records');
 
                 // Filter 2: split_with_buyer_id IS NOT NULL
@@ -6947,7 +6947,7 @@
                     .from('admin_payables')
                     .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'payment_requested'])
                     .not('split_with_buyer_id', 'is', null);
                 console.log('[Incoming] After split_with_buyer_id IS NOT NULL:', step2.data?.length || 0, 'records');
 
@@ -6956,7 +6956,7 @@
                     .from('admin_payables')
                     .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'payment_requested'])
                     .not('split_with_buyer_id', 'is', null)
                     .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
