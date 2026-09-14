@@ -7379,6 +7379,8 @@
                         setTimeout(() => {
                             closeCommissionModal('receipt-upload-modal');
                             loadManageAwaitingPayouts();
+                            loadManageIncomingRequests();
+                            loadEarningsData();
                         }, 1500);
 
                     } catch (err) {
