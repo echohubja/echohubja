@@ -7274,6 +7274,7 @@
                     try {
                         // Update admin_payables with receipt data
                         // RLS policy will validate vendor_id = auth.uid()
+                        // ✅ FIX: Add .select() to return updated rows (UPDATE alone returns empty array)
                         const { data, error } = await sbClient
                             .from('admin_payables')
                             .update({
@@ -7285,7 +7286,8 @@
                                 vendor_receipt_uploaded_date: new Date().toISOString(),
                                 vendor_flagged: false  // Reset flag when receipt uploaded
                             })
-                            .eq('id', payoutId);
+                            .eq('id', payoutId)
+                            .select();
 
                         if (error) {
                             console.error('Database error:', error);
