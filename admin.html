@@ -106,6 +106,24 @@
             font-weight: 700;
             border-left-color: #1e5aa8;
         }
+        .approval-tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            color: #5a6c7d;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .approval-tab-btn:hover {
+            color: #1e5aa8;
+        }
+        .approval-tab-btn.active {
+            color: #1e5aa8;
+            border-bottom-color: #1e5aa8;
+        }
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -221,9 +239,20 @@
 </head>
 <body class="p-4 md:p-6">
 
-    <header>
-        <h1>Echo Hub</h1>
-        <p>Unified Marketplace & Referral Control Center</p>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px;">
+        <div>
+            <h1 style="margin: 0; display: inline;">Echo Hub</h1>
+            <p style="margin: 3px 0 0 0;">Unified Marketplace & Referral Control Center</p>
+        </div>
+        <div style="position: relative;">
+            <button id="notification-bell" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 20px; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="toggleNotificationDropdown()">🔔 <span id="notification-count" style="background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: -5px; min-width: 18px; text-align: center;">0</span></button>
+            <div id="notification-dropdown" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; margin-top: 8px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e5aa8;">Notifications</div>
+                <div id="notification-list" style="max-height: 350px; overflow-y: auto;">
+                    <div style="padding: 20px; text-align: center; color: #718096; font-size: 14px;">No notifications yet</div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <div class="admin-container">
@@ -232,6 +261,7 @@
             <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn">🔍 Monitor</button>
             <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn">👥 Lookup</button>
             <button onclick="switchTab('buyers')" id="tab-btn-buyers" class="tab-btn active">Requests</button>
+            <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="tab-btn">⏳ Pending Approvals</button>
             <button onclick="switchTab('inquiries')" id="tab-btn-inquiries" class="tab-btn">Verification</button>
             <button onclick="switchTab('commissions')" id="tab-btn-commissions" class="tab-btn">Payouts</button>
             <button onclick="switchTab('vendor-settings')" id="tab-btn-vendor-settings" class="tab-btn">⚙️ Vendor Settings</button>
@@ -273,58 +303,92 @@
         </div>
     </div>
 
-    <!-- SECTION: RATE CHANGE REQUESTS APPROVALS -->
-    <div id="section-rate-changes" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">📮 Rate Change Requests (Pending Admin Approval)</h2>
-            <span id="rate-change-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+    <!-- SECTION: PENDING APPROVALS (UNIFIED) -->
+    <div id="section-approvals" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <!-- DASHBOARD SUMMARY -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 2px solid #e1e8ed;">
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="font-size: 12px; font-weight: 600; color: #92400e; text-transform: uppercase; margin-bottom: 8px;">⏳ Rate Changes Pending</div>
+                <div style="font-size: 28px; font-weight: 700; color: #b45309;" id="dashboard-rate-changes-count">0</div>
+                <div style="font-size: 11px; color: #d97706; margin-top: 4px;" id="dashboard-rate-changes-urgency"></div>
+            </div>
+            <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="font-size: 12px; font-weight: 600; color: #1e40af; text-transform: uppercase; margin-bottom: 8px;">🤝 Agreements Pending</div>
+                <div style="font-size: 28px; font-weight: 700; color: #1e5aa8;" id="dashboard-agreements-count">0</div>
+                <div style="font-size: 11px; color: #2563eb; margin-top: 4px;" id="dashboard-agreements-urgency"></div>
+            </div>
+            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="font-size: 12px; font-weight: 600; color: #166534; text-transform: uppercase; margin-bottom: 8px;">✅ Total Action Items</div>
+                <div style="font-size: 28px; font-weight: 700; color: #16a34a;" id="dashboard-total-pending">0</div>
+                <div style="font-size: 11px; color: #22c55e; margin-top: 4px;">Requires attention</div>
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                        <th class="p-2.5">Vendor</th>
-                        <th class="p-2.5">Buyer</th>
-                        <th class="p-2.5">Change Type</th>
-                        <th class="p-2.5">Current Value</th>
-                        <th class="p-2.5">Requested Value</th>
-                        <th class="p-2.5">Reason</th>
-                        <th class="p-2.5">Created</th>
-                        <th class="p-2.5 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="rate-changes-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading rate change requests...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- SECTION: CUSTOM BUYER AGREEMENTS APPROVALS -->
-    <div id="section-agreements" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🤝 Custom Buyer Agreements (Pending Admin Approval)</h2>
-            <span id="agreements-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+        <!-- TABS FOR APPROVAL TYPES -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e1e8ed; padding: 0 0 16px 0;">
+            <button class="approval-tab-btn active" onclick="switchApprovalTab('rate-changes')" style="padding: 8px 16px; border: none; background: none; color: #5a6c7d; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s; font-size: 14px;">📮 Rate Change Requests</button>
+            <button class="approval-tab-btn" onclick="switchApprovalTab('agreements')" style="padding: 8px 16px; border: none; background: none; color: #5a6c7d; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s; font-size: 14px;">🤝 Custom Agreements</button>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
-                        <th class="p-2.5">Vendor</th>
-                        <th class="p-2.5">Buyer</th>
-                        <th class="p-2.5">Commission/Feedback</th>
-                        <th class="p-2.5">Payout Threshold</th>
-                        <th class="p-2.5">Frequency</th>
-                        <th class="p-2.5">Created</th>
-                        <th class="p-2.5 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="agreements-table-body" class="divide-y divide-gray-100 text-sm">
-                    <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading custom agreements...</td></tr>
-                </tbody>
-            </table>
+        <!-- RATE CHANGE REQUESTS TABLE -->
+        <div id="approvals-rate-changes-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 0 16px 0;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1e5aa8;">Rate Change Requests Requiring Approval</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #718096;">⚠️ Vendors awaiting your decision on commission rate changes</p>
+                </div>
+                <span id="rate-change-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Buyer</th>
+                            <th class="p-2.5">Change Type</th>
+                            <th class="p-2.5">Current Value</th>
+                            <th class="p-2.5">Requested Value</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Urgency</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rate-changes-table-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading rate change requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CUSTOM AGREEMENTS TABLE -->
+        <div id="approvals-agreements-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 0 16px 0;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1e5aa8;">Custom Buyer Agreements Requiring Approval</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #718096;">💡 Vendors proposing custom payout terms with specific buyers</p>
+                </div>
+                <span id="agreements-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Buyer</th>
+                            <th class="p-2.5">Commission/Feedback</th>
+                            <th class="p-2.5">Payout Threshold</th>
+                            <th class="p-2.5">Frequency</th>
+                            <th class="p-2.5">Urgency</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agreements-table-body" class="divide-y divide-gray-100 text-sm">
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading custom agreements...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -1632,6 +1696,7 @@
                 loadInquiriesPortal();
                 loadCommissionsPortal();
                 loadPaymentProofsPortal();
+                loadNotifications();
             } else {
                 console.error("Supabase library failed to load.");
             }
@@ -1644,8 +1709,7 @@
             document.getElementById('section-monitor').classList.add('hidden');
             document.getElementById('section-accounts').classList.add('hidden');
             document.getElementById('section-buyers').classList.add('hidden');
-            document.getElementById('section-rate-changes').classList.add('hidden');
-            document.getElementById('section-agreements').classList.add('hidden');
+            document.getElementById('section-approvals').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
             document.getElementById('section-vendor-settings').classList.add('hidden');
@@ -1663,10 +1727,8 @@
 
             if (tabName === 'monitor') loadMonitoringDashboard();
             else if (tabName === 'accounts') initializeAccountLookup();
-            else if (tabName === 'buyers') {
-                loadBuyersPortal();
-                handleApprovalsTabSwitch();
-            }
+            else if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'approvals') loadApprovalsTab();
             else if (tabName === 'alerts') loadAlertCenter();
             else if (tabName === 'reversals') loadReversalPanel();
             else if (tabName === 'circuit') loadCircuitBreakerStatus();
@@ -7277,6 +7339,22 @@ async function loadVendorSubmitterRelationship() {
                                            (req.change_type === 'commission_rate' || req.change_type === 'payout_threshold') ?
                                            `$${parseFloat(req.requested_value || 0).toFixed(2)}` : req.requested_value;
 
+                    // Calculate urgency
+                    const createdDate = new Date(req.created_at);
+                    const now = new Date();
+                    const hoursAgo = (now - createdDate) / (1000 * 60 * 60);
+
+                    let urgencyBadge = '';
+                    if (hoursAgo > 72) {
+                        urgencyBadge = '<span style="background: #fca5a5; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">🔴 OVERDUE (>3d)</span>';
+                    } else if (hoursAgo > 48) {
+                        urgencyBadge = '<span style="background: #fca5a5; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">⚠️ URGENT (>2d)</span>';
+                    } else if (hoursAgo > 24) {
+                        urgencyBadge = '<span style="background: #fed7aa; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">📌 PENDING (>1d)</span>';
+                    } else {
+                        urgencyBadge = '<span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ RECENT (&lt;1d)</span>';
+                    }
+
                     return `
                         <tr class="hover:bg-gray-50 transition">
                             <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendorMap[req.vendor_id] || req.vendor_id)}</td>
@@ -7285,7 +7363,7 @@ async function loadVendorSubmitterRelationship() {
                             <td class="p-2.5 text-sm text-gray-600">${currentDisplay}</td>
                             <td class="p-2.5 text-sm font-semibold text-[#1e5aa8]">${requestedDisplay}</td>
                             <td class="p-2.5 text-xs text-gray-600">${escapeHtml(req.reason || '—')}</td>
-                            <td class="p-2.5 text-xs text-gray-500">${new Date(req.created_at).toLocaleDateString()}</td>
+                            <td class="p-2.5 text-xs text-gray-500">${urgencyBadge}</td>
                             <td class="p-2.5 text-center flex gap-2 justify-center">
                                 <button onclick="approveRateChangeFromAdmin('${escapeHtml(req.id)}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✓ Approve</button>
                                 <button onclick="denyRateChangeFromAdmin('${escapeHtml(req.id)}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✗ Deny</button>
@@ -7390,20 +7468,38 @@ async function loadVendorSubmitterRelationship() {
 
                 document.getElementById('agreements-count').textContent = `${agreements.length} pending`;
 
-                tbody.innerHTML = agreements.map(agr => `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendorMap[agr.vendor_id] || agr.vendor_id)}</td>
-                        <td class="p-2.5 text-sm text-gray-800">${escapeHtml(buyerMap[agr.buyer_id] || agr.buyer_id)}</td>
-                        <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.commission_amount_per_feedback || 0).toFixed(2)}</td>
-                        <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.payout_threshold || 0).toFixed(2)}</td>
-                        <td class="p-2.5 text-sm text-gray-700">${escapeHtml(agr.payout_frequency || 'on_demand')}</td>
-                        <td class="p-2.5 text-xs text-gray-500">${new Date(agr.created_at).toLocaleDateString()}</td>
-                        <td class="p-2.5 text-center flex gap-2 justify-center">
-                            <button onclick="approveAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✓ Approve</button>
-                            <button onclick="denyAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✗ Deny</button>
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = agreements.map(agr => {
+                    // Calculate urgency
+                    const createdDate = new Date(agr.created_at);
+                    const now = new Date();
+                    const hoursAgo = (now - createdDate) / (1000 * 60 * 60);
+
+                    let urgencyBadge = '';
+                    if (hoursAgo > 72) {
+                        urgencyBadge = '<span style="background: #fca5a5; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">🔴 OVERDUE (>3d)</span>';
+                    } else if (hoursAgo > 48) {
+                        urgencyBadge = '<span style="background: #fca5a5; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">⚠️ URGENT (>2d)</span>';
+                    } else if (hoursAgo > 24) {
+                        urgencyBadge = '<span style="background: #fed7aa; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">📌 PENDING (>1d)</span>';
+                    } else {
+                        urgencyBadge = '<span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ RECENT (&lt;1d)</span>';
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendorMap[agr.vendor_id] || agr.vendor_id)}</td>
+                            <td class="p-2.5 text-sm text-gray-800">${escapeHtml(buyerMap[agr.buyer_id] || agr.buyer_id)}</td>
+                            <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.commission_amount_per_feedback || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.payout_threshold || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-sm text-gray-700">${escapeHtml(agr.payout_frequency || 'on_demand')}</td>
+                            <td class="p-2.5 text-xs text-gray-500">${urgencyBadge}</td>
+                            <td class="p-2.5 text-center flex gap-2 justify-center">
+                                <button onclick="approveAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✓ Approve</button>
+                                <button onclick="denyAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✗ Deny</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             } catch (err) {
                 console.error('Error loading custom agreements:', err);
                 tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
@@ -7512,12 +7608,111 @@ async function loadVendorSubmitterRelationship() {
             }
         }
 
-        // Load approvals when tab switches
+        // ===== UNIFIED APPROVALS TAB =====
+        async function loadApprovalsTab() {
+            await loadRateChangeRequestsApprovals();
+            await loadCustomAgreementsApprovals();
+            updateApprovalsDashboard();
+            loadNotifications();
+        }
+
+        // Tab switching within approvals section
+        function switchApprovalTab(tabName) {
+            document.querySelectorAll('.approval-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('approvals-rate-changes-section').style.display = 'none';
+            document.getElementById('approvals-agreements-section').style.display = 'none';
+
+            if (tabName === 'rate-changes') {
+                document.getElementById('approvals-rate-changes-section').style.display = 'block';
+            } else if (tabName === 'agreements') {
+                document.getElementById('approvals-agreements-section').style.display = 'block';
+            }
+        }
+
+        // Update approval dashboard with pending counts and urgency
+        function updateApprovalsDashboard() {
+            const rateChangeCount = document.querySelectorAll('#rate-changes-table-body tr:not(:has(td[colspan]))').length;
+            const agreementsCount = document.querySelectorAll('#agreements-table-body tr:not(:has(td[colspan]))').length;
+            const totalPending = rateChangeCount + agreementsCount;
+
+            document.getElementById('dashboard-rate-changes-count').textContent = rateChangeCount;
+            document.getElementById('dashboard-agreements-count').textContent = agreementsCount;
+            document.getElementById('dashboard-total-pending').textContent = totalPending;
+
+            // Update urgency indicators
+            document.getElementById('dashboard-rate-changes-urgency').textContent = rateChangeCount > 0 ? '⚠️ ' + rateChangeCount + ' action needed' : '✓ All current';
+            document.getElementById('dashboard-agreements-urgency').textContent = agreementsCount > 0 ? '⚠️ ' + agreementsCount + ' action needed' : '✓ All current';
+        }
+
+        // ===== NOTIFICATIONS =====
+        function toggleNotificationDropdown() {
+            const dropdown = document.getElementById('notification-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function loadNotifications() {
+            try {
+                const { data: notifications, error } = await supabase
+                    .from('in_app_notifications')
+                    .select('*')
+                    .eq('user_id', (await supabase.auth.getUser()).data.user.id)
+                    .eq('is_read', false)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const notificationList = document.getElementById('notification-list');
+                const notificationCount = document.getElementById('notification-count');
+
+                if (notifications && notifications.length > 0) {
+                    notificationList.innerHTML = notifications.map(n => `
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; hover:background: #f8fafc; cursor: pointer; transition: all 0.2s;" onclick="markNotificationRead('${n.id}')">
+                            <div style="font-weight: 600; color: #1e5aa8; font-size: 13px;">${formatNotificationType(n.notification_type)}</div>
+                            <div style="color: #4a5568; font-size: 12px; margin-top: 4px;">${n.message}</div>
+                            <div style="color: #cbd5e1; font-size: 11px; margin-top: 4px;">${new Date(n.created_at).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+                    notificationCount.textContent = notifications.length;
+                } else {
+                    notificationList.innerHTML = '<div style="padding: 20px; text-align: center; color: #718096; font-size: 14px;">No new notifications</div>';
+                    notificationCount.textContent = '0';
+                }
+            } catch (err) {
+                console.error('Error loading notifications:', err);
+            }
+        }
+
+        function formatNotificationType(type) {
+            const types = {
+                'rate_change_approved': '✅ Rate Change Approved',
+                'rate_change_rejected': '❌ Rate Change Rejected',
+                'agreement_approved': '✅ Agreement Approved',
+                'agreement_rejected': '❌ Agreement Rejected',
+                'vendor_approved_payout': '💰 Payout Approved',
+                'vendor_denied_payout': '❌ Payout Denied'
+            };
+            return types[type] || type;
+        }
+
+        async function markNotificationRead(notificationId) {
+            try {
+                await supabase
+                    .from('in_app_notifications')
+                    .update({ is_read: true })
+                    .eq('id', notificationId);
+
+                await loadNotifications();
+            } catch (err) {
+                console.error('Error marking notification as read:', err);
+            }
+        }
+
+        // Load approvals when tab switches (legacy compatibility)
         function handleApprovalsTabSwitch() {
-            setTimeout(async () => {
-                await loadRateChangeRequestsApprovals();
-                await loadCustomAgreementsApprovals();
-            }, 100);
+            loadApprovalsTab();
         }
     </script>
 
