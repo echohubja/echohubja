@@ -6842,15 +6842,78 @@
 
         // Incoming Requests Functions (Bidirectional Payout)
         async function loadManageIncomingRequests() {
-            if (!sbClient || !currentVendor) return;
+            console.log('\n========== INCOMING PAYMENT REQUESTS - VERBOSE DEBUG ==========');
+            if (!sbClient || !currentVendor) {
+                const msg = `[Incoming] ABORT: sbClient or currentVendor missing: sbClient=${!!sbClient}, currentVendor=${!!currentVendor}`;
+                console.error(msg);
+                return;
+            }
+
+            console.log('[Incoming] ✓ Current Vendor:', { id: currentVendor.id, name: currentVendor.business_name });
 
             const tbody = document.getElementById('manage-incoming-table-body');
+            if (!tbody) {
+                const msg = '[Incoming] ABORT: tbody element not found with ID=manage-incoming-table-body';
+                console.error(msg);
+                return;
+            }
+            console.log('[Incoming] ✓ tbody element found');
+
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query for incoming requests (where vendor is recipient but hasn't approved yet)
-                // For now, this would be placeholder data - in real implementation,
-                // there would be a separate "payout_requests" table or similar
+                // Step 1: Query ALL admin_payables for this vendor to understand data shape
+                console.log('[Incoming] STEP 1: Fetching ALL admin_payables for this vendor...');
+                const { data: allPayables, error: allError } = await sbClient
+                    .from('admin_payables')
+                    .select('id, vendor_id, status, split_with_buyer_id, vendor_receipt_uploaded_date, amount_owed, created_at')
+                    .eq('vendor_id', currentVendor.id);
+
+                if (allError) {
+                    console.error('[Incoming] ERROR fetching all records:', allError);
+                } else {
+                    console.log('[Incoming] ✓ Found', allPayables?.length || 0, 'total admin_payables records');
+                    if (allPayables && allPayables.length > 0) {
+                        console.log('[Incoming] Sample records (first 3):', allPayables.slice(0, 3));
+
+                        // Analyze status distribution
+                        const statusMap = {};
+                        const splitWithBuyerMap = {};
+                        const receiptUploadMap = {};
+
+                        allPayables.forEach(p => {
+                            statusMap[p.status] = (statusMap[p.status] || 0) + 1;
+                            splitWithBuyerMap[p.split_with_buyer_id ? 'HAS_BUYER_ID' : 'NO_BUYER_ID'] = (splitWithBuyerMap[p.split_with_buyer_id ? 'HAS_BUYER_ID' : 'NO_BUYER_ID'] || 0) + 1;
+                            receiptUploadMap[p.vendor_receipt_uploaded_date ? 'RECEIPT_UPLOADED' : 'NO_RECEIPT'] = (receiptUploadMap[p.vendor_receipt_uploaded_date ? 'RECEIPT_UPLOADED' : 'NO_RECEIPT'] || 0) + 1;
+                        });
+
+                        console.log('[Incoming] Status distribution:', statusMap);
+                        console.log('[Incoming] split_with_buyer_id distribution:', splitWithBuyerMap);
+                        console.log('[Incoming] vendor_receipt_uploaded_date distribution:', receiptUploadMap);
+                    }
+                }
+
+                // Step 2: Apply filters step by step
+                console.log('[Incoming] STEP 2: Applying filters step by step...');
+
+                // Filter 1: status='pending'
+                let step1 = await sbClient
+                    .from('admin_payables')
+                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'pending');
+                console.log('[Incoming] After status=pending:', step1.data?.length || 0, 'records');
+
+                // Filter 2: split_with_buyer_id IS NOT NULL
+                let step2 = await sbClient
+                    .from('admin_payables')
+                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'pending')
+                    .not('split_with_buyer_id', 'is', null);
+                console.log('[Incoming] After split_with_buyer_id IS NOT NULL:', step2.data?.length || 0, 'records');
+
+                // Filter 3: vendor_receipt_uploaded_date IS NULL
                 const { data: incomingRequests, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
@@ -6860,23 +6923,32 @@
                     .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
-                console.log('[Incoming] Query params:', { vendor_id: currentVendor.id, status: 'pending', split_with_buyer_id: 'NOT NULL', vendor_receipt_uploaded_date: 'NULL' });
-                console.log('[Incoming] Results:', incomingRequests);
-                console.log('[Incoming] Error:', error);
+                console.log('[Incoming] FINAL RESULT (all 3 filters applied):', incomingRequests?.length || 0, 'records');
+                console.log('[Incoming] Final records:', incomingRequests);
+                console.log('[Incoming] Query error:', error);
 
                 if (error) {
-                    console.error('Error loading incoming requests:', error);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading requests</td></tr>';
+                    console.error('[Incoming] ❌ DATABASE ERROR:', error);
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error: ' + error.message + '</td></tr>';
                     return;
                 }
 
                 if (!incomingRequests || incomingRequests.length === 0) {
-                    console.log('[Incoming] No records matched criteria');
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No incoming requests</td></tr>';
+                    const debugMsg = `[DEBUG] Query returned 0 results for: vendor_id=${currentVendor.id}, status='pending', split_with_buyer_id IS NOT NULL, vendor_receipt_uploaded_date IS NULL. Total pending=$${step1.data?.length || 0} with status, Referral payouts=$${step2.data?.length || 0}`;
+                    console.warn('[Incoming] ⚠️  No records matched ALL criteria (pending + has_buyer_id + no_receipt)');
+                    console.warn(debugMsg);
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">
+                        No incoming requests
+                        <br><small style="font-size: 11px; color: #94a3b8; margin-top: 8px; display: block;">
+                        Query: pending=${ step1.data?.length || 0}, referral=${ step2.data?.length || 0}, no_receipt=${incomingRequests?.length || 0}
+                        </small>
+                    </td></tr>`;
                     return;
                 }
 
-                tbody.innerHTML = incomingRequests.map(request => `
+                console.log('[Incoming] ✓ Rendering', incomingRequests.length, 'records...');
+
+                const htmlContent = incomingRequests.map(request => `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="incoming-checkbox" data-request-id="${request.id}"></td>
                         <td style="padding: 12px; color: #475569;">${request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
@@ -6890,9 +6962,14 @@
                     </tr>
                 `).join('');
 
+                tbody.innerHTML = htmlContent;
+                console.log('[Incoming] ✅ Successfully rendered', incomingRequests.length, 'rows to tbody');
+                console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
+
             } catch (err) {
-                console.error('Unexpected error:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+                console.error('[Incoming] ❌ CATCH ERROR:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error: ' + err.message + '</td></tr>';
+                console.error('========== END INCOMING PAYMENT REQUESTS DEBUG (ERROR) ==========\n');
             }
         }
 
@@ -7558,7 +7635,7 @@
             // Query rate_change_requests where vendor_id = currentVendor and status = 'pending'
             const { data: requests, error } = await sbClient
                 .from('rate_change_requests')
-                .select('id, change_type, current_value, requested_value, reason, created_at, status')
+                .select('id, change_type, current_rate, requested_value, reason, created_at, status')
                 .eq('vendor_id', currentVendor.id)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
