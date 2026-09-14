@@ -7635,7 +7635,7 @@
             // Query rate_change_requests where vendor_id = currentVendor and status = 'pending'
             const { data: requests, error } = await sbClient
                 .from('rate_change_requests')
-                .select('id, change_type, current_rate, requested_value, reason, created_at, status')
+                .select('id, change_type, current_rate, requested_rate, reason, created_at, status')
                 .eq('vendor_id', currentVendor.id)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
