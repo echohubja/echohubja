@@ -5402,27 +5402,27 @@
                 let commissionTextColor = '#1e40af';
 
                 try {
-                    const { data: adminPayable } = await sbClient
+                    // ✅ FIX: Remove .single() to avoid 406 RLS errors on compound filters
+                    const { data: adminPayables, error: adminError } = await sbClient
                         .from('admin_payables')
                         .select('status')
                         .eq('vendor_id', currentVendor.id)
                         .eq('split_with_buyer_id', buyerId)
-                        .limit(1)
-                        .single();
+                        .limit(1);
 
-                    if (adminPayable) {
-                        commissionStatus = adminPayable.status || 'pending';
+                    if (!adminError && adminPayables && adminPayables.length > 0) {
+                        commissionStatus = adminPayables[0].status || 'pending';
                     } else {
-                        const { data: buyerPayable } = await sbClient
+                        // ✅ FIX: Remove .single() from buyer_payables query too
+                        const { data: buyerPayables, error: buyerError } = await sbClient
                             .from('buyer_payables')
                             .select('status')
                             .eq('vendor_id', currentVendor.id)
                             .eq('buyer_id', buyerId)
-                            .limit(1)
-                            .single();
+                            .limit(1);
 
-                        if (buyerPayable) {
-                            commissionStatus = buyerPayable.status || 'pending';
+                        if (!buyerError && buyerPayables && buyerPayables.length > 0) {
+                            commissionStatus = buyerPayables[0].status || 'pending';
                         }
                     }
                 } catch (err) {
