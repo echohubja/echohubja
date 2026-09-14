@@ -7678,20 +7678,20 @@
                 else if (request.change_type === 'threshold') changeTypeLabel = 'Payout Threshold';
                 else if (request.change_type === 'frequency') changeTypeLabel = 'Payout Frequency';
 
-                let currentDisplay = request.current_value;
-                let proposedDisplay = request.requested_value;
+                let currentDisplay = request.current_rate;
+                let proposedDisplay = request.requested_rate;
                 if (request.change_type === 'commission' || request.change_type === 'threshold') {
-                    currentDisplay = '$' + parseFloat(request.current_value).toFixed(2);
-                    proposedDisplay = '$' + parseFloat(request.requested_value).toFixed(2);
+                    currentDisplay = '$' + parseFloat(request.current_rate).toFixed(2);
+                    proposedDisplay = '$' + parseFloat(request.requested_rate).toFixed(2);
                 } else if (request.change_type === 'frequency') {
-                    currentDisplay = request.current_value.replace('_', ' ');
-                    proposedDisplay = request.requested_value.replace('_', ' ');
+                    currentDisplay = request.current_rate.replace('_', ' ');
+                    proposedDisplay = request.requested_rate.replace('_', ' ');
                 }
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="incoming-request-checkbox" data-request-id="${request.id}"></td>
-                        <td style="padding: 12px; color: #475569;">${buyerMap[request.buyer_id] || 'Loading...'}</td>
+                        <td style="padding: 12px; color: #475569;">Vendor Request</td>
                         <td style="padding: 12px; color: #475569;">${changeTypeLabel}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">${proposedDisplay}</td>
                         <td style="padding: 12px; color: #64748b; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${request.reason || '-'}</td>
@@ -7709,7 +7709,7 @@
 
             const { data: request, error } = await sbClient
                 .from('rate_change_requests')
-                .select('id, change_type, current_value, requested_value, reason, vendor_id')
+                .select('id, change_type, current_rate, requested_rate, reason, vendor_id')
                 .eq('id', requestId)
                 .single();
 
@@ -7718,17 +7718,10 @@
                 return;
             }
 
-            // Fetch buyer name
-            const { data: buyer } = await sbClient
-                .from('buyers')
-                .select('full_name')
-                .eq('id', request.buyer_id)
-                .single();
-
             // Set modal data
             document.getElementById('review-request-modal').dataset.requestId = requestId;
             document.getElementById('review-request-modal').dataset.vendorId = request.vendor_id;
-            document.getElementById('review-request-buyer-name').textContent = `From: ${buyer?.full_name || 'Unknown Buyer'}`;
+            document.getElementById('review-request-buyer-name').textContent = `From: Vendor (${request.vendor_id})`;
 
             // Format change type
             let changeTypeLabel = '';
@@ -7739,14 +7732,14 @@
             document.getElementById('review-request-type').textContent = changeTypeLabel;
 
             // Format values
-            let currentDisplay = request.current_value;
-            let proposedDisplay = request.requested_value;
+            let currentDisplay = request.current_rate;
+            let proposedDisplay = request.requested_rate;
             if (request.change_type === 'commission' || request.change_type === 'threshold') {
-                currentDisplay = '$' + parseFloat(request.current_value).toFixed(2);
-                proposedDisplay = '$' + parseFloat(request.requested_value).toFixed(2);
+                currentDisplay = '$' + parseFloat(request.current_rate).toFixed(2);
+                proposedDisplay = '$' + parseFloat(request.requested_rate).toFixed(2);
             } else if (request.change_type === 'frequency') {
-                currentDisplay = request.current_value.replace('_', ' ');
-                proposedDisplay = request.requested_value.replace('_', ' ');
+                currentDisplay = request.current_rate.replace('_', ' ');
+                proposedDisplay = request.requested_rate.replace('_', ' ');
             }
 
             document.getElementById('review-request-current').textContent = currentDisplay;
@@ -7770,16 +7763,9 @@
             statusDiv.style.color = '#075985';
             statusDiv.style.backgroundColor = '#d1e7f5';
 
-            // Get request details before updating
-            const { data: request } = await sbClient
-                .from('rate_change_requests')
-                .select('buyer_id')
-                .eq('id', requestId)
-                .single();
-
             const { error } = await sbClient
                 .from('rate_change_requests')
-                .update({ status: 'accepted' })
+                .update({ status: 'approved' })
                 .eq('id', requestId);
 
             if (error) {
@@ -7787,17 +7773,6 @@
                 statusDiv.style.color = '#dc2626';
                 statusDiv.style.backgroundColor = '#fee2e2';
                 return;
-            }
-
-            // Create notification for buyer
-            if (request && request.buyer_id) {
-                await createVendorNotification(
-                    request.buyer_id,
-                    'rate_change_accepted',
-                    `Vendor has accepted your rate change request - awaiting admin approval`,
-                    'rate_change_requests',
-                    requestId
-                );
             }
 
             statusDiv.textContent = '✅ Request accepted! Pending admin approval.';
@@ -7832,13 +7807,6 @@
             statusDiv.style.color = '#075985';
             statusDiv.style.backgroundColor = '#d1e7f5';
 
-            // Get request details before updating
-            const { data: request } = await sbClient
-                .from('rate_change_requests')
-                .select('buyer_id')
-                .eq('id', requestId)
-                .single();
-
             const { error } = await sbClient
                 .from('rate_change_requests')
                 .update({ status: 'rejected' })
@@ -7849,17 +7817,6 @@
                 statusDiv.style.color = '#dc2626';
                 statusDiv.style.backgroundColor = '#fee2e2';
                 return;
-            }
-
-            // Create notification for buyer
-            if (request && request.buyer_id) {
-                await createVendorNotification(
-                    request.buyer_id,
-                    'rate_change_rejected',
-                    `Vendor has rejected your rate change request`,
-                    'rate_change_requests',
-                    requestId
-                );
             }
 
             statusDiv.textContent = '✅ Request rejected.';
