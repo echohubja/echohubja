@@ -4972,7 +4972,7 @@
             }
 
             sidebar.innerHTML = messagingState.conversations.map(conv => `
-                <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${messagingState.currentConversationId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : conv.hasFollowUps ? 'background: #fff5f5; border-left: 3px solid #ef4444;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectVendorMessagingConversation('${conv.id}')">
+                <div data-inquiry-id="${conv.id}" data-all-approved="${conv.allApproved}" data-has-followups="${conv.hasFollowUps}" data-follow-count="${conv.followUpCount}" style="padding: 12px; border-bottom: 1px solid #e2e8f0; cursor: pointer; ${messagingState.currentConversationId === conv.id ? 'background: #dbeafe; border-left: 3px solid #1e5aa8;' : conv.hasFollowUps ? 'background: #fff5f5; border-left: 3px solid #ef4444;' : 'border-left: 3px solid transparent;'} transition: background 0.2s;" onclick="selectVendorMessagingConversation('${conv.id}')">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
                         <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate; flex: 1;">${escapeHtml(conv.buyerName)} (B-${conv.buyerId.substring(0, 6).toUpperCase()})</div>
                         <div style="display: flex; gap: 6px; align-items: center;">
