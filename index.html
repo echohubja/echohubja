@@ -2638,13 +2638,13 @@
                     </div>
                 `;
 
-                // ✅ FIX: Preserve textarea value and focus before re-render
+                // ✅ FIX: Preserve input values and image preview before re-render
                 const oldTextarea = rightPanel.querySelector(`#buyer-message-input-${inquiryId}`);
                 const textareaValue = oldTextarea ? oldTextarea.value : '';
-                const oldImageInput = rightPanel.querySelector(`#buyer-feedback-image-${inquiryId}`);
-                const imageInputValue = oldImageInput ? oldImageInput.value : '';
                 const oldUrlInput = rightPanel.querySelector(`#buyer-product-url-${inquiryId}`);
                 const urlInputValue = oldUrlInput ? oldUrlInput.value : '';
+                const oldPreviewImg = rightPanel.querySelector(`#buyer-image-preview-img-${inquiryId}`);
+                const imagePreviewData = oldPreviewImg ? oldPreviewImg.src : ''; // ✅ FIX: Preserve base64 image data, not file input
                 const wasFocused = document.activeElement === oldTextarea;
 
                 rightPanel.innerHTML = threadHtml;
@@ -2654,13 +2654,18 @@
                 if (newTextarea && textareaValue) {
                     newTextarea.value = textareaValue;
                 }
-                const newImageInput = rightPanel.querySelector(`#buyer-feedback-image-${inquiryId}`);
-                if (newImageInput && imageInputValue) {
-                    newImageInput.value = imageInputValue;
-                }
                 const newUrlInput = rightPanel.querySelector(`#buyer-product-url-${inquiryId}`);
                 if (newUrlInput && urlInputValue) {
                     newUrlInput.value = urlInputValue;
+                }
+                // ✅ FIX: Restore image preview directly (cannot restore file input value for security)
+                if (imagePreviewData) {
+                    const newPreviewContainer = rightPanel.querySelector(`#buyer-image-preview-${inquiryId}`);
+                    const newPreviewImg = rightPanel.querySelector(`#buyer-image-preview-img-${inquiryId}`);
+                    if (newPreviewContainer && newPreviewImg) {
+                        newPreviewImg.src = imagePreviewData;
+                        newPreviewContainer.style.display = 'block';
+                    }
                 }
                 if (wasFocused && newTextarea) {
                     newTextarea.focus();
