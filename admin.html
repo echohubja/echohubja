@@ -5566,9 +5566,9 @@ async function loadVendorSubmitterRelationship() {
                     productUrlHtml = `<a href="${escapeHtml(msg.product_url)}" target="_blank" style="color: #1e5aa8; text-decoration: underline; font-size: 12px; display: inline-block; margin-top: 6px;">🔗 ${escapeHtml(msg.product_url.substring(0, 50))}${msg.product_url.length > 50 ? '...' : ''}</a>`;
                 }
 
-                // Approve/Reject buttons for feedback messages
+                // Approve/Reject buttons for feedback messages (only show if status is pending)
                 let actionButtons = '';
-                if (msg.message_type === 'feedback' && !isAdminSent) {
+                if (msg.message_type === 'feedback' && !isAdminSent && msg.status === 'pending') {
                     actionButtons = `
                         <div style="display: flex; gap: 8px; margin-top: 12px;">
                             <button onclick="approveAdminFeedback('${msg.id}')" style="flex: 1; background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">✓ Approve</button>
