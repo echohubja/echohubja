@@ -1475,6 +1475,9 @@
                 currentBuyerId = '';
                 currentBuyerStringId = '';
             }
+
+            // Initialize vendor ID from localStorage
+            currentVendorId = localStorage.getItem('vendor_id') || null;
         }
 
         async function logoutBuyer() {
@@ -2139,6 +2142,8 @@
 
         let buyerMessagingPollInterval = null;
 
+        let currentBuyerId = null;
+        let currentVendorId = null;
         let currentSelectedInquiryId = null;
 
         async function selectBuyerMessagingConversation(inquiryId) {
