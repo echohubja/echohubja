@@ -156,7 +156,7 @@
             <div id="registerFields" style="display: none;">
                 <div class="form-group">
                     <label for="accountType">I want to register as a:</label>
-                    <select id="accountType">
+                    <select id="accountType" name="accountType">
                         <option value="buyer">Buyer / Reviewer</option>
                         <option value="vendor">Vendor Partner</option>
                     </select>
@@ -165,30 +165,41 @@
                 <div class="row-fields">
                     <div class="form-group" style="flex: 1;">
                         <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="India">
+                        <input type="text" id="firstName" name="firstName" placeholder="India">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Stronghold">
+                        <input type="text" id="lastName" name="lastName" placeholder="Stronghold">
                     </div>
                 </div>
 
                 <div id="vendorSpecificFields" style="display: none;">
                     <div class="form-group">
+                        <label for="businessName">Business Name</label>
+                        <input type="text" id="businessName" name="businessName" placeholder="Your Business Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="paypalEmail">PayPal Email</label>
+                        <input type="email" id="paypalEmail" name="paypalEmail" placeholder="paypal@example.com">
+                    </div>
+                    <div class="form-group">
                         <label for="vendorType">Vendor Classification</label>
-                        <input type="text" id="vendorType" value="UPFRONT" placeholder="UPFRONT">
+                        <select id="vendorType" name="vendorType">
+                            <option value="UPFRONT">UPFRONT</option>
+                            <option value="REFUND_AFTER_REVIEW">REFUND_AFTER_REVIEW</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="email">Account Email</label>
-                <input type="email" id="email" required placeholder="name@example.com">
+                <input type="email" id="email" name="email" required placeholder="name@example.com">
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
@@ -297,25 +308,30 @@
 
                     if (accountType === 'vendor') {
                         // Vendor Registration Path
+                        const businessName = document.getElementById('businessName').value.trim();
+                        const paypalEmail = document.getElementById('paypalEmail').value.trim();
                         const vendorType = document.getElementById('vendorType').value.trim() || 'UPFRONT';
-                        const { count, error: countError } = await supabaseClient
-                            .from('vendors')
-                            .select('*', { count: 'exact', head: true });
 
-                        if (countError) throw new Error('Could not calculate vendor sequence.');
+                        if (!businessName) throw new Error('Business name is required');
+                        if (!paypalEmail) throw new Error('PayPal email is required');
 
-                        const nextNum = (count || 0) + 1;
-                        const formattedId = `${firstName}-${lastName}-${String(nextNum).padStart(5, '0')}`;
+                        // Hash the password
+                        const hashedPassword = await hashPBKDF2Password(password);
 
                         const { error: insertError } = await supabaseClient.from('vendors').insert([
                             {
-                                id: formattedId,
                                 user_id: authUuid,
                                 email: email,
+                                password: hashedPassword,
                                 first_name: firstName,
                                 last_name: lastName,
+                                business_name: businessName,
+                                paypal_email: paypalEmail,
                                 vendor_type: vendorType,
-                                status: 'ACTIVE',
+                                suspension_status: 'active',
+                                is_blocked: false,
+                                accumulated_balance: 0,
+                                current_per_feedback_rate: 5.00,
                                 created_at: new Date()
                             }
                         ]);
@@ -364,7 +380,20 @@
                             // Store vendor session in localStorage for manage.html
                             localStorage.setItem('vendor_id', vendorData.id);
                             localStorage.setItem('vendor_email', vendorData.email);
-                            window.location.href = 'manage.html';
+
+                            // Check if vendor is flagged
+                            const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
+                                p_vendor_id: vendorData.id,
+                                p_buyer_id: null
+                            });
+
+                            if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
+                                localStorage.setItem('flagged_reason', flaggedStatus[0].message);
+                                localStorage.setItem('flagged_type', 'vendor');
+                                window.location.href = 'restricted-portal.html';
+                            } else {
+                                window.location.href = 'manage.html';
+                            }
                             return;
                         } else {
                             throw new Error('Invalid login credentials');
@@ -389,7 +418,20 @@
                             // Store buyer session in localStorage for index.html (use numeric ID as primary)
                             localStorage.setItem('buyer_id', buyerData.id);
                             localStorage.setItem('buyer_email', buyerData.email);
-                            window.location.href = 'index.html';
+
+                            // Check if buyer is flagged
+                            const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
+                                p_vendor_id: null,
+                                p_buyer_id: buyerData.id
+                            });
+
+                            if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
+                                localStorage.setItem('flagged_reason', flaggedStatus[0].message);
+                                localStorage.setItem('flagged_type', 'buyer');
+                                window.location.href = 'restricted-portal.html';
+                            } else {
+                                window.location.href = 'index.html';
+                            }
                             return;
                         } else {
                             throw new Error('Invalid login credentials');
@@ -413,10 +455,10 @@
                         .maybeSingle();
 
                     if (userProfileData) {
-                        // SECURITY: Even via legacy auth, check buyer approval status
+                        // SECURITY: Even via legacy auth, check buyer approval status and get numeric ID
                         const { data: buyerCheckData } = await supabaseClient
                             .from('buyers')
-                            .select('approval_status')
+                            .select('id, approval_status')
                             .eq('email', email)
                             .maybeSingle();
 
@@ -424,10 +466,23 @@
                             throw new Error(`Your account is ${buyerCheckData.approval_status}. You will receive access once your national ID is verified.`);
                         }
 
-                        // Store buyer session (use numeric ID as primary)
-                        localStorage.setItem('buyer_id', authUser.id);
+                        // Store buyer session (use numeric ID as primary, not Supabase UUID)
+                        localStorage.setItem('buyer_id', buyerCheckData.id);
                         localStorage.setItem('buyer_email', email);
-                        window.location.href = 'index.html';
+
+                        // Check if buyer is flagged
+                        const { data: flaggedStatus } = await supabaseClient.rpc('check_user_flagged_status', {
+                            p_vendor_id: null,
+                            p_buyer_id: buyerCheckData.id
+                        });
+
+                        if (flaggedStatus && flaggedStatus[0]?.is_flagged) {
+                            localStorage.setItem('flagged_reason', flaggedStatus[0].message);
+                            localStorage.setItem('flagged_type', 'buyer');
+                            window.location.href = 'restricted-portal.html';
+                        } else {
+                            window.location.href = 'index.html';
+                        }
                         return;
                     }
 
@@ -441,6 +496,45 @@
                 submitBtn.textContent = isRegisterMode ? 'Complete Registration' : 'Sign In';
             }
         });
+
+        async function hashPBKDF2Password(password) {
+            // Generate random 16-byte salt
+            const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+
+            // Compute PBKDF2 with 100k iterations, SHA-256
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits']
+            );
+
+            const derivedBits = await crypto.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: saltBuffer,
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                256
+            );
+
+            // Combine salt + hash and encode as Base64
+            const hashArray = new Uint8Array(derivedBits);
+            const combined = new Uint8Array(saltBuffer.length + hashArray.length);
+            combined.set(saltBuffer);
+            combined.set(hashArray, saltBuffer.length);
+
+            // Convert to Base64
+            let binaryString = '';
+            for (let i = 0; i < combined.length; i++) {
+                binaryString += String.fromCharCode(combined[i]);
+            }
+            return btoa(binaryString);
+        }
 
         async function verifyPBKDF2Password(inputPassword, storedHashBase64) {
             // storedHash format: Base64(16-byte salt + 32-byte PBKDF2 hash)
