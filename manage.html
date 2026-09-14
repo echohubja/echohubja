@@ -4946,7 +4946,8 @@
                         lastTime: timeStr,
                         lastTimestamp: latestMsg.created_at,
                         followUpCount: followUpCount,
-                        hasFollowUps: hasFollowUps
+                        hasFollowUps: hasFollowUps,
+                        allApproved: allApproved
                     });
                 });
 
@@ -4975,7 +4976,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
                         <div style="font-weight: 600; font-size: 14px; color: #1e293b; text-truncate; flex: 1;">${escapeHtml(conv.buyerName)} (B-${conv.buyerId.substring(0, 6).toUpperCase()})</div>
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            ${conv.hasFollowUps ? `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">🔴 ${conv.followUpCount}</span>` : ''}
+                            ${conv.allApproved ? `<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">✓ All Verified</span>` : conv.hasFollowUps ? `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">🔴 ${conv.followUpCount} pending</span>` : ''}
                             <span style="background: ${conv.status === 'approved' ? '#dcfce7' : conv.status === 'pending' ? '#fef3c7' : '#fee2e2'}; color: ${conv.status === 'approved' ? '#166534' : conv.status === 'pending' ? '#92400e' : '#991b1b'}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap;">${conv.statusBadge}</span>
                         </div>
                     </div>
