@@ -4465,7 +4465,7 @@
             try {
                 const { data: vendor, error: vendorError } = await sbClient
                     .from('vendors')
-                    .select('id, accumulated_balance, commission_threshold, commission')
+                    .select('id, commission_threshold, commission')
                     .eq('id', currentVendor.id)
                     .single();
 
@@ -4479,7 +4479,48 @@
                     return;
                 }
 
-                const accumulated = parseFloat(vendor.accumulated_balance || 0);
+                // Calculate pending commission from admin_payables + buyer_payables
+                let pending = 0;
+
+                // Fetch admin_payables (vendor commissions and referral splits)
+                const { data: adminPayables } = await sbClient
+                    .from('admin_payables')
+                    .select('amount_owed, status, split_with_buyer_id, split_with_vendor_id')
+                    .eq('vendor_id', currentVendor.id);
+
+                // Add admin commissions (no split)
+                if (adminPayables) {
+                    adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id)
+                        .forEach(ap => {
+                            if (ap.status === 'pending' || ap.status === 'requested') {
+                                pending += parseFloat(ap.amount_owed || 0);
+                            }
+                        });
+                    // Add vendor inviter commissions
+                    adminPayables.filter(ap => ap.split_with_vendor_id)
+                        .forEach(ap => {
+                            if (ap.status === 'pending' || ap.status === 'requested') {
+                                pending += parseFloat(ap.amount_owed || 0);
+                            }
+                        });
+                }
+
+                // Fetch buyer_payables (own feedback earnings)
+                const { data: buyerPayables } = await sbClient
+                    .from('buyer_payables')
+                    .select('amount_owed, status, earning_type')
+                    .eq('vendor_id', currentVendor.id);
+
+                if (buyerPayables) {
+                    buyerPayables.filter(bp => bp.earning_type === 'own_feedback')
+                        .forEach(bp => {
+                            if (bp.status === 'pending' || bp.status === 'requested') {
+                                pending += parseFloat(bp.amount_owed || 0);
+                            }
+                        });
+                }
+
+                const accumulated = pending;
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
                 const capped_percent = Math.min(progressPercent, 100);
