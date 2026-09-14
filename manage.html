@@ -7371,9 +7371,34 @@
                             return;
                         }
 
-                        statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting admin verification.';
-                        statusDiv.style.color = '#059669';
-                        statusDiv.style.background = '#d1fae5';
+                        // ✅ NEW: Update status based on payout type
+                        const recordData = data[0];
+                        const isReferralPayout = recordData.split_with_buyer_id !== null;
+
+                        if (!isReferralPayout) {
+                            // Admin-only payout: vendor uploaded, ready for admin approval
+                            const { error: statusError } = await sbClient
+                                .from('admin_payables')
+                                .update({ status: 'received' })
+                                .eq('id', payoutId);
+
+                            if (statusError) {
+                                console.error('Error updating status:', statusError);
+                                // Non-blocking: show warning but continue
+                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
+                                statusDiv.style.color = '#d97706';
+                                statusDiv.style.background = '#fef3c7';
+                            } else {
+                                statusDiv.textContent = '✅ Receipt uploaded successfully! Moving to admin verification.';
+                                statusDiv.style.color = '#059669';
+                                statusDiv.style.background = '#d1fae5';
+                            }
+                        } else {
+                            // Referral payout: vendor uploaded, waiting for buyer to upload
+                            statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
+                            statusDiv.style.color = '#059669';
+                            statusDiv.style.background = '#d1fae5';
+                        }
 
                         // Reload data after 1.5 seconds
                         setTimeout(() => {
