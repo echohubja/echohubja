@@ -6937,7 +6937,7 @@
                 // Filter 1: status='pending' or 'payment_requested' (includes both admin-created and reviewer-initiated requests)
                 let step1 = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
+                    .select('id, vendor_id, amount_owed, payable_reason, status, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date, admin_commission, buyer_portion')
                     .eq('vendor_id', currentVendor.id)
                     .in('status', ['pending', 'payment_requested']);
                 console.log('[Incoming] After status=pending:', step1.data?.length || 0, 'records');
@@ -6945,7 +6945,7 @@
                 // Filter 2: No split_with_buyer_id filter (shows both referral and non-referral payouts)
                 let step2 = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
+                    .select('id, vendor_id, amount_owed, payable_reason, status, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date, admin_commission, buyer_portion')
                     .eq('vendor_id', currentVendor.id)
                     .in('status', ['pending', 'payment_requested']);
                 console.log('[Incoming] After applying status filter (no split_with_buyer_id requirement):', step2.data?.length || 0, 'records');
@@ -6953,7 +6953,7 @@
                 // Filter 3: vendor_receipt_uploaded_date IS NULL
                 const { data: incomingRequests, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date')
+                    .select('id, vendor_id, amount_owed, payable_reason, status, created_at, split_with_buyer_id, related_feedback_id, vendor_receipt_uploaded_date, admin_commission, buyer_portion')
                     .eq('vendor_id', currentVendor.id)
                     .in('status', ['pending', 'payment_requested'])
                     .is('vendor_receipt_uploaded_date', null)
@@ -7003,17 +7003,26 @@
 
                 const htmlContent = incomingRequests.map(request => {
                     const buyer = buyersMap[request.split_with_buyer_id];
+                    const requestType = request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
+                    const payoutReason = request.payable_reason || 'Commission Payout';
+                    const statusBadge = request.status === 'payment_requested' ? '<span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">REQUESTED</span>' : '<span style="background: #d1d5db; color: #374151; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">PENDING</span>';
+                    const splitInfo = request.split_with_buyer_id ? `<small style="color: #6b7280; display: block;">Admin: $${parseFloat(request.admin_commission || 0).toFixed(2)} | Buyer: $${parseFloat(request.buyer_portion || 0).toFixed(2)}</small>` : '';
+
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="incoming-checkbox" data-request-id="${request.id}"></td>
-                        <td style="padding: 12px; color: #475569;">${request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569;">${requestType}</td>
                         <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
                         <td style="padding: 12px; color: #475569; font-size: 12px;">${buyer?.paypal_email || 'N/A'}</td>
-                        <td style="padding: 12px; color: #475569;">Payment Request</td>
+                        <td style="padding: 12px; color: #475569;">
+                            <div>${payoutReason}</div>
+                            <small style="color: #94a3b8; display: block; margin-top: 4px;">Status: ${statusBadge}</small>
+                            ${splitInfo}
+                        </td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(request.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #64748b; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="openReceiptUploadModal('${request.id}', '${request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}', ${request.amount_owed})" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">💾 Upload Receipt</button>
+                            <button onclick="openReceiptUploadModal('${request.id}', '${requestType}', ${request.amount_owed})" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">💾 Upload Receipt</button>
                             <button onclick="resetIncomingRequest('${request.id}')" style="background: #6b7280; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">↶ Reset</button>
                         </td>
                     </tr>
