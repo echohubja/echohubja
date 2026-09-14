@@ -3036,6 +3036,11 @@
             showToast('Approving receipt verification...', 'info');
 
             try {
+                if (!db) {
+                    showToast('Database connection not ready. Please refresh the page.', 'error');
+                    return;
+                }
+
                 // Step 1: Get the admin_payables record to extract vendor_id, amounts, and split details
                 const { data: payableRecord, error: fetchError } = await db.from('admin_payables')
                     .select('vendor_id, amount_owed, split_with_buyer_id, buyer_portion')
