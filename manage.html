@@ -4822,7 +4822,7 @@
                 // Fetch root inquiries only (parent_inquiry_id IS NULL)
                 const { data: rootInquiries, error: inquiryError } = await sbClient
                     .from('inquiries')
-                    .select('id, buyer_id, product_url, message, message_type, vendor_status, created_at')
+                    .select('id, buyer_id, product_url, message, message_type, vendor_status, status, created_at')
                     .eq('vendor_id', currentVendor.id)
                     .is('parent_inquiry_id', null)
                     .order('created_at', { ascending: false });
