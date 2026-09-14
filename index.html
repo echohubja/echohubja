@@ -2687,8 +2687,33 @@
             // Initial load
             await loadBuyerThread();
 
-            // Set up polling to refresh thread every 3 seconds
-            buyerMessagingPollInterval = setInterval(loadBuyerThread, 3000);
+            // ✅ FIX: Set up polling with form-interaction awareness to prevent file input destruction
+            buyerMessagingPollInterval = setInterval(async () => {
+                const fileInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
+                const textarea = document.getElementById(`buyer-message-input-${inquiryId}`);
+                const focusedElement = document.activeElement;
+
+                // Pause polling if:
+                // 1. File input or textarea is focused (user typing/selecting)
+                // 2. File input has files (user just selected file)
+                // 3. Textarea has content (user composing message)
+                if (focusedElement === fileInput || focusedElement === textarea) {
+                    console.log('⏸️ Polling paused - form input focused');
+                    return;
+                }
+
+                if (fileInput?.files?.length > 0) {
+                    console.log('⏸️ Polling paused - file selected, waiting for upload');
+                    return;
+                }
+
+                if (textarea?.value?.trim()?.length > 0) {
+                    console.log('⏸️ Polling paused - message being composed');
+                    return;
+                }
+
+                await loadBuyerThread();
+            }, 3000);
         }
 
         function showBuyerImageModal(imageData) {
