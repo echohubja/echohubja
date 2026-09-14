@@ -6860,6 +6860,10 @@
                     .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
+                console.log('[Incoming] Query params:', { vendor_id: currentVendor.id, status: 'pending', split_with_buyer_id: 'NOT NULL', vendor_receipt_uploaded_date: 'NULL' });
+                console.log('[Incoming] Results:', incomingRequests);
+                console.log('[Incoming] Error:', error);
+
                 if (error) {
                     console.error('Error loading incoming requests:', error);
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading requests</td></tr>';
@@ -6867,6 +6871,7 @@
                 }
 
                 if (!incomingRequests || incomingRequests.length === 0) {
+                    console.log('[Incoming] No records matched criteria');
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No incoming requests</td></tr>';
                     return;
                 }
@@ -7627,7 +7632,7 @@
 
             const { data: request, error } = await sbClient
                 .from('rate_change_requests')
-                .select('id, buyer_id, change_type, current_value, requested_value, reason, vendor_id')
+                .select('id, change_type, current_value, requested_value, reason, vendor_id')
                 .eq('id', requestId)
                 .single();
 
