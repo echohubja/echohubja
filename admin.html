@@ -273,6 +273,61 @@
         </div>
     </div>
 
+    <!-- SECTION: RATE CHANGE REQUESTS APPROVALS -->
+    <div id="section-rate-changes" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">📮 Rate Change Requests (Pending Admin Approval)</h2>
+            <span id="rate-change-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Vendor</th>
+                        <th class="p-2.5">Buyer</th>
+                        <th class="p-2.5">Change Type</th>
+                        <th class="p-2.5">Current Value</th>
+                        <th class="p-2.5">Requested Value</th>
+                        <th class="p-2.5">Reason</th>
+                        <th class="p-2.5">Created</th>
+                        <th class="p-2.5 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="rate-changes-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading rate change requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION: CUSTOM BUYER AGREEMENTS APPROVALS -->
+    <div id="section-agreements" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🤝 Custom Buyer Agreements (Pending Admin Approval)</h2>
+            <span id="agreements-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                        <th class="p-2.5">Vendor</th>
+                        <th class="p-2.5">Buyer</th>
+                        <th class="p-2.5">Commission/Feedback</th>
+                        <th class="p-2.5">Payout Threshold</th>
+                        <th class="p-2.5">Frequency</th>
+                        <th class="p-2.5">Created</th>
+                        <th class="p-2.5 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="agreements-table-body" class="divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading custom agreements...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- SECTION: INQUIRIES & FEEDBACK -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="mb-4 border-b pb-4">
@@ -1589,6 +1644,8 @@
             document.getElementById('section-monitor').classList.add('hidden');
             document.getElementById('section-accounts').classList.add('hidden');
             document.getElementById('section-buyers').classList.add('hidden');
+            document.getElementById('section-rate-changes').classList.add('hidden');
+            document.getElementById('section-agreements').classList.add('hidden');
             document.getElementById('section-inquiries').classList.add('hidden');
             document.getElementById('section-commissions').classList.add('hidden');
             document.getElementById('section-vendor-settings').classList.add('hidden');
@@ -1606,7 +1663,10 @@
 
             if (tabName === 'monitor') loadMonitoringDashboard();
             else if (tabName === 'accounts') initializeAccountLookup();
-            else if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'buyers') {
+                loadBuyersPortal();
+                handleApprovalsTabSwitch();
+            }
             else if (tabName === 'alerts') loadAlertCenter();
             else if (tabName === 'reversals') loadReversalPanel();
             else if (tabName === 'circuit') loadCircuitBreakerStatus();
@@ -5271,7 +5331,7 @@ async function loadVendorSubmitterRelationship() {
                     // Load all root inquiries (transactions) with full buyer+vendor context
                     const { data: rootInquiries, error: rootError } = await db
                         .from('inquiries')
-                        .select('id, buyer_id, vendor_id, message_type, vendor_status, message, created_at')
+                        .select('id, buyer_id, vendor_id, message_type, vendor_status, status, message, created_at')
                         .is('parent_inquiry_id', null)
                         .order('created_at', { ascending: false });
 
@@ -5289,10 +5349,10 @@ async function loadVendorSubmitterRelationship() {
                     (buyers || []).forEach(b => buyerMap[b.id] = b);
                     (vendors || []).forEach(v => vendorMap[v.id] = v);
 
-                    // Fetch follow-ups count and latest message for each conversation
+                    // Fetch follow-ups count and latest message for each conversation (including vendor_status & status)
                     const { data: allFollowUps } = await db
                         .from('inquiries')
-                        .select('id, parent_inquiry_id, message, created_at')
+                        .select('id, parent_inquiry_id, message, created_at, vendor_status, status')
                         .in('parent_inquiry_id', (rootInquiries || []).map(i => i.id))
                         .order('created_at', { ascending: false });
 
@@ -5310,7 +5370,28 @@ async function loadVendorSubmitterRelationship() {
                     (rootInquiries || []).forEach(inq => {
                         const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id, referred_by: null };
                         const vendor = vendorMap[inq.vendor_id] || { business_name: 'Unknown', email: 'N/A', id: inq.vendor_id, referred_by_buyer_id: null };
-                        const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+
+                        // Determine badge based on CURRENT state of all messages in thread
+                        const followUps = followUpsByRoot[inq.id] || [];
+                        const allMessages = [inq, ...followUps];
+
+                        // Check if any message is rejected at admin level (status='rejected')
+                        const hasAdminRejected = allMessages.some(msg => msg.status === 'rejected');
+                        // Check if any message is rejected at vendor level (vendor_status='rejected')
+                        const hasVendorRejected = allMessages.some(msg => msg.vendor_status === 'rejected');
+                        // Check if all feedback messages are approved at both levels
+                        const allApproved = allMessages.length > 0 && allMessages.every(msg => msg.vendor_status === 'approved' && msg.status === 'approved');
+
+                        let statusBadge = '⏳ Pending';
+                        if (hasAdminRejected) {
+                            statusBadge = '✕ Admin Rejected';
+                        } else if (hasVendorRejected) {
+                            statusBadge = '✕ Vendor Rejected';
+                        } else if (allApproved) {
+                            statusBadge = '✓ Verified';
+                        } else if (allMessages.every(msg => msg.vendor_status === 'approved')) {
+                            statusBadge = '✓ Vendor Approved';
+                        }
 
                         // Determine invitation status (5-scenario logic)
                         let invitationStatus = 'Neither invited';
@@ -5577,13 +5658,24 @@ async function loadVendorSubmitterRelationship() {
                     `;
                 }
 
-                // Admin approval status badge
-                let approvalStatusBadge = '';
-                if (msg.message_type === 'feedback' && msg.status === 'approved') {
-                    approvalStatusBadge = `<div style="background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✓ Admin Verified</div>`;
-                } else if (msg.message_type === 'feedback' && msg.status === 'rejected') {
-                    approvalStatusBadge = `<div style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✕ Admin Rejected</div>`;
+                // Vendor and Admin approval status badges
+                let approvalStatusBadges = '';
+                if (msg.message_type === 'feedback') {
+                    // Vendor approval badge
+                    if (msg.vendor_status === 'approved') {
+                        approvalStatusBadges += `<div style="background: #d1fae5; color: #065f46; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block; margin-right: 6px;">✓ Vendor Approved</div>`;
+                    } else if (msg.vendor_status === 'rejected') {
+                        approvalStatusBadges += `<div style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block; margin-right: 6px;">✕ Vendor Rejected</div>`;
+                    }
+
+                    // Admin verification badge
+                    if (msg.status === 'approved') {
+                        approvalStatusBadges += `<div style="background: #e0f2fe; color: #0369a1; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✓ Admin Verified</div>`;
+                    } else if (msg.status === 'rejected') {
+                        approvalStatusBadges += `<div style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 8px; display: inline-block;">✕ Admin Rejected</div>`;
+                    }
                 }
+                let approvalStatusBadge = approvalStatusBadges;
 
                 return `
                     <div class="${isAdminSent ? 'flex justify-end' : 'flex justify-start'}">
@@ -7138,6 +7230,294 @@ async function loadVendorSubmitterRelationship() {
             document.getElementById('vendor-submitter-date-to').value = '';
             loadVendorSubmitterRelationship();
             showToast('Date filter cleared', 'success');
+        }
+
+        // ===== RATE CHANGE REQUESTS APPROVALS =====
+        async function loadRateChangeRequestsApprovals() {
+            const tbody = document.getElementById('rate-changes-table-body');
+            if (!tbody) return;
+
+            try {
+                // Query rate_change_requests with status='accepted' (vendor accepted, awaiting admin approval)
+                const { data: requests, error } = await db
+                    .from('rate_change_requests')
+                    .select('id, vendor_id, buyer_id, change_type, current_value, requested_value, reason, created_at')
+                    .eq('status', 'accepted')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!requests || requests.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending rate change requests</td></tr>`;
+                    document.getElementById('rate-change-count').textContent = '0 pending';
+                    return;
+                }
+
+                // Get vendor and buyer names
+                const vendorIds = [...new Set(requests.map(r => r.vendor_id))];
+                const buyerIds = [...new Set(requests.map(r => r.buyer_id))];
+
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const { data: buyers } = await db.from('buyers').select('id, full_name').in('id', buyerIds);
+
+                const vendorMap = Object.fromEntries((vendors || []).map(v => [v.id, v.business_name]));
+                const buyerMap = Object.fromEntries((buyers || []).map(b => [b.id, b.full_name]));
+
+                document.getElementById('rate-change-count').textContent = `${requests.length} pending`;
+
+                tbody.innerHTML = requests.map(req => {
+                    const changeTypeDisplay = req.change_type === 'commission_rate' ? 'Commission Rate' :
+                                            req.change_type === 'payout_threshold' ? 'Payout Threshold' : 'Frequency';
+
+                    const currentDisplay = req.change_type === 'frequency' ? req.current_value :
+                                         (req.change_type === 'commission_rate' || req.change_type === 'payout_threshold') ?
+                                         `$${parseFloat(req.current_value || 0).toFixed(2)}` : req.current_value;
+
+                    const requestedDisplay = req.change_type === 'frequency' ? req.requested_value :
+                                           (req.change_type === 'commission_rate' || req.change_type === 'payout_threshold') ?
+                                           `$${parseFloat(req.requested_value || 0).toFixed(2)}` : req.requested_value;
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendorMap[req.vendor_id] || req.vendor_id)}</td>
+                            <td class="p-2.5 text-sm text-gray-800">${escapeHtml(buyerMap[req.buyer_id] || req.buyer_id)}</td>
+                            <td class="p-2.5 text-sm text-gray-700">${changeTypeDisplay}</td>
+                            <td class="p-2.5 text-sm text-gray-600">${currentDisplay}</td>
+                            <td class="p-2.5 text-sm font-semibold text-[#1e5aa8]">${requestedDisplay}</td>
+                            <td class="p-2.5 text-xs text-gray-600">${escapeHtml(req.reason || '—')}</td>
+                            <td class="p-2.5 text-xs text-gray-500">${new Date(req.created_at).toLocaleDateString()}</td>
+                            <td class="p-2.5 text-center flex gap-2 justify-center">
+                                <button onclick="approveRateChangeFromAdmin('${escapeHtml(req.id)}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✓ Approve</button>
+                                <button onclick="denyRateChangeFromAdmin('${escapeHtml(req.id)}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✗ Deny</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading rate change requests:', err);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function approveRateChangeFromAdmin(requestId) {
+            if (!confirm('Approve this rate change request?')) return;
+
+            try {
+                // Update request status to 'approved'
+                const { error } = await db.from('rate_change_requests').update({ status: 'approved' }).eq('id', requestId);
+                if (error) throw error;
+
+                // Get request details for notification
+                const { data: request } = await db.from('rate_change_requests').select('*').eq('id', requestId).single();
+
+                // Create notification for vendor
+                if (request) {
+                    await createNotification(
+                        request.vendor_id,
+                        'rate_change_approved',
+                        `Your rate change request has been approved by admin`,
+                        'rate_change_requests',
+                        request.id
+                    );
+                }
+
+                showToast('Rate change approved successfully', 'success');
+                await loadRateChangeRequestsApprovals();
+            } catch (err) {
+                showToast(`Error approving request: ${err.message}`, 'error');
+            }
+        }
+
+        async function denyRateChangeFromAdmin(requestId) {
+            if (!confirm('Deny this rate change request?')) return;
+
+            try {
+                // Update request status to 'rejected'
+                const { error } = await db.from('rate_change_requests').update({ status: 'rejected' }).eq('id', requestId);
+                if (error) throw error;
+
+                // Get request details for notification
+                const { data: request } = await db.from('rate_change_requests').select('*').eq('id', requestId).single();
+
+                // Create notification for vendor
+                if (request) {
+                    await createNotification(
+                        request.vendor_id,
+                        'rate_change_rejected',
+                        `Your rate change request has been rejected by admin`,
+                        'rate_change_requests',
+                        request.id
+                    );
+                }
+
+                showToast('Rate change denied successfully', 'success');
+                await loadRateChangeRequestsApprovals();
+            } catch (err) {
+                showToast(`Error denying request: ${err.message}`, 'error');
+            }
+        }
+
+        // ===== CUSTOM BUYER AGREEMENTS APPROVALS =====
+        async function loadCustomAgreementsApprovals() {
+            const tbody = document.getElementById('agreements-table-body');
+            if (!tbody) return;
+
+            try {
+                // Query vendor_buyer_agreements with status='proposed' (vendor created, awaiting admin approval)
+                const { data: agreements, error } = await db
+                    .from('vendor_buyer_agreements')
+                    .select('id, vendor_id, buyer_id, commission_amount_per_feedback, payout_threshold, payout_frequency, created_at')
+                    .eq('agreement_status', 'proposed')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!agreements || agreements.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending custom agreements</td></tr>`;
+                    document.getElementById('agreements-count').textContent = '0 pending';
+                    return;
+                }
+
+                // Get vendor and buyer names
+                const vendorIds = [...new Set(agreements.map(a => a.vendor_id))];
+                const buyerIds = [...new Set(agreements.map(a => a.buyer_id))];
+
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const { data: buyers } = await db.from('buyers').select('id, full_name').in('id', buyerIds);
+
+                const vendorMap = Object.fromEntries((vendors || []).map(v => [v.id, v.business_name]));
+                const buyerMap = Object.fromEntries((buyers || []).map(b => [b.id, b.full_name]));
+
+                document.getElementById('agreements-count').textContent = `${agreements.length} pending`;
+
+                tbody.innerHTML = agreements.map(agr => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-2.5 text-sm font-medium text-gray-800">${escapeHtml(vendorMap[agr.vendor_id] || agr.vendor_id)}</td>
+                        <td class="p-2.5 text-sm text-gray-800">${escapeHtml(buyerMap[agr.buyer_id] || agr.buyer_id)}</td>
+                        <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.commission_amount_per_feedback || 0).toFixed(2)}</td>
+                        <td class="p-2.5 text-sm text-gray-700">$${parseFloat(agr.payout_threshold || 0).toFixed(2)}</td>
+                        <td class="p-2.5 text-sm text-gray-700">${escapeHtml(agr.payout_frequency || 'on_demand')}</td>
+                        <td class="p-2.5 text-xs text-gray-500">${new Date(agr.created_at).toLocaleDateString()}</td>
+                        <td class="p-2.5 text-center flex gap-2 justify-center">
+                            <button onclick="approveAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✓ Approve</button>
+                            <button onclick="denyAgreementFromAdmin('${escapeHtml(agr.id)}')" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-semibold transition">✗ Deny</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading custom agreements:', err);
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function approveAgreementFromAdmin(agreementId) {
+            if (!confirm('Approve this custom buyer agreement?')) return;
+
+            try {
+                // Update agreement status to 'active'
+                const { error } = await db.from('vendor_buyer_agreements').update({ agreement_status: 'active' }).eq('id', agreementId);
+                if (error) throw error;
+
+                // Get agreement details for notification
+                const { data: agreement } = await db.from('vendor_buyer_agreements').select('*').eq('id', agreementId).single();
+
+                // Create notifications
+                if (agreement) {
+                    // Notify vendor
+                    await createNotification(
+                        agreement.vendor_id,
+                        'agreement_approved',
+                        `Your custom buyer agreement has been approved by admin`,
+                        'vendor_buyer_agreements',
+                        agreement.id
+                    );
+
+                    // Notify buyer
+                    await createNotification(
+                        agreement.buyer_id,
+                        'agreement_approved',
+                        `A custom payout agreement has been activated for you`,
+                        'vendor_buyer_agreements',
+                        agreement.id
+                    );
+                }
+
+                showToast('Custom agreement approved successfully', 'success');
+                await loadCustomAgreementsApprovals();
+            } catch (err) {
+                showToast(`Error approving agreement: ${err.message}`, 'error');
+            }
+        }
+
+        async function denyAgreementFromAdmin(agreementId) {
+            if (!confirm('Deny this custom buyer agreement?')) return;
+
+            try {
+                // Update agreement status to 'terminated'
+                const { error } = await db.from('vendor_buyer_agreements').update({ agreement_status: 'terminated' }).eq('id', agreementId);
+                if (error) throw error;
+
+                // Get agreement details for notification
+                const { data: agreement } = await db.from('vendor_buyer_agreements').select('*').eq('id', agreementId).single();
+
+                // Create notifications
+                if (agreement) {
+                    // Notify vendor
+                    await createNotification(
+                        agreement.vendor_id,
+                        'agreement_rejected',
+                        `Your custom buyer agreement has been rejected by admin`,
+                        'vendor_buyer_agreements',
+                        agreement.id
+                    );
+
+                    // Notify buyer
+                    await createNotification(
+                        agreement.buyer_id,
+                        'agreement_rejected',
+                        `A custom payout agreement request has been rejected`,
+                        'vendor_buyer_agreements',
+                        agreement.id
+                    );
+                }
+
+                showToast('Custom agreement denied successfully', 'success');
+                await loadCustomAgreementsApprovals();
+            } catch (err) {
+                showToast(`Error denying agreement: ${err.message}`, 'error');
+            }
+        }
+
+        // ===== GENERIC NOTIFICATION CREATION =====
+        async function createNotification(userId, notificationType, message, relatedTable, relatedId) {
+            try {
+                const { error } = await db.from('in_app_notifications').insert({
+                    user_id: userId,
+                    notification_type: notificationType,
+                    message: message,
+                    related_table: relatedTable,
+                    related_id: relatedId,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                });
+
+                if (error) {
+                    console.error('Error creating notification:', error);
+                    return false;
+                }
+                return true;
+            } catch (err) {
+                console.error('Exception creating notification:', err);
+                return false;
+            }
+        }
+
+        // Load approvals when tab switches
+        function handleApprovalsTabSwitch() {
+            setTimeout(async () => {
+                await loadRateChangeRequestsApprovals();
+                await loadCustomAgreementsApprovals();
+            }, 100);
         }
     </script>
 
