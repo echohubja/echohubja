@@ -882,6 +882,10 @@
             animation: pulse-gold 2s ease-in-out infinite;
         }
 
+        .inquiry-thread.vendor-rejected {
+            animation: pulse-red 2s ease-in-out infinite;
+        }
+
         @keyframes pulse-green {
             0%, 100% {
                 border-color: #10b981;
@@ -901,6 +905,17 @@
             50% {
                 border-color: #f59e0b;
                 box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+            }
+        }
+
+        @keyframes pulse-red {
+            0%, 100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+            }
+            50% {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
             }
         }
 
@@ -3638,10 +3653,16 @@
             const messageType = lastMsg.message_type;
             const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
             const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
-            const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
-            const adminVerified = feedbackMessages.filter(m => m.status === 'approved').length > 0;
+            // Determine thread status based on ALL messages
+            const hasVendorRejected = feedbackMessages.some(m => m.vendor_status === 'rejected');
+            const hasAdminRejected = feedbackMessages.some(m => m.status === 'rejected');
+            const allVendorApproved = feedbackMessages.length > 0 && feedbackMessages.every(m => m.vendor_status === 'approved');
+            const allAdminVerified = feedbackMessages.length > 0 && feedbackMessages.every(m => m.status === 'approved');
+
+            const vendorApproved = allVendorApproved && !hasVendorRejected;
+            const adminVerified = allAdminVerified && !hasAdminRejected;
             const sla = getSLAStatus(thread.lastMessageTime);
-            const threadClass = `inquiry-thread ${vendorApproved && adminVerified ? 'both-approved' : vendorApproved ? 'vendor-approved' : ''}`;
+            const threadClass = `inquiry-thread ${hasVendorRejected || hasAdminRejected ? 'vendor-rejected' : vendorApproved && adminVerified ? 'both-approved' : vendorApproved ? 'vendor-approved' : ''}`;
             const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
             return `<div class="${threadClass}" data-thread-id="${threadId}"><div class="inquiry-thread-header"><div class="thread-header-left"><div class="thread-customer-avatar">${thread.buyer_name.charAt(0).toUpperCase()}</div><div class="thread-customer-info"><div class="thread-customer-name">${escapeHtml(thread.buyer_name)}</div><div class="copyable-id" onclick="copyToClipboard('${thread.buyer_id}', '${thread.buyer_id.substring(0, 8)}')" title="Click to copy buyer ID">ID: ${thread.buyer_id.substring(0, 8)} 📋</div><div class="thread-message-preview">${escapeHtml(thread.lastMessage?.substring(0, 50) || '[No message]')}...</div></div></div><div class="thread-meta-info"><div class="message-type-badge ${messageType === 'feedback' ? 'feedback' : messageType === 'followup' ? 'followup' : 'inquiry'}">${typeEmoji}</div><div class="thread-commission"><div class="commission-amount">$${thread.commissionValue.toFixed(2)}</div><div class="commission-status">${vendorApproved && adminVerified ? 'Ready' : 'Pending'}</div></div><div class="thread-sla"><div class="sla-time">${sla.label}</div><div class="sla-indicator ${sla.indicator}"></div></div><div class="thread-expand-arrow">▼</div></div></div><div class="inquiry-thread-content">${getProductContextHtml(thread, productMap)}<div class="thread-messages">${thread.messages.map((msg, idx) => renderMessage(msg, thread.buyer_name, idx)).join('')}</div></div></div>`;
         }
@@ -4835,10 +4856,10 @@
                 const referrerMap = {};
                 (referrers || []).forEach(r => referrerMap[r.id] = r);
 
-                // Fetch follow-ups count and latest message for each conversation
+                // Fetch follow-ups count and latest message for each conversation (including vendor_status & status)
                 const { data: allFollowUps } = await sbClient
                     .from('inquiries')
-                    .select('id, parent_inquiry_id, message, created_at')
+                    .select('id, parent_inquiry_id, message, created_at, vendor_status, status')
                     .in('parent_inquiry_id', (rootInquiries || []).map(i => i.id))
                     .order('created_at', { ascending: false });
 
@@ -4855,7 +4876,33 @@
                 // Create conversation entries for each root inquiry
                 (rootInquiries || []).forEach(inq => {
                     const buyer = buyerMap[inq.buyer_id] || { full_name: 'Unknown', email: 'N/A', id: inq.buyer_id };
-                    const statusBadge = inq.vendor_status === 'approved' ? '✓ Approved' : inq.vendor_status === 'pending' ? '⏳ Pending' : '✗ Rejected';
+
+                    // Determine badge based on CURRENT state of all messages in thread
+                    const followUps = followUpsByRoot[inq.id] || [];
+                    const allMessages = [inq, ...followUps];
+
+                    // Check if any message is rejected at admin level (status='rejected')
+                    const hasAdminRejected = allMessages.some(msg => msg.status === 'rejected');
+                    // Check if any message is rejected at vendor level (vendor_status='rejected')
+                    const hasVendorRejected = allMessages.some(msg => msg.vendor_status === 'rejected');
+                    // Check if all messages are approved at both levels
+                    const allApproved = allMessages.length > 0 && allMessages.every(msg => msg.vendor_status === 'approved' && msg.status === 'approved');
+
+                    let statusBadge = '⏳ Pending';
+                    let statusValue = 'pending';
+                    if (hasAdminRejected) {
+                        statusBadge = '✕ Admin Rejected';
+                        statusValue = 'rejected';
+                    } else if (hasVendorRejected) {
+                        statusBadge = '✕ Vendor Rejected';
+                        statusValue = 'rejected';
+                    } else if (allApproved) {
+                        statusBadge = '✓ Verified';
+                        statusValue = 'approved';
+                    } else if (allMessages.every(msg => msg.vendor_status === 'approved')) {
+                        statusBadge = '✓ Vendor Approved';
+                        statusValue = 'approved';
+                    }
 
                     // Determine invitation status
                     const buyerReferrer = buyer.referred_by ? referrerMap[buyer.referred_by] : null;
@@ -4892,7 +4939,7 @@
                         product: inq.product_url ? inq.product_url.split('/').slice(-1)[0] : 'Product',
                         type: 'inquiry',
                         messageType: inq.message_type,
-                        status: inq.vendor_status,
+                        status: statusValue,
                         statusBadge: statusBadge,
                         invitationStatus: invitationStatus,
                         lastMessage: msgText,
