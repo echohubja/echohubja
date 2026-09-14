@@ -6982,7 +6982,7 @@
                     return;
                 }
 
-                // Fetch buyer data for all incoming requests
+                // Fetch buyer data for referral payouts (split_with_buyer_id IS NOT NULL)
                 const buyerIds = incomingRequests.map(r => r.split_with_buyer_id).filter(Boolean);
                 const buyersMap = {};
 
@@ -6999,24 +6999,84 @@
                     }
                 }
 
+                // Fetch admin data for admin-only payouts (split_with_buyer_id IS NULL)
+                // Admin details come from inquiries.sender_id (admin user) in the feedback
+                const feedbackIds = incomingRequests.map(r => r.related_feedback_id).filter(Boolean);
+                const feedbackMap = {};
+                const adminMap = {};
+
+                if (feedbackIds.length > 0) {
+                    const { data: feedbacks } = await sbClient
+                        .from('inquiries')
+                        .select('id, product_url, image_url, message, buyer_id')
+                        .in('id', feedbackIds);
+
+                    if (feedbacks) {
+                        feedbacks.forEach(feedback => {
+                            feedbackMap[feedback.id] = feedback;
+                        });
+
+                        // Get unique buyer IDs from feedbacks (these are the referrers/admins for the feedback)
+                        const feedbackBuyerIds = [...new Set(feedbacks.map(f => f.buyer_id).filter(Boolean))];
+                        if (feedbackBuyerIds.length > 0) {
+                            const { data: buyersForAdmin } = await sbClient
+                                .from('buyers')
+                                .select('id, full_name, paypal_email')
+                                .in('id', feedbackBuyerIds);
+
+                            if (buyersForAdmin) {
+                                buyersForAdmin.forEach(buyer => {
+                                    adminMap[buyer.id] = buyer;
+                                });
+                            }
+                        }
+                    }
+                }
+
                 console.log('[Incoming] ✓ Rendering', incomingRequests.length, 'records...');
 
                 const htmlContent = incomingRequests.map(request => {
-                    const buyer = buyersMap[request.split_with_buyer_id];
-                    const requestType = request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
+                    // Determine if this is a referral payout (split_with_buyer_id IS NOT NULL) or admin-only payout
+                    const isReferralPayout = request.split_with_buyer_id !== null;
+
+                    // Get contact person details (buyer for referral, admin for admin-only)
+                    let contactName = 'N/A';
+                    let contactEmail = 'N/A';
+
+                    if (isReferralPayout) {
+                        const buyer = buyersMap[request.split_with_buyer_id];
+                        contactName = buyer?.full_name || 'N/A';
+                        contactEmail = buyer?.paypal_email || 'N/A';
+                    } else {
+                        // For admin-only payouts: get admin details from feedbackMap
+                        const feedback = feedbackMap[request.related_feedback_id];
+                        if (feedback && feedback.buyer_id && adminMap[feedback.buyer_id]) {
+                            const admin = adminMap[feedback.buyer_id];
+                            contactName = admin.full_name || 'N/A';
+                            contactEmail = admin.paypal_email || 'N/A';
+                        }
+                    }
+
+                    const requestType = isReferralPayout ? 'Buyer Inviter' : 'Admin';
                     const payoutReason = request.payable_reason || 'Commission Payout';
                     const statusBadge = request.status === 'payment_requested' ? '<span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">REQUESTED</span>' : '<span style="background: #d1d5db; color: #374151; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">PENDING</span>';
-                    const splitInfo = request.split_with_buyer_id ? `<small style="color: #6b7280; display: block;">Admin: $${parseFloat(request.admin_commission || 0).toFixed(2)} | Buyer: $${parseFloat(request.buyer_portion || 0).toFixed(2)}</small>` : '';
+                    const splitInfo = isReferralPayout ? `<small style="color: #6b7280; display: block;">Admin: $${parseFloat(request.admin_commission || 0).toFixed(2)} | Buyer: $${parseFloat(request.buyer_portion || 0).toFixed(2)}</small>` : '';
+
+                    // Get product URL reference from feedback
+                    const feedback = feedbackMap[request.related_feedback_id];
+                    const productUrl = feedback?.product_url || '';
+                    const productLink = productUrl ? `<small style="color: #3b82f6; display: block; margin-top: 4px;"><a href="${productUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">📦 View Product</a></small>` : '';
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="incoming-checkbox" data-request-id="${request.id}"></td>
                         <td style="padding: 12px; color: #475569;">${requestType}</td>
-                        <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
-                        <td style="padding: 12px; color: #475569; font-size: 12px;">${buyer?.paypal_email || 'N/A'}</td>
+                        <td style="padding: 12px; color: #475569;">${contactName}</td>
+                        <td style="padding: 12px; color: #475569; font-size: 12px;">${contactEmail}</td>
                         <td style="padding: 12px; color: #475569;">
                             <div>${payoutReason}</div>
                             <small style="color: #94a3b8; display: block; margin-top: 4px;">Status: ${statusBadge}</small>
+                            ${productLink}
                             ${splitInfo}
                         </td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(request.amount_owed).toFixed(2)}</td>
