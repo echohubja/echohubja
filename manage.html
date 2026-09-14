@@ -6599,12 +6599,14 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='payment_requested' (vendor needs to upload receipt)
+                // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'pending')
+                    .not('split_with_buyer_id', 'is', null)
+                    .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -6763,14 +6765,8 @@
             if (!sbClient || !currentVendor) return;
 
             try {
-                const { error } = await sbClient
-                    .from('admin_payables')
-                    .update({ status: 'payment_requested' })
-                    .eq('id', payoutId)
-                    .eq('vendor_id', currentVendor.id);
-
-                if (error) throw error;
-
+                // V9 workflow: No status change needed. Record stays 'pending' until receipt uploaded.
+                // Just notify vendor to upload receipt.
                 showToast('✓ Payment request sent. You have 48 hours to upload receipt.', 'success');
                 await loadManagePendingPayouts();
             } catch (err) {
@@ -6791,29 +6787,12 @@
             if (!sbClient) return;
 
             try {
-                const timestamp = new Date().toISOString();
-                let successCount = 0;
-                let failedIds = [];
+                // V9 workflow: No status changes. Records stay 'pending' until receipt uploaded.
+                // Just notify vendor to upload receipts for selected commissions.
+                const successCount = selected.length;
 
-                for (const payoutId of selected) {
-                    const { error } = await sbClient
-                        .from('admin_payables')
-                        .update({ status: 'payment_requested' })
-                        .eq('id', payoutId)
-                        .eq('vendor_id', currentVendor.id);
-
-                    if (error) {
-                        failedIds.push(payoutId);
-                        console.error(`Error requesting payment for ${payoutId}:`, error);
-                    } else {
-                        successCount++;
-                    }
-                }
-
-                if (failedIds.length === 0) {
+                if (successCount > 0) {
                     showToast(`✓ ${successCount} payment request(s) sent. 48-hour timer started.`, 'success');
-                } else {
-                    showToast(`⚠️ ${successCount} succeeded, ${failedIds.length} failed. Check console for details.`, 'warning');
                 }
 
                 await loadManagePendingPayouts();
