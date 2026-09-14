@@ -452,7 +452,11 @@
         </div>
 
         <!-- LIFECYCLE STATUS METRICS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div class="text-[11px] text-green-600 font-semibold uppercase">Ready to Request</div>
+                <div id="metric-ready-to-request" class="text-xl font-bold text-green-700 mt-0.5">0</div>
+            </div>
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <div class="text-[11px] text-amber-600 font-semibold uppercase">Pending Approvals</div>
                 <div id="metric-pending-approvals" class="text-xl font-bold text-amber-700 mt-0.5">0</div>
@@ -473,16 +477,84 @@
 
         <!-- LIFECYCLE TABS -->
         <div class="flex gap-2 mb-6 border-b">
-            <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-amber-500 text-amber-700">Pending Approvals</button>
+            <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">🟢 Ready to Request</button>
+            <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Pending Approvals</button>
             <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Awaiting Receipts</button>
             <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipt Verification</button>
             <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Verified</button>
         </div>
 
+        <!-- READY TO REQUEST SECTION -->
+        <div id="lifecycle-ready" class="lifecycle-section">
+            <h3 class="text-md font-bold text-green-700 mb-3">Ready to Request Payment</h3>
+            <p class="text-xs text-gray-500 mb-4">Your commission is pending. Select and request payment from the vendor.</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="ready-vendor-search" oninput="filterReadyToRequest()" placeholder="Search vendor..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500">
+
+                <div class="flex gap-2">
+                    <input type="number" id="ready-amount-min" oninput="filterReadyToRequest()" placeholder="Min $" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 flex-1">
+                    <input type="number" id="ready-amount-max" oninput="filterReadyToRequest()" placeholder="Max $" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 flex-1">
+                </div>
+
+                <input type="date" id="ready-date-from" oninput="filterReadyToRequest()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="ready-date-to" oninput="filterReadyToRequest()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 flex-1">
+                    <span id="ready-record-count" class="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
+
+            <!-- Selection Bar -->
+            <div id="ready-selection-bar" class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 hidden">
+                <div class="flex justify-between items-center text-xs">
+                    <span id="ready-selected-count" class="font-semibold text-green-700">0 selected</span>
+                    <button onclick="batchRequestPaymentAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold transition">📤 Request Payment</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-green-50 text-green-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5"><input type="checkbox" id="ready-select-all" onchange="toggleAdminReadySelectAll()" class="rounded"></th>
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Reason</th>
+                            <th class="p-2.5">Created</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ready-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- PENDING APPROVALS SECTION -->
-        <div id="lifecycle-pending" class="lifecycle-section">
+        <div id="lifecycle-pending" class="lifecycle-section hidden">
             <h3 class="text-md font-bold text-amber-700 mb-3">Payment Requests Awaiting Your Approval</h3>
             <p class="text-xs text-gray-500 mb-4">Vendors or recipients have requested payout. Review, approve, deny, or request additional information.</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="pending-vendor-search" oninput="filterPendingApprovals()" placeholder="Search vendor..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500">
+
+                <select id="pending-recipient-filter" onchange="filterPendingApprovals()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <option value="">All Recipients</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Referrer">Referrer</option>
+                </select>
+
+                <input type="date" id="pending-date-from" oninput="filterPendingApprovals()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="pending-date-to" oninput="filterPendingApprovals()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500 flex-1">
+                    <span id="pending-record-count" class="text-xs bg-amber-100 text-amber-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
 
             <!-- Selection Bar -->
             <div id="pending-selection-bar" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 hidden">
@@ -520,6 +592,24 @@
         <div id="lifecycle-awaiting" class="lifecycle-section hidden">
             <h3 class="text-md font-bold text-orange-700 mb-3">Approved Payouts Awaiting Receipt Uploads</h3>
             <p class="text-xs text-gray-500 mb-4">These payments have been approved. Waiting for receipt verification uploads (SLA timers shown below).</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="awaiting-vendor-search" oninput="filterAwaitingReceipts()" placeholder="Search vendor..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500">
+
+                <select id="awaiting-recipient-filter" onchange="filterAwaitingReceipts()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                    <option value="">All Recipients</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Referrer">Referrer</option>
+                </select>
+
+                <input type="date" id="awaiting-date-from" oninput="filterAwaitingReceipts()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="awaiting-date-to" oninput="filterAwaitingReceipts()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500 flex-1">
+                    <span id="awaiting-record-count" class="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
 
             <!-- Selection Bar -->
             <div id="awaiting-selection-bar" class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4 hidden">
@@ -578,6 +668,24 @@
         <div id="lifecycle-verified" class="lifecycle-section hidden">
             <h3 class="text-md font-bold text-green-700 mb-3">Verified & Completed Payments</h3>
             <p class="text-xs text-gray-500 mb-4">Payments have been approved, receipts verified, and proof documented. Archive only.</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="verified-vendor-search" oninput="filterVerifiedPayments()" placeholder="Search vendor..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500">
+
+                <select id="verified-recipient-filter" onchange="filterVerifiedPayments()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500">
+                    <option value="">All Recipients</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Referrer">Referrer</option>
+                </select>
+
+                <input type="date" id="verified-date-from" oninput="filterVerifiedPayments()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="verified-date-to" oninput="filterVerifiedPayments()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 flex-1">
+                    <span id="verified-record-count" class="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -1849,7 +1957,10 @@
             const activeTab = document.getElementById(`lifecycle-tab-${tabName}`);
             if (activeTab) {
                 activeTab.classList.add('active');
-                if (tabName === 'pending') {
+                if (tabName === 'ready') {
+                    activeTab.style.borderBottomColor = '#16a34a';
+                    activeTab.style.color = '#15803d';
+                } else if (tabName === 'pending') {
                     activeTab.style.borderBottomColor = '#f59e0b';
                     activeTab.style.color = '#b45309';
                 } else if (tabName === 'awaiting') {
@@ -1865,7 +1976,8 @@
             }
 
             // Load data for the selected tab
-            if (tabName === 'pending') loadPendingApprovals();
+            if (tabName === 'ready') loadAdminReadyToRequest();
+            else if (tabName === 'pending') loadPendingApprovals();
             else if (tabName === 'awaiting') loadAwaitingReceipts();
             else if (tabName === 'verification') loadReceiptVerifications();
             else if (tabName === 'verified') loadVerifiedPayments();
@@ -1873,11 +1985,211 @@
 
         // LIFECYCLE HUB DATA LOADING
         async function refreshCommissionLifecycle() {
+            await loadAdminReadyToRequest();
             await loadPendingApprovals();
             await loadAwaitingReceipts();
             await loadReceiptVerifications();
             await loadVerifiedPayments();
         }
+
+        // ADMIN READY TO REQUEST FUNCTIONS
+        let globalReadyToRequestData = [];
+        let globalReadyToRequestVendorMap = {};
+
+        async function loadAdminReadyToRequest() {
+            const tbody = document.getElementById('ready-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading...</td></tr>';
+
+            try {
+                // Query admin_payables where status='pending' and split_with_buyer_id IS NULL (admin's own commission)
+                const { data, error } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, payable_reason, admin_commission,
+                        created_at, status
+                    `)
+                    .eq('status', 'pending')
+                    .is('split_with_buyer_id', null)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No commissions ready to request</td></tr>';
+                    document.getElementById('metric-ready-to-request').textContent = '0';
+                    globalReadyToRequestData = [];
+                    globalReadyToRequestVendorMap = {};
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                globalReadyToRequestVendorMap = {};
+                if (vendors) vendors.forEach(v => globalReadyToRequestVendorMap[v.id] = v.business_name || 'Unknown');
+
+                globalReadyToRequestData = data;
+                document.getElementById('metric-ready-to-request').textContent = data.length;
+
+                // Clear filters
+                document.getElementById('ready-vendor-search').value = '';
+                document.getElementById('ready-amount-min').value = '';
+                document.getElementById('ready-amount-max').value = '';
+                document.getElementById('ready-date-from').value = '';
+                document.getElementById('ready-date-to').value = '';
+
+                filterReadyToRequest();
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        function filterReadyToRequest() {
+            const vendorSearch = document.getElementById('ready-vendor-search').value.toLowerCase().trim();
+            const minAmount = parseFloat(document.getElementById('ready-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('ready-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('ready-date-from').value;
+            const dateTo = document.getElementById('ready-date-to').value;
+
+            let filtered = globalReadyToRequestData;
+
+            if (vendorSearch) {
+                filtered = filtered.filter(record => {
+                    const vendorName = (globalReadyToRequestVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
+                    return vendorName.includes(vendorSearch);
+                });
+            }
+
+            filtered = filtered.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                return amount >= minAmount && amount <= maxAmount;
+            });
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderReadyToRequestTable(filtered);
+        }
+
+        function renderReadyToRequestTable(data) {
+            const tbody = document.getElementById('ready-body');
+            document.getElementById('ready-record-count').textContent = `${data.length} records`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
+                return;
+            }
+
+            const rows = data.map((record, idx) => {
+                const vendorName = globalReadyToRequestVendorMap[record.vendor_id] || 'Unknown';
+                const createdDate = new Date(record.created_at).toLocaleDateString();
+                const amount = parseFloat(record.amount_owed || 0).toFixed(2);
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-2.5"><input type="checkbox" class="ready-checkbox rounded" data-id="${record.id}"></td>
+                        <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5 text-right">$${amount}</td>
+                        <td class="p-2.5 text-xs">${escapeHtml(record.payable_reason || 'Commission')}</td>
+                        <td class="p-2.5">${createdDate}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="requestPaymentForAdmin('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📤 Request</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+
+            // Add checkbox change listeners
+            document.querySelectorAll('.ready-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateReadySelectionBar);
+            });
+        }
+
+        function toggleAdminReadySelectAll() {
+            const selectAllCheckbox = document.getElementById('ready-select-all');
+            document.querySelectorAll('.ready-checkbox').forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+            });
+            updateReadySelectionBar();
+        }
+
+        function updateReadySelectionBar() {
+            const selected = document.querySelectorAll('.ready-checkbox:checked').length;
+            const selectionBar = document.getElementById('ready-selection-bar');
+            const selectedCount = document.getElementById('ready-selected-count');
+
+            if (selected > 0) {
+                selectionBar.classList.remove('hidden');
+                selectedCount.textContent = `${selected} selected`;
+            } else {
+                selectionBar.classList.add('hidden');
+            }
+
+            // Update select-all checkbox
+            const totalCheckboxes = document.querySelectorAll('.ready-checkbox').length;
+            document.getElementById('ready-select-all').checked = selected === totalCheckboxes && totalCheckboxes > 0;
+        }
+
+        async function batchRequestPaymentAdmin() {
+            const selected = document.querySelectorAll('.ready-checkbox:checked');
+            if (selected.length === 0) {
+                showToast('❌ No commissions selected', 'error');
+                return;
+            }
+
+            if (!confirm(`Request payment for ${selected.length} commission(s)?`)) return;
+
+            showToast('Processing...', 'info');
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const checkbox of selected) {
+                const id = checkbox.getAttribute('data-id');
+                try {
+                    const { error } = await db.from('admin_payables')
+                        .update({
+                            status: 'payment_requested',
+                            admin_payment_requested_date: new Date().toISOString()
+                        })
+                        .eq('id', id);
+
+                    if (error) throw error;
+                    successCount++;
+                } catch (err) {
+                    console.error(`Error requesting payment for ${id}:`, err);
+                    failCount++;
+                }
+            }
+
+            await loadAdminReadyToRequest();
+
+            if (failCount === 0) {
+                showToast(`✓ ${successCount} commission(s) payment requested!`, 'success');
+            } else {
+                showToast(`✓ ${successCount} sent, ❌ ${failCount} failed`, 'warning');
+            }
+        }
+
+        // GLOBAL DATA STORAGE FOR LIFECYCLE FILTERING
+        let globalPendingData = [];
+        let globalPendingVendorMap = {};
+        let globalAwaitingData = [];
+        let globalAwaitingVendorMap = {};
+        let globalVerifiedData = [];
+        let globalVerifiedVendorMap = {};
 
         async function loadPendingApprovals() {
             const tbody = document.getElementById('pending-approvals-body');
@@ -1909,43 +2221,98 @@
                 // Fetch vendor details
                 const vendorIds = [...new Set(data.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
-                const vendorMap = {};
-                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+                globalPendingVendorMap = {};
+                if (vendors) vendors.forEach(v => globalPendingVendorMap[v.id] = v.business_name || 'Unknown');
 
-                const rows = data.map((record, idx) => {
-                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
-                    const submittedDate = new Date(record.created_at).toLocaleDateString();
-                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
-                    const amount = parseFloat(record.amount_owed || 0).toFixed(2);
-
-                    return `
-                        <tr class="hover:bg-gray-50">
-                            <td class="p-2.5"><input type="checkbox" class="pending-checkbox rounded" data-id="${record.id}"></td>
-                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
-                            <td class="p-2.5">${recipientType}</td>
-                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer ID' : 'System'}</td>
-                            <td class="p-2.5 text-right">$${amount}</td>
-                            <td class="p-2.5 text-xs">${escapeHtml(record.payable_reason || 'Feedback Commission')}</td>
-                            <td class="p-2.5">${submittedDate}</td>
-                            <td class="p-2.5 text-center">
-                                <button onclick="approvePendingCommission('${record.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
-                                <button onclick="denyPendingCommission('${record.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
-                                <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                tbody.innerHTML = rows;
+                globalPendingData = data;
                 document.getElementById('metric-pending-approvals').textContent = data.length;
 
-                // Add checkbox change listeners
-                document.querySelectorAll('.pending-checkbox').forEach(cb => {
-                    cb.addEventListener('change', updatePendingSelectionBar);
-                });
+                // Clear filters
+                document.getElementById('pending-vendor-search').value = '';
+                document.getElementById('pending-recipient-filter').value = '';
+                document.getElementById('pending-date-from').value = '';
+                document.getElementById('pending-date-to').value = '';
+
+                filterPendingApprovals();
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
+        }
+
+        function filterPendingApprovals() {
+            const vendorSearch = document.getElementById('pending-vendor-search').value.toLowerCase().trim();
+            const recipientFilter = document.getElementById('pending-recipient-filter').value;
+            const dateFrom = document.getElementById('pending-date-from').value;
+            const dateTo = document.getElementById('pending-date-to').value;
+
+            let filtered = globalPendingData;
+
+            if (vendorSearch) {
+                filtered = filtered.filter(record => {
+                    const vendorName = (globalPendingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
+                    return vendorName.includes(vendorSearch);
+                });
+            }
+
+            if (recipientFilter) {
+                filtered = filtered.filter(record => {
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    return recipientType === recipientFilter;
+                });
+            }
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderPendingApprovalsTable(filtered);
+        }
+
+        function renderPendingApprovalsTable(data) {
+            const tbody = document.getElementById('pending-approvals-body');
+            document.getElementById('pending-record-count').textContent = `${data.length} records`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
+                return;
+            }
+
+            const rows = data.map((record, idx) => {
+                const vendorName = globalPendingVendorMap[record.vendor_id] || 'Unknown';
+                const submittedDate = new Date(record.created_at).toLocaleDateString();
+                const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                const amount = parseFloat(record.amount_owed || 0).toFixed(2);
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-2.5"><input type="checkbox" class="pending-checkbox rounded" data-id="${record.id}"></td>
+                        <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5">${recipientType}</td>
+                        <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer ID' : 'System'}</td>
+                        <td class="p-2.5 text-right">$${amount}</td>
+                        <td class="p-2.5 text-xs">${escapeHtml(record.payable_reason || 'Feedback Commission')}</td>
+                        <td class="p-2.5">${submittedDate}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="approvePendingCommission('${record.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
+                            <button onclick="denyPendingCommission('${record.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
+                            <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+
+            // Add checkbox change listeners
+            document.querySelectorAll('.pending-checkbox').forEach(cb => {
+                cb.addEventListener('change', updatePendingSelectionBar);
+            });
         }
 
         async function loadAwaitingReceipts() {
@@ -1979,52 +2346,107 @@
                 // Fetch vendor details
                 const vendorIds = [...new Set(data.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
-                const vendorMap = {};
-                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+                globalAwaitingVendorMap = {};
+                if (vendors) vendors.forEach(v => globalAwaitingVendorMap[v.id] = v.business_name || 'Unknown');
 
-                const rows = data.map(record => {
-                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
-                    const approvedDate = new Date(record.created_at).toLocaleDateString();
-                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
-                    const amount = parseFloat(record.amount_owed || 0).toFixed(2);
-
-                    // Calculate SLA timer
-                    let slaStatus = '⏱️ Active';
-                    let slaColor = 'text-blue-600';
-                    if (record.vendor_flagged) {
-                        slaStatus = '🚨 Vendor Overdue';
-                        slaColor = 'text-red-600';
-                    } else if (record.buyer_flagged) {
-                        slaStatus = '🚨 Recipient Overdue';
-                        slaColor = 'text-red-600';
-                    }
-
-                    return `
-                        <tr class="hover:bg-orange-50">
-                            <td class="p-2.5"><input type="checkbox" class="awaiting-checkbox rounded" data-id="${record.id}"></td>
-                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
-                            <td class="p-2.5">${recipientType}</td>
-                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
-                            <td class="p-2.5 text-right">$${amount}</td>
-                            <td class="p-2.5">${approvedDate}</td>
-                            <td class="p-2.5 ${slaColor}">${slaStatus}</td>
-                            <td class="p-2.5 text-center">
-                                <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                tbody.innerHTML = rows;
+                globalAwaitingData = data;
                 document.getElementById('metric-awaiting-receipts').textContent = data.length;
 
-                // Add checkbox change listeners
-                document.querySelectorAll('.awaiting-checkbox').forEach(cb => {
-                    cb.addEventListener('change', updateAwaitingSelectionBar);
-                });
+                // Clear filters
+                document.getElementById('awaiting-vendor-search').value = '';
+                document.getElementById('awaiting-recipient-filter').value = '';
+                document.getElementById('awaiting-date-from').value = '';
+                document.getElementById('awaiting-date-to').value = '';
+
+                filterAwaitingReceipts();
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
+        }
+
+        function filterAwaitingReceipts() {
+            const vendorSearch = document.getElementById('awaiting-vendor-search').value.toLowerCase().trim();
+            const recipientFilter = document.getElementById('awaiting-recipient-filter').value;
+            const dateFrom = document.getElementById('awaiting-date-from').value;
+            const dateTo = document.getElementById('awaiting-date-to').value;
+
+            let filtered = globalAwaitingData;
+
+            if (vendorSearch) {
+                filtered = filtered.filter(record => {
+                    const vendorName = (globalAwaitingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
+                    return vendorName.includes(vendorSearch);
+                });
+            }
+
+            if (recipientFilter) {
+                filtered = filtered.filter(record => {
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    return recipientType === recipientFilter;
+                });
+            }
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderAwaitingReceiptsTable(filtered);
+        }
+
+        function renderAwaitingReceiptsTable(data) {
+            const tbody = document.getElementById('awaiting-receipts-body');
+            document.getElementById('awaiting-record-count').textContent = `${data.length} records`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
+                return;
+            }
+
+            const rows = data.map(record => {
+                const vendorName = globalAwaitingVendorMap[record.vendor_id] || 'Unknown';
+                const approvedDate = new Date(record.created_at).toLocaleDateString();
+                const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                const amount = parseFloat(record.amount_owed || 0).toFixed(2);
+
+                // Calculate SLA timer
+                let slaStatus = '⏱️ Active';
+                let slaColor = 'text-blue-600';
+                if (record.vendor_flagged) {
+                    slaStatus = '🚨 Vendor Overdue';
+                    slaColor = 'text-red-600';
+                } else if (record.buyer_flagged) {
+                    slaStatus = '🚨 Recipient Overdue';
+                    slaColor = 'text-red-600';
+                }
+
+                return `
+                    <tr class="hover:bg-orange-50">
+                        <td class="p-2.5"><input type="checkbox" class="awaiting-checkbox rounded" data-id="${record.id}"></td>
+                        <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5">${recipientType}</td>
+                        <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
+                        <td class="p-2.5 text-right">$${amount}</td>
+                        <td class="p-2.5">${approvedDate}</td>
+                        <td class="p-2.5 ${slaColor}">${slaStatus}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+
+            // Add checkbox change listeners
+            document.querySelectorAll('.awaiting-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateAwaitingSelectionBar);
+            });
         }
 
         async function loadReceiptVerifications() {
@@ -2124,38 +2546,96 @@
                 // Fetch vendor details
                 const vendorIds = [...new Set(data.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
-                const vendorMap = {};
-                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
+                globalVerifiedVendorMap = {};
+                if (vendors) vendors.forEach(v => globalVerifiedVendorMap[v.id] = v.business_name || 'Unknown');
 
-                let totalAmount = 0;
-                const rows = data.map(record => {
-                    const vendorName = vendorMap[record.vendor_id] || 'Unknown';
-                    const verifiedDate = record.unflagged_date ? new Date(record.unflagged_date).toLocaleDateString() : 'N/A';
-                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
-                    const amount = parseFloat(record.amount_owed || 0);
-                    totalAmount += amount;
-
-                    return `
-                        <tr class="hover:bg-green-50">
-                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
-                            <td class="p-2.5">${recipientType}</td>
-                            <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
-                            <td class="p-2.5 text-right">$${amount.toFixed(2)}</td>
-                            <td class="p-2.5">${verifiedDate}</td>
-                            <td class="p-2.5 text-xs">✓ Verified</td>
-                            <td class="p-2.5 text-center">
-                                <button onclick="viewCommissionDetails('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">View</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                tbody.innerHTML = rows;
+                globalVerifiedData = data;
                 document.getElementById('metric-verified').textContent = data.length;
+
+                // Calculate total verified amount
+                const totalAmount = data.reduce((sum, r) => sum + parseFloat(r.amount_owed || 0), 0);
                 document.getElementById('metric-total-verified-amount').textContent = `$${totalAmount.toFixed(2)}`;
+
+                // Clear filters
+                document.getElementById('verified-vendor-search').value = '';
+                document.getElementById('verified-recipient-filter').value = '';
+                document.getElementById('verified-date-from').value = '';
+                document.getElementById('verified-date-to').value = '';
+
+                filterVerifiedPayments();
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
+        }
+
+        function filterVerifiedPayments() {
+            const vendorSearch = document.getElementById('verified-vendor-search').value.toLowerCase().trim();
+            const recipientFilter = document.getElementById('verified-recipient-filter').value;
+            const dateFrom = document.getElementById('verified-date-from').value;
+            const dateTo = document.getElementById('verified-date-to').value;
+
+            let filtered = globalVerifiedData;
+
+            if (vendorSearch) {
+                filtered = filtered.filter(record => {
+                    const vendorName = (globalVerifiedVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
+                    return vendorName.includes(vendorSearch);
+                });
+            }
+
+            if (recipientFilter) {
+                filtered = filtered.filter(record => {
+                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                    return recipientType === recipientFilter;
+                });
+            }
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filtered = filtered.filter(record => new Date(record.unflagged_date || record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filtered = filtered.filter(record => new Date(record.unflagged_date || record.created_at).getTime() <= toDate);
+            }
+
+            renderVerifiedPaymentsTable(filtered);
+        }
+
+        function renderVerifiedPaymentsTable(data) {
+            const tbody = document.getElementById('verified-body');
+            document.getElementById('verified-record-count').textContent = `${data.length} records`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
+                return;
+            }
+
+            let totalAmount = 0;
+            const rows = data.map(record => {
+                const vendorName = globalVerifiedVendorMap[record.vendor_id] || 'Unknown';
+                const verifiedDate = record.unflagged_date ? new Date(record.unflagged_date).toLocaleDateString() : 'N/A';
+                const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+                const amount = parseFloat(record.amount_owed || 0);
+                totalAmount += amount;
+
+                return `
+                    <tr class="hover:bg-green-50">
+                        <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                        <td class="p-2.5">${recipientType}</td>
+                        <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
+                        <td class="p-2.5 text-right">$${amount.toFixed(2)}</td>
+                        <td class="p-2.5">${verifiedDate}</td>
+                        <td class="p-2.5 text-xs">✓ Verified</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="viewCommissionDetails('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">View</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
         }
 
         // CHECKBOX & SELECTION MANAGEMENT
@@ -2328,6 +2808,38 @@
         }
 
         // SINGLE COMMISSION ACTIONS
+        async function requestPaymentForAdmin(id) {
+            if (!confirm('Request payment for this commission?')) return;
+
+            showToast('Requesting payment...', 'info');
+
+            try {
+                if (!db) {
+                    throw new Error('Database client not initialized');
+                }
+
+                const { error } = await db
+                    .from('admin_payables')
+                    .update({
+                        status: 'payment_requested',
+                        admin_payment_requested_date: new Date().toISOString()
+                    })
+                    .eq('id', id);
+
+                if (error) {
+                    console.error(`Failed to request payment ${id}:`, error);
+                    showToast(`Error requesting payment: ${error.message}`, 'error');
+                    return;
+                }
+
+                await loadPendingApprovals();
+                showToast('✓ Payment request sent. Vendor will upload receipt within 48 hours.', 'success');
+            } catch (err) {
+                console.error('Request payment error:', err);
+                showToast(`Error requesting payment: ${err.message}`, 'error');
+            }
+        }
+
         async function approvePendingCommission(id) {
             if (!confirm('Approve this commission?')) return;
 
