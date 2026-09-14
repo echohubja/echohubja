@@ -2857,91 +2857,46 @@
                 </div>
             </div>
 
-            <!-- Commission Breakdown Section -->
+            <!-- Commission Breakdown Section - Transaction Level -->
             <div class="panel" style="margin-top: 24px;">
                 <div class="panel-header">
-                    <h2>📊 Commission Breakdown</h2>
+                    <h2>📊 Commission Breakdown (Transaction Level)</h2>
+                    <p style="font-size: 13px; color: #64748b; margin-top: 4px;">View detailed 4-part split for each feedback submission</p>
                 </div>
 
-                <!-- Admin Commissions Table -->
-                <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-                    <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 15px; font-weight: 600;">Admin Commission</h3>
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                            <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <tr>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-commissions-tbody">
-                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <!-- Filter Controls -->
+                <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="transactionSearchInput" placeholder="Search by feedback ID, reviewer, or amount..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" onkeyup="filterPayoutList('transaction')">
+                    <select id="transactionStatusFilter" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: white;" onchange="filterPayoutList('transaction')">
+                        <option value="">All Statuses</option>
+                        <option value="pending">⏳ Pending</option>
+                        <option value="requested">📤 Requested</option>
+                        <option value="paid">✅ Paid</option>
+                        <option value="received">📥 Received</option>
+                        <option value="flagged">🚩 Flagged</option>
+                    </select>
                 </div>
 
-                <!-- Reviewer Payments Table -->
-                <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-                    <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 15px; font-weight: 600;">Reviewer Payments</h3>
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                            <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <tr>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Window</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reviewer-payments-tbody">
-                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Buyer Inviter Commissions Table -->
-                <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-                    <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 15px; font-weight: 600;">Buyer Inviter Commission</h3>
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                            <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <tr>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Window</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="buyer-inviter-commissions-tbody">
-                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Vendor Inviter Commissions Table -->
+                <!-- Transaction-Level Commissions Table -->
                 <div style="padding: 20px;">
-                    <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 15px; font-weight: 600;">Vendor Inviter Commission</h3>
                     <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                             <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                 <tr>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Name</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Email</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">SLA Window</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Action</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568; min-width: 140px;">Feedback ID</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568; min-width: 120px;">Date</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568; min-width: 140px;">Reviewer</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 90px;">Admin</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 100px;">Reviewer</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 110px;">Buyer Inviter</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 110px;">Vendor Inviter</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 90px;">Total</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568; min-width: 100px;">Status</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568; min-width: 70px;">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="vendor-inviter-commissions-tbody">
-                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                            <tbody id="transaction-commissions-tbody">
+                                <tr><td colspan="10" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -5712,13 +5667,10 @@
                 // Render payout history section
                 renderPayoutHistoryTable();
 
-                // Render the 4 commission subsections
-                console.log('[Payout] Rendering commission rows...');
-                renderCommissionRows('admin');
-                renderCommissionRows('reviewer');
-                renderCommissionRows('buyer-inviter');
-                renderCommissionRows('vendor-inviter');
-                console.log('[Payout] Commission rows rendered');
+                // Render transaction-level commission breakdown
+                console.log('[Payout] Rendering transaction-level commission rows...');
+                renderCommissionRows('transaction');
+                console.log('[Payout] Transaction-level commission rows rendered');
 
             } catch (err) {
                 console.error('[Payout] Error loading payout data:', err);
@@ -5732,78 +5684,66 @@
                 return;
             }
 
-            let rows = [];
-            let tableBodyId = '';
-
-            if (section === 'admin') {
-                tableBodyId = 'admin-commissions-tbody';
-                // Admin Commissions: admin_payables WHERE split_with_buyer_id IS NULL AND split_with_vendor_id IS NULL
-                rows = data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).map(ap => ({
-                    id: ap.id,
-                    name: 'Admin Facility',
-                    email: ap.vendor_paypal_email || '',
-                    amount: ap.amount_owed || 0,
-                    status: ap.status || 'pending',
-                    type: 'admin'
-                }));
-                console.log(`[Render admin] Found ${rows.length} records from ${data.adminPayables.length} total`);
-            } else if (section === 'reviewer') {
-                tableBodyId = 'reviewer-payments-tbody';
-                // Reviewer Payments: buyer_payables WHERE earning_type = 'own_feedback'
-                const reviewerPayables = data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback');
-                rows = reviewerPayables.map(bp => ({
-                    id: bp.id,
-                    name: (bp.buyer && bp.buyer.full_name) || 'Reviewer',  // Extract from joined buyer object
-                    email: (bp.buyer && bp.buyer.paypal_email) || (bp.buyer && bp.buyer.email) || '',  // Use PayPal email preferred, fallback to regular email
-                    amount: bp.amount_owed || 0,
-                    status: bp.status || 'pending',
-                    slaTimer: calculateSLATimer(bp.created_at, 'vendor'),
-                    type: 'reviewer'
-                }));
-                console.log(`[Render reviewer] Found ${rows.length} records from ${data.buyerPayables.length} total (filtered by earning_type='own_feedback')`);
-                if (reviewerPayables.length > 0) {
-                    console.log('[Render reviewer] Sample records:', reviewerPayables.slice(0, 2).map(bp => ({name: bp.buyer?.full_name, amount: bp.amount_owed, type: bp.earning_type})));
-                }
-            } else if (section === 'buyer-inviter') {
-                tableBodyId = 'buyer-inviter-commissions-tbody';
-                // Buyer Inviter: admin_payables WHERE split_with_buyer_id IS NOT NULL AND split_with_vendor_id IS NULL
-                rows = data.adminPayables.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id).map(ap => ({
-                    id: ap.id,
-                    name: (ap.buyer && ap.buyer.full_name) || 'Buyer Inviter',  // Extract from joined buyer
-                    email: (ap.buyer && ap.buyer.paypal_email) || (ap.buyer && ap.buyer.email) || '',  // Use PayPal email preferred
-                    amount: ap.buyer_portion || 0,
-                    status: ap.status || 'pending',
-                    slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
-                    type: 'buyer-inviter'
-                }));
-                console.log(`[Render buyer-inviter] Found ${rows.length} records from ${data.adminPayables.length} total`);
-            } else if (section === 'vendor-inviter') {
-                tableBodyId = 'vendor-inviter-commissions-tbody';
-                // Vendor Inviter: admin_payables WHERE split_with_vendor_id IS NOT NULL
-                rows = data.adminPayables.filter(ap => ap.split_with_vendor_id).map(ap => ({
-                    id: ap.id,
-                    name: (ap.inviter_vendor && ap.inviter_vendor.full_name) || 'Vendor Inviter',  // Extract from joined buyer (inviters are buyers)
-                    email: (ap.inviter_vendor && ap.inviter_vendor.paypal_email) || (ap.inviter_vendor && ap.inviter_vendor.email) || '',  // PayPal email preferred
-                    amount: (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0,  // Vendor inviter gets remainder
-                    status: ap.status || 'pending',
-                    slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
-                    type: 'vendor-inviter'
-                }));
-                console.log(`[Render vendor-inviter] Found ${rows.length} records from ${data.adminPayables.length} total`);
-            }
-
+            const tableBodyId = 'transaction-commissions-tbody';
             const tbody = document.getElementById(tableBodyId);
             if (!tbody) {
                 console.warn(`[Render ${section}] Table body not found: ${tableBodyId}`);
                 return;
             }
 
-            if (rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">No ${section} commissions yet</td></tr>`;
+            if (section !== 'transaction') {
+                console.warn(`[Render] Unknown section type: ${section}`);
                 return;
             }
 
-            tbody.innerHTML = rows.map(row => {
+            // Transform admin_payables into transaction-level rows showing 4-part split
+            const transactionRows = data.adminPayables.map(ap => {
+                // Find related reviewer payment (buyer_payables with own_feedback earning)
+                const reviewerPayment = data.buyerPayables.find(bp =>
+                    bp.related_feedback_ids &&
+                    bp.related_feedback_ids.includes(ap.related_feedback_id) &&
+                    bp.earning_type === 'own_feedback'
+                );
+
+                const adminAmount = ap.admin_commission || 0;
+                const reviewerAmount = reviewerPayment ? (reviewerPayment.amount_owed || 0) : 0;
+                const buyerInviterAmount = ap.buyer_portion || 0;
+                const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
+                const totalAmount = ap.amount_owed || 0;
+
+                // Format feedback ID (show last 8 chars)
+                const feedbackIdShort = ap.related_feedback_id ? ap.related_feedback_id.substring(ap.related_feedback_id.length - 8).toUpperCase() : 'N/A';
+
+                // Format date
+                const createdDate = new Date(ap.created_at);
+                const dateStr = createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+
+                return {
+                    id: ap.id,
+                    feedbackId: ap.related_feedback_id,
+                    feedbackIdDisplay: feedbackIdShort,
+                    date: dateStr,
+                    createdAt: ap.created_at,
+                    reviewerName: (reviewerPayment && reviewerPayment.buyer && reviewerPayment.buyer.full_name) || 'Reviewer',
+                    adminAmount: adminAmount,
+                    reviewerAmount: reviewerAmount,
+                    buyerInviterAmount: buyerInviterAmount,
+                    vendorInviterAmount: vendorInviterAmount,
+                    totalAmount: totalAmount,
+                    status: ap.status || 'pending',
+                    type: 'transaction'
+                };
+            });
+
+            if (transactionRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="padding: 20px; text-align: center; color: #94a3b8;">No commission transactions yet</td></tr>`;
+                return;
+            }
+
+            // Sort by date descending (most recent first)
+            transactionRows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            tbody.innerHTML = transactionRows.map(row => {
                 const statusBadgeColor = {
                     'pending': '#dbeafe',
                     'requested': '#fef3c7',
@@ -5822,80 +5762,63 @@
                 const statusColor = statusBadgeColor[row.status] || '#f0f0f0';
                 const textColor = statusTextColor[row.status] || '#64748b';
 
-                // Admin section: Show Status column (5 columns total: Name | Email | Amount | Status | Action)
-                if (section === 'admin') {
-                    return `
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="padding: 12px; color: #1e293b; font-weight: 500;">${row.name}</td>
-                            <td style="padding: 12px; color: #64748b; font-size: 12px; font-family: monospace;">${row.email}</td>
-                            <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(row.amount).toFixed(2)}</td>
-                            <td style="padding: 12px;">
-                                <span style="background: ${statusColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-                                    ${row.status === 'pending' ? '⏳ Pending' : row.status === 'requested' ? '📤 Requested' : row.status === 'paid' ? '✅ Paid' : row.status === 'received' ? '📥 Received' : '🚩 Flagged'}
-                                </span>
-                            </td>
-                            <td style="padding: 12px; text-align: center;">
-                                <button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View Source</button>
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                // Reviewer/Inviter sections: Show SLA Window column (5 columns total: Name | Email | Amount | SLA Window | Action)
-                let slaDisplay = '';
-                if (row.slaTimer) {
-                    if (row.slaTimer.status === 'timeout') {
-                        slaDisplay = `<span style="color: #dc2626; font-weight: 600;">⏱️ Timeout</span>`;
-                    } else if (row.slaTimer.status === 'active') {
-                        slaDisplay = `<span style="color: ${row.slaTimer.statusColor}; font-weight: 600;">${row.slaTimer.displayText}</span>`;
-                    } else {
-                        slaDisplay = `<span style="color: #16a34a; font-weight: 600;">✓ Completed</span>`;
-                    }
-                } else {
-                    slaDisplay = `<span style="color: #64748b;">-</span>`;
-                }
-
                 return `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; color: #1e293b; font-weight: 500;">${row.name}</td>
-                        <td style="padding: 12px; color: #64748b; font-size: 12px; font-family: monospace;">${row.email}</td>
-                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(row.amount).toFixed(2)}</td>
-                        <td style="padding: 12px;">${slaDisplay}</td>
+                    <tr style="border-bottom: 1px solid #e2e8f0; hover: background: #f8fafc;">
+                        <td style="padding: 12px; color: #1e293b; font-weight: 500; font-family: monospace; font-size: 12px;">${row.feedbackIdDisplay}</td>
+                        <td style="padding: 12px; color: #64748b; font-size: 12px;">${row.date}</td>
+                        <td style="padding: 12px; color: #1e293b;">${row.reviewerName}</td>
+                        <td style="padding: 12px; text-align: right; color: #16a34a; font-weight: 600;">$${parseFloat(row.adminAmount).toFixed(2)}</td>
+                        <td style="padding: 12px; text-align: right; color: #16a34a; font-weight: 600;">$${parseFloat(row.reviewerAmount).toFixed(2)}</td>
+                        <td style="padding: 12px; text-align: right; color: #16a34a; font-weight: 600;">$${parseFloat(row.buyerInviterAmount).toFixed(2)}</td>
+                        <td style="padding: 12px; text-align: right; color: #16a34a; font-weight: 600;">$${parseFloat(row.vendorInviterAmount).toFixed(2)}</td>
+                        <td style="padding: 12px; text-align: right; color: #1e293b; font-weight: 700; border-left: 2px solid #e2e8f0; padding-left: 14px;">$${parseFloat(row.totalAmount).toFixed(2)}</td>
+                        <td style="padding: 12px;">
+                            <span style="background: ${statusColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                ${row.status === 'pending' ? '⏳ Pending' : row.status === 'requested' ? '📤 Requested' : row.status === 'paid' ? '✅ Paid' : row.status === 'received' ? '📥 Received' : '🚩 Flagged'}
+                            </span>
+                        </td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View Source</button>
+                            <button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View</button>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            console.log(`[Render transaction] Rendered ${transactionRows.length} transaction-level commission rows`);
         }
 
         function filterPayoutList(section) {
-            const searchInputId = `${section}SearchInput`;
-            const statusFilterId = `${section}StatusFilter`;
-            const tableBodyId = section === 'admin' ? 'admin-commissions-tbody' :
-                               section === 'reviewer' ? 'reviewer-payments-tbody' :
-                               section === 'buyer-inviter' ? 'buyer-inviter-commissions-tbody' : 'vendor-inviter-commissions-tbody';
-
-            const searchInput = document.getElementById(searchInputId);
-            const statusFilter = document.getElementById(statusFilterId);
+            // Filter unified transaction-level table
+            const tableBodyId = 'transaction-commissions-tbody';
             const tbody = document.getElementById(tableBodyId);
 
-            if (!searchInput || !tbody) return;
+            if (!tbody) {
+                console.warn('[Filter] Transaction table not found');
+                return;
+            }
 
-            const searchQuery = (searchInput.value || '').toLowerCase();
-            const statusValue = (statusFilter?.value || '').toLowerCase();
+            // Search across feedback ID, reviewer name, and amounts
+            const searchQuery = document.getElementById('transactionSearchInput')?.value.toLowerCase() || '';
+            const statusValue = document.getElementById('transactionStatusFilter')?.value.toLowerCase() || '';
 
             const rows = tbody.querySelectorAll('tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                if (cells.length < 4) return;
+                if (cells.length < 10) return;
 
-                const name = cells[0]?.textContent.toLowerCase() || '';
-                const email = cells[1]?.textContent.toLowerCase() || '';
-                const amount = cells[2]?.textContent.toLowerCase() || '';
-                const statusCell = cells.length > 4 ? cells[4]?.textContent.toLowerCase() : cells[3]?.textContent.toLowerCase() || '';
+                const feedbackId = cells[0]?.textContent.toLowerCase() || '';
+                const date = cells[1]?.textContent.toLowerCase() || '';
+                const reviewerName = cells[2]?.textContent.toLowerCase() || '';
+                const adminAmount = cells[3]?.textContent.toLowerCase() || '';
+                const totalAmount = cells[7]?.textContent.toLowerCase() || '';
+                const statusCell = cells[8]?.textContent.toLowerCase() || '';
 
-                const searchMatch = searchQuery === '' || name.includes(searchQuery) || email.includes(searchQuery) || amount.includes(searchQuery);
+                const searchMatch = searchQuery === '' ||
+                    feedbackId.includes(searchQuery) ||
+                    reviewerName.includes(searchQuery) ||
+                    adminAmount.includes(searchQuery) ||
+                    totalAmount.includes(searchQuery);
+
                 const statusMatch = statusValue === '' || statusCell.includes(statusValue);
 
                 row.style.display = (searchMatch && statusMatch) ? '' : 'none';
