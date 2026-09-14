@@ -1361,6 +1361,51 @@
     <!-- Code Viewer Floating Button -->
     <button class="code-viewer-floating-btn" id="code-viewer-btn" onclick="showCodeViewer()" title="View Source Code">📄</button>
 
+    <!-- Receiver Receipt Upload Modal (V9) -->
+    <div id="receiver-receipt-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; width: 90%; max-width: 500px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 18px; color: #1e293b;">📋 Confirm Payment Receipt</h2>
+                <button onclick="closeReceiverReceiptModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+            </div>
+
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #166534;">
+                <strong>⏱️ Time Limit:</strong> You have 8 hours from vendor's upload to confirm receipt.
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">PayPal Email</label>
+                <input type="email" id="receiver-paypal-email" readonly style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; font-size: 13px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Auto-filled from your profile</div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Vendor's Transaction ID *</label>
+                <input type="text" id="receiver-vendor-tx-id" readonly style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; font-family: monospace; font-size: 12px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Read-only reference from vendor's proof</div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Your PayPal Transaction ID *</label>
+                <input type="text" id="receiver-tx-id" placeholder="e.g., 9XZ87654321" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-size: 13px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Your PayPal confirmation transaction ID</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Receipt File (PDF, PNG, JPG) *</label>
+                <input type="file" id="receiver-receipt-file" accept="application/pdf,image/png,image/jpeg" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Max 10MB. Screenshot or PDF of your payment confirmation</div>
+            </div>
+
+            <div id="receiver-receipt-status" style="display: none; margin-bottom: 16px; padding: 12px; border-radius: 6px; font-size: 13px;"></div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeReceiverReceiptModal()" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="button" onclick="submitReceiverReceiptUpload()" style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">✓ Confirm Receipt</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://nvtqtkllmsiqknogmarc.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_ju4wLLra1DBXDyGiHGOB7w_TdsjcBj1';
@@ -3344,33 +3389,73 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Show paid commissions where vendor has uploaded, awaiting receiver confirmation
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
-                    .eq('status', 'pending')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'paid')
+                    .is('buyer_receipt_data', null)
                     .order('created_at', { ascending: false });
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No payment confirmations needed</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(comm => {
+                    const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
+                    return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                        <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;">${slaTimer.displayText}</td>
+                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="openReceiverReceiptModal('${comm.id}', '${comm.vendor_paypal_transaction_id || ''}', '${comm.vendor_paypal_email || ''}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">✓ Confirm</button>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading reviewer pending approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        async function loadReviewerAwaitingApprovals(buyerId) {
+            const tbody = document.getElementById('reviewer-awaiting-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                // Show received commissions awaiting admin verification
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'received')
+                    .order('created_at', { ascending: false });
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = data.map(comm => `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-awaiting-checkbox" value="${comm.id}"></td>
                         <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
                         <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
-                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
-                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
-                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
                         </td>
                     </tr>
                 `).join('');
             } catch (err) {
-                console.error('Error loading reviewer pending approvals:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+                console.error('Error loading reviewer awaiting approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
         }
 
@@ -3541,6 +3626,41 @@
             showToast(`Info requests sent for ${selected.length} items`, 'success');
         }
 
+        async function loadBuyerInviterAwaitingApprovals(buyerId) {
+            const tbody = document.getElementById('buyer-inviter-awaiting-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                // Show received commissions awaiting admin verification
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'received')
+                    .order('created_at', { ascending: false });
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(comm => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-awaiting-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading buyer inviter awaiting approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
         // ========== VENDOR INVITER APPROVALS ==========
         async function loadVendorInviterApprovals(buyerId) {
             if (!buyerId) return;
@@ -3662,6 +3782,54 @@
             showToast(`Info requests sent for ${selected.length} items`, 'success');
         }
 
+        async function loadVendorInviterAwaitingApprovals(buyerId) {
+            const tbody = document.getElementById('vendor-inviter-awaiting-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                // Get vendors referred by this buyer
+                const { data: vendors } = await db
+                    .from('vendors')
+                    .select('id')
+                    .eq('referred_by_buyer_id', buyerId);
+
+                if (!vendors || vendors.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
+                    return;
+                }
+
+                const vendorIds = vendors.map(v => v.id);
+
+                // Get commissions from those vendors with status='received' awaiting verification
+                const { data: commissions } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .in('vendor_id', vendorIds)
+                    .eq('status', 'received')
+                    .order('created_at', { ascending: false });
+
+                if (!commissions || commissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = commissions.map(comm => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-awaiting-checkbox" value="${comm.id}"></td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading vendor inviter awaiting approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
         // ========== SHARED PAYOUT FUNCTIONS ==========
         async function approvePayout(commissionId) {
             try {
@@ -3699,6 +3867,115 @@
                 console.log(`Info request sent for commission ${commissionId}`);
             } catch (err) {
                 console.error('Error requesting info:', err);
+            }
+        }
+
+        // Receiver Receipt Upload Functions (V9)
+        function openReceiverReceiptModal(commissionId, vendorTxId, paypalEmail) {
+            if (!db || !currentBuyer) return;
+
+            document.getElementById('receiver-receipt-modal').dataset.commissionId = commissionId;
+            document.getElementById('receiver-paypal-email').value = currentBuyer.paypal_email || paypalEmail || '';
+            document.getElementById('receiver-vendor-tx-id').value = vendorTxId;
+            document.getElementById('receiver-tx-id').value = '';
+            document.getElementById('receiver-receipt-file').value = '';
+            document.getElementById('receiver-receipt-status').style.display = 'none';
+
+            document.getElementById('receiver-receipt-modal').style.display = 'flex';
+        }
+
+        function closeReceiverReceiptModal() {
+            document.getElementById('receiver-receipt-modal').style.display = 'none';
+        }
+
+        async function submitReceiverReceiptUpload() {
+            if (!db || !currentBuyer) return;
+
+            const commissionId = document.getElementById('receiver-receipt-modal').dataset.commissionId;
+            const txId = document.getElementById('receiver-tx-id').value.trim();
+            const fileInput = document.getElementById('receiver-receipt-file');
+            const statusDiv = document.getElementById('receiver-receipt-status');
+
+            if (!txId) {
+                statusDiv.textContent = '❌ Transaction ID is required';
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            if (!fileInput.files.length) {
+                statusDiv.textContent = '❌ Receipt file is required';
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.size > 10 * 1024 * 1024) {
+                statusDiv.textContent = '❌ File must be under 10MB';
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                statusDiv.textContent = '⏳ Uploading receipt...';
+                statusDiv.style.background = '#dbeafe';
+                statusDiv.style.color = '#0c4a6e';
+                statusDiv.style.display = 'block';
+
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const base64Data = reader.result.split(',')[1];
+                    const mimeType = file.type || 'application/octet-stream';
+
+                    try {
+                        const { error } = await db
+                            .from('admin_payables')
+                            .update({
+                                buyer_paypal_email: document.getElementById('receiver-paypal-email').value,
+                                buyer_paypal_transaction_id: txId,
+                                buyer_receipt_data: base64Data,
+                                buyer_receipt_filename: file.name,
+                                buyer_receipt_filetype: mimeType,
+                                buyer_receipt_filesize: file.size,
+                                buyer_receipt_uploaded_date: new Date().toISOString(),
+                                status: 'received'
+                            })
+                            .eq('id', commissionId);
+
+                        if (error) throw error;
+
+                        statusDiv.textContent = '✓ Receipt uploaded! Admin will verify shortly.';
+                        statusDiv.style.background = '#dcfce7';
+                        statusDiv.style.color = '#166534';
+
+                        setTimeout(() => {
+                            closeReceiverReceiptModal();
+                            // Reload appropriate tab based on user role
+                            if (document.getElementById('reviewer-awaiting-tab')) loadReviewerAwaitingApprovals(currentBuyer.id);
+                            else if (document.getElementById('buyer-inviter-awaiting-tab')) loadBuyerInviterAwaitingApprovals(currentBuyer.id);
+                            else if (document.getElementById('vendor-inviter-awaiting-tab')) loadVendorInviterAwaitingApprovals(currentBuyer.id);
+                        }, 1500);
+
+                    } catch (err) {
+                        console.error('Error updating admin_payables:', err);
+                        statusDiv.textContent = '❌ Error uploading receipt. Please try again.';
+                        statusDiv.style.background = '#fee2e2';
+                        statusDiv.style.color = '#991b1b';
+                    }
+                };
+                reader.readAsDataURL(file);
+
+            } catch (err) {
+                console.error('Error in upload:', err);
+                statusDiv.textContent = '❌ Error processing file';
+                statusDiv.style.background = '#fee2e2';
+                statusDiv.style.color = '#991b1b';
+                statusDiv.style.display = 'block';
             }
         }
 
