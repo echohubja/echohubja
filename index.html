@@ -1447,22 +1447,35 @@
             const buyerNameSpan = document.getElementById('current-buyer-name');
             const portalBtn = document.getElementById('portal-btn');
 
-            currentActiveEmail = localStorage.getItem('buyer_email') || localStorage.getItem('buyer_id') || '';
+            const buyerEmail = localStorage.getItem('buyer_email');
+            const buyerId = localStorage.getItem('buyer_id');
+            currentActiveEmail = buyerEmail || buyerId || '';
 
             if (currentActiveEmail) {
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                const { data: buyerData, error } = await db
-                    .from('buyers')
-                    .select('id, referral_code, full_name')
-                    .eq('email', currentActiveEmail)
-                    .single();
+                let query = db.from('buyers').select('id, referral_code, full_name, email');
+                let buyerData = null;
+                let error = null;
+
+                if (buyerEmail) {
+                    // Query by email if available
+                    const result = await query.eq('email', buyerEmail).single();
+                    buyerData = result.data;
+                    error = result.error;
+                } else if (buyerId) {
+                    // Query by ID if email not available
+                    const result = await query.eq('id', buyerId).single();
+                    buyerData = result.data;
+                    error = result.error;
+                }
 
                 if (buyerData) {
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.referral_code || 'BUYER-00000';
-                    const displayName = buyerData.full_name ? `${buyerData.full_name} (${currentActiveEmail})` : currentActiveEmail;
+                    const displayEmail = buyerData.email || currentActiveEmail;
+                    const displayName = buyerData.full_name ? `${buyerData.full_name} (${displayEmail})` : displayEmail;
                     buyerNameSpan.textContent = `${displayName} • ID: ${buyerData.id}`;
                 } else {
                     currentBuyerId = '';
@@ -2142,7 +2155,6 @@
 
         let buyerMessagingPollInterval = null;
 
-        let currentBuyerId = null;
         let currentVendorId = null;
         let currentSelectedInquiryId = null;
 
