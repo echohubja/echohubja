@@ -2829,15 +2829,24 @@
 
         function setupBuyerFeedbackImagePaste(inquiryId) {
             const imageInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
-            if (!imageInput) return;
+            if (!imageInput) {
+                console.warn(`Image input not found: buyer-feedback-image-${inquiryId}`);
+                return;
+            }
+
+            // ✅ FIX: Remove existing listeners to prevent duplicates during polling
+            const newImageInput = imageInput.cloneNode(true);
+            imageInput.parentNode.replaceChild(newImageInput, imageInput);
+            const freshImageInput = document.getElementById(`buyer-feedback-image-${inquiryId}`);
 
             // Handle file input change
-            imageInput.addEventListener('change', () => {
+            freshImageInput.addEventListener('change', (e) => {
+                console.log('📸 File selected:', e.target.files[0]?.name);
                 displayBuyerFeedbackImagePreview(inquiryId);
             });
 
             // Handle paste event for feedback images
-            document.addEventListener('paste', async (e) => {
+            const pasteHandler = async (e) => {
                 const items = e.clipboardData?.items;
                 if (!items) return;
 
@@ -2847,12 +2856,14 @@
                         const blob = item.getAsFile();
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(blob);
-                        imageInput.files = dataTransfer.files;
+                        freshImageInput.files = dataTransfer.files;
+                        console.log('📸 Image pasted:', blob.name);
                         displayBuyerFeedbackImagePreview(inquiryId);
                         break;
                     }
                 }
-            });
+            };
+            document.addEventListener('paste', pasteHandler);
         }
 
         function displayBuyerFeedbackImagePreview(inquiryId) {
@@ -2860,13 +2871,36 @@
             const previewContainer = document.getElementById(`buyer-image-preview-${inquiryId}`);
             const previewImg = document.getElementById(`buyer-image-preview-img-${inquiryId}`);
 
-            if (!imageInput?.files?.[0] || !previewContainer || !previewImg) return;
+            console.log('🖼️ Preview attempt:', {
+                hasFile: imageInput?.files?.[0] ? 'YES' : 'NO',
+                hasContainer: previewContainer ? 'YES' : 'NO',
+                hasImg: previewImg ? 'YES' : 'NO',
+                fileName: imageInput?.files?.[0]?.name || 'N/A'
+            });
+
+            if (!imageInput?.files?.[0]) {
+                console.warn('No file selected in imageInput');
+                return;
+            }
+            if (!previewContainer) {
+                console.warn(`Preview container not found: buyer-image-preview-${inquiryId}`);
+                return;
+            }
+            if (!previewImg) {
+                console.warn(`Preview img not found: buyer-image-preview-img-${inquiryId}`);
+                return;
+            }
 
             const file = imageInput.files[0];
+            console.log('📖 Starting FileReader for:', file.name);
             const reader = new FileReader();
             reader.onload = (e) => {
+                console.log('✅ FileReader complete, setting preview');
                 previewImg.src = e.target.result;
                 previewContainer.style.display = 'block';
+            };
+            reader.onerror = (e) => {
+                console.error('❌ FileReader error:', e);
             };
             reader.readAsDataURL(file);
         }
