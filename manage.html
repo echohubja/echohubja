@@ -4888,6 +4888,15 @@
                     // Check if all messages are approved at both levels
                     const allApproved = allMessages.length > 0 && allMessages.every(msg => msg.vendor_status === 'approved' && msg.status === 'approved');
 
+                    // DEBUG: Log for Tianna Harvey conversation
+                    if (buyer.full_name && buyer.full_name.includes('Tianna')) {
+                        console.log(`[DEBUG] Tianna conversation (${inq.id}):`, {
+                            messageCount: allMessages.length,
+                            allApproved: allApproved,
+                            messages: allMessages.map(m => ({id: m.id.substring(0, 8), vendor_status: m.vendor_status, status: m.status}))
+                        });
+                    }
+
                     let statusBadge = '⏳ Pending';
                     let statusValue = 'pending';
                     if (hasAdminRejected) {
