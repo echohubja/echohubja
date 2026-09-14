@@ -2400,6 +2400,80 @@
                 </div>
             </div>
 
+            <!-- Custom Buyer Agreements Section -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <h3><span class="collapsible-icon">▶</span> 🤝 Custom Buyer Agreements</h3>
+                </div>
+                <div class="collapsible-content" style="display: none;">
+                    <div class="collapsible-body">
+                        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9em; color: #64748b;"><strong id="agreements-count">0</strong> active agreement(s)</span>
+                            <button onclick="openCreateAgreementModal()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">+ Create New Agreement</button>
+                        </div>
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Buyer Name</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Commission/Feedback</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Payout Threshold</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Frequency</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agreements-table-body" style="min-height: 100px;">
+                                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading agreements...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="no-agreements-msg" style="text-align: center; padding: 30px; color: #718096; display: none;">
+                            No custom agreements yet. Click "Create New Agreement" to get started.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incoming Rate Change Requests Section -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <h3><span class="collapsible-icon">▶</span> 📮 Incoming Rate Change Requests</h3>
+                </div>
+                <div class="collapsible-content" style="display: none;">
+                    <div class="collapsible-body">
+                        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9em; color: #64748b;"><strong id="incoming-requests-count">0</strong> pending request(s)</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="batchAcceptIncomingRequests()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Accept Selected</button>
+                                <button onclick="batchRejectIncomingRequests()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Reject Selected</button>
+                            </div>
+                        </div>
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="incoming-requests-select-all" onchange="toggleIncomingRequestsSelectAll()"></th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Buyer Name</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Change Type</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Proposed Value</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Reason</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incoming-requests-table-body" style="min-height: 100px;">
+                                    <tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading requests...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="no-incoming-requests-msg" style="text-align: center; padding: 30px; color: #718096; display: none;">
+                            No incoming rate change requests at this time.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Commission Payment History Section -->
             <div class="collapsible-section">
                 <div class="collapsible-header" onclick="toggleCollapsible(this)">
@@ -2770,7 +2844,8 @@
 
                 <!-- Lifecycle Tabs -->
                 <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding: 0 20px; background: white;">
-                    <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Pending Approval</button>
+                    <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('incoming')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-incoming-tab">📥 Incoming Requests</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Pending Approval</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Awaiting Receipts</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Admin Verified</button>
                 </div>
@@ -2778,8 +2853,36 @@
                 <!-- Payout Subsections Container -->
                 <div style="padding: 20px;">
 
+                    <!-- INCOMING REQUESTS SECTION (NEW) -->
+                    <div id="manage-incoming-section" class="lifecycle-content active">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="color: #2c3e50; margin: 0; font-size: 16px;">Incoming Payment Requests</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="batchApproveIncomingRequests()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Approve Selected</button>
+                                <button onclick="batchDenyIncomingRequests()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
+                            </div>
+                        </div>
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="manage-incoming-select-all" onchange="toggleManageIncomingSelectAll()"></th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Requester</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Request Type</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="manage-incoming-table-body">
+                                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- PENDING APPROVAL SECTION -->
-                    <div id="manage-pending-section" class="lifecycle-content active">
+                    <div id="manage-pending-section" class="lifecycle-content" style="display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <h3 style="color: #2c3e50; margin: 0; font-size: 16px;">Pending Your Approval</h3>
                             <div style="display: flex; gap: 8px;">
@@ -2998,6 +3101,157 @@
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('threshold-modal')">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="submitThresholdChangeRequest()">Submit Request</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipt Upload Modal (V9) -->
+            <div id="receipt-upload-modal" class="commission-modal">
+                <div class="commission-modal-content">
+                    <button class="commission-modal-close" onclick="closeCommissionModal('receipt-upload-modal')">×</button>
+                    <div class="commission-modal-header">
+                        <h2>📨 Upload Payment Receipt</h2>
+                        <p>Proof of disbursement (PayPal screenshot or receipt)</p>
+                    </div>
+                    <div class="commission-modal-body">
+                        <div class="form-section">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                                <div style="margin-bottom: 12px;">
+                                    <strong style="color: #475569;">Payout ID:</strong>
+                                    <span id="receipt-payout-id" style="color: #64748b; font-family: monospace; font-size: 12px;">-</span>
+                                </div>
+                                <div style="margin-bottom: 12px;">
+                                    <strong style="color: #475569;">Recipient Type:</strong>
+                                    <span id="receipt-recipient-type" style="color: #64748b;">-</span>
+                                </div>
+                                <div>
+                                    <strong style="color: #475569;">Amount Due:</strong>
+                                    <span id="receipt-amount-due" style="color: #16a34a; font-weight: 600;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>PayPal Email</label>
+                                <input type="email" id="receipt-paypal-email" readonly style="background: #f1f5f9; cursor: not-allowed;" placeholder="vendor@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>PayPal Transaction ID *</label>
+                                <input type="text" id="receipt-tx-id" placeholder="e.g., 1AB23456789" required style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 14px;">
+                                <div style="font-size: 0.8em; color: #64748b; margin-top: 4px;">Copy from PayPal transaction confirmation</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Receipt File (PDF, PNG, JPG) *</label>
+                                <input type="file" id="receipt-file" accept="application/pdf,image/png,image/jpeg" required style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                                <div style="font-size: 0.8em; color: #64748b; margin-top: 4px;">Max 10MB. Screenshot or PDF of payment confirmation</div>
+                            </div>
+                            <div id="receipt-upload-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+                            <div class="info-box">
+                                ℹ️ You have 48 hours from payout creation to upload receipt. After that, your account will be automatically flagged.
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('receipt-upload-modal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitReceiptUpload()">Upload Receipt</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create/Edit Agreement Modal -->
+            <div id="agreement-modal" class="commission-modal" style="display: none;">
+                <div class="commission-modal-content" style="max-width: 600px;">
+                    <button class="commission-modal-close" onclick="closeCommissionModal('agreement-modal')">×</button>
+                    <div class="commission-modal-header">
+                        <h2 id="agreement-modal-title">Create New Agreement</h2>
+                        <p id="agreement-modal-subtitle">Set custom payout terms for a specific buyer</p>
+                    </div>
+                    <div class="commission-modal-body">
+                        <div class="form-group">
+                            <label>Buyer *</label>
+                            <select id="agreement-buyer-select" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #1e293b;">
+                                <option value="">-- Select a buyer --</option>
+                            </select>
+                            <div style="font-size: 0.8em; color: #64748b; margin-top: 6px;">ℹ️ Select the buyer this agreement applies to</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Commission Per Feedback ($) *</label>
+                            <input type="number" id="agreement-commission" step="0.01" min="0" placeholder="e.g., 7.50" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #1e293b;">
+                            <div style="font-size: 0.8em; color: #64748b; margin-top: 6px;">ℹ️ Custom rate for this buyer (overrides your global rate)</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payout Threshold ($) *</label>
+                            <input type="number" id="agreement-threshold" step="0.01" min="0" placeholder="e.g., 50.00" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #1e293b;">
+                            <div style="font-size: 0.8em; color: #64748b; margin-top: 6px;">ℹ️ Minimum balance before payout is triggered</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payout Frequency *</label>
+                            <select id="agreement-frequency" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #1e293b;">
+                                <option value="">-- Select frequency --</option>
+                                <option value="on_demand">On Demand</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="bi_weekly">Bi-Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <div style="font-size: 0.8em; color: #64748b; margin-top: 6px;">ℹ️ How often payouts are processed for this buyer</div>
+                        </div>
+
+                        <div id="agreement-upload-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; display: none; margin-bottom: 12px;"></div>
+
+                        <div class="info-box">
+                            ℹ️ This agreement requires admin approval. Once submitted, admin will review and notify you of approval status.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('agreement-modal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitAgreement()">Submit for Approval</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Incoming Request Modal -->
+            <div id="review-request-modal" class="commission-modal" style="display: none;">
+                <div class="commission-modal-content" style="max-width: 600px;">
+                    <button class="commission-modal-close" onclick="closeCommissionModal('review-request-modal')">×</button>
+                    <div class="commission-modal-header">
+                        <h2>📮 Review Rate Change Request</h2>
+                        <p id="review-request-buyer-name">From: Loading...</p>
+                    </div>
+                    <div class="commission-modal-body">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #475569;">Change Type:</strong>
+                                <span id="review-request-type" style="color: #1e5aa8; font-weight: 600;">-</span>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #475569;">Current Value:</strong>
+                                <span id="review-request-current" style="color: #64748b;">-</span>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #475569;">Proposed Value:</strong>
+                                <span id="review-request-proposed" style="color: #16a34a; font-weight: 600;">-</span>
+                            </div>
+                            <div>
+                                <strong style="color: #475569;">Reason:</strong>
+                                <p id="review-request-reason" style="color: #64748b; margin-top: 6px; font-style: italic;">-</p>
+                            </div>
+                        </div>
+
+                        <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                            <strong style="color: #92400e;">ℹ️ Note:</strong>
+                            <div style="color: #92400e; font-size: 0.9em; margin-top: 6px;">
+                                This change requires admin approval. If you accept, the request will be sent to admin for final approval.
+                            </div>
+                        </div>
+
+                        <div id="review-request-status" style="font-size: 0.85em; color: #075985; background: #d1e7f5; padding: 10px; border-radius: 4px; display: none; margin-bottom: 12px;"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('review-request-modal')">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="rejectIncomingRequest()" style="background: #ef4444;">Reject</button>
+                        <button type="button" class="btn btn-primary" onclick="acceptIncomingRequest()" style="background: #10b981;">Accept</button>
                     </div>
                 </div>
             </div>
@@ -4465,7 +4719,7 @@
             try {
                 const { data: vendor, error: vendorError } = await sbClient
                     .from('vendors')
-                    .select('id, commission_threshold, commission')
+                    .select('id, accumulated_balance, commission_threshold, commission')
                     .eq('id', currentVendor.id)
                     .single();
 
@@ -4479,48 +4733,7 @@
                     return;
                 }
 
-                // Calculate pending commission from admin_payables + buyer_payables
-                let pending = 0;
-
-                // Fetch admin_payables (vendor commissions and referral splits)
-                const { data: adminPayables } = await sbClient
-                    .from('admin_payables')
-                    .select('amount_owed, status, split_with_buyer_id, split_with_vendor_id')
-                    .eq('vendor_id', currentVendor.id);
-
-                // Add admin commissions (no split)
-                if (adminPayables) {
-                    adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id)
-                        .forEach(ap => {
-                            if (ap.status === 'pending' || ap.status === 'requested') {
-                                pending += parseFloat(ap.amount_owed || 0);
-                            }
-                        });
-                    // Add vendor inviter commissions
-                    adminPayables.filter(ap => ap.split_with_vendor_id)
-                        .forEach(ap => {
-                            if (ap.status === 'pending' || ap.status === 'requested') {
-                                pending += parseFloat(ap.amount_owed || 0);
-                            }
-                        });
-                }
-
-                // Fetch buyer_payables (own feedback earnings)
-                const { data: buyerPayables } = await sbClient
-                    .from('buyer_payables')
-                    .select('amount_owed, status, earning_type')
-                    .eq('vendor_id', currentVendor.id);
-
-                if (buyerPayables) {
-                    buyerPayables.filter(bp => bp.earning_type === 'own_feedback')
-                        .forEach(bp => {
-                            if (bp.status === 'pending' || bp.status === 'requested') {
-                                pending += parseFloat(bp.amount_owed || 0);
-                            }
-                        });
-                }
-
-                const accumulated = pending;
+                const accumulated = parseFloat(vendor.accumulated_balance || 0);
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
                 const capped_percent = Math.min(progressPercent, 100);
@@ -4715,6 +4928,12 @@
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('active');
+                modal.style.display = 'none';
+                // Reset buyer select if it's the agreement modal
+                if (modalId === 'agreement-modal') {
+                    const buyerSelect = document.getElementById('agreement-buyer-select');
+                    if (buyerSelect) buyerSelect.disabled = false;
+                }
             }
         }
 
@@ -6135,6 +6354,7 @@
 
         function switchManagePayoutsLifecycleTab(tab) {
             // Update tab buttons
+            document.getElementById('manage-incoming-tab').classList.toggle('active', tab === 'incoming');
             document.getElementById('manage-pending-tab').classList.toggle('active', tab === 'pending');
             document.getElementById('manage-awaiting-tab').classList.toggle('active', tab === 'awaiting');
             document.getElementById('manage-verified-tab').classList.toggle('active', tab === 'verified');
@@ -6146,9 +6366,16 @@
             });
 
             // Show/hide content sections
+            document.getElementById('manage-incoming-section').style.display = tab === 'incoming' ? 'block' : 'none';
             document.getElementById('manage-pending-section').style.display = tab === 'pending' ? 'block' : 'none';
             document.getElementById('manage-awaiting-section').style.display = tab === 'awaiting' ? 'block' : 'none';
             document.getElementById('manage-verified-section').style.display = tab === 'verified' ? 'block' : 'none';
+
+            // Load data for the selected tab
+            if (tab === 'incoming') loadManageIncomingRequests();
+            else if (tab === 'pending') loadManagePendingPayouts();
+            else if (tab === 'awaiting') loadManageAwaitingPayouts();
+            else if (tab === 'verified') loadManageVerifiedPayouts();
 
             // Load data for selected tab
             if (tab === 'pending') loadManagePendingPayouts();
@@ -6308,6 +6535,9 @@
                         <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;">${slaTimer.displayText}</td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="openReceiptUploadModal('${payout.id}', '${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                         </td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
@@ -6507,6 +6737,302 @@
             alert(`Viewing details for payout ${payoutId}`);
         }
 
+        // Incoming Requests Functions (Bidirectional Payout)
+        async function loadManageIncomingRequests() {
+            if (!sbClient || !currentVendor) return;
+
+            const tbody = document.getElementById('manage-incoming-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                // Query for incoming requests (where vendor is recipient but hasn't approved yet)
+                // For now, this would be placeholder data - in real implementation,
+                // there would be a separate "payout_requests" table or similar
+                const { data: incomingRequests, error } = await sbClient
+                    .from('admin_payables')
+                    .select('id, vendor_id, amount_owed, created_at, split_with_buyer_id, related_feedback_id')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'requested')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error loading incoming requests:', error);
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading requests</td></tr>';
+                    return;
+                }
+
+                if (!incomingRequests || incomingRequests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No incoming requests</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = incomingRequests.map(request => `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="incoming-checkbox" data-request-id="${request.id}"></td>
+                        <td style="padding: 12px; color: #475569;">${request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569;">Payment Request</td>
+                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(request.amount_owed).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #64748b; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="approveIncomingRequest('${request.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✓ Approve</button>
+                            <button onclick="denyIncomingRequest('${request.id}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">✗ Deny</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+            }
+        }
+
+        function toggleManageIncomingSelectAll() {
+            const selectAll = document.getElementById('manage-incoming-select-all').checked;
+            document.querySelectorAll('#manage-incoming-table-body input[type="checkbox"]').forEach(cb => {
+                cb.checked = selectAll;
+            });
+        }
+
+        async function batchApproveIncomingRequests() {
+            const selected = Array.from(document.querySelectorAll('#manage-incoming-table-body input[type="checkbox"]:checked'))
+                .map(cb => cb.dataset.requestId);
+
+            if (selected.length === 0) {
+                alert('Please select at least one request to approve');
+                return;
+            }
+
+            if (!sbClient) return;
+
+            try {
+                for (const requestId of selected) {
+                    await sbClient
+                        .from('admin_payables')
+                        .update({ status: 'pending' })  // Move to pending approval for vendor
+                        .eq('id', requestId);
+                }
+
+                alert(`✓ ${selected.length} request(s) approved`);
+                await loadManageIncomingRequests();
+                document.getElementById('manage-incoming-select-all').checked = false;
+            } catch (err) {
+                console.error('Error approving requests:', err);
+                alert('Error approving requests');
+            }
+        }
+
+        async function batchDenyIncomingRequests() {
+            const selected = Array.from(document.querySelectorAll('#manage-incoming-table-body input[type="checkbox"]:checked'))
+                .map(cb => cb.dataset.requestId);
+
+            if (selected.length === 0) {
+                alert('Please select at least one request to deny');
+                return;
+            }
+
+            if (!sbClient) return;
+
+            try {
+                for (const requestId of selected) {
+                    await sbClient
+                        .from('admin_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', requestId);
+                }
+
+                alert(`✗ ${selected.length} request(s) denied`);
+                await loadManageIncomingRequests();
+                document.getElementById('manage-incoming-select-all').checked = false;
+            } catch (err) {
+                console.error('Error denying requests:', err);
+                alert('Error denying requests');
+            }
+        }
+
+        async function approveIncomingRequest(requestId) {
+            if (!sbClient) return;
+
+            try {
+                // Get the admin_payables record to retrieve related info
+                const { data: payable } = await sbClient
+                    .from('admin_payables')
+                    .select('admin_id, vendor_id')
+                    .eq('id', requestId)
+                    .single();
+
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'pending' })
+                    .eq('id', requestId);
+
+                // Create notification for admin
+                if (payable && payable.admin_id) {
+                    await createVendorNotification(
+                        payable.admin_id,
+                        'vendor_approved_payout',
+                        `Vendor has approved a payout request - awaiting admin approval`,
+                        'admin_payables',
+                        requestId
+                    );
+                }
+
+                showToast('✓ Request approved', 'success');
+                await loadManageIncomingRequests();
+            } catch (err) {
+                console.error('Error approving request:', err);
+                showToast('Error approving request', 'error');
+            }
+        }
+
+        async function denyIncomingRequest(requestId) {
+            if (!sbClient) return;
+
+            try {
+                // Get the admin_payables record to retrieve related info
+                const { data: payable } = await sbClient
+                    .from('admin_payables')
+                    .select('admin_id, vendor_id')
+                    .eq('id', requestId)
+                    .single();
+
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'denied' })
+                    .eq('id', requestId);
+
+                // Create notification for admin
+                if (payable && payable.admin_id) {
+                    await createVendorNotification(
+                        payable.admin_id,
+                        'vendor_denied_payout',
+                        `Vendor has denied a payout request`,
+                        'admin_payables',
+                        requestId
+                    );
+                }
+
+                showToast('✗ Request denied', 'success');
+                await loadManageIncomingRequests();
+            } catch (err) {
+                console.error('Error denying request:', err);
+                showToast('Error denying request', 'error');
+            }
+        }
+
+        // Receipt Upload Functions (V9)
+        function openReceiptUploadModal(payoutId, recipientType, amountDue) {
+            if (!currentVendor) return;
+
+            document.getElementById('receipt-payout-id').textContent = payoutId;
+            document.getElementById('receipt-recipient-type').textContent = recipientType;
+            document.getElementById('receipt-amount-due').textContent = `$${parseFloat(amountDue).toFixed(2)}`;
+            document.getElementById('receipt-paypal-email').value = currentVendor.paypal_email || '';
+            document.getElementById('receipt-tx-id').value = '';
+            document.getElementById('receipt-file').value = '';
+            document.getElementById('receipt-upload-status').style.display = 'none';
+
+            // Store payout ID for submission
+            document.getElementById('receipt-upload-modal').dataset.payoutId = payoutId;
+
+            const modal = document.getElementById('receipt-upload-modal');
+            modal.style.display = 'flex';
+        }
+
+        async function submitReceiptUpload() {
+            if (!sbClient || !currentVendor) return;
+
+            const payoutId = document.getElementById('receipt-upload-modal').dataset.payoutId;
+            const txId = document.getElementById('receipt-tx-id').value.trim();
+            const fileInput = document.getElementById('receipt-file');
+            const statusDiv = document.getElementById('receipt-upload-status');
+
+            if (!txId) {
+                statusDiv.textContent = '❌ Transaction ID required';
+                statusDiv.style.display = 'block';
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.background = '#fee2e2';
+                return;
+            }
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.textContent = '❌ Receipt file required';
+                statusDiv.style.display = 'block';
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.background = '#fee2e2';
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            if (file.size > 10 * 1024 * 1024) {
+                statusDiv.textContent = '❌ File size exceeds 10MB limit';
+                statusDiv.style.display = 'block';
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.background = '#fee2e2';
+                return;
+            }
+
+            try {
+                statusDiv.textContent = '⏳ Uploading...';
+                statusDiv.style.display = 'block';
+                statusDiv.style.color = '#075985';
+                statusDiv.style.background = '#d1e7f5';
+
+                // Read file as Base64
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const base64Data = e.target.result.split(',')[1];
+                    const mimeType = file.type;
+
+                    try {
+                        // Update admin_payables with receipt data
+                        const { error } = await sbClient
+                            .from('admin_payables')
+                            .update({
+                                vendor_paypal_transaction_id: txId,
+                                vendor_receipt_data: base64Data,
+                                vendor_receipt_filename: file.name,
+                                vendor_receipt_filetype: mimeType,
+                                vendor_receipt_filesize: file.size,
+                                vendor_receipt_uploaded_date: new Date().toISOString(),
+                                vendor_flagged: false  // Reset flag when receipt uploaded
+                            })
+                            .eq('id', payoutId);
+
+                        if (error) {
+                            statusDiv.textContent = '❌ Upload failed: ' + error.message;
+                            statusDiv.style.color = '#dc2626';
+                            statusDiv.style.background = '#fee2e2';
+                            return;
+                        }
+
+                        statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting admin verification.';
+                        statusDiv.style.color = '#059669';
+                        statusDiv.style.background = '#d1fae5';
+
+                        // Reload data after 1.5 seconds
+                        setTimeout(() => {
+                            closeCommissionModal('receipt-upload-modal');
+                            loadManageAwaitingPayouts();
+                        }, 1500);
+
+                    } catch (err) {
+                        console.error('Error uploading receipt:', err);
+                        statusDiv.textContent = '❌ Upload error: ' + err.message;
+                        statusDiv.style.color = '#dc2626';
+                        statusDiv.style.background = '#fee2e2';
+                    }
+                };
+                reader.readAsDataURL(file);
+
+            } catch (err) {
+                console.error('Error in submitReceiptUpload:', err);
+                statusDiv.textContent = '❌ Error: ' + err.message;
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.background = '#fee2e2';
+            }
+        }
+
         async function initPayoutDataPolling() {
             // Poll payout data every 15 seconds
             setInterval(async () => {
@@ -6589,6 +7115,721 @@
                 closeCodeViewer();
             }
         });
+
+        // ===== PHASE 2 STEP 3: CUSTOM BUYER AGREEMENTS FUNCTIONS =====
+
+        async function loadCustomAgreements() {
+            if (!sbClient || !currentVendor) return;
+            const tbody = document.getElementById('agreements-table-body');
+            const noMsg = document.getElementById('no-agreements-msg');
+            const count = document.getElementById('agreements-count');
+
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading agreements...</td></tr>';
+
+            const { data: agreements, error } = await sbClient
+                .from('vendor_buyer_agreements')
+                .select('id, vendor_id, buyer_id, commission_amount_per_feedback, payout_threshold, payout_frequency, agreement_status')
+                .eq('vendor_id', currentVendor.id)
+                .eq('agreement_status', 'active')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading agreements:', error);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #dc2626;">Error loading agreements</td></tr>';
+                noMsg.style.display = 'none';
+                return;
+            }
+
+            if (!agreements || agreements.length === 0) {
+                tbody.style.display = 'none';
+                noMsg.style.display = 'block';
+                count.textContent = '0';
+                return;
+            }
+
+            tbody.style.display = 'table-row-group';
+            noMsg.style.display = 'none';
+            count.textContent = agreements.length.toString();
+
+            // Fetch buyer names for all agreements
+            const buyerIds = [...new Set(agreements.map(a => a.buyer_id))];
+            const { data: buyers } = await sbClient
+                .from('buyers')
+                .select('id, full_name')
+                .in('id', buyerIds);
+
+            const buyerMap = {};
+            if (buyers) {
+                buyers.forEach(b => {
+                    buyerMap[b.id] = b.full_name || 'Unknown';
+                });
+            }
+
+            tbody.innerHTML = agreements.map(agreement => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; color: #475569;">${buyerMap[agreement.buyer_id] || 'Loading...'}</td>
+                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(agreement.commission_amount_per_feedback).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #475569;">$${parseFloat(agreement.payout_threshold).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #475569; text-transform: capitalize;">${agreement.payout_frequency.replace('_', ' ')}</td>
+                    <td style="padding: 12px;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Active</span></td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="openEditAgreementModal('${agreement.id}')" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✏️ Edit</button>
+                        <button onclick="deactivateAgreement('${agreement.id}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">❌ Deactivate</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function populateBuyerSelect() {
+            if (!sbClient) return;
+
+            // Get all feedback submitted by buyers to this vendor
+            const { data: feedbackByBuyers, error } = await sbClient
+                .from('inquiries')
+                .select('DISTINCT buyer_id')
+                .eq('vendor_id', currentVendor.id)
+                .not('buyer_id', 'is', null);
+
+            if (error || !feedbackByBuyers) {
+                console.error('Error loading buyers:', error);
+                return;
+            }
+
+            const buyerIds = feedbackByBuyers.map(f => f.buyer_id);
+            const { data: buyers } = await sbClient
+                .from('buyers')
+                .select('id, full_name')
+                .in('id', buyerIds)
+                .order('full_name', { ascending: true });
+
+            const select = document.getElementById('agreement-buyer-select');
+            select.innerHTML = '<option value="">-- Select a buyer --</option>';
+
+            if (buyers) {
+                buyers.forEach(buyer => {
+                    const option = document.createElement('option');
+                    option.value = buyer.id;
+                    option.textContent = buyer.full_name || 'Unknown';
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function openCreateAgreementModal() {
+            if (!currentVendor) return;
+
+            // Reset form
+            document.getElementById('agreement-buyer-select').value = '';
+            document.getElementById('agreement-commission').value = '';
+            document.getElementById('agreement-threshold').value = '';
+            document.getElementById('agreement-frequency').value = '';
+            document.getElementById('agreement-upload-status').style.display = 'none';
+
+            // Update modal title
+            document.getElementById('agreement-modal-title').textContent = 'Create New Agreement';
+            document.getElementById('agreement-modal-subtitle').textContent = 'Set custom payout terms for a specific buyer';
+            document.getElementById('agreement-modal').dataset.mode = 'create';
+
+            // Populate buyer select
+            populateBuyerSelect();
+
+            // Show modal
+            const modal = document.getElementById('agreement-modal');
+            modal.style.display = 'flex';
+        }
+
+        async function openEditAgreementModal(agreementId) {
+            if (!sbClient || !currentVendor) return;
+
+            const { data: agreement, error } = await sbClient
+                .from('vendor_buyer_agreements')
+                .select('*')
+                .eq('id', agreementId)
+                .single();
+
+            if (error || !agreement) {
+                showToast('Error loading agreement', 'error');
+                return;
+            }
+
+            // Fetch buyer name
+            const { data: buyer } = await sbClient
+                .from('buyers')
+                .select('full_name')
+                .eq('id', agreement.buyer_id)
+                .single();
+
+            // Pre-fill form
+            document.getElementById('agreement-buyer-select').value = agreement.buyer_id;
+            document.getElementById('agreement-commission').value = parseFloat(agreement.commission_amount_per_feedback).toFixed(2);
+            document.getElementById('agreement-threshold').value = parseFloat(agreement.payout_threshold).toFixed(2);
+            document.getElementById('agreement-frequency').value = agreement.payout_frequency;
+            document.getElementById('agreement-upload-status').style.display = 'none';
+
+            // Make buyer select read-only during edit
+            document.getElementById('agreement-buyer-select').disabled = true;
+
+            // Update modal title
+            document.getElementById('agreement-modal-title').textContent = `Edit Agreement: ${buyer?.full_name || 'Buyer'}`;
+            document.getElementById('agreement-modal-subtitle').textContent = 'Update this buyer\'s custom payout terms (requires admin approval)';
+            document.getElementById('agreement-modal').dataset.mode = 'edit';
+            document.getElementById('agreement-modal').dataset.agreementId = agreementId;
+
+            // Show modal
+            const modal = document.getElementById('agreement-modal');
+            modal.style.display = 'flex';
+        }
+
+        async function submitAgreement() {
+            if (!sbClient || !currentVendor) return;
+
+            const buyerId = document.getElementById('agreement-buyer-select').value;
+            const commission = parseFloat(document.getElementById('agreement-commission').value);
+            const threshold = parseFloat(document.getElementById('agreement-threshold').value);
+            const frequency = document.getElementById('agreement-frequency').value;
+            const statusDiv = document.getElementById('agreement-upload-status');
+            const mode = document.getElementById('agreement-modal').dataset.mode;
+
+            // Validation
+            if (!buyerId) {
+                statusDiv.textContent = '❌ Please select a buyer';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            if (isNaN(commission) || commission < 0) {
+                statusDiv.textContent = '❌ Please enter a valid commission amount';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            if (isNaN(threshold) || threshold < 0) {
+                statusDiv.textContent = '❌ Please enter a valid payout threshold';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            if (!frequency) {
+                statusDiv.textContent = '❌ Please select a payout frequency';
+                statusDiv.style.display = 'block';
+                return;
+            }
+
+            statusDiv.textContent = '⏳ Submitting agreement for admin approval...';
+            statusDiv.style.display = 'block';
+
+            try {
+                if (mode === 'create') {
+                    // Create new agreement
+                    const { data: inserted, error } = await sbClient
+                        .from('vendor_buyer_agreements')
+                        .insert({
+                            vendor_id: currentVendor.id,
+                            buyer_id: buyerId,
+                            commission_amount_per_feedback: commission,
+                            payout_threshold: threshold,
+                            payout_frequency: frequency,
+                            agreement_status: 'proposed',  // Requires admin approval
+                            proposed_date: new Date().toISOString()
+                        })
+                        .select();
+
+                    if (error) {
+                        statusDiv.textContent = `❌ Error: ${error.message}`;
+                        statusDiv.style.display = 'block';
+                        return;
+                    }
+
+                    // Create notification for buyer
+                    if (inserted && inserted.length > 0) {
+                        await createVendorNotification(
+                            buyerId,
+                            'agreement_proposed',
+                            `Vendor has proposed a custom payout agreement with you - awaiting admin approval`,
+                            'vendor_buyer_agreements',
+                            inserted[0].id
+                        );
+                    }
+
+                    statusDiv.textContent = '✅ Agreement submitted! Admin will review and notify you.';
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.color = '#16a34a';
+                    statusDiv.style.backgroundColor = '#dcfce7';
+
+                    setTimeout(() => {
+                        closeCommissionModal('agreement-modal');
+                        loadCustomAgreements();
+                    }, 1500);
+
+                } else if (mode === 'edit') {
+                    // Update existing agreement
+                    const agreementId = document.getElementById('agreement-modal').dataset.agreementId;
+                    const { error } = await sbClient
+                        .from('vendor_buyer_agreements')
+                        .update({
+                            commission_amount_per_feedback: commission,
+                            payout_threshold: threshold,
+                            payout_frequency: frequency,
+                            agreement_status: 'proposed',  // Re-propose after edit
+                            proposed_date: new Date().toISOString()
+                        })
+                        .eq('id', agreementId);
+
+                    if (error) {
+                        statusDiv.textContent = `❌ Error: ${error.message}`;
+                        statusDiv.style.display = 'block';
+                        return;
+                    }
+
+                    statusDiv.textContent = '✅ Agreement updated! Admin will review changes.';
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.color = '#16a34a';
+                    statusDiv.style.backgroundColor = '#dcfce7';
+
+                    setTimeout(() => {
+                        closeCommissionModal('agreement-modal');
+                        loadCustomAgreements();
+                    }, 1500);
+                }
+            } catch (err) {
+                statusDiv.textContent = `❌ Error: ${err.message}`;
+                statusDiv.style.display = 'block';
+            }
+        }
+
+        async function deactivateAgreement(agreementId) {
+            if (!sbClient) return;
+
+            const confirmed = await new Promise((resolve) => {
+                showConfirmation(
+                    'Deactivate Agreement',
+                    'Are you sure you want to deactivate this agreement? This action cannot be undone.',
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+
+            if (!confirmed) return;
+
+            const { error } = await sbClient
+                .from('vendor_buyer_agreements')
+                .update({ agreement_status: 'terminated' })
+                .eq('id', agreementId);
+
+            if (error) {
+                showToast('Error deactivating agreement', 'error');
+                return;
+            }
+
+            showToast('✓ Agreement deactivated', 'success');
+            loadCustomAgreements();
+        }
+
+        // Load agreements on portal init
+        if (!window.originalInitPortal) {
+            window.originalInitPortal = initPortal;
+            initPortal = async function() {
+                await window.originalInitPortal();
+                loadCustomAgreements();
+                loadIncomingRateChangeRequests();
+            };
+        }
+
+        // ===== PHASE 2 STEP 4: BIDIRECTIONAL RATE CHANGE REQUEST FLOW =====
+
+        async function loadIncomingRateChangeRequests() {
+            if (!sbClient || !currentVendor) return;
+            const tbody = document.getElementById('incoming-requests-table-body');
+            const noMsg = document.getElementById('no-incoming-requests-msg');
+            const count = document.getElementById('incoming-requests-count');
+
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading requests...</td></tr>';
+
+            // Query rate_change_requests where vendor_id = currentVendor and status = 'pending'
+            const { data: requests, error } = await sbClient
+                .from('rate_change_requests')
+                .select('id, buyer_id, change_type, current_value, requested_value, reason, created_at, status')
+                .eq('vendor_id', currentVendor.id)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading incoming requests:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #dc2626;">Error loading requests</td></tr>';
+                noMsg.style.display = 'none';
+                return;
+            }
+
+            if (!requests || requests.length === 0) {
+                tbody.style.display = 'none';
+                noMsg.style.display = 'block';
+                count.textContent = '0';
+                return;
+            }
+
+            tbody.style.display = 'table-row-group';
+            noMsg.style.display = 'none';
+            count.textContent = requests.length.toString();
+
+            // Fetch buyer names
+            const buyerIds = [...new Set(requests.map(r => r.buyer_id))];
+            const { data: buyers } = await sbClient
+                .from('buyers')
+                .select('id, full_name')
+                .in('id', buyerIds);
+
+            const buyerMap = {};
+            if (buyers) {
+                buyers.forEach(b => {
+                    buyerMap[b.id] = b.full_name || 'Unknown';
+                });
+            }
+
+            tbody.innerHTML = requests.map(request => {
+                let changeTypeLabel = '';
+                if (request.change_type === 'commission') changeTypeLabel = 'Commission Rate';
+                else if (request.change_type === 'threshold') changeTypeLabel = 'Payout Threshold';
+                else if (request.change_type === 'frequency') changeTypeLabel = 'Payout Frequency';
+
+                let currentDisplay = request.current_value;
+                let proposedDisplay = request.requested_value;
+                if (request.change_type === 'commission' || request.change_type === 'threshold') {
+                    currentDisplay = '$' + parseFloat(request.current_value).toFixed(2);
+                    proposedDisplay = '$' + parseFloat(request.requested_value).toFixed(2);
+                } else if (request.change_type === 'frequency') {
+                    currentDisplay = request.current_value.replace('_', ' ');
+                    proposedDisplay = request.requested_value.replace('_', ' ');
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px;"><input type="checkbox" class="incoming-request-checkbox" data-request-id="${request.id}"></td>
+                        <td style="padding: 12px; color: #475569;">${buyerMap[request.buyer_id] || 'Loading...'}</td>
+                        <td style="padding: 12px; color: #475569;">${changeTypeLabel}</td>
+                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">${proposedDisplay}</td>
+                        <td style="padding: 12px; color: #64748b; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${request.reason || '-'}</td>
+                        <td style="padding: 12px; color: #64748b; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="openReviewRequestModal('${request.id}')" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">👁️ Review</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openReviewRequestModal(requestId) {
+            if (!sbClient) return;
+
+            const { data: request, error } = await sbClient
+                .from('rate_change_requests')
+                .select('id, buyer_id, change_type, current_value, requested_value, reason, vendor_id')
+                .eq('id', requestId)
+                .single();
+
+            if (error || !request) {
+                showToast('Error loading request details', 'error');
+                return;
+            }
+
+            // Fetch buyer name
+            const { data: buyer } = await sbClient
+                .from('buyers')
+                .select('full_name')
+                .eq('id', request.buyer_id)
+                .single();
+
+            // Set modal data
+            document.getElementById('review-request-modal').dataset.requestId = requestId;
+            document.getElementById('review-request-modal').dataset.vendorId = request.vendor_id;
+            document.getElementById('review-request-buyer-name').textContent = `From: ${buyer?.full_name || 'Unknown Buyer'}`;
+
+            // Format change type
+            let changeTypeLabel = '';
+            if (request.change_type === 'commission') changeTypeLabel = 'Commission Rate';
+            else if (request.change_type === 'threshold') changeTypeLabel = 'Payout Threshold';
+            else if (request.change_type === 'frequency') changeTypeLabel = 'Payout Frequency';
+
+            document.getElementById('review-request-type').textContent = changeTypeLabel;
+
+            // Format values
+            let currentDisplay = request.current_value;
+            let proposedDisplay = request.requested_value;
+            if (request.change_type === 'commission' || request.change_type === 'threshold') {
+                currentDisplay = '$' + parseFloat(request.current_value).toFixed(2);
+                proposedDisplay = '$' + parseFloat(request.requested_value).toFixed(2);
+            } else if (request.change_type === 'frequency') {
+                currentDisplay = request.current_value.replace('_', ' ');
+                proposedDisplay = request.requested_value.replace('_', ' ');
+            }
+
+            document.getElementById('review-request-current').textContent = currentDisplay;
+            document.getElementById('review-request-proposed').textContent = proposedDisplay;
+            document.getElementById('review-request-reason').textContent = request.reason || 'No reason provided';
+            document.getElementById('review-request-status').style.display = 'none';
+
+            // Show modal
+            const modal = document.getElementById('review-request-modal');
+            modal.style.display = 'flex';
+        }
+
+        async function acceptIncomingRequest() {
+            if (!sbClient) return;
+
+            const requestId = document.getElementById('review-request-modal').dataset.requestId;
+            const statusDiv = document.getElementById('review-request-status');
+
+            statusDiv.textContent = '⏳ Accepting request...';
+            statusDiv.style.display = 'block';
+            statusDiv.style.color = '#075985';
+            statusDiv.style.backgroundColor = '#d1e7f5';
+
+            // Get request details before updating
+            const { data: request } = await sbClient
+                .from('rate_change_requests')
+                .select('buyer_id')
+                .eq('id', requestId)
+                .single();
+
+            const { error } = await sbClient
+                .from('rate_change_requests')
+                .update({ status: 'accepted' })
+                .eq('id', requestId);
+
+            if (error) {
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.backgroundColor = '#fee2e2';
+                return;
+            }
+
+            // Create notification for buyer
+            if (request && request.buyer_id) {
+                await createVendorNotification(
+                    request.buyer_id,
+                    'rate_change_accepted',
+                    `Vendor has accepted your rate change request - awaiting admin approval`,
+                    'rate_change_requests',
+                    requestId
+                );
+            }
+
+            statusDiv.textContent = '✅ Request accepted! Pending admin approval.';
+            statusDiv.style.color = '#16a34a';
+            statusDiv.style.backgroundColor = '#dcfce7';
+
+            setTimeout(() => {
+                closeCommissionModal('review-request-modal');
+                loadIncomingRateChangeRequests();
+            }, 1500);
+        }
+
+        async function rejectIncomingRequest() {
+            if (!sbClient) return;
+
+            const requestId = document.getElementById('review-request-modal').dataset.requestId;
+            const statusDiv = document.getElementById('review-request-status');
+
+            const confirmed = await new Promise((resolve) => {
+                showConfirmation(
+                    'Reject Request',
+                    'Are you sure you want to reject this rate change request?',
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+
+            if (!confirmed) return;
+
+            statusDiv.textContent = '⏳ Rejecting request...';
+            statusDiv.style.display = 'block';
+            statusDiv.style.color = '#075985';
+            statusDiv.style.backgroundColor = '#d1e7f5';
+
+            // Get request details before updating
+            const { data: request } = await sbClient
+                .from('rate_change_requests')
+                .select('buyer_id')
+                .eq('id', requestId)
+                .single();
+
+            const { error } = await sbClient
+                .from('rate_change_requests')
+                .update({ status: 'rejected' })
+                .eq('id', requestId);
+
+            if (error) {
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.style.color = '#dc2626';
+                statusDiv.style.backgroundColor = '#fee2e2';
+                return;
+            }
+
+            // Create notification for buyer
+            if (request && request.buyer_id) {
+                await createVendorNotification(
+                    request.buyer_id,
+                    'rate_change_rejected',
+                    `Vendor has rejected your rate change request`,
+                    'rate_change_requests',
+                    requestId
+                );
+            }
+
+            statusDiv.textContent = '✅ Request rejected.';
+            statusDiv.style.color = '#16a34a';
+            statusDiv.style.backgroundColor = '#dcfce7';
+
+            setTimeout(() => {
+                closeCommissionModal('review-request-modal');
+                loadIncomingRateChangeRequests();
+            }, 1500);
+        }
+
+        function toggleIncomingRequestsSelectAll() {
+            const selectAll = document.getElementById('incoming-requests-select-all').checked;
+            document.querySelectorAll('#incoming-requests-table-body input[type="checkbox"]').forEach(cb => {
+                cb.checked = selectAll;
+            });
+        }
+
+        async function batchAcceptIncomingRequests() {
+            const selected = Array.from(document.querySelectorAll('#incoming-requests-table-body input[type="checkbox"]:checked'))
+                .map(cb => cb.dataset.requestId);
+
+            if (selected.length === 0) {
+                alert('Please select at least one request to accept');
+                return;
+            }
+
+            if (!sbClient) return;
+
+            for (const requestId of selected) {
+                await sbClient
+                    .from('rate_change_requests')
+                    .update({ status: 'accepted' })
+                    .eq('id', requestId);
+            }
+
+            showToast(`✓ ${selected.length} request(s) accepted`, 'success');
+            await loadIncomingRateChangeRequests();
+            document.getElementById('incoming-requests-select-all').checked = false;
+        }
+
+        async function batchRejectIncomingRequests() {
+            const selected = Array.from(document.querySelectorAll('#incoming-requests-table-body input[type="checkbox"]:checked'))
+                .map(cb => cb.dataset.requestId);
+
+            if (selected.length === 0) {
+                alert('Please select at least one request to reject');
+                return;
+            }
+
+            const confirmed = await new Promise((resolve) => {
+                showConfirmation(
+                    'Reject Selected Requests',
+                    `Are you sure you want to reject ${selected.length} request(s)?`,
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+
+            if (!confirmed) return;
+
+            if (!sbClient) return;
+
+            for (const requestId of selected) {
+                await sbClient
+                    .from('rate_change_requests')
+                    .update({ status: 'rejected' })
+                    .eq('id', requestId);
+            }
+
+            showToast(`✗ ${selected.length} request(s) rejected`, 'success');
+            await loadIncomingRateChangeRequests();
+            document.getElementById('incoming-requests-select-all').checked = false;
+        }
+
+        // ===== NOTIFICATION CREATION (Vendor actions) =====
+        async function createVendorNotification(userId, notificationType, message, relatedTable, relatedId) {
+            if (!sbClient) return false;
+
+            try {
+                const { error } = await sbClient.from('in_app_notifications').insert({
+                    user_id: userId,
+                    notification_type: notificationType,
+                    message: message,
+                    related_table: relatedTable,
+                    related_id: relatedId,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                });
+
+                if (error) {
+                    console.error('Error creating notification:', error);
+                    return false;
+                }
+                return true;
+            } catch (err) {
+                console.error('Exception creating notification:', err);
+                return false;
+            }
+        }
+
+        // Update existing vendor action functions to create notifications
+        // Patch approveIncomingRequest
+        async function approveIncomingRequestWithNotification(requestId, adminUserId) {
+            if (!sbClient) return;
+
+            try {
+                // Get the admin_payables record to get admin_id
+                const { data: payable } = await sbClient
+                    .from('admin_payables')
+                    .select('admin_id, related_feedback_id')
+                    .eq('id', requestId)
+                    .single();
+
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'pending' })
+                    .eq('id', requestId);
+
+                // Create notification for admin if needed
+                if (payable && payable.admin_id) {
+                    await createVendorNotification(
+                        payable.admin_id,
+                        'vendor_approved_payout',
+                        `Vendor approved a payout request - waiting for admin approval`,
+                        'admin_payables',
+                        requestId
+                    );
+                }
+
+                showToast('✓ Request approved', 'success');
+                await loadManageIncomingRequests();
+            } catch (err) {
+                console.error('Error approving request:', err);
+                showToast('Error approving request', 'error');
+            }
+        }
+
+        // Patch submitAgreement to add notification
+        async function submitAgreementWithNotification(buyerId, vendorId) {
+            if (!sbClient) return false;
+
+            try {
+                await createVendorNotification(
+                    buyerId,
+                    'agreement_proposed',
+                    `A vendor has proposed a custom payout agreement with you`,
+                    'vendor_buyer_agreements',
+                    vendorId
+                );
+                return true;
+            } catch (err) {
+                console.error('Error creating notification:', err);
+                return false;
+            }
+        }
 
         initPortal();
     </script>
