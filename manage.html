@@ -2109,7 +2109,16 @@
             <h1>Echo Hub</h1>
             <p>Vendor Product Management Portal</p>
         </div>
-        <button id="logoutBtn" class="btn-logout">Sign Out</button>
+        <div style="display: flex; gap: 16px; align-items: center; position: relative;">
+            <button id="vendor-notification-bell" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 20px; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="toggleVendorNotificationDropdown()">🔔 <span id="vendor-notification-count" style="background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: -5px; min-width: 18px; text-align: center;">0</span></button>
+            <div id="vendor-notification-dropdown" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; display: none; margin-top: 8px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e5aa8;">Notifications</div>
+                <div id="vendor-notification-list" style="max-height: 350px; overflow-y: auto;">
+                    <div style="padding: 20px; text-align: center; color: #718096; font-size: 14px;">No notifications yet</div>
+                </div>
+            </div>
+            <button id="logoutBtn" class="btn-logout">Sign Out</button>
+        </div>
     </header>
 
     <div class="container">
@@ -2820,7 +2829,13 @@
             <!-- Manage Payouts Section - UNIFIED LIFECYCLE HUB -->
             <div class="panel" style="margin-top: 24px;">
                 <div class="panel-header">
-                    <h2>💰 Payout Lifecycle Hub</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <h2>💰 Payout Lifecycle Hub</h2>
+                        <div style="display: flex; gap: 12px; align-items: center; flex: 0 1 400px;">
+                            <input type="text" id="lifecycle-search-field" placeholder="Search by name, ID, or email..." style="flex: 1; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: white;" oninput="filterPayoutLifecycleRows()">
+                            <span id="lifecycle-search-count" style="font-size: 12px; color: #718096; min-width: 60px;">Showing all</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Payout Summary Cards -->
@@ -2884,10 +2899,9 @@
                     <!-- PENDING APPROVAL SECTION -->
                     <div id="manage-pending-section" class="lifecycle-content" style="display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3 style="color: #2c3e50; margin: 0; font-size: 16px;">Pending Your Approval</h3>
+                            <h3 style="color: #2c3e50; margin: 0; font-size: 16px;">Ready to Request Payment</h3>
                             <div style="display: flex; gap: 8px;">
-                                <button onclick="batchApproveManagePayouts()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✓ Approve Selected</button>
-                                <button onclick="batchDenyManagePayouts()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
+                                <button onclick="batchRequestPayment()" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📤 Request Payment (Selected)</button>
                             </div>
                         </div>
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
@@ -3413,6 +3427,7 @@
                 await loadPayoutDataFromDB();
                 await initPayoutDataPolling();
                 await setupPolling();
+                await loadVendorNotifications();
 
                 loadingState.style.display = 'none';
                 portalContent.style.display = 'block';
@@ -6352,6 +6367,108 @@
 
         // MANAGE PAYOUTS LIFECYCLE FUNCTIONS
 
+        // ===== VENDOR NOTIFICATIONS =====
+        function toggleVendorNotificationDropdown() {
+            const dropdown = document.getElementById('vendor-notification-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function loadVendorNotifications() {
+            try {
+                const user = await sbClient.auth.getUser();
+                if (!user.data.user) return;
+
+                const { data: notifications, error } = await sbClient
+                    .from('in_app_notifications')
+                    .select('*')
+                    .eq('user_id', user.data.user.id)
+                    .eq('is_read', false)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const notificationList = document.getElementById('vendor-notification-list');
+                const notificationCount = document.getElementById('vendor-notification-count');
+
+                if (notifications && notifications.length > 0) {
+                    notificationList.innerHTML = notifications.map(n => `
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; hover:background: #f8fafc; cursor: pointer; transition: all 0.2s;" onclick="markVendorNotificationRead('${n.id}')">
+                            <div style="font-weight: 600; color: #1e5aa8; font-size: 13px;">${formatVendorNotificationType(n.notification_type)}</div>
+                            <div style="color: #4a5568; font-size: 12px; margin-top: 4px;">${n.message}</div>
+                            <div style="color: #cbd5e1; font-size: 11px; margin-top: 4px;">${new Date(n.created_at).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+                    notificationCount.textContent = notifications.length;
+                } else {
+                    notificationList.innerHTML = '<div style="padding: 20px; text-align: center; color: #718096; font-size: 14px;">No new notifications</div>';
+                    notificationCount.textContent = '0';
+                }
+            } catch (err) {
+                console.error('Error loading vendor notifications:', err);
+            }
+        }
+
+        function formatVendorNotificationType(type) {
+            const types = {
+                'rate_change_approved': '✅ Rate Change Approved',
+                'rate_change_rejected': '❌ Rate Change Rejected',
+                'agreement_approved': '✅ Agreement Approved',
+                'agreement_rejected': '❌ Agreement Rejected',
+                'vendor_approved_payout': '💰 Payout Approved',
+                'vendor_denied_payout': '❌ Payout Denied'
+            };
+            return types[type] || type;
+        }
+
+        async function markVendorNotificationRead(notificationId) {
+            try {
+                await sbClient
+                    .from('in_app_notifications')
+                    .update({ is_read: true })
+                    .eq('id', notificationId);
+
+                await loadVendorNotifications();
+            } catch (err) {
+                console.error('Error marking notification as read:', err);
+            }
+        }
+
+        // ===== PAYOUT LIFECYCLE HUB SEARCH =====
+        function filterPayoutLifecycleRows() {
+            const searchInput = document.getElementById('lifecycle-search-field');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            if (!searchTerm) {
+                // Show all rows
+                document.querySelectorAll('#manage-incoming-table-body tr').forEach(row => row.style.display = '');
+                document.querySelectorAll('#manage-pending-table-body tr').forEach(row => row.style.display = '');
+                document.querySelectorAll('#manage-awaiting-table-body tr').forEach(row => row.style.display = '');
+                document.querySelectorAll('#manage-verified-table-body tr').forEach(row => row.style.display = '');
+                document.getElementById('lifecycle-search-count').textContent = 'Showing all';
+                return;
+            }
+
+            let visibleCount = 0;
+            const searchInTable = (tableBody) => {
+                let count = 0;
+                Array.from(tableBody.querySelectorAll('tr')).forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const isMatch = text.includes(searchTerm);
+                    row.style.display = isMatch ? '' : 'none';
+                    if (isMatch) count++;
+                });
+                return count;
+            };
+
+            visibleCount += searchInTable(document.getElementById('manage-incoming-table-body'));
+            visibleCount += searchInTable(document.getElementById('manage-pending-table-body'));
+            visibleCount += searchInTable(document.getElementById('manage-awaiting-table-body'));
+            visibleCount += searchInTable(document.getElementById('manage-verified-table-body'));
+
+            document.getElementById('lifecycle-search-count').textContent = `Found: ${visibleCount}`;
+        }
+
         function switchManagePayoutsLifecycleTab(tab) {
             // Update tab buttons
             document.getElementById('manage-incoming-tab').classList.toggle('active', tab === 'incoming');
@@ -6450,11 +6567,9 @@
                         <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(payout.created_at).toLocaleDateString()}</td>
-                        <td style="padding: 12px; text-align: center;">
+                        <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
                             <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="approveManagePayout('${payout.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Approve</button>
+                            <button onclick="requestPaymentForCommission('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📤 Request</button>
                         </td>
                     </tr>
                     <tr id="${detailsId}" style="display: none; background: #f0f9ff; border-bottom: 1px solid #e2e8f0;">
@@ -6484,12 +6599,12 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where vendor_flagged=true OR buyer_flagged=true
+                // Query admin_payables where status='payment_requested' (vendor needs to upload receipt)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
+                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_payment_requested_date, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .or(`vendor_flagged.eq.true,buyer_flagged.eq.true`)
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -6521,7 +6636,7 @@
                 }
 
                 tbody.innerHTML = payouts.map(payout => {
-                    const slaTimer = calculateSLATimer(payout.vendor_receipt_uploaded_date || payout.created_at, 'vendor');
+                    const slaTimer = calculateSLATimer(payout.vendor_payment_requested_date || payout.created_at, 'vendor');
                     const inquiry = inquiriesMap[payout.related_feedback_id];
                     const detailsId = `awaiting-details-${payout.id}`;
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
@@ -6644,59 +6759,68 @@
             }
         }
 
-        async function batchApproveManagePayouts() {
-            const selected = Array.from(document.querySelectorAll('#manage-pending-table-body input[type="checkbox"]:checked'))
-                .map(cb => cb.dataset.payoutId);
-
-            if (selected.length === 0) {
-                alert('Please select at least one payout to approve');
-                return;
-            }
-
-            if (!sbClient) return;
+        async function requestPaymentForCommission(payoutId) {
+            if (!sbClient || !currentVendor) return;
 
             try {
-                for (const payoutId of selected) {
-                    await sbClient
-                        .from('admin_payables')
-                        .update({ status: 'completed' })
-                        .eq('id', payoutId);
-                }
+                const { error } = await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'payment_requested', vendor_payment_requested_date: new Date().toISOString() })
+                    .eq('id', payoutId)
+                    .eq('vendor_id', currentVendor.id);
 
-                alert(`✓ ${selected.length} payout(s) approved`);
+                if (error) throw error;
+
+                showToast('✓ Payment request sent. You have 48 hours to upload receipt.', 'success');
                 await loadManagePendingPayouts();
-                document.getElementById('manage-pending-select-all').checked = false;
             } catch (err) {
-                console.error('Error approving payouts:', err);
-                alert('Error approving payouts');
+                console.error('Error requesting payment:', err);
+                showToast('Error requesting payment. Please try again.', 'error');
             }
         }
 
-        async function batchDenyManagePayouts() {
+        async function batchRequestPayment() {
             const selected = Array.from(document.querySelectorAll('#manage-pending-table-body input[type="checkbox"]:checked'))
                 .map(cb => cb.dataset.payoutId);
 
             if (selected.length === 0) {
-                alert('Please select at least one payout to deny');
+                showToast('Please select at least one commission to request payment for', 'warning');
                 return;
             }
 
             if (!sbClient) return;
 
             try {
+                const timestamp = new Date().toISOString();
+                let successCount = 0;
+                let failedIds = [];
+
                 for (const payoutId of selected) {
-                    await sbClient
+                    const { error } = await sbClient
                         .from('admin_payables')
-                        .update({ status: 'denied' })
-                        .eq('id', payoutId);
+                        .update({ status: 'payment_requested', vendor_payment_requested_date: timestamp })
+                        .eq('id', payoutId)
+                        .eq('vendor_id', currentVendor.id);
+
+                    if (error) {
+                        failedIds.push(payoutId);
+                        console.error(`Error requesting payment for ${payoutId}:`, error);
+                    } else {
+                        successCount++;
+                    }
                 }
 
-                alert(`✗ ${selected.length} payout(s) denied`);
+                if (failedIds.length === 0) {
+                    showToast(`✓ ${successCount} payment request(s) sent. 48-hour timer started.`, 'success');
+                } else {
+                    showToast(`⚠️ ${successCount} succeeded, ${failedIds.length} failed. Check console for details.`, 'warning');
+                }
+
                 await loadManagePendingPayouts();
                 document.getElementById('manage-pending-select-all').checked = false;
             } catch (err) {
-                console.error('Error denying payouts:', err);
-                alert('Error denying payouts');
+                console.error('Error in batch payment request:', err);
+                showToast('Error processing payment requests', 'error');
             }
         }
 
