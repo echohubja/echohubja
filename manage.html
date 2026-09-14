@@ -6602,7 +6602,7 @@
                 // Query admin_payables where status='payment_requested' (vendor needs to upload receipt)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_payment_requested_date, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
+                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
@@ -6636,7 +6636,7 @@
                 }
 
                 tbody.innerHTML = payouts.map(payout => {
-                    const slaTimer = calculateSLATimer(payout.vendor_payment_requested_date || payout.created_at, 'vendor');
+                    const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
                     const inquiry = inquiriesMap[payout.related_feedback_id];
                     const detailsId = `awaiting-details-${payout.id}`;
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
@@ -6765,7 +6765,7 @@
             try {
                 const { error } = await sbClient
                     .from('admin_payables')
-                    .update({ status: 'payment_requested', vendor_payment_requested_date: new Date().toISOString() })
+                    .update({ status: 'payment_requested' })
                     .eq('id', payoutId)
                     .eq('vendor_id', currentVendor.id);
 
@@ -6798,7 +6798,7 @@
                 for (const payoutId of selected) {
                     const { error } = await sbClient
                         .from('admin_payables')
-                        .update({ status: 'payment_requested', vendor_payment_requested_date: timestamp })
+                        .update({ status: 'payment_requested' })
                         .eq('id', payoutId)
                         .eq('vendor_id', currentVendor.id);
 
