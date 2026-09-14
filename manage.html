@@ -5583,10 +5583,14 @@
 
                 if (vpError) throw vpError;
 
-                // Load admin payables (referral commissions)
+                // Load admin payables (referral commissions) with buyer inviters joined
                 const { data: adminPayables, error: apError } = await sbClient
                     .from('admin_payables')
-                    .select('*')
+                    .select(`
+                        *,
+                        buyer:split_with_buyer_id (id, full_name, email, paypal_email),
+                        inviter_vendor:split_with_vendor_id (id, full_name, email, paypal_email)
+                    `)
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
 
@@ -5687,9 +5691,9 @@
                 // Vendor Inviter: admin_payables WHERE split_with_vendor_id IS NOT NULL
                 rows = data.adminPayables.filter(ap => ap.split_with_vendor_id).map(ap => ({
                     id: ap.id,
-                    name: (ap.inviter_vendor && ap.inviter_vendor.business_name) || 'Vendor Inviter',  // Extract from joined vendor
+                    name: (ap.inviter_vendor && ap.inviter_vendor.full_name) || 'Vendor Inviter',  // Extract from joined buyer (inviters are buyers)
                     email: (ap.inviter_vendor && ap.inviter_vendor.paypal_email) || (ap.inviter_vendor && ap.inviter_vendor.email) || '',  // PayPal email preferred
-                    amount: ap.admin_commission || 0,
+                    amount: (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0,  // Vendor inviter gets remainder
                     status: ap.status || 'pending',
                     slaTimer: calculateSLATimer(ap.created_at, 'vendor'),
                     type: 'vendor-inviter'
