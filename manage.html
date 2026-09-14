@@ -5698,18 +5698,21 @@
 
             // Transform admin_payables into transaction-level rows showing 4-part split
             const transactionRows = data.adminPayables.map(ap => {
-                // Find related reviewer payment (buyer_payables with own_feedback earning)
+                const adminAmount = ap.admin_commission || 0;
+                const buyerInviterAmount = ap.buyer_portion || 0;
+                const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
+                const totalAmount = ap.amount_owed || 0;
+
+                // Reviewer amount is the remainder to ensure 4-part split adds up correctly
+                const reviewerAmount = Math.max(0, totalAmount - adminAmount - buyerInviterAmount - vendorInviterAmount);
+
+                // Get reviewer name from buyer_payables if available (person who submitted feedback)
                 const reviewerPayment = data.buyerPayables.find(bp =>
                     bp.related_feedback_ids &&
                     bp.related_feedback_ids.includes(ap.related_feedback_id) &&
                     bp.earning_type === 'own_feedback'
                 );
-
-                const adminAmount = ap.admin_commission || 0;
-                const reviewerAmount = reviewerPayment ? (reviewerPayment.amount_owed || 0) : 0;
-                const buyerInviterAmount = ap.buyer_portion || 0;
-                const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
-                const totalAmount = ap.amount_owed || 0;
+                const reviewerName = (reviewerPayment && reviewerPayment.buyer && reviewerPayment.buyer.full_name) || 'Reviewer';
 
                 // Format feedback ID (show last 8 chars)
                 const feedbackIdShort = ap.related_feedback_id ? ap.related_feedback_id.substring(ap.related_feedback_id.length - 8).toUpperCase() : 'N/A';
@@ -5724,7 +5727,7 @@
                     feedbackIdDisplay: feedbackIdShort,
                     date: dateStr,
                     createdAt: ap.created_at,
-                    reviewerName: (reviewerPayment && reviewerPayment.buyer && reviewerPayment.buyer.full_name) || 'Reviewer',
+                    reviewerName: reviewerName,
                     adminAmount: adminAmount,
                     reviewerAmount: reviewerAmount,
                     buyerInviterAmount: buyerInviterAmount,
