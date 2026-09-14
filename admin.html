@@ -5622,11 +5622,19 @@ async function loadVendorSubmitterRelationship() {
 
                 if (error) throw error;
 
-                loadMessagingConversations();
-                alert('Feedback approved successfully');
+                showToast('✓ Feedback approved successfully', 'success');
+
+                // Reload both conversations and current thread
+                setTimeout(() => {
+                    loadMessagingConversations();
+                    const currentConvId = messagingState.currentConversationId;
+                    if (currentConvId) {
+                        loadMessagingMessages(currentConvId);
+                    }
+                }, 500);
             } catch (err) {
                 console.error('Approve feedback error:', err);
-                alert(`Error approving feedback: ${escapeHtml(err.message)}`);
+                showToast(`✗ Error approving feedback: ${escapeHtml(err.message)}`, 'error');
             }
         }
 
@@ -5639,11 +5647,19 @@ async function loadVendorSubmitterRelationship() {
 
                 if (error) throw error;
 
-                loadMessagingConversations();
-                alert('Feedback rejected successfully');
+                showToast('✓ Feedback rejected successfully', 'success');
+
+                // Reload both conversations and current thread
+                setTimeout(() => {
+                    loadMessagingConversations();
+                    const currentConvId = messagingState.currentConversationId;
+                    if (currentConvId) {
+                        loadMessagingMessages(currentConvId);
+                    }
+                }, 500);
             } catch (err) {
                 console.error('Reject feedback error:', err);
-                alert(`Error rejecting feedback: ${escapeHtml(err.message)}`);
+                showToast(`✗ Error rejecting feedback: ${escapeHtml(err.message)}`, 'error');
             }
         }
 
