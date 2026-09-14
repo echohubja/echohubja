@@ -1005,13 +1005,58 @@
 
             <!-- Lifecycle Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
-                <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-ready-tab">🟢 Ready to Request</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Pending Confirmation</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-awaiting-tab">📤 Awaiting Receipts</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-verified-tab">✅ Verified</button>
             </div>
 
-            <!-- Pending Approval Table -->
-            <div id="reviewer-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+            <!-- Ready to Request Payment Table -->
+            <div id="reviewer-ready-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Ready to Request Payment</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestPaymentReviewers()" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📤 Request Payment (Selected)</button>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="reviewer-amount-min" oninput="filterReviewerReadyToRequest()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="reviewer-amount-max" oninput="filterReviewerReadyToRequest()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-date-from" oninput="filterReviewerReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-date-to" oninput="filterReviewerReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="reviewer-ready-select-all" onchange="toggleReviewerReadySelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewer-ready-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pending Confirmation Table -->
+            <div id="reviewer-pending-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
                     <div style="display: flex; gap: 8px;">
@@ -1019,6 +1064,23 @@
                         <button onclick="batchDenyReviewerPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="reviewer-pending-amount-min" oninput="filterReviewerPendingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="reviewer-pending-amount-max" oninput="filterReviewerPendingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-pending-date-from" oninput="filterReviewerPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-pending-date-to" oninput="filterReviewerPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1046,6 +1108,23 @@
                         <button onclick="batchRequestInfoReviewerAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="reviewer-awaiting-amount-min" oninput="filterReviewerAwaitingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="reviewer-awaiting-amount-max" oninput="filterReviewerAwaitingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-awaiting-date-from" oninput="filterReviewerAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-awaiting-date-to" oninput="filterReviewerAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1067,6 +1146,23 @@
             <!-- Verified Section -->
             <div id="reviewer-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="reviewer-verified-amount-min" oninput="filterReviewerVerified()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="reviewer-verified-amount-max" oninput="filterReviewerVerified()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-verified-date-from" oninput="filterReviewerVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-verified-date-to" oninput="filterReviewerVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1094,13 +1190,58 @@
 
             <!-- Lifecycle Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
-                <button class="lifecycle-tab-btn active" onclick="switchBuyerInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn active" onclick="switchBuyerInviterLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-ready-tab">🟢 Ready to Request</button>
+                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-pending-tab">⏳ Pending Confirmation</button>
                 <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-awaiting-tab">📤 Awaiting Receipts</button>
                 <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-verified-tab">✅ Verified</button>
             </div>
 
-            <!-- Pending Approval Table -->
-            <div id="buyer-inviter-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+            <!-- Ready to Request Payment Table -->
+            <div id="buyer-inviter-ready-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Ready to Request Payment</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestPaymentBuyerInviters()" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📤 Request Payment (Selected)</button>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="buyer-inviter-amount-min" oninput="filterBuyerInviterReadyToRequest()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="buyer-inviter-amount-max" oninput="filterBuyerInviterReadyToRequest()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-date-from" oninput="filterBuyerInviterReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-date-to" oninput="filterBuyerInviterReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="buyer-inviter-ready-select-all" onchange="toggleBuyerInviterReadySelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Commission ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-inviter-ready-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pending Confirmation Table -->
+            <div id="buyer-inviter-pending-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
                     <div style="display: flex; gap: 8px;">
@@ -1108,6 +1249,23 @@
                         <button onclick="batchDenyBuyerInviterPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="buyer-inviter-pending-amount-min" oninput="filterBuyerInviterPendingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="buyer-inviter-pending-amount-max" oninput="filterBuyerInviterPendingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-pending-date-from" oninput="filterBuyerInviterPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-pending-date-to" oninput="filterBuyerInviterPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1135,6 +1293,23 @@
                         <button onclick="batchRequestInfoBuyerInviterAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="buyer-inviter-awaiting-amount-min" oninput="filterBuyerInviterAwaitingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="buyer-inviter-awaiting-amount-max" oninput="filterBuyerInviterAwaitingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-awaiting-date-from" oninput="filterBuyerInviterAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-awaiting-date-to" oninput="filterBuyerInviterAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1156,6 +1331,23 @@
             <!-- Verified Section -->
             <div id="buyer-inviter-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="buyer-inviter-verified-amount-min" oninput="filterBuyerInviterVerified()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="buyer-inviter-verified-amount-max" oninput="filterBuyerInviterVerified()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-verified-date-from" oninput="filterBuyerInviterVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-verified-date-to" oninput="filterBuyerInviterVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1183,13 +1375,58 @@
 
             <!-- Lifecycle Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
-                <button class="lifecycle-tab-btn active" onclick="switchVendorInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-pending-tab">⏳ Pending Approval</button>
+                <button class="lifecycle-tab-btn active" onclick="switchVendorInviterLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-ready-tab">🟢 Ready to Request</button>
+                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-pending-tab">⏳ Pending Confirmation</button>
                 <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-awaiting-tab">📤 Awaiting Receipts</button>
                 <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-verified-tab">✅ Verified</button>
             </div>
 
-            <!-- Pending Approval Table -->
-            <div id="vendor-inviter-pending-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+            <!-- Ready to Request Payment Table -->
+            <div id="vendor-inviter-ready-section" class="lifecycle-content active" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Ready to Request Payment</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="batchRequestPaymentVendorInviters()" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📤 Request Payment (Selected)</button>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="vendor-inviter-amount-min" oninput="filterVendorInviterReadyToRequest()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="vendor-inviter-amount-max" oninput="filterVendorInviterReadyToRequest()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-date-from" oninput="filterVendorInviterReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-date-to" oninput="filterVendorInviterReadyToRequest()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;"><input type="checkbox" id="vendor-inviter-ready-select-all" onchange="toggleVendorInviterReadySelectAll()"></th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Commission ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-inviter-ready-table-body">
+                            <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pending Confirmation Table -->
+            <div id="vendor-inviter-pending-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">Pending Your Approval</h3>
                     <div style="display: flex; gap: 8px;">
@@ -1197,6 +1434,23 @@
                         <button onclick="batchDenyVendorInviterPending()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">✗ Deny Selected</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="vendor-inviter-pending-amount-min" oninput="filterVendorInviterPendingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="vendor-inviter-pending-amount-max" oninput="filterVendorInviterPendingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-pending-date-from" oninput="filterVendorInviterPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-pending-date-to" oninput="filterVendorInviterPendingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1224,6 +1478,23 @@
                         <button onclick="batchRequestInfoVendorInviterAwaiting()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">📨 Request Info</button>
                     </div>
                 </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="vendor-inviter-awaiting-amount-min" oninput="filterVendorInviterAwaitingApprovals()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="vendor-inviter-awaiting-amount-max" oninput="filterVendorInviterAwaitingApprovals()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-awaiting-date-from" oninput="filterVendorInviterAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-awaiting-date-to" oninput="filterVendorInviterAwaitingApprovals()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1245,6 +1516,23 @@
             <!-- Verified Section -->
             <div id="vendor-inviter-verified-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
                 <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 16px;">Verified & Completed</h3>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="vendor-inviter-verified-amount-min" oninput="filterVendorInviterVerified()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="vendor-inviter-verified-amount-max" oninput="filterVendorInviterVerified()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-verified-date-from" oninput="filterVendorInviterVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-verified-date-to" oninput="filterVendorInviterVerified()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
@@ -1414,6 +1702,34 @@
         let currentBuyerId = '';
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
+
+        // Global Data Storage for Commission Filters
+        let globalReviewerReadyData = [];
+        let globalReviewerReadyVendorMap = {};
+        let globalReviewerPendingData = [];
+        let globalReviewerPendingVendorMap = {};
+        let globalReviewerAwaitingData = [];
+        let globalReviewerAwaitingVendorMap = {};
+        let globalReviewerVerifiedData = [];
+        let globalReviewerVerifiedVendorMap = {};
+
+        let globalBuyerInviterReadyData = [];
+        let globalBuyerInviterReadyVendorMap = {};
+        let globalBuyerInviterPendingData = [];
+        let globalBuyerInviterPendingVendorMap = {};
+        let globalBuyerInviterAwaitingData = [];
+        let globalBuyerInviterAwaitingVendorMap = {};
+        let globalBuyerInviterVerifiedData = [];
+        let globalBuyerInviterVerifiedVendorMap = {};
+
+        let globalVendorInviterReadyData = [];
+        let globalVendorInviterReadyVendorMap = {};
+        let globalVendorInviterPendingData = [];
+        let globalVendorInviterPendingVendorMap = {};
+        let globalVendorInviterAwaitingData = [];
+        let globalVendorInviterAwaitingVendorMap = {};
+        let globalVendorInviterVerifiedData = [];
+        let globalVendorInviterVerifiedVendorMap = {};
 
         // Toast Notification System
         function showToast(message, type = 'info') {
@@ -3384,6 +3700,91 @@
             await loadReviewerPendingApprovals(buyerId);
         }
 
+        async function loadReviewerReadyToRequest(buyerId) {
+            const tbody = document.getElementById('reviewer-ready-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                globalReviewerReadyData = data || [];
+                globalReviewerReadyVendorMap = {};
+
+                if (globalReviewerReadyData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No commissions ready for payment request</td></tr>';
+                    return;
+                }
+
+                // Clear filter inputs
+                document.getElementById('reviewer-amount-min').value = '';
+                document.getElementById('reviewer-amount-max').value = '';
+                document.getElementById('reviewer-date-from').value = '';
+                document.getElementById('reviewer-date-to').value = '';
+
+                filterReviewerReadyToRequest();
+            } catch (err) {
+                console.error('Error loading reviewer ready to request:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterReviewerReadyToRequest() {
+            const minAmount = parseFloat(document.getElementById('reviewer-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('reviewer-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('reviewer-date-from').value;
+            const dateTo = document.getElementById('reviewer-date-to').value;
+
+            let filtered = globalReviewerReadyData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderReviewerReadyToRequestTable(filtered);
+        }
+
+        function renderReviewerReadyToRequestTable(data) {
+            const tbody = document.getElementById('reviewer-ready-table-body');
+            const countEl = document.querySelector('[id="reviewer-ready-count"]') || { textContent: '' };
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching commissions</td></tr>';
+                if (countEl) countEl.textContent = '0 records';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="reviewer-ready-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="requestPaymentForReviewer('${comm.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            if (countEl) countEl.textContent = `${data.length} records`;
+        }
+
         async function loadReviewerPendingApprovals(buyerId) {
             const tbody = document.getElementById('reviewer-pending-table-body');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
@@ -3460,18 +3861,54 @@
         }
 
         function switchReviewerLifecycleTab(tab) {
-            document.querySelectorAll('#reviewer-pending-section, #reviewer-awaiting-section, #reviewer-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#reviewer-pending-tab, #reviewer-awaiting-tab, #reviewer-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+            document.querySelectorAll('#reviewer-ready-section, #reviewer-pending-section, #reviewer-awaiting-section, #reviewer-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#reviewer-ready-tab, #reviewer-pending-tab, #reviewer-awaiting-tab, #reviewer-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
 
-            if (tab === 'pending') {
+            if (tab === 'ready') {
+                document.getElementById('reviewer-ready-section').style.display = 'block';
+                document.getElementById('reviewer-ready-tab').style.borderBottomColor = '#10b981';
+                loadReviewerReadyToRequest(currentBuyer.id);
+            } else if (tab === 'pending') {
                 document.getElementById('reviewer-pending-section').style.display = 'block';
                 document.getElementById('reviewer-pending-tab').style.borderBottomColor = '#f59e0b';
+                loadReviewerPendingApprovals(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('reviewer-awaiting-section').style.display = 'block';
                 document.getElementById('reviewer-awaiting-tab').style.borderBottomColor = '#f59e0b';
+                loadReviewerAwaitingApprovals(currentBuyer.id);
             } else if (tab === 'verified') {
                 document.getElementById('reviewer-verified-section').style.display = 'block';
                 document.getElementById('reviewer-verified-tab').style.borderBottomColor = '#10b981';
+                loadReviewerVerifiedApprovals(currentBuyer.id);
+            }
+        }
+
+        function toggleReviewerReadySelectAll() {
+            const checkbox = document.getElementById('reviewer-ready-select-all');
+            document.querySelectorAll('.reviewer-ready-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchRequestPaymentReviewers() {
+            const selected = Array.from(document.querySelectorAll('.reviewer-ready-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            try {
+                for (const payableId of selected) {
+                    await db.from('buyer_payables')
+                        .update({
+                            status: 'payment_requested',
+                            payment_requested_date: new Date().toISOString()
+                        })
+                        .eq('id', payableId);
+                }
+                showToast(`✓ ${selected.length} payment request(s) sent to vendor`, 'success');
+                loadReviewerReadyToRequest(currentBuyer.id);
+            } catch (err) {
+                console.error('Error batch requesting payments:', err);
+                showToast('❌ Error requesting payments', 'error');
             }
         }
 
@@ -3519,10 +3956,316 @@
             showToast(`Info requests sent for ${selected.length} items`, 'success');
         }
 
+        // ========== REVIEWER PENDING FILTER FUNCTIONS ==========
+        async function loadReviewerPendingApprovals(buyerId) {
+            const tbody = document.getElementById('reviewer-pending-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .eq('status', 'payment_requested')
+                    .order('created_at', { ascending: false });
+
+                globalReviewerPendingData = data || [];
+                globalReviewerPendingVendorMap = {};
+
+                if (globalReviewerPendingData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
+                    return;
+                }
+
+                filterReviewerPendingApprovals();
+            } catch (err) {
+                console.error('Error loading reviewer pending approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterReviewerPendingApprovals() {
+            const minAmount = parseFloat(document.getElementById('reviewer-pending-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('reviewer-pending-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('reviewer-pending-date-from')?.value;
+            const dateTo = document.getElementById('reviewer-pending-date-to')?.value;
+
+            let filtered = globalReviewerPendingData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderReviewerPendingApprovalsTable(filtered);
+        }
+
+        function renderReviewerPendingApprovalsTable(data) {
+            const tbody = document.getElementById('reviewer-pending-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching pending approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #f59e0b;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Payment Requested</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="requestPaymentForReviewer('${comm.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== REVIEWER AWAITING FILTER FUNCTIONS ==========
+        async function loadReviewerAwaitingApprovals(buyerId) {
+            const tbody = document.getElementById('reviewer-awaiting-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .in('status', ['awaiting_receipt', 'payment_verified'])
+                    .order('created_at', { ascending: false });
+
+                globalReviewerAwaitingData = data || [];
+                globalReviewerAwaitingVendorMap = {};
+
+                if (globalReviewerAwaitingData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending receipts</td></tr>';
+                    return;
+                }
+
+                filterReviewerAwaitingApprovals();
+            } catch (err) {
+                console.error('Error loading reviewer awaiting approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterReviewerAwaitingApprovals() {
+            const minAmount = parseFloat(document.getElementById('reviewer-awaiting-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('reviewer-awaiting-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('reviewer-awaiting-date-from')?.value;
+            const dateTo = document.getElementById('reviewer-awaiting-date-to')?.value;
+
+            let filtered = globalReviewerAwaitingData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderReviewerAwaitingApprovalsTable(filtered);
+        }
+
+        function renderReviewerAwaitingApprovalsTable(data) {
+            const tbody = document.getElementById('reviewer-awaiting-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No matching items awaiting receipt</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="reviewer-awaiting-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #8b5cf6;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">Awaiting Receipt</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="requestPaymentForReviewer('${comm.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== REVIEWER VERIFIED FILTER FUNCTIONS ==========
+        async function loadReviewerVerifiedApprovals(buyerId) {
+            const tbody = document.getElementById('reviewer-verified-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .eq('status', 'verified')
+                    .order('created_at', { ascending: false });
+
+                globalReviewerVerifiedData = data || [];
+                globalReviewerVerifiedVendorMap = {};
+
+                if (globalReviewerVerifiedData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No verified approvals</td></tr>';
+                    return;
+                }
+
+                filterReviewerVerified();
+            } catch (err) {
+                console.error('Error loading reviewer verified approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterReviewerVerified() {
+            const minAmount = parseFloat(document.getElementById('reviewer-verified-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('reviewer-verified-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('reviewer-verified-date-from')?.value;
+            const dateTo = document.getElementById('reviewer-verified-date-to')?.value;
+
+            let filtered = globalReviewerVerifiedData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderReviewerVerifiedTable(filtered);
+        }
+
+        function renderReviewerVerifiedTable(data) {
+            const tbody = document.getElementById('reviewer-verified-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching verified approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.payment_verified_date || comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         // ========== BUYER INVITER APPROVALS ==========
         async function loadBuyerInviterApprovals(buyerId) {
             if (!buyerId) return;
             await loadBuyerInviterPendingApprovals(buyerId);
+        }
+
+        async function loadBuyerInviterReadyToRequest(buyerId) {
+            const tbody = document.getElementById('buyer-inviter-ready-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                globalBuyerInviterReadyData = data || [];
+                globalBuyerInviterReadyVendorMap = {};
+
+                if (globalBuyerInviterReadyData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No commissions ready for payment request</td></tr>';
+                    return;
+                }
+
+                // Clear filter inputs
+                document.getElementById('buyer-inviter-amount-min').value = '';
+                document.getElementById('buyer-inviter-amount-max').value = '';
+                document.getElementById('buyer-inviter-date-from').value = '';
+                document.getElementById('buyer-inviter-date-to').value = '';
+
+                filterBuyerInviterReadyToRequest();
+            } catch (err) {
+                console.error('Error loading buyer inviter ready to request:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterBuyerInviterReadyToRequest() {
+            const minAmount = parseFloat(document.getElementById('buyer-inviter-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('buyer-inviter-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('buyer-inviter-date-from').value;
+            const dateTo = document.getElementById('buyer-inviter-date-to').value;
+
+            let filtered = globalBuyerInviterReadyData.filter(record => {
+                const amount = parseFloat(record.buyer_portion || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderBuyerInviterReadyToRequestTable(filtered);
+        }
+
+        function renderBuyerInviterReadyToRequestTable(data) {
+            const tbody = document.getElementById('buyer-inviter-ready-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching commissions</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-ready-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.id.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="requestPaymentForBuyerInviter('${comm.id}', '${currentBuyerId}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
         async function loadBuyerInviterPendingApprovals(buyerId) {
@@ -3534,46 +4277,123 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'pending')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
-                if (!data || data.length === 0) {
+                globalBuyerInviterPendingData = data || [];
+                globalBuyerInviterPendingVendorMap = {};
+
+                if (globalBuyerInviterPendingData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = data.map(comm => `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-pending-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
-                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
-                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
-                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
-                        </td>
-                    </tr>
-                `).join('');
+                filterBuyerInviterPendingApprovals();
             } catch (err) {
                 console.error('Error loading buyer inviter pending approvals:', err);
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
         }
 
-        function switchBuyerInviterLifecycleTab(tab) {
-            document.querySelectorAll('#buyer-inviter-pending-section, #buyer-inviter-awaiting-section, #buyer-inviter-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#buyer-inviter-pending-tab, #buyer-inviter-awaiting-tab, #buyer-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+        function filterBuyerInviterPendingApprovals() {
+            const minAmount = parseFloat(document.getElementById('buyer-inviter-pending-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('buyer-inviter-pending-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('buyer-inviter-pending-date-from')?.value;
+            const dateTo = document.getElementById('buyer-inviter-pending-date-to')?.value;
 
-            if (tab === 'pending') {
+            let filtered = globalBuyerInviterPendingData.filter(record => {
+                const amount = parseFloat(record.buyer_portion || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderBuyerInviterPendingApprovalsTable(filtered);
+        }
+
+        function renderBuyerInviterPendingApprovalsTable(data) {
+            const tbody = document.getElementById('buyer-inviter-pending-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching pending approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-pending-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                    <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                        <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function switchBuyerInviterLifecycleTab(tab) {
+            document.querySelectorAll('#buyer-inviter-ready-section, #buyer-inviter-pending-section, #buyer-inviter-awaiting-section, #buyer-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#buyer-inviter-ready-tab, #buyer-inviter-pending-tab, #buyer-inviter-awaiting-tab, #buyer-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+
+            if (tab === 'ready') {
+                document.getElementById('buyer-inviter-ready-section').style.display = 'block';
+                document.getElementById('buyer-inviter-ready-tab').style.borderBottomColor = '#10b981';
+                loadBuyerInviterReadyToRequest(currentBuyer.id);
+            } else if (tab === 'pending') {
                 document.getElementById('buyer-inviter-pending-section').style.display = 'block';
                 document.getElementById('buyer-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
+                loadBuyerInviterPendingApprovals(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('buyer-inviter-awaiting-section').style.display = 'block';
                 document.getElementById('buyer-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
+                loadBuyerInviterAwaitingApprovals(currentBuyer.id);
             } else if (tab === 'verified') {
                 document.getElementById('buyer-inviter-verified-section').style.display = 'block';
                 document.getElementById('buyer-inviter-verified-tab').style.borderBottomColor = '#10b981';
+                loadBuyerInviterVerifiedApprovals(currentBuyer.id);
+            }
+        }
+
+        function toggleBuyerInviterReadySelectAll() {
+            const checkbox = document.getElementById('buyer-inviter-ready-select-all');
+            document.querySelectorAll('.buyer-inviter-ready-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchRequestPaymentBuyerInviters() {
+            const selected = Array.from(document.querySelectorAll('.buyer-inviter-ready-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            try {
+                for (const payableId of selected) {
+                    await db.from('admin_payables')
+                        .update({
+                            status: 'payment_requested',
+                            buyer_payment_requested_date: new Date().toISOString()
+                        })
+                        .eq('id', payableId)
+                        .eq('split_with_buyer_id', currentBuyer.id);
+                }
+                showToast(`✓ ${selected.length} payment request(s) sent to vendor`, 'success');
+                loadBuyerInviterReadyToRequest(currentBuyer.id);
+            } catch (err) {
+                console.error('Error batch requesting payments:', err);
+                showToast('❌ Error requesting payments', 'error');
             }
         }
 
@@ -3631,34 +4451,147 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Show received commissions awaiting admin verification
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'received')
+                    .in('status', ['awaiting_receipt', 'payment_verified'])
                     .order('created_at', { ascending: false });
 
-                if (!data || data.length === 0) {
+                globalBuyerInviterAwaitingData = data || [];
+                globalBuyerInviterAwaitingVendorMap = {};
+
+                if (globalBuyerInviterAwaitingData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = data.map(comm => `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-awaiting-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
-                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
-                        </td>
-                    </tr>
-                `).join('');
+                filterBuyerInviterAwaitingApprovals();
             } catch (err) {
                 console.error('Error loading buyer inviter awaiting approvals:', err);
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
+        }
+
+        function filterBuyerInviterAwaitingApprovals() {
+            const minAmount = parseFloat(document.getElementById('buyer-inviter-awaiting-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('buyer-inviter-awaiting-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('buyer-inviter-awaiting-date-from')?.value;
+            const dateTo = document.getElementById('buyer-inviter-awaiting-date-to')?.value;
+
+            let filtered = globalBuyerInviterAwaitingData.filter(record => {
+                const amount = parseFloat(record.buyer_portion || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderBuyerInviterAwaitingApprovalsTable(filtered);
+        }
+
+        function renderBuyerInviterAwaitingApprovalsTable(data) {
+            const tbody = document.getElementById('buyer-inviter-awaiting-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No matching pending verifications</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-awaiting-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== BUYER INVITER VERIFIED FILTER FUNCTIONS ==========
+        async function loadBuyerInviterVerifiedApprovals(buyerId) {
+            const tbody = document.getElementById('buyer-inviter-verified-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'verified')
+                    .order('created_at', { ascending: false });
+
+                globalBuyerInviterVerifiedData = data || [];
+                globalBuyerInviterVerifiedVendorMap = {};
+
+                if (globalBuyerInviterVerifiedData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No verified approvals</td></tr>';
+                    return;
+                }
+
+                filterBuyerInviterVerified();
+            } catch (err) {
+                console.error('Error loading buyer inviter verified approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterBuyerInviterVerified() {
+            const minAmount = parseFloat(document.getElementById('buyer-inviter-verified-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('buyer-inviter-verified-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('buyer-inviter-verified-date-from')?.value;
+            const dateTo = document.getElementById('buyer-inviter-verified-date-to')?.value;
+
+            let filtered = globalBuyerInviterVerifiedData.filter(record => {
+                const amount = parseFloat(record.buyer_portion || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderBuyerInviterVerifiedTable(filtered);
+        }
+
+        function renderBuyerInviterVerifiedTable(data) {
+            const tbody = document.getElementById('buyer-inviter-verified-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching verified approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
         // ========== VENDOR INVITER APPROVALS ==========
@@ -3667,12 +4600,91 @@
             await loadVendorInviterPendingApprovals(buyerId);
         }
 
+        async function loadVendorInviterReadyToRequest(buyerId) {
+            const tbody = document.getElementById('vendor-inviter-ready-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                globalVendorInviterReadyData = data || [];
+                globalVendorInviterReadyVendorMap = {};
+
+                if (globalVendorInviterReadyData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No commissions ready for payment request</td></tr>';
+                    return;
+                }
+
+                document.getElementById('vendor-inviter-amount-min').value = '';
+                document.getElementById('vendor-inviter-amount-max').value = '';
+                document.getElementById('vendor-inviter-date-from').value = '';
+                document.getElementById('vendor-inviter-date-to').value = '';
+
+                filterVendorInviterReadyToRequest();
+            } catch (err) {
+                console.error('Error loading vendor inviter ready to request:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterVendorInviterReadyToRequest() {
+            const minAmount = parseFloat(document.getElementById('vendor-inviter-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('vendor-inviter-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('vendor-inviter-date-from').value;
+            const dateTo = document.getElementById('vendor-inviter-date-to').value;
+
+            let filtered = globalVendorInviterReadyData.filter(record => {
+                const amount = parseFloat(record.buyer_portion || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderVendorInviterReadyToRequestTable(filtered);
+        }
+
+        function renderVendorInviterReadyToRequestTable(data) {
+            const tbody = document.getElementById('vendor-inviter-ready-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching commissions</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-ready-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.id.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="requestPaymentForVendorInviter('${comm.id}', '${currentBuyerId}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         async function loadVendorInviterPendingApprovals(buyerId) {
             const tbody = document.getElementById('vendor-inviter-pending-table-body');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Get vendors referred by this buyer
                 const { data: vendors } = await db
                     .from('vendors')
                     .select('id')
@@ -3685,51 +4697,127 @@
 
                 const vendorIds = vendors.map(v => v.id);
 
-                // Get commissions from those vendors
                 const { data: commissions } = await db
                     .from('admin_payables')
                     .select('*')
                     .in('vendor_id', vendorIds)
-                    .eq('status', 'pending')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
-                if (!commissions || commissions.length === 0) {
+                globalVendorInviterPendingData = commissions || [];
+                globalVendorInviterPendingVendorMap = {};
+
+                if (globalVendorInviterPendingData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No pending approvals</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = commissions.map(comm => `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-pending-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
-                        <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
-                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
-                            <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
-                        </td>
-                    </tr>
-                `).join('');
+                filterVendorInviterPendingApprovals();
             } catch (err) {
                 console.error('Error loading vendor inviter pending approvals:', err);
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
         }
 
-        function switchVendorInviterLifecycleTab(tab) {
-            document.querySelectorAll('#vendor-inviter-pending-section, #vendor-inviter-awaiting-section, #vendor-inviter-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#vendor-inviter-pending-tab, #vendor-inviter-awaiting-tab, #vendor-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+        function filterVendorInviterPendingApprovals() {
+            const minAmount = parseFloat(document.getElementById('vendor-inviter-pending-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('vendor-inviter-pending-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('vendor-inviter-pending-date-from')?.value;
+            const dateTo = document.getElementById('vendor-inviter-pending-date-to')?.value;
 
-            if (tab === 'pending') {
+            let filtered = globalVendorInviterPendingData.filter(record => {
+                const amount = parseFloat(record.admin_commission || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderVendorInviterPendingApprovalsTable(filtered);
+        }
+
+        function renderVendorInviterPendingApprovalsTable(data) {
+            const tbody = document.getElementById('vendor-inviter-pending-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No matching pending approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-pending-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
+                    <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                        <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function switchVendorInviterLifecycleTab(tab) {
+            document.querySelectorAll('#vendor-inviter-ready-section, #vendor-inviter-pending-section, #vendor-inviter-awaiting-section, #vendor-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#vendor-inviter-ready-tab, #vendor-inviter-pending-tab, #vendor-inviter-awaiting-tab, #vendor-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+
+            if (tab === 'ready') {
+                document.getElementById('vendor-inviter-ready-section').style.display = 'block';
+                document.getElementById('vendor-inviter-ready-tab').style.borderBottomColor = '#10b981';
+                loadVendorInviterReadyToRequest(currentBuyer.id);
+            } else if (tab === 'pending') {
                 document.getElementById('vendor-inviter-pending-section').style.display = 'block';
                 document.getElementById('vendor-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
+                loadVendorInviterPendingApprovals(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('vendor-inviter-awaiting-section').style.display = 'block';
                 document.getElementById('vendor-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
+                loadVendorInviterAwaitingApprovals(currentBuyer.id);
             } else if (tab === 'verified') {
                 document.getElementById('vendor-inviter-verified-section').style.display = 'block';
                 document.getElementById('vendor-inviter-verified-tab').style.borderBottomColor = '#10b981';
+                loadVendorInviterVerifiedApprovals(currentBuyer.id);
+            }
+        }
+
+        function toggleVendorInviterReadySelectAll() {
+            const checkbox = document.getElementById('vendor-inviter-ready-select-all');
+            document.querySelectorAll('.vendor-inviter-ready-checkbox').forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function batchRequestPaymentVendorInviters() {
+            const selected = Array.from(document.querySelectorAll('.vendor-inviter-ready-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('No items selected', 'info');
+                return;
+            }
+
+            try {
+                for (const payableId of selected) {
+                    await db.from('admin_payables')
+                        .update({
+                            status: 'payment_requested',
+                            buyer_payment_requested_date: new Date().toISOString()
+                        })
+                        .eq('id', payableId)
+                        .eq('split_with_buyer_id', currentBuyer.id);
+                }
+                showToast(`✓ ${selected.length} payment request(s) sent to vendor`, 'success');
+                loadVendorInviterReadyToRequest(currentBuyer.id);
+            } catch (err) {
+                console.error('Error batch requesting payments:', err);
+                showToast('❌ Error requesting payments', 'error');
             }
         }
 
@@ -3787,7 +4875,6 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Get vendors referred by this buyer
                 const { data: vendors } = await db
                     .from('vendors')
                     .select('id')
@@ -3800,34 +4887,147 @@
 
                 const vendorIds = vendors.map(v => v.id);
 
-                // Get commissions from those vendors with status='received' awaiting verification
                 const { data: commissions } = await db
                     .from('admin_payables')
                     .select('*')
                     .in('vendor_id', vendorIds)
-                    .eq('status', 'received')
+                    .in('status', ['awaiting_receipt', 'payment_verified'])
                     .order('created_at', { ascending: false });
 
-                if (!commissions || commissions.length === 0) {
+                globalVendorInviterAwaitingData = commissions || [];
+                globalVendorInviterAwaitingVendorMap = {};
+
+                if (globalVendorInviterAwaitingData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = commissions.map(comm => `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-awaiting-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
-                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
-                        </td>
-                    </tr>
-                `).join('');
+                filterVendorInviterAwaitingApprovals();
             } catch (err) {
                 console.error('Error loading vendor inviter awaiting approvals:', err);
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
+        }
+
+        function filterVendorInviterAwaitingApprovals() {
+            const minAmount = parseFloat(document.getElementById('vendor-inviter-awaiting-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('vendor-inviter-awaiting-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('vendor-inviter-awaiting-date-from')?.value;
+            const dateTo = document.getElementById('vendor-inviter-awaiting-date-to')?.value;
+
+            let filtered = globalVendorInviterAwaitingData.filter(record => {
+                const amount = parseFloat(record.admin_commission || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderVendorInviterAwaitingApprovalsTable(filtered);
+        }
+
+        function renderVendorInviterAwaitingApprovalsTable(data) {
+            const tbody = document.getElementById('vendor-inviter-awaiting-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No matching pending verifications</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-awaiting-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== VENDOR INVITER VERIFIED FILTER FUNCTIONS ==========
+        async function loadVendorInviterVerifiedApprovals(buyerId) {
+            const tbody = document.getElementById('vendor-inviter-verified-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'verified')
+                    .order('created_at', { ascending: false });
+
+                globalVendorInviterVerifiedData = data || [];
+                globalVendorInviterVerifiedVendorMap = {};
+
+                if (globalVendorInviterVerifiedData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No verified approvals</td></tr>';
+                    return;
+                }
+
+                filterVendorInviterVerified();
+            } catch (err) {
+                console.error('Error loading vendor inviter verified approvals:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterVendorInviterVerified() {
+            const minAmount = parseFloat(document.getElementById('vendor-inviter-verified-amount-min')?.value) || 0;
+            const maxAmount = parseFloat(document.getElementById('vendor-inviter-verified-amount-max')?.value) || Infinity;
+            const dateFrom = document.getElementById('vendor-inviter-verified-date-from')?.value;
+            const dateTo = document.getElementById('vendor-inviter-verified-date-to')?.value;
+
+            let filtered = globalVendorInviterVerifiedData.filter(record => {
+                const amount = parseFloat(record.admin_commission || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderVendorInviterVerifiedTable(filtered);
+        }
+
+        function renderVendorInviterVerifiedTable(data) {
+            const tbody = document.getElementById('vendor-inviter-verified-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching verified approvals</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(comm => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
         // ========== SHARED PAYOUT FUNCTIONS ==========
@@ -3976,6 +5176,75 @@
                 statusDiv.style.background = '#fee2e2';
                 statusDiv.style.color = '#991b1b';
                 statusDiv.style.display = 'block';
+            }
+        }
+
+        // Payment Request Functions for All User Types
+        async function requestPaymentForReviewer(payableId) {
+            if (!db) return;
+
+            try {
+                const { error } = await db.from('buyer_payables')
+                    .update({
+                        status: 'payment_requested',
+                        payment_requested_date: new Date().toISOString()
+                    })
+                    .eq('id', payableId);
+
+                if (error) throw error;
+
+                showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
+                loadReviewerPendingApprovals(currentBuyer.id);
+
+            } catch (err) {
+                console.error('Error requesting payment:', err);
+                showToast('❌ Error requesting payment. Please try again.', 'error');
+            }
+        }
+
+        async function requestPaymentForBuyerInviter(payableId, buyerId) {
+            if (!db) return;
+
+            try {
+                const { error } = await db.from('admin_payables')
+                    .update({
+                        status: 'payment_requested',
+                        buyer_payment_requested_date: new Date().toISOString()
+                    })
+                    .eq('id', payableId)
+                    .eq('split_with_buyer_id', buyerId);
+
+                if (error) throw error;
+
+                showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
+                loadBuyerInviterPendingApprovals(currentBuyer.id);
+
+            } catch (err) {
+                console.error('Error requesting payment:', err);
+                showToast('❌ Error requesting payment. Please try again.', 'error');
+            }
+        }
+
+        async function requestPaymentForVendorInviter(payableId, buyerId) {
+            if (!db) return;
+
+            try {
+                const { error } = await db.from('admin_payables')
+                    .update({
+                        status: 'payment_requested',
+                        buyer_payment_requested_date: new Date().toISOString()
+                    })
+                    .eq('id', payableId)
+                    .eq('split_with_buyer_id', buyerId);
+
+                if (error) throw error;
+
+                showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
+                loadVendorInviterPendingApprovals(currentBuyer.id);
+
+            } catch (err) {
+                console.error('Error requesting payment:', err);
+                showToast('❌ Error requesting payment. Please try again.', 'error');
             }
         }
 
