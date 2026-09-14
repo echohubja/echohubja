@@ -2757,7 +2757,7 @@
                 <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding: 0 20px; background: white;">
                     <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Pending Approval</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Awaiting Receipts</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Verified</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Admin Verified</button>
                 </div>
 
                 <!-- Payout Subsections Container -->
@@ -3431,7 +3431,7 @@
                     }
 
                     // Calculate commission if feedback and approved
-                    if (inquiry.message_type === 'feedback' && inquiry.status === 'verified' && inquiry.vendor_status === 'approved') {
+                    if (inquiry.message_type === 'feedback' && inquiry.status === 'approved' && inquiry.vendor_status === 'approved') {
                         threadsMap[buyerId].commissionValue += 2.5;
                     }
                 });
@@ -3639,7 +3639,7 @@
             const typeEmoji = messageType === 'feedback' ? '💬' : messageType === 'buyer_followup' ? '↩️' : '❓';
             const feedbackMessages = thread.messages.filter(m => m.message_type === 'feedback');
             const vendorApproved = feedbackMessages.filter(m => m.vendor_status === 'approved').length > 0;
-            const adminVerified = feedbackMessages.filter(m => m.status === 'verified').length > 0;
+            const adminVerified = feedbackMessages.filter(m => m.status === 'approved').length > 0;
             const sla = getSLAStatus(thread.lastMessageTime);
             const threadClass = `inquiry-thread ${vendorApproved && adminVerified ? 'both-approved' : vendorApproved ? 'vendor-approved' : ''}`;
             const threadId = `${thread.buyer_name}-${thread.messages[0]?.id || 'unknown'}`;
@@ -3736,7 +3736,7 @@
             const feedbackStatus = msg.message_type === 'feedback' ? `
                 <div class="inquiry-feedback-status">
                     ${msg.vendor_status ? `<span class="status-badge-pill vendor ${msg.vendor_status}">You: ${msg.vendor_status === 'approved' ? '✅' : '❌'}</span>` : ''}
-                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending'}</span>` : ''}
+                    ${msg.status ? `<span class="status-badge-pill admin ${msg.status}">${msg.status === 'approved' ? '✅ Admin Verified' : msg.status === 'rejected' ? '❌ Admin Rejected' : '📋 Pending'}</span>` : ''}
                 </div>
             ` : '';
 
@@ -4521,8 +4521,10 @@
                     const date = new Date(feedback.created_at).toLocaleDateString();
                     const status = (feedback.status || 'pending').toLowerCase();
                     let statusBadge = `<span class="status-badge status-pending">PENDING</span>`;
-                    if (status === 'verified') {
-                        statusBadge = `<span class="status-badge status-verified">VERIFIED</span>`;
+                    if (status === 'approved') {
+                        statusBadge = `<span class="status-badge status-verified">ADMIN VERIFIED</span>`;
+                    } else if (status === 'rejected') {
+                        statusBadge = `<span class="status-badge" style="background: #fee2e2; color: #991b1b;">REJECTED</span>`;
                     }
 
                     return `
@@ -5106,7 +5108,7 @@
                 const feedbackStatus = msg.message_type === 'feedback' ? `
                     <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                         <span style="background: ${msg.vendor_status === 'approved' ? '#dcfce7' : '#fef3c7'}; color: ${msg.vendor_status === 'approved' ? '#166534' : '#92400e'}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">You: ${msg.vendor_status === 'approved' ? '✅' : '❌'}</span>
-                        <span style="background: ${msg.status === 'verified' ? '#dcfce7' : msg.status === 'rejected' ? '#fee2e2' : msg.status === 'flagged' ? '#fee2e2' : '#dbeafe'}; color: ${msg.status === 'verified' ? '#166534' : msg.status === 'rejected' ? '#991b1b' : msg.status === 'flagged' ? '#991b1b' : '#1e40af'}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${msg.status === 'verified' ? '✅ Verified' : msg.status === 'rejected' ? '❌ Rejected' : msg.status === 'flagged' ? '🚩 Flagged' : '📋 Pending'}</span>
+                        <span style="background: ${msg.status === 'approved' ? '#e0f2fe' : msg.status === 'rejected' ? '#fee2e2' : '#dbeafe'}; color: ${msg.status === 'approved' ? '#0369a1' : msg.status === 'rejected' ? '#991b1b' : '#1e40af'}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${msg.status === 'approved' ? '✅ Admin Verified' : msg.status === 'rejected' ? '❌ Admin Rejected' : '📋 Pending'}</span>
                     </div>
                 ` : '';
 
