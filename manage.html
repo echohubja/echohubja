@@ -3398,6 +3398,23 @@
             }
 
             try {
+                // CRITICAL: Verify vendor is authenticated with Supabase
+                // This is required for RLS policies to work on database updates
+                const { data: { user }, error: authError } = await sbClient.auth.getUser();
+
+                if (authError || !user) {
+                    console.warn('Supabase auth not available. Redirecting to login.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Verify the authenticated user matches the vendor's stored user_id
+                if (user.id !== vendorId) {
+                    console.warn('Auth mismatch:', { auth: user.id, vendor: vendorId });
+                    window.location.href = 'login.html?error=auth_mismatch';
+                    return;
+                }
+
                 const { data: vendorData, error: vendorError } = await sbClient
                     .from('vendors')
                     .select('*')
@@ -6956,8 +6973,8 @@
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(request.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #64748b; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="approveIncomingRequest('${request.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✓ Approve</button>
-                            <button onclick="denyIncomingRequest('${request.id}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">✗ Deny</button>
+                            <button onclick="openReceiptUploadModal('${request.id}', '${request.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}', ${request.amount_owed})" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">💾 Upload Receipt</button>
+                            <button onclick="resetIncomingRequest('${request.id}')" style="background: #6b7280; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">↶ Reset</button>
                         </td>
                     </tr>
                 `).join('');
@@ -7106,6 +7123,24 @@
             }
         }
 
+        async function resetIncomingRequest(requestId) {
+            if (!sbClient) return;
+
+            try {
+                // Reset status back to 'awaiting_vendor_approval' (or original state)
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'awaiting_vendor_approval' })
+                    .eq('id', requestId);
+
+                showToast('✓ Request reset', 'success');
+                await loadManageIncomingRequests();
+            } catch (err) {
+                console.error('Error resetting request:', err);
+                showToast('Error resetting request', 'error');
+            }
+        }
+
         // Receipt Upload Functions (V9)
         function openReceiptUploadModal(payoutId, recipientType, amountDue) {
             if (!currentVendor) return;
@@ -7160,10 +7195,32 @@
             }
 
             try {
-                statusDiv.textContent = '⏳ Uploading...';
+                statusDiv.textContent = '⏳ Verifying authentication...';
                 statusDiv.style.display = 'block';
                 statusDiv.style.color = '#075985';
                 statusDiv.style.background = '#d1e7f5';
+
+                // CRITICAL: Verify vendor is authenticated with Supabase
+                const { data: { user }, error: authError } = await sbClient.auth.getUser();
+
+                if (authError || !user) {
+                    statusDiv.textContent = '❌ Session expired. Please <a href="login.html" style="color: #1e5aa8;">log in again</a>.';
+                    statusDiv.style.color = '#dc2626';
+                    statusDiv.style.background = '#fee2e2';
+                    console.error('Auth check failed:', authError);
+                    return;
+                }
+
+                // Verify vendor_id matches auth user
+                if (user.id !== currentVendor.user_id) {
+                    statusDiv.textContent = '❌ Authentication mismatch. Please <a href="login.html" style="color: #1e5aa8;">log in again</a>.';
+                    statusDiv.style.color = '#dc2626';
+                    statusDiv.style.background = '#fee2e2';
+                    console.error('Vendor ID mismatch:', { auth: user.id, vendor: currentVendor.user_id });
+                    return;
+                }
+
+                statusDiv.textContent = '⏳ Uploading receipt...';
 
                 // Read file as Base64
                 const reader = new FileReader();
@@ -7173,7 +7230,8 @@
 
                     try {
                         // Update admin_payables with receipt data
-                        const { error } = await sbClient
+                        // RLS policy will validate vendor_id = auth.uid()
+                        const { data, error } = await sbClient
                             .from('admin_payables')
                             .update({
                                 vendor_paypal_transaction_id: txId,
@@ -7187,7 +7245,15 @@
                             .eq('id', payoutId);
 
                         if (error) {
-                            statusDiv.textContent = '❌ Upload failed: ' + error.message;
+                            console.error('Database error:', error);
+                            statusDiv.textContent = '❌ Upload failed: ' + (error.message || 'RLS policy blocked update. Try logging in again.');
+                            statusDiv.style.color = '#dc2626';
+                            statusDiv.style.background = '#fee2e2';
+                            return;
+                        }
+
+                        if (!data || data.length === 0) {
+                            statusDiv.textContent = '❌ Record not found or access denied. Try refreshing the page.';
                             statusDiv.style.color = '#dc2626';
                             statusDiv.style.background = '#fee2e2';
                             return;
