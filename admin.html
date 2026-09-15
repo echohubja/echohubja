@@ -8653,10 +8653,10 @@ async function loadVendorSubmitterRelationship() {
 
         async function loadNotifications() {
             try {
-                const currentUser = (await supabase.auth.getUser()).data.user.id;
+                const currentUser = (await db.auth.getUser()).data.user.id;
 
                 // ✅ FIX: Query both user-specific notifications AND broadcast notifications (user_id IS NULL)
-                const { data: notifications, error } = await supabase
+                const { data: notifications, error } = await db
                     .from('in_app_notifications')
                     .select('*')
                     .or(`user_id.eq.${currentUser},user_id.is.null`)
