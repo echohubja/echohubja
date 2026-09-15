@@ -3052,10 +3052,10 @@
                     return;
                 }
 
-                // Step 2: Update admin_payables status to 'verified'
+                // Step 2: Update admin_payables status to 'completed'
                 const { error: updateError } = await db.from('admin_payables')
                     .update({
-                        status: 'verified',
+                        status: 'completed',
                         unflagged_date: new Date().toISOString(),
                         unflag_reason: 'Receipt verification approved by admin'
                     })
