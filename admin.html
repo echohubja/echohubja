@@ -479,7 +479,7 @@
         <div class="flex gap-2 mb-6 border-b">
             <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">Tell Vendor To Send Payment</button>
             <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Vendor Requested To Pay</button>
-            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">✅ Ready to Approve</button>
+            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Awaiting Receipts</button>
             <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Under Review</button>
             <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Admin Have Verified</button>
         </div>
@@ -1907,6 +1907,12 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-btn-${tabName}`).classList.add('active');
 
+            // Clear SLA timer intervals when switching away from commissions tab
+            if (tabName !== 'commissions' && adminAwaitingSLAInterval) {
+                clearInterval(adminAwaitingSLAInterval);
+                adminAwaitingSLAInterval = null;
+            }
+
             document.getElementById('section-monitor').classList.add('hidden');
             document.getElementById('section-accounts').classList.add('hidden');
             document.getElementById('section-buyers').classList.add('hidden');
@@ -2218,8 +2224,10 @@
         let globalPendingVendorMap = {};
         let globalAwaitingData = [];
         let globalAwaitingVendorMap = {};
+        let globalAwaitingInquiriesMap = {};
         let globalVerifiedData = [];
         let globalVerifiedVendorMap = {};
+        let adminAwaitingSLAInterval = null;
 
         async function loadPendingApprovals() {
             const tbody = document.getElementById('pending-approvals-body');
@@ -2351,6 +2359,12 @@
 
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Loading awaiting receipts...</td></tr>';
 
+            // Clear existing interval before starting new one
+            if (adminAwaitingSLAInterval) {
+                clearInterval(adminAwaitingSLAInterval);
+                adminAwaitingSLAInterval = null;
+            }
+
             try {
                 // Query admin_payables where status='approved' and vendor_receipt_data IS NULL or buyer_receipt_data IS NULL
                 const { data, error } = await db.from('admin_payables')
@@ -2389,6 +2403,11 @@
                 document.getElementById('awaiting-date-to').value = '';
 
                 filterAwaitingReceipts();
+
+                // Set up periodic SLA timer refresh (every 60 seconds)
+                adminAwaitingSLAInterval = setInterval(() => {
+                    refreshAdminAwaitingSLATimers();
+                }, 60000);
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
@@ -2444,16 +2463,10 @@
                 const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
                 const amount = parseFloat(record.amount_owed || 0).toFixed(2);
 
-                // Calculate SLA timer
-                let slaStatus = '⏱️ Active';
-                let slaColor = 'text-blue-600';
-                if (record.vendor_flagged) {
-                    slaStatus = '🚨 Vendor Overdue';
-                    slaColor = 'text-red-600';
-                } else if (record.buyer_flagged) {
-                    slaStatus = '🚨 Recipient Overdue';
-                    slaColor = 'text-red-600';
-                }
+                // Calculate SLA timer for vendor (T+48h)
+                const slaTimer = calculateSLATimer(record.created_at, 'vendor');
+                const slaStatus = slaTimer.displayText;
+                const slaColor = slaTimer.statusColor;
 
                 return `
                     <tr class="hover:bg-orange-50">
@@ -2463,7 +2476,7 @@
                         <td class="p-2.5">${recipientType === 'Referrer' ? 'Buyer' : 'System'}</td>
                         <td class="p-2.5 text-right">$${amount}</td>
                         <td class="p-2.5">${approvedDate}</td>
-                        <td class="p-2.5 ${slaColor}">${slaStatus}</td>
+                        <td class="p-2.5 sla-timer-cell-${record.id}" style="color: ${slaColor};">${slaStatus}</td>
                         <td class="p-2.5 text-center">
                             <button onclick="requestInfoCommission('${record.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
                         </td>
@@ -2476,6 +2489,19 @@
             // Add checkbox change listeners
             document.querySelectorAll('.awaiting-checkbox').forEach(cb => {
                 cb.addEventListener('change', updateAwaitingSelectionBar);
+            });
+        }
+
+        function refreshAdminAwaitingSLATimers() {
+            if (!globalAwaitingData || globalAwaitingData.length === 0) return;
+
+            globalAwaitingData.forEach(payout => {
+                const timerCell = document.querySelector(`.sla-timer-cell-${payout.id}`);
+                if (!timerCell) return;
+
+                const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
+                timerCell.textContent = slaTimer.displayText;
+                timerCell.style.color = slaTimer.statusColor;
             });
         }
 
@@ -3944,6 +3970,45 @@
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
+        }
+
+        function calculateSLATimer(createdAt, stage) {
+            const created = new Date(createdAt);
+            const now = new Date();
+
+            let deadline;
+            if (stage === 'vendor') {
+                // T+48 hours
+                deadline = new Date(created.getTime() + 48 * 60 * 60 * 1000);
+            } else if (stage === 'buyer') {
+                // T+8 hours from vendor receipt upload
+                deadline = new Date(created.getTime() + 8 * 60 * 60 * 1000);
+            } else {
+                return { status: 'completed', timeLeft: 0, displayText: '✓ Completed', statusColor: '#16a34a' };
+            }
+
+            const timeLeft = deadline - now;
+
+            if (timeLeft <= 0) {
+                return { status: 'timeout', timeLeft: 0, displayText: '⏱️ Time Expired', statusColor: '#dc2626', deadline: deadline.toISOString() };
+            }
+
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+            let statusColor = '#16a34a'; // green
+            if (minutes < 5 && hours === 0) statusColor = '#dc2626'; // red
+            else if (minutes < 60 && hours < 1) statusColor = '#eab308'; // yellow
+
+            return {
+                status: 'active',
+                timeLeft: timeLeft,
+                hours: hours,
+                minutes: minutes,
+                displayText: hours > 0 ? `⏱️ ${hours}h ${minutes}m` : `⏱️ ${minutes}m`,
+                statusColor: statusColor,
+                deadline: deadline.toISOString()
+            };
         }
 
         function copyToClipboard(text) {
