@@ -394,7 +394,7 @@
     <!-- SECTION: INQUIRIES & FEEDBACK -->
     <div id="section-inquiries" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="mb-4 border-b pb-4">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8] mb-3">Feedback Verification Dashboard</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8] mb-3">🔐 Verify Seller & Buyer Payment Receipts</h2>
             <p class="text-xs text-gray-500 mb-4">Showing actionable feedback (pending/flagged). Verified/rejected are archived.</p>
 
             <!-- Status Summary Bar -->
@@ -454,11 +454,11 @@
         <!-- LIFECYCLE STATUS METRICS -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
             <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                <div class="text-[11px] text-green-600 font-semibold uppercase">Ready to Request</div>
+                <div class="text-[11px] text-green-600 font-semibold uppercase">Tell Vendor To Send Payment</div>
                 <div id="metric-ready-to-request" class="text-xl font-bold text-green-700 mt-0.5">0</div>
             </div>
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div class="text-[11px] text-amber-600 font-semibold uppercase">Pending Approvals</div>
+                <div class="text-[11px] text-amber-600 font-semibold uppercase">Vendor Requested To Pay</div>
                 <div id="metric-pending-approvals" class="text-xl font-bold text-amber-700 mt-0.5">0</div>
             </div>
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
@@ -466,7 +466,7 @@
                 <div id="metric-awaiting-receipts" class="text-xl font-bold text-orange-700 mt-0.5">0</div>
             </div>
             <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                <div class="text-[11px] text-green-600 font-semibold uppercase">Verified</div>
+                <div class="text-[11px] text-green-600 font-semibold uppercase">Receipts Admin Have Verified</div>
                 <div id="metric-verified" class="text-xl font-bold text-green-700 mt-0.5">0</div>
             </div>
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -477,11 +477,11 @@
 
         <!-- LIFECYCLE TABS -->
         <div class="flex gap-2 mb-6 border-b">
-            <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">🟢 Ready to Request</button>
-            <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Pending Approvals</button>
-            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Awaiting Receipts</button>
-            <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipt Verification</button>
-            <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Verified</button>
+            <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">Tell Vendor To Send Payment</button>
+            <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Vendor Requested To Pay</button>
+            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">✅ Ready to Approve</button>
+            <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Under Review</button>
+            <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Admin Have Verified</button>
         </div>
 
         <!-- READY TO REQUEST SECTION -->
@@ -590,8 +590,8 @@
 
         <!-- AWAITING RECEIPTS SECTION -->
         <div id="lifecycle-awaiting" class="lifecycle-section hidden">
-            <h3 class="text-md font-bold text-orange-700 mb-3">Approved Payouts Awaiting Receipt Uploads</h3>
-            <p class="text-xs text-gray-500 mb-4">These payments have been approved. Waiting for receipt verification uploads (SLA timers shown below).</p>
+            <h3 class="text-md font-bold text-orange-700 mb-3">Seller Needs to Upload Proof</h3>
+            <p class="text-xs text-gray-500 mb-4">Seller has 48 hours to upload proof they got paid. Follow up if deadline missed.</p>
 
             <!-- Search & Filter Controls -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
@@ -642,8 +642,8 @@
 
         <!-- RECEIPT VERIFICATION SECTION -->
         <div id="lifecycle-verification" class="lifecycle-section hidden">
-            <h3 class="text-md font-bold text-blue-700 mb-3">Receipt Verification - Side-by-Side Review</h3>
-            <p class="text-xs text-gray-500 mb-4">Both vendor and recipient have uploaded proof. Review and verify receipts before final approval.</p>
+            <h3 class="text-md font-bold text-blue-700 mb-3">Both Proofs Uploaded - Ready for Your Approval</h3>
+            <p class="text-xs text-gray-500 mb-4">Seller and buyer both uploaded receipts. Review both sides and approve to complete payment.</p>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -979,7 +979,7 @@
     <!-- SECTION: PAYMENT VERIFICATION -->
     <div id="section-payments" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Payment Proof Verification</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">Review & Approve Payment Proofs</h2>
             <span id="payment-count" class="text-xs bg-blue-100 text-[#1e5aa8] px-3 py-1 rounded-full font-semibold">0 pending</span>
         </div>
 
@@ -1173,14 +1173,14 @@
     <!-- SECTION: FLAGGED ACCOUNTS -->
     <div id="section-flagged" class="max-w-6xl mx-auto hub-card p-4 md:p-6 hidden">
         <div class="flex justify-between items-center mb-4 border-b pb-3">
-            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">🚩 Flagged Accounts (Missing Receipts)</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#1e5aa8]">⚠️ Urgent: Missing Proof - Need Seller/Buyer Follow-Up</h2>
             <span id="flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0 flagged</span>
         </div>
 
         <!-- VENDORS MISSING RECEIPTS (T+48h) -->
         <div class="mb-8 pb-6 border-b">
             <div class="flex items-center gap-2 mb-4">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">🏢 Vendors Missing Receipts (T+48h Timeout)</h3>
+                <h3 class="text-lg font-bold text-[#1e5aa8]">🏢 Sellers Blocked - Missed 48-Hour Deadline</h3>
                 <span id="vendor-flagged-count" class="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">0</span>
             </div>
             <p class="text-xs text-gray-500 mb-4">Vendors who have not uploaded payment receipts within 48 hours of payment request.</p>
@@ -1206,13 +1206,13 @@
             </div>
         </div>
 
-        <!-- BUYERS MISSING RECEIPTS (T+8h) -->
+        <!-- BUYER INVITERS MISSING RECEIPTS (T+8h) -->
         <div>
             <div class="flex items-center gap-2 mb-4">
-                <h3 class="text-lg font-bold text-[#1e5aa8]">👤 Buyers Missing Receipts (T+8h Timeout)</h3>
+                <h3 class="text-lg font-bold text-[#1e5aa8]">👤 Buyer Inviters Blocked - Missed 8-Hour Deadline</h3>
                 <span id="buyer-flagged-count" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">0</span>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Buyers who have not uploaded payment confirmation receipts within 8 hours of vendor upload.</p>
+            <p class="text-xs text-gray-500 mb-4">Buyer Inviters who have not uploaded payment confirmation receipts within 8 hours of vendor upload.</p>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -1562,8 +1562,8 @@
 
             <div class="flex gap-2 mt-5 pt-4 border-t">
                 <button onclick="closeThresholdRequestModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="rejectThresholdRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
-                <button onclick="approveThresholdRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
+                <button onclick="rejectThresholdRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">❌ Flag for Review</button>
+                <button onclick="approveThresholdRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">✓ Approve Request</button>
             </div>
         </div>
     </div>
@@ -1619,8 +1619,8 @@
 
             <div class="flex gap-2 mt-5 pt-4 border-t">
                 <button onclick="closePaymentProofModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="rejectPaymentProof()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
-                <button onclick="approvePaymentProof()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
+                <button onclick="rejectPaymentProof()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">❌ Flag for Review</button>
+                <button onclick="approvePaymentProof()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">✓ Approve Payment</button>
             </div>
         </div>
     </div>
@@ -1667,8 +1667,8 @@
 
             <div class="flex gap-2 mt-5 pt-4 border-t">
                 <button onclick="closeRateChangeModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded transition">Cancel</button>
-                <button onclick="rejectRateChangeRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">Reject</button>
-                <button onclick="approveRateChangeRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Approve</button>
+                <button onclick="rejectRateChangeRequest()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition">❌ Flag for Review</button>
+                <button onclick="approveRateChangeRequest()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">✓ Approve Request</button>
             </div>
         </div>
     </div>
