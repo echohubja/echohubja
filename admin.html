@@ -651,7 +651,6 @@
                         <tr class="bg-blue-50 text-blue-700 uppercase tracking-wider border-b">
                             <th class="p-2.5">Commission ID</th>
                             <th class="p-2.5">Vendor</th>
-                            <th class="p-2.5">User ID</th>
                             <th class="p-2.5">Amount</th>
                             <th class="p-2.5">Vendor Receipt</th>
                             <th class="p-2.5">Recipient Receipt</th>
@@ -659,7 +658,7 @@
                         </tr>
                     </thead>
                     <tbody id="verification-body" class="divide-y divide-gray-100">
-                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>
+                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2484,7 +2483,7 @@
             const tbody = document.getElementById('verification-body');
             if (!tbody) return;
 
-            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>';
 
             try {
                 // Query admin_payables where status='received' (both vendor and buyer have uploaded receipts)
@@ -2499,30 +2498,23 @@
                     .order('created_at', { ascending: false });
 
                 if (error) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
                     return;
                 }
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No receipts pending verification</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No receipts pending verification</td></tr>';
                     return;
                 }
 
                 // Fetch vendor details
                 const vendorIds = [...new Set(data.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, user_id').in('id', vendorIds);
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
                 const vendorMap = {};
-                const userIdMap = {};
-                if (vendors) {
-                    vendors.forEach(v => {
-                        vendorMap[v.id] = v.business_name || 'Unknown';
-                        userIdMap[v.id] = v.user_id || 'N/A';
-                    });
-                }
+                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
 
                 const rows = data.map(record => {
                     const vendorName = vendorMap[record.vendor_id] || 'Unknown';
-                    const userId = userIdMap[record.vendor_id] || 'N/A';
                     const amount = parseFloat(record.amount_owed || 0).toFixed(2);
                     const commissionId = record.id.substring(0, 8);
                     const hasVendorReceipt = !!record.vendor_receipt_data;
@@ -2532,7 +2524,6 @@
                         <tr class="hover:bg-blue-50">
                             <td class="p-2.5 font-mono text-xs">${commissionId}...</td>
                             <td class="p-2.5">${escapeHtml(vendorName)}</td>
-                            <td class="p-2.5"><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs cursor-pointer hover:bg-gray-200" title="Click to copy" onclick="navigator.clipboard.writeText('${userId}'); showToast('User ID copied!', 'success')">${escapeHtml(userId)}</code></td>
                             <td class="p-2.5 text-right">$${amount}</td>
                             <td class="p-2.5 text-center">
                                 ${hasVendorReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>'}
@@ -2550,7 +2541,7 @@
 
                 tbody.innerHTML = rows;
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
             }
         }
 
