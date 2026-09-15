@@ -2859,10 +2859,10 @@
 
                 <!-- Lifecycle Tabs -->
                 <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding: 0 20px; background: white;">
-                    <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('incoming')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-incoming-tab">📥 Incoming Requests</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Pending Approval</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Awaiting Receipts</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Admin Verified</button>
+                    <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('incoming')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-incoming-tab">📥 Here are People Requesting for Me to Pay Them</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Here are People I Must Send Payment To</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Here are People Waiting For Me To Upload Proof After Sending Their Payment</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Payments Receipts That Admin Have Taken a Look at</button>
                 </div>
 
                 <!-- Payout Subsections Container -->
@@ -3174,7 +3174,7 @@
                     </div>
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('receipt-upload-modal')">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="submitReceiptUpload()">📤 Prove I Got Paid</button>
+                        <button type="button" class="btn btn-primary" onclick="submitReceiptUpload()">📤 Prove I Sent Payment</button>
                     </div>
                 </div>
             </div>
@@ -6635,7 +6635,7 @@
             if (!sbClient || !currentVendor) return;
 
             const tbody = document.getElementById('manage-awaiting-table-body');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
@@ -6650,13 +6650,30 @@
 
                 if (error) {
                     console.error('Error loading awaiting receipts:', error);
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 if (!payouts || payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
                     return;
+                }
+
+                // Fetch buyer details for all split_with_buyer_ids
+                const buyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
+                const buyersMap = {};
+
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await sbClient
+                        .from('buyers')
+                        .select('id, full_name, paypal_email')
+                        .in('id', buyerIds);
+
+                    if (buyers) {
+                        buyers.forEach(buyer => {
+                            buyersMap[buyer.id] = buyer;
+                        });
+                    }
                 }
 
                 // Fetch inquiry details for all payouts
@@ -6679,28 +6696,28 @@
                 tbody.innerHTML = payouts.map(payout => {
                     const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
                     const inquiry = inquiriesMap[payout.related_feedback_id];
+                    const buyer = buyersMap[payout.split_with_buyer_id];
                     const detailsId = `awaiting-details-${payout.id}`;
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                    const recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
-                        <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569;">${recipientType}</td>
+                        <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
+                        <td style="padding: 12px; color: #475569;">${buyer?.paypal_email || 'N/A'}</td>
                         <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;">${slaTimer.displayText}</td>
-                        <td style="padding: 12px; text-align: center;">
+                        <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                             <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="openReceiptUploadModal('${payout.id}', '${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                             <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                         </td>
                     </tr>
                     <tr id="${detailsId}" style="display: none; background: #fef3c7; border-bottom: 1px solid #e2e8f0;">
-                        <td colspan="7" style="padding: 16px;">
+                        <td colspan="8" style="padding: 16px;">
                             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                                 ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
                                 <div style="flex: 1;">
@@ -6715,7 +6732,7 @@
                 }).join('');
             } catch (err) {
                 console.error('Unexpected error:', err);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
             }
         }
 
