@@ -3556,6 +3556,7 @@
             if (pollingIntervals.inquiries) clearInterval(pollingIntervals.inquiries);
             if (pollingIntervals.vendor) clearInterval(pollingIntervals.vendor);
             if (pollingIntervals.products) clearInterval(pollingIntervals.products);
+            if (pollingIntervals.payoutData) clearInterval(pollingIntervals.payoutData);
             pollingIntervals = {};
             console.log('🛑 Polling stopped');
         }
@@ -7427,13 +7428,17 @@
 
         async function initPayoutDataPolling() {
             // Poll payout data every 15 seconds
-            setInterval(async () => {
+            if (pollingIntervals.payoutData) clearInterval(pollingIntervals.payoutData);
+
+            pollingIntervals.payoutData = setInterval(async () => {
                 try {
                     await loadPayoutDataFromDB();
                 } catch (err) {
                     console.error('Error polling payout data:', err);
                 }
             }, 15000); // 15 second interval
+
+            console.log('💳 Payout data polling started (15s interval)');
         }
 
         // Logout Handler
