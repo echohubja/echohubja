@@ -6357,13 +6357,13 @@
                 // T+8 hours from vendor receipt upload
                 deadline = new Date(created.getTime() + 8 * 60 * 60 * 1000);
             } else {
-                return { status: 'completed', timeLeft: 0 };
+                return { status: 'completed', timeLeft: 0, displayText: '✓ Completed', statusColor: '#16a34a' };
             }
 
             const timeLeft = deadline - now;
 
             if (timeLeft <= 0) {
-                return { status: 'timeout', timeLeft: 0, deadline: deadline.toISOString() };
+                return { status: 'timeout', timeLeft: 0, displayText: '⏱️ Time Expired', statusColor: '#dc2626', deadline: deadline.toISOString() };
             }
 
             const hours = Math.floor(timeLeft / (1000 * 60 * 60));
