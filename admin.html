@@ -8653,6 +8653,10 @@ async function loadVendorSubmitterRelationship() {
 
         async function loadNotifications() {
             try {
+                // Temporarily disabled - schema mismatch (in_app_notifications.user_id does not exist)
+                // TODO: Fix schema and renable after deployment verification
+                return;
+
                 const currentUser = (await db.auth.getUser()).data.user.id;
 
                 // ✅ FIX: Query both user-specific notifications AND broadcast notifications (user_id IS NULL)
