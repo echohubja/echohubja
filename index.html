@@ -3984,7 +3984,7 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                const { data } = await sbClient
+                const { data } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
@@ -4585,7 +4585,7 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                const { data } = await sbClient
+                const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
@@ -5245,7 +5245,7 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                const { data } = await sbClient
+                const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
