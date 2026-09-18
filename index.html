@@ -4325,7 +4325,7 @@
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .in('status', ['awaiting_receipt', 'payment_verified'])
+                    .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
                 globalReviewerAwaitingData = data || [];
@@ -4402,9 +4402,8 @@
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'pending')
-                    .not('payout_requested_date', 'is', null)
-                    .order('payout_requested_date', { ascending: false });
+                    .eq('status', 'approved')
+                    .order('created_at', { ascending: false });
 
                 globalReviewerPendingRequestsData = data || [];
 
@@ -4437,12 +4436,12 @@
                 if (amount < minAmount || amount > maxAmount) return false;
 
                 if (dateFrom) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate < dateFrom) return false;
                 }
 
                 if (dateTo) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate > dateTo) return false;
                 }
 
@@ -4464,8 +4463,8 @@
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
-                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
                 </tr>
             `).join('');
         }
@@ -4825,8 +4824,8 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
-                    .order('payout_requested_date', { ascending: false });
+                    .eq('status', 'approved')
+                    .order('created_at', { ascending: false });
 
                 globalBuyerInviterPendingRequestsData = data || [];
 
@@ -4859,12 +4858,12 @@
                 if (amount < minAmount || amount > maxAmount) return false;
 
                 if (dateFrom) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate < dateFrom) return false;
                 }
 
                 if (dateTo) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate > dateTo) return false;
                 }
 
@@ -4886,8 +4885,8 @@
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
-                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
                 </tr>
             `).join('');
         }
@@ -4904,7 +4903,7 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .in('status', ['awaiting_receipt', 'payment_verified'])
+                    .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterAwaitingData = data || [];
@@ -5496,8 +5495,8 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
-                    .order('payout_requested_date', { ascending: false });
+                    .eq('status', 'approved')
+                    .order('created_at', { ascending: false });
 
                 globalVendorInviterPendingRequestsData = data || [];
 
@@ -5530,12 +5529,12 @@
                 if (amount < minAmount || amount > maxAmount) return false;
 
                 if (dateFrom) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate < dateFrom) return false;
                 }
 
                 if (dateTo) {
-                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    const recordDate = new Date(record.created_at).toISOString().split('T')[0];
                     if (recordDate > dateTo) return false;
                 }
 
@@ -5557,8 +5556,8 @@
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
-                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
                 </tr>
             `).join('');
         }
@@ -5584,7 +5583,7 @@
                     .from('admin_payables')
                     .select('*')
                     .in('vendor_id', vendorIds)
-                    .in('status', ['awaiting_receipt', 'payment_verified'])
+                    .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterAwaitingData = commissions || [];
@@ -5734,6 +5733,7 @@
                 if (error) throw error;
                 showToast('Payment request approved successfully', 'success');
                 await loadReviewerPendingApprovals(currentBuyer.id);
+                await loadReviewerPendingRequests(currentBuyer.id);
             } catch (err) {
                 console.error('Error approving payout:', err);
                 showToast('Failed to approve payment request', 'error');
@@ -5750,6 +5750,7 @@
                 if (error) throw error;
                 showToast('Payment request denied', 'success');
                 await loadReviewerPendingApprovals(currentBuyer.id);
+                await loadReviewerPendingRequests(currentBuyer.id);
             } catch (err) {
                 console.error('Error denying payout:', err);
                 showToast('Failed to deny payment request', 'error');
