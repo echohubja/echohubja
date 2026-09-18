@@ -1830,6 +1830,7 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentBuyerId = '';
+        let currentBuyer = {};
         let currentBuyerStringId = '';
         let currentActiveEmail = '';
 
@@ -1946,7 +1947,7 @@
                 buyerPill.style.display = 'flex';
                 portalBtn.style.display = 'none';
 
-                let query = db.from('buyers').select('id, referral_code, full_name, email');
+                let query = db.from('buyers').select('id, referral_code, full_name, email, paypal_email');
                 let buyerData = null;
                 let error = null;
 
@@ -1963,12 +1964,14 @@
                 }
 
                 if (buyerData) {
+                    currentBuyer = buyerData;
                     currentBuyerId = buyerData.id;
                     currentBuyerStringId = buyerData.referral_code || 'BUYER-00000';
                     const displayEmail = buyerData.email || currentActiveEmail;
                     const displayName = buyerData.full_name ? `${buyerData.full_name} (${displayEmail})` : displayEmail;
                     buyerNameSpan.textContent = `${displayName} • ID: ${buyerData.id}`;
                 } else {
+                    currentBuyer = {};
                     currentBuyerId = '';
                     currentBuyerStringId = 'BUYER-00000';
                     buyerNameSpan.textContent = `${currentActiveEmail} • ID: N/A`;
