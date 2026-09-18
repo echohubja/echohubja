@@ -462,7 +462,7 @@
                 <div id="metric-pending-approvals" class="text-xl font-bold text-amber-700 mt-0.5">0</div>
             </div>
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <div class="text-[11px] text-orange-600 font-semibold uppercase">Awaiting Receipts</div>
+                <div class="text-[11px] text-orange-600 font-semibold uppercase">Seller Proof Pending</div>
                 <div id="metric-awaiting-receipts" class="text-xl font-bold text-orange-700 mt-0.5">0</div>
             </div>
             <div class="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -479,7 +479,7 @@
         <div class="flex gap-2 mb-6 border-b">
             <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">Tell Vendor To Send Payment</button>
             <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Vendor Requested To Pay</button>
-            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Awaiting Receipts</button>
+            <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">🔍 Seller Proof Pending</button>
             <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Under Review</button>
             <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Admin Have Verified</button>
         </div>
@@ -590,8 +590,8 @@
 
         <!-- AWAITING RECEIPTS SECTION -->
         <div id="lifecycle-awaiting" class="lifecycle-section hidden">
-            <h3 class="text-md font-bold text-orange-700 mb-3">Seller Needs to Upload Proof</h3>
-            <p class="text-xs text-gray-500 mb-4">Seller has 48 hours to upload proof they got paid. Follow up if deadline missed.</p>
+            <h3 class="text-md font-bold text-orange-700 mb-3">🔍 All Commissions Waiting for Seller Proof</h3>
+            <p class="text-xs text-gray-500 mb-4">Shows all commissions that users requested payment for, but sellers haven't uploaded receipt proof yet. Sellers have 48 hours from approval to upload proof, or they will be automatically flagged.</p>
 
             <!-- Search & Filter Controls -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
