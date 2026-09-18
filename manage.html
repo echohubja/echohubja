@@ -7118,7 +7118,7 @@
                 if (feedbackIds.length > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .select('id, message, product_url, image_data')
                         .in('id', feedbackIds);
 
                     if (inquiries) {
@@ -7165,7 +7165,7 @@
                 const inquiry = globalAwaitingInquiriesMap[feedbackId];
                 const buyer = globalAwaitingBuyersMap[recipientId];
                 const detailsId = `awaiting-details-${payout.id}`;
-                const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                const imageData = inquiry?.image_data ? `data:image/png;base64,${inquiry.image_data}` : null;
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7179,7 +7179,6 @@
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
                         <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
-                        <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
                 <tr id="${detailsId}" style="display: none; background: #fef3c7; border-bottom: 1px solid #e2e8f0;">
@@ -7189,7 +7188,7 @@
                             <div style="flex: 1;">
                                 <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 6px;">📝 Feedback Message:</div>
                                 <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                ${inquiry?.product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.product_url}" target="_blank">${inquiry.product_url}</a></div>` : ''}
                             </div>
                         </div>
                     </td>
@@ -7242,7 +7241,7 @@
                 if (feedbackIds.length > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .select('id, message, product_url, image_data')
                         .in('id', feedbackIds);
 
                     if (inquiries) {
@@ -7255,7 +7254,7 @@
                 tbody.innerHTML = payouts.map(payout => {
                     const inquiry = inquiriesMap[payout.related_feedback_id];
                     const detailsId = `verified-details-${payout.id}`;
-                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                    const imageData = inquiry?.image_data ? `data:image/png;base64,${inquiry.image_data}` : null;
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7277,7 +7276,7 @@
                                 <div style="flex: 1;">
                                     <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
                                     <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                    ${inquiry?.product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.product_url}" target="_blank">${inquiry.product_url}</a></div>` : ''}
                                 </div>
                             </div>
                         </td>
@@ -8729,3 +8728,7 @@
     </script>
 </body>
 </html>
+
+
+
+                    
