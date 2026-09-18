@@ -7879,44 +7879,63 @@
                     const mimeType = file.type;
 
                     try {
-                        // Update admin_payables with receipt data
-                        // RLS policy will validate vendor_id = auth.uid()
-                        // ✅ FIX: Add .select() to return updated rows (UPDATE alone returns empty array)
-                        const { data, error } = await sbClient
+                        // Receipt data to update (common fields for both tables)
+                        const receiptData = {
+                            vendor_paypal_transaction_id: txId,
+                            vendor_receipt_data: base64Data,
+                            vendor_receipt_filename: file.name,
+                            vendor_receipt_filetype: mimeType,
+                            vendor_receipt_filesize: file.size,
+                            vendor_receipt_uploaded_date: new Date().toISOString(),
+                            vendor_flagged: false  // Reset flag when receipt uploaded
+                        };
+
+                        // Try updating admin_payables first
+                        let data = null;
+                        let error = null;
+                        let recordTable = null;
+
+                        const adminResult = await sbClient
                             .from('admin_payables')
-                            .update({
-                                vendor_paypal_transaction_id: txId,
-                                vendor_receipt_data: base64Data,
-                                vendor_receipt_filename: file.name,
-                                vendor_receipt_filetype: mimeType,
-                                vendor_receipt_filesize: file.size,
-                                vendor_receipt_uploaded_date: new Date().toISOString(),
-                                vendor_flagged: false  // Reset flag when receipt uploaded
-                            })
+                            .update(receiptData)
                             .eq('id', payoutId)
                             .select();
 
-                        if (error) {
-                            console.error('Database error:', error);
-                            statusDiv.textContent = '❌ Upload failed: ' + (error.message || 'RLS policy blocked update. Try logging in again.');
-                            statusDiv.style.color = '#dc2626';
-                            statusDiv.style.background = '#fee2e2';
-                            return;
+                        if (adminResult.error) {
+                            console.error('Admin payables error:', adminResult.error);
+                        } else if (adminResult.data && adminResult.data.length > 0) {
+                            data = adminResult.data;
+                            recordTable = 'admin_payables';
+                        } else {
+                            // Try buyer_payables if admin_payables had no match
+                            const buyerResult = await sbClient
+                                .from('buyer_payables')
+                                .update(receiptData)
+                                .eq('id', payoutId)
+                                .select();
+
+                            if (buyerResult.error) {
+                                console.error('Buyer payables error:', buyerResult.error);
+                                error = buyerResult.error;
+                            } else if (buyerResult.data && buyerResult.data.length > 0) {
+                                data = buyerResult.data;
+                                recordTable = 'buyer_payables';
+                            }
                         }
 
                         if (!data || data.length === 0) {
                             statusDiv.textContent = '❌ Record not found or access denied. Try refreshing the page.';
                             statusDiv.style.color = '#dc2626';
                             statusDiv.style.background = '#fee2e2';
+                            if (error) console.error('Database error:', error);
                             return;
                         }
 
-                        // ✅ NEW: Update status based on payout type
+                        // ✅ Update status based on payout type (admin_payables or buyer_payables)
                         const recordData = data[0];
-                        const isReferralPayout = recordData.split_with_buyer_id !== null;
 
-                        if (!isReferralPayout) {
-                            // Admin-only payout: vendor uploaded, ready for admin approval
+                        if (recordTable === 'admin_payables') {
+                            // Admin payout: vendor uploaded, ready for admin approval
                             const { error: statusError } = await sbClient
                                 .from('admin_payables')
                                 .update({ status: 'received' })
@@ -7933,6 +7952,11 @@
                                 statusDiv.style.color = '#059669';
                                 statusDiv.style.background = '#d1fae5';
                             }
+                        } else if (recordTable === 'buyer_payables') {
+                            // Reviewer payout: receipt uploaded
+                            statusDiv.textContent = '✅ Receipt uploaded successfully!';
+                            statusDiv.style.color = '#059669';
+                            statusDiv.style.background = '#d1fae5';
                         } else {
                             // Referral payout: vendor uploaded, waiting for buyer to upload
                             statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
@@ -8728,7 +8752,3 @@
     </script>
 </body>
 </html>
-
-
-
-                    
