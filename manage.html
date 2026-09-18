@@ -6757,13 +6757,23 @@
                     .order('created_at', { ascending: false });
 
                 // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
-                const { data: buyerPayouts, error: buyerError } = await sbClient
+                // First fetch all pending buyer payables with own_feedback (no vendor filter yet)
+                const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
                     .from('buyer_payables')
-                    .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at')
-                    .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
+                    .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('earning_type', 'own_feedback')
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
+
+                // Extract feedback IDs and filter by current vendor
+                let buyerPayouts = [];
+                let feedbackIdsFromBuyer = [];
+                if (buyerPayoutsRaw && buyerPayoutsRaw.length > 0) {
+                    feedbackIdsFromBuyer = buyerPayoutsRaw
+                        .filter(bp => bp.related_feedback_ids && bp.related_feedback_ids.length > 0)
+                        .flatMap(bp => bp.related_feedback_ids || [])
+                        .filter(Boolean);
+                }
 
                 if (adminError) {
                     console.error('Error loading admin payouts:', adminError);
@@ -6773,6 +6783,32 @@
 
                 if (buyerError) {
                     console.error('Error loading buyer payouts:', buyerError);
+                }
+
+                // Fetch inquiries to filter buyer payables by current vendor
+                let inquiriesByFeedbackId = {};
+                if (feedbackIdsFromBuyer.length > 0) {
+                    const { data: inquiriesData } = await sbClient
+                        .from('inquiries')
+                        .select('id, vendor_id, buyer_id')
+                        .in('id', feedbackIdsFromBuyer);
+
+                    if (inquiriesData) {
+                        inquiriesData.forEach(inq => {
+                            inquiriesByFeedbackId[inq.id] = inq;
+                        });
+                    }
+                }
+
+                // Filter buyer payouts to only include current vendor's feedback
+                if (buyerPayoutsRaw && buyerPayoutsRaw.length > 0) {
+                    buyerPayouts = buyerPayoutsRaw.filter(bp => {
+                        const feedbackId = bp.related_feedback_ids && bp.related_feedback_ids.length > 0
+                            ? bp.related_feedback_ids[0]
+                            : null;
+                        const inquiry = feedbackId ? inquiriesByFeedbackId[feedbackId] : null;
+                        return inquiry && inquiry.vendor_id === currentVendor.id;
+                    });
                 }
 
                 // Combine all payouts and add recipient type mapping
@@ -6819,15 +6855,18 @@
                     return;
                 }
 
-                // Fetch all related data
+                // Fetch all related feedback data (inquiries)
+                // Combine feedback IDs from both admin and buyer payouts
                 const feedbackIds = allPayouts.map(p => p.related_feedback_id || p.related_feedback_ids?.[0]).filter(Boolean);
-                const inquiriesMap = {};
+                const inquiriesMap = { ...inquiriesByFeedbackId }; // Start with already fetched inquiries
 
-                if (feedbackIds.length > 0) {
+                // Fetch additional inquiries that aren't already loaded (those from admin_payables only)
+                const missingFeedbackIds = feedbackIds.filter(fbId => !inquiriesMap[fbId]);
+                if (missingFeedbackIds.length > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, product_url, image_data, image_mime')
-                        .in('id', feedbackIds);
+                        .select('id, message, product_url, image_data, image_mime, vendor_id, buyer_id')
+                        .in('id', missingFeedbackIds);
 
                     if (inquiries) {
                         inquiries.forEach(inq => {
@@ -6877,9 +6916,13 @@
                 }
 
                 // Fetch reviewer data (buyer info for buyer_payables)
+                // Get buyer_ids from inquiries that correspond to feedback in buyer_payables
                 const reviewerIds = allPayouts
                     .filter(p => p.source === 'buyer_payables')
-                    .map(p => p.vendor_id)  // vendor_id in buyer_payables is actually the buyer_id
+                    .map(p => {
+                        const feedbackId = p.related_feedback_id || p.related_feedback_ids?.[0];
+                        return inquiriesByFeedbackId[feedbackId]?.buyer_id;
+                    })
                     .filter(Boolean);
                 const reviewersMap = {};
 
@@ -6907,7 +6950,9 @@
                         const vendor = vendorsMap[payout.split_with_vendor_id];
                         recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
                     } else if (payout.recipientType === 'reviewer') {
-                        const reviewer = reviewersMap[payout.vendor_id];
+                        const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0];
+                        const buyerId = inquiriesByFeedbackId[feedbackId]?.buyer_id;
+                        const reviewer = reviewersMap[buyerId];
                         recipient = { name: reviewer?.full_name || 'N/A', email: reviewer?.paypal_email || 'N/A' };
                     }
 
