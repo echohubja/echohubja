@@ -3022,14 +3022,6 @@
                 <!-- Filter Controls -->
                 <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                     <input type="text" id="transactionSearchInput" placeholder="Search by feedback ID, reviewer, PayPal email, or amount..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" onkeyup="filterPayoutList('transaction')">
-                    <select id="transactionStatusFilter" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: white;" onchange="filterPayoutList('transaction')">
-                        <option value="">All Statuses</option>
-                        <option value="pending">⏳ Pending</option>
-                        <option value="requested">📤 Requested</option>
-                        <option value="paid">✅ Paid</option>
-                        <option value="received">📥 Received</option>
-                        <option value="flagged">🚩 Flagged</option>
-                    </select>
                 </div>
 
                 <!-- Transaction-Level Commissions Table -->
@@ -3047,7 +3039,6 @@
                                     <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 110px;">Buyer Inviter</th>
                                     <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 110px;">Vendor Inviter</th>
                                     <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568; min-width: 90px;">Total</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568; min-width: 100px;">Status</th>
                                     <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568; min-width: 70px;">Action</th>
                                 </tr>
                             </thead>
@@ -6281,7 +6272,7 @@
             });
 
             if (transactionRows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="padding: 20px; text-align: center; color: #94a3b8;">No commission transactions yet</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #94a3b8;">No commission transactions yet</td></tr>`;
                 return;
             }
 
@@ -6289,24 +6280,6 @@
             transactionRows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             tbody.innerHTML = transactionRows.map(row => {
-                const statusBadgeColor = {
-                    'pending': '#dbeafe',
-                    'requested': '#fef3c7',
-                    'paid': '#dcfce7',
-                    'received': '#dcfce7',
-                    'flagged': '#fee2e2'
-                };
-                const statusTextColor = {
-                    'pending': '#1e40af',
-                    'requested': '#92400e',
-                    'paid': '#166534',
-                    'received': '#166534',
-                    'flagged': '#991b1b'
-                };
-
-                const statusColor = statusBadgeColor[row.status] || '#f0f0f0';
-                const textColor = statusTextColor[row.status] || '#64748b';
-
                 // Generate commission cells with status badges and tooltips
                 const adminTooltip = `Type: Admin/Facility\nAmount: $${parseFloat(row.adminAmount).toFixed(2)}\n(Contact admin for payment details)`;
                 const adminCell = getCommissionCellWithTooltip(row.adminAmount, row.vendorFlagged, row.vendorFlagReason, adminTooltip);
@@ -6319,17 +6292,12 @@
                         <td style="padding: 12px; color: #1e293b; font-weight: 500; font-family: monospace; font-size: 12px;">${row.feedbackIdDisplay}</td>
                         <td style="padding: 12px; color: #64748b; font-size: 12px;">${row.date}</td>
                         <td style="padding: 12px; color: #1e293b;">${row.reviewerName}</td>
-                        <td style="padding: 12px; color: #475569; font-size: 11px; font-family: monospace; word-break: break-all;" title="${row.vendorPaypalEmail}">${row.vendorPaypalEmail || 'N/A'}</td>
+                        <td style="padding: 12px; color: #475569; font-size: 11px; font-family: monospace; word-break: break-all;" title="${row.reviewerEmail}">${row.reviewerEmail || 'N/A'}</td>
                         <td style="padding: 12px; text-align: right; min-width: 100px;">${adminCell}</td>
                         <td style="padding: 12px; text-align: right; min-width: 100px;">${reviewerCell}</td>
                         <td style="padding: 12px; text-align: right; min-width: 100px;">${buyerInviterCell}</td>
                         <td style="padding: 12px; text-align: right; min-width: 100px;">${vendorInviterCell}</td>
                         <td style="padding: 12px; text-align: right; color: #1e293b; font-weight: 700; border-left: 2px solid #e2e8f0; padding-left: 14px;">$${parseFloat(row.totalAmount).toFixed(2)}</td>
-                        <td style="padding: 12px;">
-                            <span style="background: ${statusColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">
-                                ${row.status === 'pending' ? '⏳ Pending' : row.status === 'requested' ? '📤 Requested' : row.status === 'paid' ? '✅ Paid' : row.status === 'received' ? '📥 Received' : '🚩 Flagged'}
-                            </span>
-                        </td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="viewSourceBreakdown('${row.id}')" style="background: none; border: none; color: #1e5aa8; cursor: pointer; font-size: 12px; text-decoration: underline;">View</button>
                         </td>
@@ -6350,12 +6318,11 @@
 
             // Search across feedback ID, reviewer name, PayPal email, and amounts
             const searchQuery = document.getElementById('transactionSearchInput')?.value.toLowerCase() || '';
-            const statusValue = document.getElementById('transactionStatusFilter')?.value.toLowerCase() || '';
 
             const rows = tbody.querySelectorAll('tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                if (cells.length < 11) return;
+                if (cells.length < 9) return;
 
                 const feedbackId = cells[0]?.textContent.toLowerCase() || '';
                 const date = cells[1]?.textContent.toLowerCase() || '';
@@ -6363,7 +6330,6 @@
                 const paypalEmail = cells[3]?.textContent.toLowerCase() || '';
                 const adminAmount = cells[4]?.textContent.toLowerCase() || '';
                 const totalAmount = cells[8]?.textContent.toLowerCase() || '';
-                const statusCell = cells[9]?.textContent.toLowerCase() || '';
 
                 const searchMatch = searchQuery === '' ||
                     feedbackId.includes(searchQuery) ||
@@ -6372,9 +6338,7 @@
                     adminAmount.includes(searchQuery) ||
                     totalAmount.includes(searchQuery);
 
-                const statusMatch = statusValue === '' || statusCell.includes(statusValue);
-
-                row.style.display = (searchMatch && statusMatch) ? '' : 'none';
+                row.style.display = searchMatch ? '' : 'none';
             });
         }
 
