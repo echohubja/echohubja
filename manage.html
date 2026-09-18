@@ -7259,10 +7259,16 @@
             if (!sbClient || !currentVendor) return;
 
             try {
-                // V9 workflow: No status change needed. Record stays 'pending' until receipt uploaded.
-                // Just notify vendor to upload receipt.
-                showToast('✓ Payment request sent. You have 48 hours to upload receipt.', 'success');
-                await loadManagePendingPayouts();
+                // Update status to payment_requested so buyer/reviewer can see it in their pending approvals tab
+                const { error } = await sbClient
+                    .from('buyer_payables')
+                    .update({ status: 'payment_requested' })
+                    .eq('id', payoutId);
+
+                if (error) throw error;
+
+                showToast('✓ Payment request sent to buyer. Awaiting approval.', 'success');
+                await loadManageIncomingRequests(currentVendor.id);
             } catch (err) {
                 console.error('Error requesting payment:', err);
                 showToast('Error requesting payment. Please try again.', 'error');
@@ -7271,7 +7277,7 @@
 
         async function batchRequestPayment() {
             const selected = Array.from(document.querySelectorAll('#manage-pending-table-body input[type="checkbox"]:checked'))
-                .map(cb => cb.dataset.payoutId);
+                .map(cb => cb.value);
 
             if (selected.length === 0) {
                 showToast('Please select at least one commission to request payment for', 'warning');
@@ -7281,15 +7287,22 @@
             if (!sbClient) return;
 
             try {
-                // V9 workflow: No status changes. Records stay 'pending' until receipt uploaded.
-                // Just notify vendor to upload receipts for selected commissions.
-                const successCount = selected.length;
+                // Update all selected commissions to payment_requested status
+                for (const payoutId of selected) {
+                    const { error } = await sbClient
+                        .from('buyer_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', payoutId);
 
-                if (successCount > 0) {
-                    showToast(`✓ ${successCount} payment request(s) sent. 48-hour timer started.`, 'success');
+                    if (error) {
+                        console.error('Error updating payout:', error);
+                        showToast(`Error requesting payment for one or more commissions`, 'error');
+                        return;
+                    }
                 }
 
-                await loadManagePendingPayouts();
+                showToast(`✓ ${selected.length} payment request(s) sent to buyer. Awaiting approval.`, 'success');
+                await loadManageIncomingRequests(currentVendor.id);
                 document.getElementById('manage-pending-select-all').checked = false;
             } catch (err) {
                 console.error('Error in batch payment request:', err);
