@@ -1006,7 +1006,7 @@
             <!-- Lifecycle Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
                 <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-ready-tab">🟢 Tell Vendor I am Ready to Get Paid</button>
-                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Admin Wants to Pay Me. I Need To Check & Confirm</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Vendor Wants to Pay Me. I Need To Check & Confirm</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('requests')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-requests-tab">📋 My Payment Requests Awaiting Vendor Review</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-awaiting-tab">📤 Payments Vendor Made But I Am Still To Upload Receipts For</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-verified-tab">✅ Your Receipts Verified by Admin</button>
@@ -4071,32 +4071,23 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Show paid commissions where vendor has uploaded, awaiting receiver confirmation
+                // Show buyer_payables with status='payment_requested' - vendor requesting payment
                 const { data } = await db
-                    .from('admin_payables')
+                    .from('buyer_payables')
                     .select('*')
-                    .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'paid')
-                    .is('buyer_receipt_data', null)
+                    .eq('buyer_id', buyerId)
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No payment confirmations needed</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No payment requests from vendors</td></tr>';
                     if (reviewerPendingSLAInterval) clearInterval(reviewerPendingSLAInterval);
                     return;
                 }
 
-                // Store data globally for SLA timer refresh
+                // Store data globally
                 globalReviewerPendingData = data;
                 renderReviewerPendingTable();
-
-                // Clear existing interval
-                if (reviewerPendingSLAInterval) clearInterval(reviewerPendingSLAInterval);
-
-                // Refresh SLA timers every 60 seconds
-                reviewerPendingSLAInterval = setInterval(() => {
-                    refreshReviewerPendingSLATimers();
-                }, 60000);
 
             } catch (err) {
                 console.error('Error loading reviewer pending approvals:', err);
@@ -4106,32 +4097,18 @@
 
         function renderReviewerPendingTable() {
             const tbody = document.getElementById('reviewer-pending-table-body');
-            tbody.innerHTML = globalReviewerPendingData.map(comm => {
-                const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
-                return `
+            tbody.innerHTML = globalReviewerPendingData.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="reviewer-sla-timer-${comm.id}">${slaTimer.displayText}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Payment Requested</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="openReceiverReceiptModal('${comm.id}', '${comm.vendor_paypal_transaction_id || ''}', '${comm.vendor_paypal_email || ''}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">✓ Confirm</button>
+                        <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">✓ Approve</button>
                     </td>
                 </tr>
-                `;
-            }).join('');
-        }
-
-        function refreshReviewerPendingSLATimers() {
-            globalReviewerPendingData.forEach(comm => {
-                const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
-                const timerCell = document.querySelector(`.reviewer-sla-timer-${comm.id}`);
-                if (timerCell) {
-                    timerCell.textContent = slaTimer.displayText;
-                    timerCell.style.color = slaTimer.statusColor;
-                }
-            });
+            `).join('');
         }
 
         async function loadReviewerAwaitingApprovals(buyerId) {
@@ -5757,30 +5734,32 @@
         async function approvePayout(commissionId) {
             try {
                 const { error } = await db
-                    .from('admin_payables')
+                    .from('buyer_payables')
                     .update({ status: 'approved' })
                     .eq('id', commissionId);
 
                 if (error) throw error;
-                showToast('Payout approved successfully', 'success');
+                showToast('Payment request approved successfully', 'success');
+                await loadReviewerPendingApprovals(currentBuyer.id);
             } catch (err) {
                 console.error('Error approving payout:', err);
-                showToast('Failed to approve payout', 'error');
+                showToast('Failed to approve payment request', 'error');
             }
         }
 
         async function denyPayout(commissionId) {
             try {
                 const { error } = await db
-                    .from('admin_payables')
+                    .from('buyer_payables')
                     .update({ status: 'denied' })
                     .eq('id', commissionId);
 
                 if (error) throw error;
-                showToast('Payout denied', 'success');
+                showToast('Payment request denied', 'success');
+                await loadReviewerPendingApprovals(currentBuyer.id);
             } catch (err) {
                 console.error('Error denying payout:', err);
-                showToast('Failed to deny payout', 'error');
+                showToast('Failed to deny payment request', 'error');
             }
         }
 
