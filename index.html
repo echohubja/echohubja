@@ -4065,22 +4065,36 @@
                     const filetype = file.type || 'application/octet-stream';
                     const filename = file.name;
 
-                    // Update buyer_payables with receipt data
+                    // Determine record type to update correct table
+                    const commission = globalReviewerAwaitingData.find(c => c.id === commissionId);
+                    if (!commission) {
+                        showToast('Record not found', 'error');
+                        return;
+                    }
+
+                    // Detect if this is admin_payables (has split_with_buyer_id) or buyer_payables (has buyer_id)
+                    const isAdminPayable = commission.split_with_buyer_id !== null && commission.split_with_buyer_id !== undefined;
+                    const tableName = isAdminPayable ? 'admin_payables' : 'buyer_payables';
+
+                    const receiptData = {
+                        buyer_receipt_data: base64Data,
+                        buyer_receipt_filename: filename,
+                        buyer_receipt_filetype: filetype,
+                        buyer_receipt_filesize: file.size,
+                        buyer_receipt_uploaded_date: new Date().toISOString(),
+                        buyer_paypal_email: paypalEmail,
+                        buyer_paypal_transaction_id: txnId
+                    };
+
+                    // Update correct table
                     const { error } = await db
-                        .from('buyer_payables')
-                        .update({
-                            buyer_receipt_data: base64Data,
-                            buyer_receipt_filename: filename,
-                            buyer_receipt_filetype: filetype,
-                            buyer_receipt_filesize: file.size,
-                            buyer_receipt_uploaded_date: new Date().toISOString(),
-                            buyer_paypal_email: paypalEmail,
-                            buyer_paypal_transaction_id: txnId
-                        })
+                        .from(tableName)
+                        .update(receiptData)
                         .eq('id', commissionId);
 
                     if (error) throw error;
 
+                    console.log('[Reviewer Receipt Upload] Success', { commissionId, table: tableName, timestamp: new Date().toISOString() });
                     showToast('✓ Receipt uploaded! Your balance has been credited.', 'success');
                     document.getElementById(`reviewer-receipt-modal-${commissionId}`).remove();
 
@@ -4478,7 +4492,8 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                const { data } = await db
+                // Query 1: buyer_payables (direct feedback commissions)
+                const { data: buyerPayables } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
@@ -4487,7 +4502,19 @@
                     .eq('buyer_receipt_data', null)
                     .order('created_at', { ascending: false });
 
-                globalReviewerAwaitingData = data || [];
+                // Query 2: admin_payables where this reviewer is also the referrer (split_with_buyer_id)
+                // They need to upload receipt proof as the referrer
+                const { data: adminPayables } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'approved')
+                    .not('vendor_receipt_data', 'is', null)
+                    .eq('buyer_receipt_data', null)
+                    .order('created_at', { ascending: false });
+
+                // Combine both result sets
+                globalReviewerAwaitingData = [...(buyerPayables || []), ...(adminPayables || [])];
                 globalReviewerAwaitingVendorMap = {};
 
                 if (globalReviewerAwaitingData.length === 0) {
@@ -4510,6 +4537,7 @@
                     }
                 }
 
+                console.log('[Reviewer Awaiting] Loaded', globalReviewerAwaitingData.length, 'records', { buyerPayables: buyerPayables?.length || 0, adminPayables: adminPayables?.length || 0 });
                 filterReviewerAwaitingApprovals();
             } catch (err) {
                 console.error('Error loading reviewer awaiting approvals:', err);
@@ -4552,7 +4580,9 @@
             }
 
             tbody.innerHTML = data.map(comm => {
-                const feedbackId = comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A';
+                // Handle both record types: admin_payables (related_feedback_id) and buyer_payables (related_feedback_ids array)
+                const feedbackId = comm.related_feedback_ids?.[0] || comm.related_feedback_id;
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
                 const vendorName = globalReviewerAwaitingVendorMap[comm.vendor_id] || 'Unknown Vendor';
                 const transactionDate = new Date(comm.created_at).toLocaleDateString();
 
@@ -4566,7 +4596,7 @@
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackId}...</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                         <td style="padding: 12px;">${vendorName}</td>
                         <td style="padding: 12px; font-weight: 600; color: #8b5cf6;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                         <td style="padding: 12px; font-size: 12px; color: #718096;">${transactionDate}</td>
@@ -5173,7 +5203,9 @@
             }
 
             tbody.innerHTML = data.map(comm => {
-                const feedbackId = comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A';
+                // admin_payables uses related_feedback_id (singular, not array)
+                const feedbackId = comm.related_feedback_id || comm.related_feedback_ids?.[0];
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
                 const vendorName = globalBuyerInviterAwaitingVendorMap[comm.vendor_id] || 'Unknown Vendor';
                 const transactionDate = new Date(comm.created_at).toLocaleDateString();
                 const awaitingBuyer = comm.vendor_receipt_data && !comm.buyer_receipt_data;
@@ -5188,7 +5220,7 @@
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackId}...</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                         <td style="padding: 12px;">${vendorName}</td>
                         <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                         <td style="padding: 12px; font-size: 12px; color: #718096;">${transactionDate}</td>
@@ -5212,13 +5244,14 @@
         function renderBuyerReceiptUploadForm(commission, buyerId) {
             const commId = commission.id;
             const amount = parseFloat(commission.buyer_portion || 0).toFixed(2);
+            const feedbackId = commission.related_feedback_id || commission.related_feedback_ids?.[0];
 
             return `
                 <div id="buyer-receipt-form-${commId}" style="background: white; border: 2px solid #dbeafe; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
                         <div>
                             <h4 style="font-size: 15px; color: #2c3e50; margin: 0 0 6px 0; font-weight: 600;">Commission: $${amount}</h4>
-                            <p style="font-size: 13px; color: #718096; margin: 0;">ID: ${commission.related_feedback_ids?.[0]?.substring(0, 12)}</p>
+                            <p style="font-size: 13px; color: #718096; margin: 0;">ID: ${feedbackId ? feedbackId.substring(0, 12) : 'N/A'}</p>
                         </div>
                         <span style="background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Seller Uploaded</span>
                     </div>
@@ -5398,9 +5431,12 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(comm => `
+            tbody.innerHTML = data.map(comm => {
+                const feedbackId = comm.related_feedback_id || comm.related_feedback_ids?.[0];
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
+                return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
@@ -5759,14 +5795,17 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(req => `
+            tbody.innerHTML = data.map(req => {
+                const feedbackId = req.related_feedback_id || req.related_feedback_ids?.[0];
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
+                return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
                 </tr>
-            `).join('');
+            `;}).join('');
         }
 
         async function loadVendorInviterAwaitingApprovals(buyerId) {
@@ -5858,13 +5897,15 @@
             }
 
             tbody.innerHTML = data.map(comm => {
-                const feedbackId = comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A';
+                // admin_payables uses related_feedback_id (singular, not array)
+                const feedbackId = comm.related_feedback_id || comm.related_feedback_ids?.[0];
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
                 const vendorName = globalVendorInviterAwaitingVendorMap[comm.vendor_id] || 'Unknown Vendor';
                 const transactionDate = new Date(comm.created_at).toLocaleDateString();
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackId}...</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                         <td style="padding: 12px;">${vendorName}</td>
                         <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                         <td style="padding: 12px; font-size: 12px; color: #718096;">${transactionDate}</td>
@@ -5939,16 +5980,19 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(comm => `
+            tbody.innerHTML = data.map(comm => {
+                const feedbackId = comm.related_feedback_id || comm.related_feedback_ids?.[0];
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
+                return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
                     </td>
                 </tr>
-            `).join('');
+            `;}).join('');
         }
 
         // ========== SHARED PAYOUT FUNCTIONS ==========
