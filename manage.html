@@ -7928,14 +7928,22 @@
                             statusDiv.style.color = '#dc2626';
                             statusDiv.style.background = '#fee2e2';
                             if (error) console.error('Database error:', error);
+                            console.error('submitReceiptUpload: No data returned after update', { payoutId, adminError: adminResult.error, buyerError });
                             return;
                         }
 
-                        // ✅ Update status based on payout type (admin_payables or buyer_payables)
+                        // ✅ Verify receipt data was persisted
                         const recordData = data[0];
+                        console.log('[Receipt Upload] Verified write:', {
+                            recordTable,
+                            recordId: recordData.id,
+                            vendor_receipt_data_exists: !!recordData.vendor_receipt_data,
+                            vendor_receipt_uploaded_date: recordData.vendor_receipt_uploaded_date,
+                            vendor_flagged: recordData.vendor_flagged
+                        });
 
                         if (recordTable === 'admin_payables') {
-                            // Admin payout: vendor uploaded, ready for admin approval
+                            // Referral payout: vendor uploaded, ready for referrer to upload their receipt
                             const { error: statusError } = await sbClient
                                 .from('admin_payables')
                                 .update({ status: 'received' })
@@ -7943,25 +7951,26 @@
 
                             if (statusError) {
                                 console.error('Error updating status:', statusError);
-                                // Non-blocking: show warning but continue
                                 statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
                                 statusDiv.style.color = '#d97706';
                                 statusDiv.style.background = '#fef3c7';
                             } else {
-                                statusDiv.textContent = '✅ Receipt uploaded successfully! Moving to admin verification.';
+                                console.log('[Receipt Upload] admin_payables updated, status changed to received', { payoutId, timestamp: new Date().toISOString() });
+                                statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting referrer to upload their proof.';
                                 statusDiv.style.color = '#059669';
                                 statusDiv.style.background = '#d1fae5';
                             }
                         } else if (recordTable === 'buyer_payables') {
-                            // Reviewer payout: receipt uploaded
-                            statusDiv.textContent = '✅ Receipt uploaded successfully!';
+                            // Direct reviewer commission: receipt uploaded, now awaiting reviewer to upload their proof
+                            console.log('[Receipt Upload] buyer_payables updated, awaiting reviewer receipt', { payoutId, timestamp: new Date().toISOString() });
+                            statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting reviewer to upload their proof.';
                             statusDiv.style.color = '#059669';
                             statusDiv.style.background = '#d1fae5';
                         } else {
-                            // Referral payout: vendor uploaded, waiting for buyer to upload
-                            statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
-                            statusDiv.style.color = '#059669';
-                            statusDiv.style.background = '#d1fae5';
+                            console.error('[Receipt Upload] Unknown record table type', { recordTable, payoutId });
+                            statusDiv.textContent = '⚠️ Receipt uploaded but table type unknown. Refreshing...';
+                            statusDiv.style.color = '#d97706';
+                            statusDiv.style.background = '#fef3c7';
                         }
 
                         // Reload data after 1.5 seconds
