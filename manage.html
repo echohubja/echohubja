@@ -6004,8 +6004,10 @@
                     inquiryMap[inq.id] = inq.buyer_id;
                 });
 
+                // Get reviewer buyer IDs from inquiries (not from bp.vendor_id)
+                const buyerIds = [...new Set(Object.values(inquiryMap).filter(Boolean))];
+
                 // Fetch buyer details for all reviewers
-                const buyerIds = [...new Set(buyerPayablesFiltered.map(bp => bp.vendor_id).filter(Boolean))];
                 const { data: buyers } = await sbClient
                     .from('buyers')
                     .select('id, full_name')
@@ -6018,7 +6020,12 @@
 
                 // Attach buyer full_name to each buyerPayable
                 buyerPayablesFiltered.forEach(bp => {
-                    bp.reviewerName = buyerNameMap[bp.vendor_id] || 'Unknown Reviewer';
+                    // Get reviewer ID from first related feedback ID
+                    const feedbackId = bp.related_feedback_ids && bp.related_feedback_ids.length > 0
+                        ? bp.related_feedback_ids[0]
+                        : null;
+                    const buyerId = feedbackId ? inquiryMap[feedbackId] : null;
+                    bp.reviewerName = buyerId ? (buyerNameMap[buyerId] || 'Unknown Reviewer') : 'Unknown Reviewer';
                 });
 
                 if (bpError) throw bpError;
