@@ -5980,7 +5980,6 @@
                 // Load buyer payables (commission earnings) - fetch records with feedback IDs from admin_payables
                 // For own_feedback earnings, vendor_id actually contains the buyer's ID, so fetch by related_feedback_ids instead
                 const feedbackIds = (adminPayables || []).map(ap => ap.related_feedback_id).filter(Boolean);
-                console.log('[DEBUG Payout] Feedback IDs from admin_payables:', feedbackIds);
 
                 const { data: buyerPayables, error: bpError } = await sbClient
                     .from('buyer_payables')
@@ -5988,15 +5987,39 @@
                     .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false });
 
-                console.log('[DEBUG Payout] Raw buyerPayables returned:', buyerPayables);
-
                 // Filter buyerPayables by feedback IDs
                 const buyerPayablesFiltered = buyerPayables ? buyerPayables.filter(bp => {
                     const match = bp.related_feedback_ids && feedbackIds.some(fbId => bp.related_feedback_ids.includes(fbId));
-                    console.log(`[DEBUG Payout] BP ID ${bp.id}: related_feedback_ids=${JSON.stringify(bp.related_feedback_ids)}, matched=${match}, amount=${bp.amount_owed}`);
                     return match;
                 }) : [];
-                console.log('[DEBUG Payout] Filtered buyerPayablesFiltered:', buyerPayablesFiltered);
+
+                // Fetch inquiry details to get buyer_id and full_name for each feedback
+                const { data: inquiries } = await sbClient
+                    .from('inquiries')
+                    .select('id, buyer_id')
+                    .in('id', feedbackIds);
+
+                const inquiryMap = {};
+                (inquiries || []).forEach(inq => {
+                    inquiryMap[inq.id] = inq.buyer_id;
+                });
+
+                // Fetch buyer details for all reviewers
+                const buyerIds = [...new Set(buyerPayablesFiltered.map(bp => bp.vendor_id).filter(Boolean))];
+                const { data: buyers } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name')
+                    .in('id', buyerIds);
+
+                const buyerNameMap = {};
+                (buyers || []).forEach(buyer => {
+                    buyerNameMap[buyer.id] = buyer.full_name;
+                });
+
+                // Attach buyer full_name to each buyerPayable
+                buyerPayablesFiltered.forEach(bp => {
+                    bp.reviewerName = buyerNameMap[bp.vendor_id] || 'Unknown Reviewer';
+                });
 
                 if (bpError) throw bpError;
 
@@ -6014,9 +6037,7 @@
                 renderPayoutHistoryTable();
 
                 // Render transaction-level commission breakdown
-                console.log('[Payout] Rendering transaction-level commission rows...');
                 renderCommissionRows('transaction');
-                console.log('[Payout] Transaction-level commission rows rendered');
 
             } catch (err) {
                 console.error('[Payout] Error loading payout data:', err);
@@ -6087,10 +6108,8 @@
 
                             if (found) {
                                 reviewerAmount = bp.amount_owed || 0;
-                                // Try to get reviewer name from vendor_id (buyer's ID)
-                                if (bp.vendor_id) {
-                                    reviewerName = `Buyer ${bp.vendor_id.substring(0, 8)}`;
-                                }
+                                // Use the fetched reviewer name from buyerPayable
+                                reviewerName = bp.reviewerName || 'Unknown Reviewer';
                                 break;
                             }
                         }
@@ -6172,8 +6191,6 @@
                     </tr>
                 `;
             }).join('');
-
-            console.log(`[Render transaction] Rendered ${transactionRows.length} transaction-level commission rows`);
         }
 
         function filterPayoutList(section) {
@@ -6299,8 +6316,6 @@
             let paidOut = 0;
             let pending = 0;
 
-            console.log('[Payout] Calculating summary cards from database...');
-
             // Helper function to add earnings (excludes flagged items from active totals)
             const addEarnings = (amount, status) => {
                 // Only count non-flagged items in totalEarnings
@@ -6317,53 +6332,29 @@
             };
 
             // Process all admin_payables records and extract 4-part split
-            console.log('[DEBUG Summary] adminPayables data:', data.adminPayables);
             data.adminPayables.forEach((ap, idx) => {
-                console.log(`[DEBUG Summary] Record ${idx}:`, {
-                    id: ap.id,
-                    amount_owed: ap.amount_owed,
-                    admin_commission: ap.admin_commission,
-                    buyer_portion: ap.buyer_portion,
-                    split_with_buyer_id: ap.split_with_buyer_id,
-                    split_with_vendor_id: ap.split_with_vendor_id,
-                    status: ap.status,
-                    buyer: ap.buyer,
-                    inviter_vendor: ap.inviter_vendor
-                });
-
                 // Admin portion (always present)
                 const adminAmount = ap.admin_commission || 0;
-                console.log(`[DEBUG Summary] Record ${idx} - Adding admin: $${adminAmount}`);
                 addEarnings(adminAmount, ap.status);
 
                 // Buyer Inviter portion (if split_with_buyer_id exists)
                 if (ap.split_with_buyer_id) {
                     const buyerInviterAmount = ap.buyer_portion || 0;
-                    console.log(`[DEBUG Summary] Record ${idx} - Adding buyer inviter: $${buyerInviterAmount}`);
                     addEarnings(buyerInviterAmount, ap.status);
-                } else {
-                    console.log(`[DEBUG Summary] Record ${idx} - NO buyer inviter (split_with_buyer_id is ${ap.split_with_buyer_id})`);
                 }
 
                 // Vendor Inviter portion (if split_with_vendor_id exists, calculate as remainder)
                 if (ap.split_with_vendor_id) {
                     const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
-                    console.log(`[DEBUG Summary] Record ${idx} - Adding vendor inviter: $${vendorInviterAmount}`);
                     addEarnings(vendorInviterAmount, ap.status);
-                } else {
-                    console.log(`[DEBUG Summary] Record ${idx} - NO vendor inviter (split_with_vendor_id is ${ap.split_with_vendor_id})`);
                 }
             });
-            console.log('[Payout] Admin/Buyer Inviter/Vendor Inviter Commissions: earnings added');
 
             // Reviewer Payments (from buyer_payables)
             data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
                 const amount = bp.amount_owed || 0;
                 addEarnings(amount, bp.status);
             });
-            console.log('[Payout] Reviewer Payments: earnings added');
-
-            console.log(`[Payout] Summary: Total=$${totalEarnings.toFixed(2)}, Pending=$${pending.toFixed(2)}, PaidOut=$${paidOut.toFixed(2)}`);
 
             // Update DOM - Fixed selector for summary cards
             const summaryContainer = document.querySelector('div[style*="grid-template-columns: repeat(auto-fit"]');
@@ -6378,10 +6369,8 @@
 
                         if (labelText.includes('total earnings')) {
                             value.textContent = `$${totalEarnings.toFixed(2)}`;
-                            console.log('[Payout] ✅ Updated TOTAL EARNINGS to:', `$${totalEarnings.toFixed(2)}`);
                         } else if (labelText.includes('pending payout')) {
                             value.textContent = `$${pending.toFixed(2)}`;
-                            console.log('[Payout] ✅ Updated PENDING PAYOUT to:', `$${pending.toFixed(2)}`);
                         } else if (labelText.includes('paid out')) {
                             value.textContent = `$${paidOut.toFixed(2)}`;
                             const subtitleEl = card.querySelector('div[style*="font-size: 11px"]:not([style*="font-size: 12px"])');
@@ -6389,7 +6378,6 @@
                                 const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length;
                                 subtitleEl.textContent = `${payoutCount} payouts`;
                             }
-                            console.log('[Payout] ✅ Updated PAID OUT to:', `$${paidOut.toFixed(2)}`);
                         }
                     }
                 });
