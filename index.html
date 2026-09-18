@@ -4051,7 +4051,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="reviewer-ready-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Pending</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
@@ -4111,7 +4111,7 @@
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="reviewer-sla-timer-${comm.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
@@ -4155,7 +4155,7 @@
                 tbody.innerHTML = data.map(comm => `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px;"><input type="checkbox" class="reviewer-awaiting-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                         <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                         <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
                         <td style="padding: 12px; text-align: center;">
@@ -4334,7 +4334,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #f59e0b;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Payment Requested</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
@@ -4410,7 +4410,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="reviewer-awaiting-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #8b5cf6;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">Awaiting Receipt</td>
                     <td style="padding: 12px; text-align: center;">
@@ -4492,7 +4492,7 @@
 
             tbody.innerHTML = data.map(req => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
@@ -4564,7 +4564,7 @@
 
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.payment_verified_date || comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
@@ -4725,7 +4725,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="buyer-inviter-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                     <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
@@ -4914,7 +4914,7 @@
 
             tbody.innerHTML = data.map(req => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
@@ -5013,7 +5013,7 @@
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                         <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                         <td style="padding: 12px; color: ${statusColor}; font-weight: 600;">${uploadStatus}</td>
                         <td style="padding: 12px;">${awaitingBuyer ? `${hoursLeft}h` : 'Complete'}</td>
@@ -5042,7 +5042,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
                         <div>
                             <h4 style="font-size: 15px; color: #2c3e50; margin: 0 0 6px 0; font-weight: 600;">Commission: $${amount}</h4>
-                            <p style="font-size: 13px; color: #718096; margin: 0;">ID: ${commission.related_feedback_id?.substring(0, 12)}</p>
+                            <p style="font-size: 13px; color: #718096; margin: 0;">ID: ${commission.related_feedback_ids?.[0]?.substring(0, 12)}</p>
                         </div>
                         <span style="background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Seller Uploaded</span>
                     </div>
@@ -5224,7 +5224,7 @@
 
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
@@ -5396,7 +5396,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                     <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
@@ -5585,7 +5585,7 @@
 
             tbody.innerHTML = data.map(req => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
@@ -5669,7 +5669,7 @@
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="vendor-inviter-awaiting-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                     <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
                     <td style="padding: 12px; text-align: center;">
@@ -5743,7 +5743,7 @@
 
             tbody.innerHTML = data.map(comm => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
