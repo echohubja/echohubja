@@ -2947,11 +2947,12 @@
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
                                         <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manage-pending-table-body">
-                                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                    <tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -6748,21 +6749,21 @@
             tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
+                // Query 1: admin_payables for pending or payment_requested status (Admin, Buyer Inviter, Vendor Inviter)
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'payment_requested'])
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
-                // First fetch all pending buyer payables with own_feedback (no vendor filter yet)
+                // Query 2: buyer_payables for pending or payment_requested status where earning_type='own_feedback' (Reviewer)
+                // First fetch all buyer payables with own_feedback (no vendor filter yet)
                 const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('earning_type', 'own_feedback')
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'payment_requested'])
                     .order('created_at', { ascending: false });
 
                 // Extract feedback IDs and filter by current vendor
@@ -7015,9 +7016,10 @@
                     <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.feedbackId || 'N/A'}</td>
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.displayAmount).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(payout.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; font-size: 11px; color: ${payout.status === 'payment_requested' ? '#10b981' : '#f59e0b'}; font-weight: 600;">${payout.status === 'payment_requested' ? '✓ Requested' : 'Pending'}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        <button onclick="requestPaymentForCommission('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📤 Request</button>
+                        <button onclick="requestPaymentForCommission('${payout.id}')" style="background: ${payout.status === 'payment_requested' ? '#9ca3af' : '#f59e0b'}; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;" ${payout.status === 'payment_requested' ? 'disabled' : ''}>${payout.status === 'payment_requested' ? '✓ Requested' : '📤 Request'}</button>
                     </td>
                 </tr>
                 <tr id="${detailsId}" style="display: none; background: #f0f9ff; border-bottom: 1px solid #e2e8f0;">
@@ -7048,21 +7050,37 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
-                const { data: payouts, error } = await sbClient
+                // Query 1: admin_payables where referral payout needs receipt (V9 workflow: status='approved' with split_with_buyer_id)
+                const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
+                    .eq('status', 'approved')
                     .not('split_with_buyer_id', 'is', null)
-                    .is('vendor_receipt_uploaded_date', null)
+                    .is('vendor_receipt_data', null)
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('Error loading awaiting receipts:', error);
+                // Query 2: buyer_payables where reviewer payment needs receipt (status='approved')
+                const { data: buyerPayouts, error: buyerError } = await sbClient
+                    .from('buyer_payables')
+                    .select('id, vendor_id, buyer_id, amount_owed, related_feedback_ids, created_at, vendor_flagged, buyer_flagged')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'approved')
+                    .is('vendor_receipt_data', null)
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    console.error('Error loading admin payouts:', adminError);
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
+
+                if (buyerError) {
+                    console.error('Error loading buyer payouts:', buyerError);
+                }
+
+                // Combine both queries
+                let payouts = [...(adminPayouts || []), ...(buyerPayouts || [])];
 
                 if (!payouts || payouts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
@@ -7070,15 +7088,17 @@
                     return;
                 }
 
-                // Fetch buyer details for all split_with_buyer_ids
-                const buyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
+                // Fetch buyer details for all split_with_buyer_ids (admin_payables) and buyer_ids (buyer_payables)
+                const adminBuyerIds = adminPayouts?.map(p => p.split_with_buyer_id).filter(Boolean) || [];
+                const buyerIds = buyerPayouts?.map(p => p.buyer_id).filter(Boolean) || [];
+                const allBuyerIds = [...new Set([...adminBuyerIds, ...buyerIds])];
                 globalAwaitingBuyersMap = {};
 
-                if (buyerIds.length > 0) {
+                if (allBuyerIds.length > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
                         .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
+                        .in('id', allBuyerIds);
 
                     if (buyers) {
                         buyers.forEach(buyer => {
@@ -7087,8 +7107,12 @@
                     }
                 }
 
-                // Fetch inquiry details for all payouts
-                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                // Fetch inquiry details for all payouts (both admin_payables and buyer_payables)
+                const feedbackIds = [
+                    ...(adminPayouts?.map(p => p.related_feedback_id).filter(Boolean) || []),
+                    ...(buyerPayouts?.flatMap(p => p.related_feedback_ids || []).filter(Boolean) || [])
+                ];
+                const uniqueFeedbackIds = [...new Set(feedbackIds)];
                 globalAwaitingInquiriesMap = {};
 
                 if (feedbackIds.length > 0) {
@@ -7125,12 +7149,23 @@
         function renderAwaitingPayoutsTable() {
             const tbody = document.getElementById('manage-awaiting-table-body');
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
+                // Detect record type: admin_payables have split_with_buyer_id, buyer_payables have buyer_id
+                const isAdminPayout = payout.split_with_buyer_id !== null && payout.split_with_buyer_id !== undefined;
+                const recipientId = isAdminPayout ? payout.split_with_buyer_id : payout.buyer_id;
+                const feedbackId = isAdminPayout ? payout.related_feedback_id : (payout.related_feedback_ids?.[0] || null);
+
+                let recipientType;
+                if (isAdminPayout) {
+                    recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
+                } else {
+                    recipientType = 'Reviewer';
+                }
+
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
-                const inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
-                const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
+                const inquiry = globalAwaitingInquiriesMap[feedbackId];
+                const buyer = globalAwaitingBuyersMap[recipientId];
                 const detailsId = `awaiting-details-${payout.id}`;
                 const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
-                const recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7138,7 +7173,7 @@
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
                     <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
                     <td style="padding: 12px; color: #475569;">${buyer?.paypal_email || 'N/A'}</td>
-                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
+                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${feedbackId}</td>
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
