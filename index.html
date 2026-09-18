@@ -1005,10 +1005,11 @@
 
             <!-- Lifecycle Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
-                <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-ready-tab">🟢 Tell Admin I am Ready to Get Paid</button>
+                <button class="lifecycle-tab-btn active" onclick="switchReviewerLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-ready-tab">🟢 Tell Vendor I am Ready to Get Paid</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-pending-tab">⏳ Admin Wants to Pay Me. I Need To Check & Confirm</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('requests')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-requests-tab">📋 My Payment Requests Awaiting Vendor Review</button>
                 <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-awaiting-tab">📤 Payments Vendor Made But I Am Still To Upload Receipts For</button>
-                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-verified-tab">✅ Vendor & Your Receipts Verified by Admin</button>
+                <button class="lifecycle-tab-btn" onclick="switchReviewerLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="reviewer-verified-tab">✅ Your Receipts Verified by Admin</button>
             </div>
 
             <!-- Ready to Request Payment Table -->
@@ -1095,6 +1096,45 @@
                         </thead>
                         <tbody id="reviewer-pending-table-body">
                             <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- My Payment Requests Awaiting Vendor Review Table -->
+            <div id="reviewer-requests-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">My Payment Requests Awaiting Vendor Review</h3>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="reviewer-requests-amount-min" oninput="filterReviewerPendingRequests()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="reviewer-requests-amount-max" oninput="filterReviewerPendingRequests()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-requests-date-from" oninput="filterReviewerPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="reviewer-requests-date-to" oninput="filterReviewerPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount Requested</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Requested Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewer-requests-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1192,8 +1232,9 @@
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
                 <button class="lifecycle-tab-btn active" onclick="switchBuyerInviterLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-ready-tab">🟢 Tell Vendor I am Ready to Get Paid</button>
                 <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-pending-tab">⏳ Vendor Wants to Pay Me. I Need To Check & Confirm</button>
+                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('requests')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-requests-tab">📋 My Payment Requests Awaiting Vendor Review</button>
                 <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-awaiting-tab">📤 Payments Vendor Made But I Am Still To Upload Receipts For</button>
-                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-verified-tab">✅ Vendor & Your Receipts Verified by Admin</button>
+                <button class="lifecycle-tab-btn" onclick="switchBuyerInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="buyer-inviter-verified-tab">✅ Your Receipts Verified by Admin</button>
             </div>
 
             <!-- Ready to Request Payment Table -->
@@ -1280,6 +1321,45 @@
                         </thead>
                         <tbody id="buyer-inviter-pending-table-body">
                             <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- My Payment Requests Awaiting Vendor Review Table -->
+            <div id="buyer-inviter-requests-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">My Payment Requests Awaiting Vendor Review</h3>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="buyer-inviter-requests-amount-min" oninput="filterBuyerInviterPendingRequests()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="buyer-inviter-requests-amount-max" oninput="filterBuyerInviterPendingRequests()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-requests-date-from" oninput="filterBuyerInviterPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="buyer-inviter-requests-date-to" oninput="filterBuyerInviterPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount Requested</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Requested Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyer-inviter-requests-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1387,8 +1467,9 @@
             <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0;">
                 <button class="lifecycle-tab-btn active" onclick="switchVendorInviterLifecycleTab('ready')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-ready-tab">🟢 Tell Vendor I am Ready to Get Paid</button>
                 <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-pending-tab">⏳ Vendor Wants to Pay Me. I Need To Check & Confirm</button>
+                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('requests')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-requests-tab">📋 My Payment Requests Awaiting Vendor Review</button>
                 <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-awaiting-tab">📤 Payments Vendor Made But I Am Still To Upload Receipts For</button>
-                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-verified-tab">✅ Vendor & Your Receipts Verified by Admin</button>
+                <button class="lifecycle-tab-btn" onclick="switchVendorInviterLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="vendor-inviter-verified-tab">✅ Your Receipts Verified by Admin</button>
             </div>
 
             <!-- Ready to Request Payment Table -->
@@ -1475,6 +1556,45 @@
                         </thead>
                         <tbody id="vendor-inviter-pending-table-body">
                             <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- My Payment Requests Awaiting Vendor Review Table -->
+            <div id="vendor-inviter-requests-section" class="lifecycle-content" style="margin-bottom: 24px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 16px; color: #2c3e50; margin: 0;">My Payment Requests Awaiting Vendor Review</h3>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div>
+                        <input type="number" id="vendor-inviter-requests-amount-min" oninput="filterVendorInviterPendingRequests()" placeholder="Min $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="number" id="vendor-inviter-requests-amount-max" oninput="filterVendorInviterPendingRequests()" placeholder="Max $" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-requests-date-from" oninput="filterVendorInviterPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <input type="date" id="vendor-inviter-requests-date-to" oninput="filterVendorInviterPendingRequests()" style="width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount Requested</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Requested Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-inviter-requests-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -3941,6 +4061,9 @@
             if (countEl) countEl.textContent = `${data.length} records`;
         }
 
+        let globalReviewerPendingData = [];
+        let reviewerPendingSLAInterval = null;
+
         async function loadReviewerPendingApprovals(buyerId) {
             const tbody = document.getElementById('reviewer-pending-table-body');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
@@ -3957,28 +4080,56 @@
 
                 if (!data || data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No payment confirmations needed</td></tr>';
+                    if (reviewerPendingSLAInterval) clearInterval(reviewerPendingSLAInterval);
                     return;
                 }
 
-                tbody.innerHTML = data.map(comm => {
-                    const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
-                    return `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
-                        <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;">${slaTimer.displayText}</td>
-                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="openReceiverReceiptModal('${comm.id}', '${comm.vendor_paypal_transaction_id || ''}', '${comm.vendor_paypal_email || ''}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">✓ Confirm</button>
-                        </td>
-                    </tr>
-                    `;
-                }).join('');
+                // Store data globally for SLA timer refresh
+                globalReviewerPendingData = data;
+                renderReviewerPendingTable();
+
+                // Clear existing interval
+                if (reviewerPendingSLAInterval) clearInterval(reviewerPendingSLAInterval);
+
+                // Refresh SLA timers every 60 seconds
+                reviewerPendingSLAInterval = setInterval(() => {
+                    refreshReviewerPendingSLATimers();
+                }, 60000);
+
             } catch (err) {
                 console.error('Error loading reviewer pending approvals:', err);
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
             }
+        }
+
+        function renderReviewerPendingTable() {
+            const tbody = document.getElementById('reviewer-pending-table-body');
+            tbody.innerHTML = globalReviewerPendingData.map(comm => {
+                const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
+                return `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_id?.substring(0, 8)}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="reviewer-sla-timer-${comm.id}">${slaTimer.displayText}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="openReceiverReceiptModal('${comm.id}', '${comm.vendor_paypal_transaction_id || ''}', '${comm.vendor_paypal_email || ''}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">✓ Confirm</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function refreshReviewerPendingSLATimers() {
+            globalReviewerPendingData.forEach(comm => {
+                const slaTimer = calculateSLATimer(comm.vendor_receipt_uploaded_date || comm.created_at, 'buyer');
+                const timerCell = document.querySelector(`.reviewer-sla-timer-${comm.id}`);
+                if (timerCell) {
+                    timerCell.textContent = slaTimer.displayText;
+                    timerCell.style.color = slaTimer.statusColor;
+                }
+            });
         }
 
         async function loadReviewerAwaitingApprovals(buyerId) {
@@ -4017,8 +4168,8 @@
         }
 
         function switchReviewerLifecycleTab(tab) {
-            document.querySelectorAll('#reviewer-ready-section, #reviewer-pending-section, #reviewer-awaiting-section, #reviewer-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#reviewer-ready-tab, #reviewer-pending-tab, #reviewer-awaiting-tab, #reviewer-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+            document.querySelectorAll('#reviewer-ready-section, #reviewer-pending-section, #reviewer-requests-section, #reviewer-awaiting-section, #reviewer-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#reviewer-ready-tab, #reviewer-pending-tab, #reviewer-requests-tab, #reviewer-awaiting-tab, #reviewer-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
 
             if (tab === 'ready') {
                 document.getElementById('reviewer-ready-section').style.display = 'block';
@@ -4028,6 +4179,10 @@
                 document.getElementById('reviewer-pending-section').style.display = 'block';
                 document.getElementById('reviewer-pending-tab').style.borderBottomColor = '#f59e0b';
                 loadReviewerPendingApprovals(currentBuyer.id);
+            } else if (tab === 'requests') {
+                document.getElementById('reviewer-requests-section').style.display = 'block';
+                document.getElementById('reviewer-requests-tab').style.borderBottomColor = '#8b5cf6';
+                loadReviewerPendingRequests(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('reviewer-awaiting-section').style.display = 'block';
                 document.getElementById('reviewer-awaiting-tab').style.borderBottomColor = '#f59e0b';
@@ -4259,6 +4414,86 @@
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="requestPaymentForReviewer('${comm.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">📤 Request</button>
                     </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== REVIEWER PENDING REQUESTS FUNCTIONS ==========
+        let globalReviewerPendingRequestsData = [];
+
+        async function loadReviewerPendingRequests(buyerId) {
+            const tbody = document.getElementById('reviewer-requests-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('buyer_payables')
+                    .select('*')
+                    .eq('buyer_id', buyerId)
+                    .eq('status', 'pending')
+                    .not('payout_requested_date', 'is', null)
+                    .order('payout_requested_date', { ascending: false });
+
+                globalReviewerPendingRequestsData = data || [];
+
+                if (globalReviewerPendingRequestsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No pending payment requests</td></tr>';
+                    return;
+                }
+
+                // Clear filter inputs
+                document.getElementById('reviewer-requests-amount-min').value = '';
+                document.getElementById('reviewer-requests-amount-max').value = '';
+                document.getElementById('reviewer-requests-date-from').value = '';
+                document.getElementById('reviewer-requests-date-to').value = '';
+
+                filterReviewerPendingRequests();
+            } catch (err) {
+                console.error('Error loading reviewer pending requests:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterReviewerPendingRequests() {
+            const minAmount = parseFloat(document.getElementById('reviewer-requests-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('reviewer-requests-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('reviewer-requests-date-from').value;
+            const dateTo = document.getElementById('reviewer-requests-date-to').value;
+
+            let filtered = globalReviewerPendingRequestsData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderReviewerPendingRequestsTable(filtered);
+        }
+
+        function renderReviewerPendingRequestsTable(data) {
+            const tbody = document.getElementById('reviewer-requests-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching requests</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(req => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
                 </tr>
             `).join('');
         }
@@ -4501,8 +4736,8 @@
         }
 
         function switchBuyerInviterLifecycleTab(tab) {
-            document.querySelectorAll('#buyer-inviter-ready-section, #buyer-inviter-pending-section, #buyer-inviter-awaiting-section, #buyer-inviter-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#buyer-inviter-ready-tab, #buyer-inviter-pending-tab, #buyer-inviter-awaiting-tab, #buyer-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+            document.querySelectorAll('#buyer-inviter-ready-section, #buyer-inviter-pending-section, #buyer-inviter-requests-section, #buyer-inviter-awaiting-section, #buyer-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#buyer-inviter-ready-tab, #buyer-inviter-pending-tab, #buyer-inviter-requests-tab, #buyer-inviter-awaiting-tab, #buyer-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
 
             if (tab === 'ready') {
                 document.getElementById('buyer-inviter-ready-section').style.display = 'block';
@@ -4512,6 +4747,10 @@
                 document.getElementById('buyer-inviter-pending-section').style.display = 'block';
                 document.getElementById('buyer-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
                 loadBuyerInviterPendingApprovals(currentBuyer.id);
+            } else if (tab === 'requests') {
+                document.getElementById('buyer-inviter-requests-section').style.display = 'block';
+                document.getElementById('buyer-inviter-requests-tab').style.borderBottomColor = '#8b5cf6';
+                loadBuyerInviterPendingRequests(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('buyer-inviter-awaiting-section').style.display = 'block';
                 document.getElementById('buyer-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
@@ -4600,6 +4839,85 @@
                 await requestPayoutInfo(commissionId);
             }
             showToast(`Info requests sent for ${selected.length} items`, 'success');
+        }
+
+        // ========== BUYER INVITER PENDING REQUESTS FUNCTIONS ==========
+        let globalBuyerInviterPendingRequestsData = [];
+
+        async function loadBuyerInviterPendingRequests(buyerId) {
+            const tbody = document.getElementById('buyer-inviter-requests-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'payment_requested')
+                    .order('payout_requested_date', { ascending: false });
+
+                globalBuyerInviterPendingRequestsData = data || [];
+
+                if (globalBuyerInviterPendingRequestsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No pending payment requests</td></tr>';
+                    return;
+                }
+
+                // Clear filter inputs
+                document.getElementById('buyer-inviter-requests-amount-min').value = '';
+                document.getElementById('buyer-inviter-requests-amount-max').value = '';
+                document.getElementById('buyer-inviter-requests-date-from').value = '';
+                document.getElementById('buyer-inviter-requests-date-to').value = '';
+
+                filterBuyerInviterPendingRequests();
+            } catch (err) {
+                console.error('Error loading buyer inviter pending requests:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterBuyerInviterPendingRequests() {
+            const minAmount = parseFloat(document.getElementById('buyer-inviter-requests-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('buyer-inviter-requests-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('buyer-inviter-requests-date-from').value;
+            const dateTo = document.getElementById('buyer-inviter-requests-date-to').value;
+
+            let filtered = globalBuyerInviterPendingRequestsData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderBuyerInviterPendingRequestsTable(filtered);
+        }
+
+        function renderBuyerInviterPendingRequestsTable(data) {
+            const tbody = document.getElementById('buyer-inviter-requests-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching requests</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(req => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadBuyerInviterAwaitingApprovals(buyerId) {
@@ -5089,8 +5407,8 @@
         }
 
         function switchVendorInviterLifecycleTab(tab) {
-            document.querySelectorAll('#vendor-inviter-ready-section, #vendor-inviter-pending-section, #vendor-inviter-awaiting-section, #vendor-inviter-verified-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('#vendor-inviter-ready-tab, #vendor-inviter-pending-tab, #vendor-inviter-awaiting-tab, #vendor-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
+            document.querySelectorAll('#vendor-inviter-ready-section, #vendor-inviter-pending-section, #vendor-inviter-requests-section, #vendor-inviter-awaiting-section, #vendor-inviter-verified-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#vendor-inviter-ready-tab, #vendor-inviter-pending-tab, #vendor-inviter-requests-tab, #vendor-inviter-awaiting-tab, #vendor-inviter-verified-tab').forEach(b => b.style.borderBottomColor = 'transparent');
 
             if (tab === 'ready') {
                 document.getElementById('vendor-inviter-ready-section').style.display = 'block';
@@ -5100,6 +5418,10 @@
                 document.getElementById('vendor-inviter-pending-section').style.display = 'block';
                 document.getElementById('vendor-inviter-pending-tab').style.borderBottomColor = '#f59e0b';
                 loadVendorInviterPendingApprovals(currentBuyer.id);
+            } else if (tab === 'requests') {
+                document.getElementById('vendor-inviter-requests-section').style.display = 'block';
+                document.getElementById('vendor-inviter-requests-tab').style.borderBottomColor = '#8b5cf6';
+                loadVendorInviterPendingRequests(currentBuyer.id);
             } else if (tab === 'awaiting') {
                 document.getElementById('vendor-inviter-awaiting-section').style.display = 'block';
                 document.getElementById('vendor-inviter-awaiting-tab').style.borderBottomColor = '#f59e0b';
@@ -5188,6 +5510,85 @@
                 await requestPayoutInfo(commissionId);
             }
             showToast(`Info requests sent for ${selected.length} items`, 'success');
+        }
+
+        // ========== VENDOR INVITER PENDING REQUESTS FUNCTIONS ==========
+        let globalVendorInviterPendingRequestsData = [];
+
+        async function loadVendorInviterPendingRequests(buyerId) {
+            const tbody = document.getElementById('vendor-inviter-requests-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+
+            try {
+                const { data } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .eq('status', 'payment_requested')
+                    .order('payout_requested_date', { ascending: false });
+
+                globalVendorInviterPendingRequestsData = data || [];
+
+                if (globalVendorInviterPendingRequestsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No pending payment requests</td></tr>';
+                    return;
+                }
+
+                // Clear filter inputs
+                document.getElementById('vendor-inviter-requests-amount-min').value = '';
+                document.getElementById('vendor-inviter-requests-amount-max').value = '';
+                document.getElementById('vendor-inviter-requests-date-from').value = '';
+                document.getElementById('vendor-inviter-requests-date-to').value = '';
+
+                filterVendorInviterPendingRequests();
+            } catch (err) {
+                console.error('Error loading vendor inviter pending requests:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        function filterVendorInviterPendingRequests() {
+            const minAmount = parseFloat(document.getElementById('vendor-inviter-requests-amount-min').value) || 0;
+            const maxAmount = parseFloat(document.getElementById('vendor-inviter-requests-amount-max').value) || Infinity;
+            const dateFrom = document.getElementById('vendor-inviter-requests-date-from').value;
+            const dateTo = document.getElementById('vendor-inviter-requests-date-to').value;
+
+            let filtered = globalVendorInviterPendingRequestsData.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                if (amount < minAmount || amount > maxAmount) return false;
+
+                if (dateFrom) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate < dateFrom) return false;
+                }
+
+                if (dateTo) {
+                    const recordDate = new Date(record.payout_requested_date).toISOString().split('T')[0];
+                    if (recordDate > dateTo) return false;
+                }
+
+                return true;
+            });
+
+            renderVendorInviterPendingRequestsTable(filtered);
+        }
+
+        function renderVendorInviterPendingRequestsTable(data) {
+            const tbody = document.getElementById('vendor-inviter-requests-table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No matching requests</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(req => `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_id?.substring(0, 8) || 'N/A'}...</td>
+                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">Pending Vendor Action</td>
+                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.payout_requested_date).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadVendorInviterAwaitingApprovals(buyerId) {
@@ -5507,14 +5908,14 @@
                 const { error } = await db.from('buyer_payables')
                     .update({
                         status: 'payment_requested',
-                        payment_requested_date: new Date().toISOString()
+                        payout_requested_date: new Date().toISOString()
                     })
                     .eq('id', payableId);
 
                 if (error) throw error;
 
                 showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
-                loadReviewerPendingApprovals(currentBuyer.id);
+                loadReviewerPendingRequests(currentBuyer.id);
 
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -5529,7 +5930,8 @@
                 const { error } = await db.from('admin_payables')
                     .update({
                         status: 'payment_requested',
-                        buyer_payment_requested_date: new Date().toISOString()
+                        payout_requested_date: new Date().toISOString(),
+                        payout_requested_by: currentBuyer.id
                     })
                     .eq('id', payableId)
                     .eq('split_with_buyer_id', buyerId);
@@ -5537,7 +5939,7 @@
                 if (error) throw error;
 
                 showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
-                loadBuyerInviterPendingApprovals(currentBuyer.id);
+                loadBuyerInviterPendingRequests(currentBuyer.id);
 
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -5552,7 +5954,8 @@
                 const { error } = await db.from('admin_payables')
                     .update({
                         status: 'payment_requested',
-                        buyer_payment_requested_date: new Date().toISOString()
+                        payout_requested_date: new Date().toISOString(),
+                        payout_requested_by: buyerId
                     })
                     .eq('id', payableId)
                     .eq('split_with_buyer_id', buyerId);
