@@ -5977,15 +5977,26 @@
 
                 if (apError) throw apError;
 
-                // Load buyer payables (commission earnings) with buyer names and PayPal email
+                // Load buyer payables (commission earnings) - fetch records with feedback IDs from admin_payables
+                // For own_feedback earnings, vendor_id actually contains the buyer's ID, so fetch by related_feedback_ids instead
+                const feedbackIds = (adminPayables || []).map(ap => ap.related_feedback_id).filter(Boolean);
+                console.log('[DEBUG Payout] Feedback IDs from admin_payables:', feedbackIds);
+
                 const { data: buyerPayables, error: bpError } = await sbClient
                     .from('buyer_payables')
-                    .select(`
-                        *,
-                        buyer:buyer_id (id, full_name, email, paypal_email)
-                    `)
-                    .eq('vendor_id', currentVendor.id)
+                    .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, status, created_at')
+                    .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false });
+
+                console.log('[DEBUG Payout] Raw buyerPayables returned:', buyerPayables);
+
+                // Filter buyerPayables by feedback IDs
+                const buyerPayablesFiltered = buyerPayables ? buyerPayables.filter(bp => {
+                    const match = bp.related_feedback_ids && feedbackIds.some(fbId => bp.related_feedback_ids.includes(fbId));
+                    console.log(`[DEBUG Payout] BP ID ${bp.id}: related_feedback_ids=${JSON.stringify(bp.related_feedback_ids)}, matched=${match}, amount=${bp.amount_owed}`);
+                    return match;
+                }) : [];
+                console.log('[DEBUG Payout] Filtered buyerPayablesFiltered:', buyerPayablesFiltered);
 
                 if (bpError) throw bpError;
 
@@ -5993,7 +6004,7 @@
                 messagingState.payoutData = {
                     vendorPayables: vendorPayables || [],
                     adminPayables: adminPayables || [],
-                    buyerPayables: buyerPayables || []
+                    buyerPayables: buyerPayablesFiltered || []
                 };
 
                 // Update summary cards
@@ -6031,44 +6042,84 @@
                 return;
             }
 
-            // Transform admin_payables into transaction-level rows showing 4-part split
-            const transactionRows = data.adminPayables.map(ap => {
-                const adminAmount = ap.admin_commission || 0;
-                const buyerInviterAmount = ap.buyer_portion || 0;
-                const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
-                const totalAmount = ap.amount_owed || 0;
+            // Group admin_payables by related_feedback_id to create one row per feedback
+            const feedbackGroupMap = {};
+            if (data.adminPayables && data.adminPayables.length > 0) {
+                data.adminPayables.forEach(ap => {
+                    const fbId = ap.related_feedback_id;
+                    if (!feedbackGroupMap[fbId]) {
+                        feedbackGroupMap[fbId] = {
+                            feedbackId: fbId,
+                            records: [],
+                            createdAt: ap.created_at,
+                            status: ap.status
+                        };
+                    }
+                    feedbackGroupMap[fbId].records.push(ap);
+                });
+            }
 
-                // Reviewer amount is the remainder to ensure 4-part split adds up correctly
-                const reviewerAmount = Math.max(0, totalAmount - adminAmount - buyerInviterAmount - vendorInviterAmount);
+            // Transform grouped admin_payables into transaction-level rows showing 4-part split
+            const transactionRows = Object.values(feedbackGroupMap).map(group => {
+                let adminAmount = 0;
+                let buyerInviterAmount = 0;
+                let vendorInviterAmount = 0;
+                let totalAmount = 0;
 
-                // Get reviewer name from buyer_payables if available (person who submitted feedback)
-                const reviewerPayment = data.buyerPayables.find(bp =>
-                    bp.related_feedback_ids &&
-                    bp.related_feedback_ids.includes(ap.related_feedback_id) &&
-                    bp.earning_type === 'own_feedback'
-                );
-                const reviewerName = (reviewerPayment && reviewerPayment.buyer && reviewerPayment.buyer.full_name) || 'Reviewer';
+                // Sum all amounts across all records for this feedback ID
+                group.records.forEach(ap => {
+                    adminAmount += ap.admin_commission || 0;
+                    buyerInviterAmount += ap.buyer_portion || 0;
+                    vendorInviterAmount += (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
+                    totalAmount += ap.amount_owed || 0;
+                });
+
+                // Get reviewer amount from buyer_payables for this feedback ID
+                let reviewerAmount = 0;
+                let reviewerName = 'Reviewer';
+
+                if (data.buyerPayables && Array.isArray(data.buyerPayables) && data.buyerPayables.length > 0) {
+                    for (let bp of data.buyerPayables) {
+                        if (bp.related_feedback_ids && Array.isArray(bp.related_feedback_ids) && bp.earning_type === 'own_feedback') {
+                            // Convert both to strings for reliable comparison
+                            const feedbackIdStr = String(group.feedbackId);
+                            const found = bp.related_feedback_ids.some(id => String(id) === feedbackIdStr);
+
+                            if (found) {
+                                reviewerAmount = bp.amount_owed || 0;
+                                // Try to get reviewer name from vendor_id (buyer's ID)
+                                if (bp.vendor_id) {
+                                    reviewerName = `Buyer ${bp.vendor_id.substring(0, 8)}`;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Include reviewer amount in total (admin splits + reviewer earnings are separate)
+                const grandTotal = totalAmount + reviewerAmount;
 
                 // Format feedback ID (show last 8 chars)
-                const feedbackIdShort = ap.related_feedback_id ? ap.related_feedback_id.substring(ap.related_feedback_id.length - 8).toUpperCase() : 'N/A';
+                const feedbackIdShort = group.feedbackId ? group.feedbackId.substring(group.feedbackId.length - 8).toUpperCase() : 'N/A';
 
-                // Format date
-                const createdDate = new Date(ap.created_at);
+                // Format date from first record
+                const createdDate = new Date(group.createdAt);
                 const dateStr = createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
 
                 return {
-                    id: ap.id,
-                    feedbackId: ap.related_feedback_id,
+                    id: group.records[0].id,
+                    feedbackId: group.feedbackId,
                     feedbackIdDisplay: feedbackIdShort,
                     date: dateStr,
-                    createdAt: ap.created_at,
+                    createdAt: group.createdAt,
                     reviewerName: reviewerName,
                     adminAmount: adminAmount,
                     reviewerAmount: reviewerAmount,
                     buyerInviterAmount: buyerInviterAmount,
                     vendorInviterAmount: vendorInviterAmount,
-                    totalAmount: totalAmount,
-                    status: ap.status || 'pending',
+                    totalAmount: grandTotal,
+                    status: group.status || 'pending',
                     type: 'transaction'
                 };
             });
@@ -6265,12 +6316,45 @@
                 }
             };
 
-            // Admin Commissions (no split)
-            data.adminPayables.filter(ap => !ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
-                const amount = ap.amount_owed || 0;
-                addEarnings(amount, ap.status);
+            // Process all admin_payables records and extract 4-part split
+            console.log('[DEBUG Summary] adminPayables data:', data.adminPayables);
+            data.adminPayables.forEach((ap, idx) => {
+                console.log(`[DEBUG Summary] Record ${idx}:`, {
+                    id: ap.id,
+                    amount_owed: ap.amount_owed,
+                    admin_commission: ap.admin_commission,
+                    buyer_portion: ap.buyer_portion,
+                    split_with_buyer_id: ap.split_with_buyer_id,
+                    split_with_vendor_id: ap.split_with_vendor_id,
+                    status: ap.status,
+                    buyer: ap.buyer,
+                    inviter_vendor: ap.inviter_vendor
+                });
+
+                // Admin portion (always present)
+                const adminAmount = ap.admin_commission || 0;
+                console.log(`[DEBUG Summary] Record ${idx} - Adding admin: $${adminAmount}`);
+                addEarnings(adminAmount, ap.status);
+
+                // Buyer Inviter portion (if split_with_buyer_id exists)
+                if (ap.split_with_buyer_id) {
+                    const buyerInviterAmount = ap.buyer_portion || 0;
+                    console.log(`[DEBUG Summary] Record ${idx} - Adding buyer inviter: $${buyerInviterAmount}`);
+                    addEarnings(buyerInviterAmount, ap.status);
+                } else {
+                    console.log(`[DEBUG Summary] Record ${idx} - NO buyer inviter (split_with_buyer_id is ${ap.split_with_buyer_id})`);
+                }
+
+                // Vendor Inviter portion (if split_with_vendor_id exists, calculate as remainder)
+                if (ap.split_with_vendor_id) {
+                    const vendorInviterAmount = (ap.amount_owed - ap.admin_commission - ap.buyer_portion) || 0;
+                    console.log(`[DEBUG Summary] Record ${idx} - Adding vendor inviter: $${vendorInviterAmount}`);
+                    addEarnings(vendorInviterAmount, ap.status);
+                } else {
+                    console.log(`[DEBUG Summary] Record ${idx} - NO vendor inviter (split_with_vendor_id is ${ap.split_with_vendor_id})`);
+                }
             });
-            console.log('[Payout] Admin Commissions: earnings added');
+            console.log('[Payout] Admin/Buyer Inviter/Vendor Inviter Commissions: earnings added');
 
             // Reviewer Payments (from buyer_payables)
             data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
@@ -6278,20 +6362,6 @@
                 addEarnings(amount, bp.status);
             });
             console.log('[Payout] Reviewer Payments: earnings added');
-
-            // Buyer Inviter Commissions (buyer_portion from admin_payables)
-            data.adminPayables.filter(ap => ap.split_with_buyer_id && !ap.split_with_vendor_id).forEach(ap => {
-                const amount = ap.buyer_portion || 0;
-                addEarnings(amount, ap.status);
-            });
-            console.log('[Payout] Buyer Inviter: earnings added');
-
-            // Vendor Inviter Commissions (admin_commission from admin_payables with split_with_vendor_id)
-            data.adminPayables.filter(ap => ap.split_with_vendor_id).forEach(ap => {
-                const amount = ap.admin_commission || 0;
-                addEarnings(amount, ap.status);
-            });
-            console.log('[Payout] Vendor Inviter: earnings added');
 
             console.log(`[Payout] Summary: Total=$${totalEarnings.toFixed(2)}, Pending=$${pending.toFixed(2)}, PaidOut=$${paidOut.toFixed(2)}`);
 
