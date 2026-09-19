@@ -2366,15 +2366,15 @@
             }
 
             try {
-                // Query admin_payables awaiting receipt verification (V9: status='payment_sent' or 'paid')
-                // Shows payouts where receipts are being collected or verified
+                // Query admin_payables awaiting receipt verification (V9: status='payment_requested')
+                // Shows payouts where admin/buyer requested payment, waiting for vendor to upload proof
                 const { data, error } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, split_with_buyer_id,
                         created_at, vendor_receipt_uploaded_date, vendor_flagged,
                         buyer_receipt_uploaded_date, buyer_flagged
                     `)
-                    .in('status', ['payment_sent', 'paid'])
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 if (error) {
