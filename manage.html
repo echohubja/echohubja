@@ -7414,10 +7414,10 @@
                     .single();
 
                 if (!adminQueryError && adminPayout) {
-                    // This is an admin commission - update admin_payables
+                    // This is an admin commission - update admin_payables with vendor_requested status
                     const { error: updateError } = await sbClient
                         .from('admin_payables')
-                        .update({ status: 'payment_requested' })
+                        .update({ status: 'vendor_requested' })
                         .eq('id', payoutId);
 
                     if (updateError) throw updateError;
@@ -7432,10 +7432,10 @@
 
                     showToast(`✓ Payment request sent to ${recipientType}. Appears in 'Vendor Requested To Pay' tab.`, 'success');
                 } else {
-                    // This is a non-admin commission (reviewer) - update buyer_payables
+                    // This is a non-admin commission (reviewer) - update buyer_payables with vendor_requested status
                     const { error: updateError } = await sbClient
                         .from('buyer_payables')
-                        .update({ status: 'payment_requested' })
+                        .update({ status: 'vendor_requested' })
                         .eq('id', payoutId);
 
                     if (updateError) throw updateError;
@@ -7472,10 +7472,10 @@
                         .single();
 
                     if (adminPayout) {
-                        // Update admin_payables
+                        // Update admin_payables with vendor_requested status
                         const { error } = await sbClient
                             .from('admin_payables')
-                            .update({ status: 'payment_requested' })
+                            .update({ status: 'vendor_requested' })
                             .eq('id', payoutId);
 
                         if (error) {
@@ -7484,10 +7484,10 @@
                             return;
                         }
                     } else {
-                        // Update buyer_payables (non-admin/reviewer)
+                        // Update buyer_payables (non-admin/reviewer) with vendor_requested status
                         const { error } = await sbClient
                             .from('buyer_payables')
-                            .update({ status: 'payment_requested' })
+                            .update({ status: 'vendor_requested' })
                             .eq('id', payoutId);
 
                         if (error) {
