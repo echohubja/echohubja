@@ -6495,6 +6495,9 @@
             } else {
                 console.error('[Payout] ❌ Summary container not found! Selector failed.');
             }
+
+            // Update commission-pending metric in "Your Payment Proof Uploads" section
+            document.getElementById('commission-pending').textContent = `$${pending.toFixed(2)}`;
         }
 
         function renderPayoutHistoryTable() {
