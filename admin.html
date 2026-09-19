@@ -2366,14 +2366,15 @@
             }
 
             try {
-                // Query admin_payables where status='approved' and vendor_receipt_data IS NULL or buyer_receipt_data IS NULL
+                // Query admin_payables awaiting receipt verification (V9: status='payment_sent' or 'paid')
+                // Shows payouts where receipts are being collected or verified
                 const { data, error } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, split_with_buyer_id,
                         created_at, vendor_receipt_uploaded_date, vendor_flagged,
                         buyer_receipt_uploaded_date, buyer_flagged
                     `)
-                    .eq('status', 'approved')
+                    .in('status', ['payment_sent', 'paid'])
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -2893,16 +2894,16 @@
                     throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
                 }
 
-                // Send notification to vendor
-                if (record.vendor_id) {
-                    await createAdminNotification(
-                        record.vendor_id,
-                        'admin_payment_request',
-                        `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
-                        'admin_payables',
-                        id
-                    );
-                }
+                // TODO: Implement createAdminNotification() or remove vendor notification
+                // if (record.vendor_id) {
+                //     await createAdminNotification(
+                //         record.vendor_id,
+                //         'admin_payment_request',
+                //         `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
+                //         'admin_payables',
+                //         id
+                //     );
+                // }
 
                 await loadAdminReadyToRequest();
                 await loadPendingApprovals();
