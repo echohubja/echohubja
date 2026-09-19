@@ -4538,24 +4538,21 @@
 
             try {
                 // Query 1: buyer_payables (direct feedback commissions)
+                // Status='payment_sent' means vendor has uploaded receipt, buyer needs to upload
                 const { data: buyerPayables } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'approved')
-                    .not('vendor_receipt_data', 'is', null)
-                    .eq('buyer_receipt_data', null)
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 // Query 2: admin_payables where this reviewer is also the referrer (split_with_buyer_id)
-                // They need to upload receipt proof as the referrer
+                // Status='payment_sent' means vendor has uploaded disbursement receipt, referrer needs to upload collection receipt
                 const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'approved')
-                    .not('vendor_receipt_data', 'is', null)
-                    .eq('buyer_receipt_data', null)
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 // Combine both result sets
@@ -5371,11 +5368,12 @@
             itemsContainer.innerHTML = '';
 
             try {
+                // Query for status='payment_sent': vendor has uploaded disbursement proof, buyer needs to upload collection proof
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterAwaitingData = data || [];
@@ -6079,11 +6077,12 @@
 
                 const vendorIds = vendors.map(v => v.id);
 
+                // Query for status='payment_sent': vendor has uploaded disbursement proof awaiting admin verification
                 const { data: commissions } = await db
                     .from('admin_payables')
                     .select('*')
                     .in('vendor_id', vendorIds)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterAwaitingData = commissions || [];
@@ -6178,11 +6177,12 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query for status='paid': both vendor and buyer have uploaded receipts, awaiting admin verification
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'verified')
+                    .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterVerifiedData = data || [];
