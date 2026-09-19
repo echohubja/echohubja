@@ -4277,83 +4277,6 @@
 
         let reviewerPendingSLAInterval = null;
 
-        async function loadReviewerPendingApprovals(buyerId) {
-            const tbody = document.getElementById('reviewer-pending-table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
-
-            try {
-                // Show buyer_payables with status='payment_requested' - vendor requesting payment
-                const { data } = await db
-                    .from('buyer_payables')
-                    .select('*')
-                    .eq('buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
-                    .order('created_at', { ascending: false });
-
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No payment requests from vendors</td></tr>';
-                    if (reviewerPendingSLAInterval) clearInterval(reviewerPendingSLAInterval);
-                    return;
-                }
-
-                // Store data globally
-                globalReviewerPendingData = data;
-                renderReviewerPendingTable();
-
-            } catch (err) {
-                console.error('Error loading reviewer pending approvals:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
-            }
-        }
-
-        function renderReviewerPendingTable() {
-            const tbody = document.getElementById('reviewer-pending-table-body');
-            tbody.innerHTML = globalReviewerPendingData.map(comm => `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px;"><input type="checkbox" class="reviewer-pending-checkbox" value="${comm.id}"></td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
-                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: #718096; font-size: 12px;">Payment Requested</td>
-                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function loadReviewerAwaitingApprovals(buyerId) {
-            const tbody = document.getElementById('reviewer-awaiting-table-body');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
-
-            try {
-                // Show paid commissions awaiting admin verification
-                const { data } = await db
-                    .from('admin_payables')
-                    .select('*')
-                    .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'paid')
-                    .order('created_at', { ascending: false });
-
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">No pending verifications</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = data.map(comm => `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px;"><input type="checkbox" class="reviewer-awaiting-checkbox" value="${comm.id}"></td>
-                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${comm.related_feedback_ids?.[0]?.substring(0, 8)}...</td>
-                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
-                        <td style="padding: 12px; color: #0c4a6e; font-weight: 600;">⏳ Verifying...</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <span style="background: #dbeafe; color: #0c4a6e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pending Admin Review</span>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (err) {
-                console.error('Error loading reviewer awaiting approvals:', err);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
-            }
-        }
-
         function switchReviewerLifecycleTab(tab) {
             document.querySelectorAll('#reviewer-ready-section, #reviewer-pending-section, #reviewer-requests-section, #reviewer-awaiting-section, #reviewer-verified-section, #reviewer-collected-section').forEach(s => s.style.display = 'none');
             document.querySelectorAll('#reviewer-ready-tab, #reviewer-pending-tab, #reviewer-requests-tab, #reviewer-awaiting-tab, #reviewer-verified-tab, #reviewer-collected-tab').forEach(b => b.style.borderBottomColor = 'transparent');
@@ -4464,11 +4387,12 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query status='payment_sent': vendor has uploaded payment receipt, reviewer needs to check & confirm
                 const { data } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 globalReviewerPendingData = data || [];
@@ -4659,11 +4583,12 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query status='payment_requested': Buyer requested payment, vendor reviewing/processing
                 const { data } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 globalReviewerPendingRequestsData = data || [];
@@ -5104,11 +5029,12 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query status='payment_sent': vendor has uploaded disbursement receipt, buyer needs to check & confirm
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterPendingData = data || [];
@@ -5289,11 +5215,12 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query status='payment_requested': Referrer requested payment, vendor reviewing/processing
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterPendingRequestsData = data || [];
@@ -5801,11 +5728,12 @@
 
                 const vendorIds = vendors.map(v => v.id);
 
+                // Query status='payment_sent': vendor has uploaded payment proof, buyer needs to check & confirm
                 const { data: commissions } = await db
                     .from('admin_payables')
                     .select('*')
                     .in('vendor_id', vendorIds)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterPendingData = commissions || [];
@@ -5986,11 +5914,12 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
+                // Query status='payment_requested': Vendor inviter requested payment, vendor reviewing/processing
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterPendingRequestsData = data || [];
@@ -6252,18 +6181,35 @@
         // ========== SHARED PAYOUT FUNCTIONS ==========
         async function approvePayout(commissionId) {
             try {
-                const { error } = await db
-                    .from('buyer_payables')
-                    .update({ status: 'approved' })
-                    .eq('id', commissionId);
+                // Approval means buyer confirmed payment received and will upload proof
+                // Status stays 'payment_sent' - only changes to 'paid' AFTER buyer uploads receipt
 
-                if (error) throw error;
-                showToast('Payment request approved successfully', 'success');
-                await loadReviewerPendingApprovals(currentBuyer.id);
-                await loadReviewerPendingRequests(currentBuyer.id);
+                // Determine active scenario and switch to awaiting tab
+                const reviewerSection = document.getElementById('reviewer-pending-section');
+                const buyerInviterSection = document.getElementById('buyer-inviter-pending-section');
+                const vendorInviterSection = document.getElementById('vendor-inviter-pending-section');
+
+                if (reviewerSection?.style.display !== 'none') {
+                    switchReviewerLifecycleTab('awaiting');
+                } else if (buyerInviterSection?.style.display !== 'none') {
+                    switchBuyerInviterLifecycleTab('awaiting');
+                } else if (vendorInviterSection?.style.display !== 'none') {
+                    switchVendorInviterLifecycleTab('awaiting');
+                }
+
+                // Scroll to receipt upload form for this commission
+                setTimeout(() => {
+                    const form = document.getElementById(`buyer-receipt-form-${commissionId}`);
+                    if (form) {
+                        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        form.querySelector('input[type="file"]')?.focus();
+                    }
+                }, 200);
+
+                showToast('Receipt upload ready - upload to complete payment', 'success');
             } catch (err) {
-                console.error('Error approving payout:', err);
-                showToast('Failed to approve payment request', 'error');
+                console.error('Error in approve payout:', err);
+                showToast('Failed to load receipt upload', 'error');
             }
         }
 
