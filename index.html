@@ -4123,7 +4123,8 @@
                         buyer_receipt_filesize: file.size,
                         buyer_receipt_uploaded_date: new Date().toISOString(),
                         buyer_paypal_email: paypalEmail,
-                        buyer_paypal_transaction_id: txnId
+                        buyer_paypal_transaction_id: txnId,
+                        status: 'paid'
                     };
 
                     // Update correct table
@@ -4323,12 +4324,12 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Show received commissions awaiting admin verification
+                // Show paid commissions awaiting admin verification
                 const { data } = await db
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'received')
+                    .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
                 if (!data || data.length === 0) {
@@ -5588,7 +5589,8 @@
                             buyer_receipt_filesize: file.size,
                             buyer_receipt_uploaded_date: new Date().toISOString(),
                             buyer_flagged: false,
-                            buyer_flag_reason: null
+                            buyer_flag_reason: null,
+                            status: 'paid'
                         })
                         .eq('id', commissionId)
                         .eq('split_with_buyer_id', buyerId);
@@ -6364,7 +6366,7 @@
                                 buyer_receipt_filetype: mimeType,
                                 buyer_receipt_filesize: file.size,
                                 buyer_receipt_uploaded_date: new Date().toISOString(),
-                                status: 'received'
+                                status: 'paid'
                             })
                             .eq('id', commissionId);
 
