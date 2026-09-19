@@ -6363,7 +6363,8 @@
                 if (error) throw error;
 
                 showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
-                loadReviewerPendingRequests(currentBuyer.id);
+                await loadReviewerReadyToRequest(currentBuyer.id);
+                await loadReviewerPendingRequests(currentBuyer.id);
 
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -6387,7 +6388,8 @@
                 if (error) throw error;
 
                 showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
-                loadBuyerInviterPendingRequests(currentBuyer.id);
+                await loadBuyerInviterReadyToRequest(currentBuyer.id);
+                await loadBuyerInviterPendingRequests(currentBuyer.id);
 
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -6411,7 +6413,8 @@
                 if (error) throw error;
 
                 showToast('✓ Payment requested! Vendor will upload receipt within 48 hours.', 'success');
-                loadVendorInviterPendingApprovals(currentBuyer.id);
+                await loadVendorInviterReadyToRequest(currentBuyer.id);
+                await loadVendorInviterPendingApprovals(currentBuyer.id);
 
             } catch (err) {
                 console.error('Error requesting payment:', err);
