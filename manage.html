@@ -6789,21 +6789,22 @@
             tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables for pending or payment_requested status (Admin, Buyer Inviter, Vendor Inviter)
+                // Query 1: admin_payables where vendor must send payment (approved or payment_requested)
+                // Excludes payment_sent (already sent, in Awaiting tab) and paid (complete, in Verified tab)
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .in('status', ['pending', 'payment_requested'])
+                    .in('status', ['approved', 'payment_requested'])
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for pending, payment_requested, or approved status where earning_type='own_feedback' (Reviewer)
+                // Query 2: buyer_payables where vendor must send payment (approved or payment_requested, earning_type='own_feedback')
                 // First fetch all buyer payables with own_feedback (no vendor filter yet)
                 const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('earning_type', 'own_feedback')
-                    .in('status', ['pending', 'payment_requested', 'approved'])
+                    .in('status', ['approved', 'payment_requested'])
                     .order('created_at', { ascending: false });
 
                 // Extract feedback IDs and filter by current vendor
@@ -7090,23 +7091,23 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables where referral payout needs receipt (V9 workflow: status='approved' with split_with_buyer_id)
+                // Query 1: admin_payables where V9 workflow: status='payment_sent' (vendor sent, awaiting recipient upload)
+                // Recipient (buyer/referrer) approved and now needs to upload receipt
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'approved')
+                    .eq('status', 'payment_sent')
                     .not('split_with_buyer_id', 'is', null)
-                    .is('vendor_receipt_data', null)
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables where reviewer payment needs receipt (status='approved')
+                // Query 2: buyer_payables where status='payment_sent' (vendor sent, awaiting recipient upload)
+                // Reviewer approved and now needs to upload receipt
                 const { data: buyerPayouts, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, buyer_id, amount_owed, related_feedback_ids, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'approved')
-                    .is('vendor_receipt_data', null)
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 if (adminError) {
@@ -7405,16 +7406,44 @@
             if (!sbClient || !currentVendor) return;
 
             try {
-                // Update status to payment_requested so buyer/reviewer can see it in their pending approvals tab
-                const { error } = await sbClient
-                    .from('buyer_payables')
-                    .update({ status: 'payment_requested' })
-                    .eq('id', payoutId);
+                // First, try to find the payout in admin_payables (handles admin, buyer_inviter, vendor_inviter)
+                const { data: adminPayout, error: adminQueryError } = await sbClient
+                    .from('admin_payables')
+                    .select('id, split_with_buyer_id, split_with_vendor_id')
+                    .eq('id', payoutId)
+                    .single();
 
-                if (error) throw error;
+                if (!adminQueryError && adminPayout) {
+                    // This is an admin commission - update admin_payables
+                    const { error: updateError } = await sbClient
+                        .from('admin_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', payoutId);
 
-                showToast('✓ Payment request sent to buyer. Awaiting approval.', 'success');
-                await loadManageIncomingRequests(currentVendor.id);
+                    if (updateError) throw updateError;
+
+                    // Determine recipient type for user feedback
+                    let recipientType = 'admin';
+                    if (adminPayout.split_with_vendor_id) {
+                        recipientType = 'vendor inviter';
+                    } else if (adminPayout.split_with_buyer_id) {
+                        recipientType = 'buyer inviter';
+                    }
+
+                    showToast(`✓ Payment request sent to ${recipientType}. Appears in 'Vendor Requested To Pay' tab.`, 'success');
+                } else {
+                    // This is a non-admin commission (reviewer) - update buyer_payables
+                    const { error: updateError } = await sbClient
+                        .from('buyer_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', payoutId);
+
+                    if (updateError) throw updateError;
+
+                    showToast('✓ Payment request sent to reviewer. Appears in "⏳ Vendor Wants to Pay Me" tab.', 'success');
+                }
+
+                await loadManagePendingPayouts();
             } catch (err) {
                 console.error('Error requesting payment:', err);
                 showToast('Error requesting payment. Please try again.', 'error');
@@ -7423,7 +7452,7 @@
 
         async function batchRequestPayment() {
             const selected = Array.from(document.querySelectorAll('#manage-pending-table-body input[type="checkbox"]:checked'))
-                .map(cb => cb.value);
+                .map(cb => cb.dataset.payoutId || cb.value);
 
             if (selected.length === 0) {
                 showToast('Please select at least one commission to request payment for', 'warning');
@@ -7433,22 +7462,44 @@
             if (!sbClient) return;
 
             try {
-                // Update all selected commissions to payment_requested status
+                // Update all selected commissions to payment_requested status, handling both admin and non-admin
                 for (const payoutId of selected) {
-                    const { error } = await sbClient
-                        .from('buyer_payables')
-                        .update({ status: 'payment_requested' })
-                        .eq('id', payoutId);
+                    // Try to find in admin_payables first (handles admin, buyer_inviter, vendor_inviter)
+                    const { data: adminPayout } = await sbClient
+                        .from('admin_payables')
+                        .select('id')
+                        .eq('id', payoutId)
+                        .single();
 
-                    if (error) {
-                        console.error('Error updating payout:', error);
-                        showToast(`Error requesting payment for one or more commissions`, 'error');
-                        return;
+                    if (adminPayout) {
+                        // Update admin_payables
+                        const { error } = await sbClient
+                            .from('admin_payables')
+                            .update({ status: 'payment_requested' })
+                            .eq('id', payoutId);
+
+                        if (error) {
+                            console.error('Error updating admin payout:', error);
+                            showToast(`Error requesting payment for one or more commissions`, 'error');
+                            return;
+                        }
+                    } else {
+                        // Update buyer_payables (non-admin/reviewer)
+                        const { error } = await sbClient
+                            .from('buyer_payables')
+                            .update({ status: 'payment_requested' })
+                            .eq('id', payoutId);
+
+                        if (error) {
+                            console.error('Error updating buyer payout:', error);
+                            showToast(`Error requesting payment for one or more commissions`, 'error');
+                            return;
+                        }
                     }
                 }
 
-                showToast(`✓ ${selected.length} payment request(s) sent to buyer. Awaiting approval.`, 'success');
-                await loadManageIncomingRequests(currentVendor.id);
+                showToast(`✓ ${selected.length} payment request(s) sent. Awaiting approvals.`, 'success');
+                await loadManagePendingPayouts();
                 document.getElementById('manage-pending-select-all').checked = false;
             } catch (err) {
                 console.error('Error in batch payment request:', err);
