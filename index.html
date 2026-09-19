@@ -4199,7 +4199,7 @@
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'approved'])
                     .order('created_at', { ascending: false });
 
                 globalReviewerReadyData = data || [];
@@ -4952,7 +4952,7 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'approved'])
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterReadyData = data || [];
@@ -5640,7 +5640,7 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .eq('status', 'pending')
+                    .in('status', ['pending', 'approved'])
                     .order('created_at', { ascending: false });
 
                 globalVendorInviterReadyData = data || [];
