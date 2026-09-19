@@ -6475,10 +6475,10 @@
                     totalEarnings += parseFloat(amount || 0);
                 }
 
-                if (status === 'paid' || status === 'received') {
+                if (status === 'paid') {
                     paidOut += parseFloat(amount || 0);
-                } else if (status === 'pending' || status === 'requested') {
-                    // Both 'pending' and 'requested' count as pending payout
+                } else if (status === 'pending' || status === 'requested' || status === 'payment_sent') {
+                    // 'pending', 'payment_sent', and 'requested' count as pending payout
                     pending += parseFloat(amount || 0);
                 }
             };
@@ -6527,7 +6527,7 @@
                             value.textContent = `$${paidOut.toFixed(2)}`;
                             const subtitleEl = card.querySelector('div[style*="font-size: 11px"]:not([style*="font-size: 12px"])');
                             if (subtitleEl) {
-                                const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length;
+                                const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid').length;
                                 subtitleEl.textContent = `${payoutCount} payouts`;
                             }
                         }
@@ -6547,7 +6547,7 @@
 
             // Add vendor payables
             data.vendorPayables.forEach(vp => {
-                if (vp.status === 'paid' || vp.status === 'received') {
+                if (vp.status === 'paid') {
                     allPayables.push({
                         id: vp.id,
                         amount: vp.amount_owed,
@@ -6561,7 +6561,7 @@
 
             // Add admin payables
             data.adminPayables.forEach(ap => {
-                if (ap.status === 'paid' || ap.status === 'received') {
+                if (ap.status === 'paid') {
                     allPayables.push({
                         id: ap.id,
                         amount: ap.admin_commission,
@@ -6587,7 +6587,7 @@
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(item.amount).toFixed(2)}</td>
                         <td style="padding: 12px;">
                             <span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-                                ${item.status === 'received' ? 'Received' : 'Completed'}
+                                Completed
                             </span>
                         </td>
                         <td style="padding: 12px; color: #64748b;">${item.method}</td>
@@ -6797,13 +6797,13 @@
                     .in('status', ['pending', 'payment_requested'])
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for pending or payment_requested status where earning_type='own_feedback' (Reviewer)
+                // Query 2: buyer_payables for pending, payment_requested, or approved status where earning_type='own_feedback' (Reviewer)
                 // First fetch all buyer payables with own_feedback (no vendor filter yet)
                 const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('earning_type', 'own_feedback')
-                    .in('status', ['pending', 'payment_requested'])
+                    .in('status', ['pending', 'payment_requested', 'approved'])
                     .order('created_at', { ascending: false });
 
                 // Extract feedback IDs and filter by current vendor
@@ -8058,7 +8058,7 @@
                             // Referral payout: vendor uploaded, ready for referrer to upload their receipt
                             const { error: statusError } = await sbClient
                                 .from('admin_payables')
-                                .update({ status: 'received' })
+                                .update({ status: 'payment_sent' })
                                 .eq('id', payoutId);
 
                             if (statusError) {
@@ -8067,17 +8067,29 @@
                                 statusDiv.style.color = '#d97706';
                                 statusDiv.style.background = '#fef3c7';
                             } else {
-                                console.log('[Receipt Upload] admin_payables updated, status changed to received', { payoutId, timestamp: new Date().toISOString() });
+                                console.log('[Receipt Upload] admin_payables updated, status changed to payment_sent', { payoutId, timestamp: new Date().toISOString() });
                                 statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting referrer to upload their proof.';
                                 statusDiv.style.color = '#059669';
                                 statusDiv.style.background = '#d1fae5';
                             }
                         } else if (recordTable === 'buyer_payables') {
-                            // Direct reviewer commission: receipt uploaded, now awaiting reviewer to upload their proof
-                            console.log('[Receipt Upload] buyer_payables updated, awaiting reviewer receipt', { payoutId, timestamp: new Date().toISOString() });
-                            statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting reviewer to upload their proof.';
-                            statusDiv.style.color = '#059669';
-                            statusDiv.style.background = '#d1fae5';
+                            // Direct reviewer commission: vendor uploaded proof of payment, now awaiting reviewer to upload their proof
+                            const { error: statusError } = await sbClient
+                                .from('buyer_payables')
+                                .update({ status: 'payment_sent' })
+                                .eq('id', payoutId);
+
+                            if (statusError) {
+                                console.error('Error updating buyer_payables status:', statusError);
+                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
+                                statusDiv.style.color = '#d97706';
+                                statusDiv.style.background = '#fef3c7';
+                            } else {
+                                console.log('[Receipt Upload] buyer_payables updated, status changed to payment_sent', { payoutId, timestamp: new Date().toISOString() });
+                                statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting reviewer to upload their proof.';
+                                statusDiv.style.color = '#059669';
+                                statusDiv.style.background = '#d1fae5';
+                            }
                         } else {
                             console.error('[Receipt Upload] Unknown record table type', { recordTable, payoutId });
                             statusDiv.textContent = '⚠️ Receipt uploaded but table type unknown. Refreshing...';
