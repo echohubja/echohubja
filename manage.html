@@ -2862,7 +2862,7 @@
                     <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('incoming')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-incoming-tab">📥 Here are People Requesting for Me to Pay Them</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Here are People I Must Send Payment To</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Here are People Waiting For Me To Upload Proof After Sending Their Payment</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Transferred Payments</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Payments Receipts That Admin Have Taken a Look at</button>
                 </div>
 
                 <!-- Payout Subsections Container -->
@@ -2947,12 +2947,11 @@
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Created</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
                                         <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manage-pending-table-body">
-                                    <tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2987,23 +2986,24 @@
                         </div>
                     </div>
 
-                    <!-- VERIFIED SECTION - TRANSFERRED PAYMENTS -->
+                    <!-- VERIFIED SECTION -->
                     <div id="manage-verified-section" class="lifecycle-content" style="display: none;">
-                        <h3 style="color: #2c3e50; margin: 0 0 16px 0; font-size: 16px;">Transferred Payments</h3>
+                        <h3 style="color: #2c3e50; margin: 0 0 16px 0; font-size: 16px;">Verified & Completed</h3>
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Commission Type</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Recipient Type</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Full Name</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">PayPal Email</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
-                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">View</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Verified Date</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manage-verified-table-body">
-                                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                    <tr><td colspan="5" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -3296,47 +3296,6 @@
                         <button type="button" class="btn btn-secondary" onclick="closeCommissionModal('review-request-modal')">Cancel</button>
                         <button type="button" class="btn btn-danger" onclick="rejectIncomingRequest()" style="background: #ef4444;">Reject</button>
                         <button type="button" class="btn btn-primary" onclick="acceptIncomingRequest()" style="background: #10b981;">Accept</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transferred Payment Receipt Modal -->
-            <div id="transferred-receipt-modal" class="commission-modal" style="display: none;">
-                <div class="commission-modal-content" style="max-width: 700px;">
-                    <button class="commission-modal-close" onclick="closeTransferredReceiptModal()">×</button>
-                    <div class="commission-modal-header">
-                        <h2>💳 Payment Receipt</h2>
-                        <p id="receipt-header-info">Proof of transfer to recipient</p>
-                    </div>
-                    <div class="commission-modal-body">
-                        <div style="background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                            <div style="margin-bottom: 12px;">
-                                <strong style="color: #475569;">Commission Type:</strong>
-                                <span id="receipt-commission-type" style="color: #1e5aa8; font-weight: 600;">-</span>
-                            </div>
-                            <div style="margin-bottom: 12px;">
-                                <strong style="color: #475569;">Recipient Name:</strong>
-                                <span id="receipt-recipient-name" style="color: #64748b;">-</span>
-                            </div>
-                            <div style="margin-bottom: 12px;">
-                                <strong style="color: #475569;">Recipient Email:</strong>
-                                <span id="receipt-recipient-email" style="color: #64748b;">-</span>
-                            </div>
-                            <div>
-                                <strong style="color: #475569;">Amount Transferred:</strong>
-                                <span id="receipt-amount" style="color: #16a34a; font-weight: 600;">-</span>
-                            </div>
-                        </div>
-
-                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: white;">
-                            <strong style="color: #475569; display: block; margin-bottom: 12px;">📄 Receipt:</strong>
-                            <div id="receipt-display-container" style="width: 100%; max-height: 500px; overflow: auto; border-radius: 6px; background: #f9fafb;">
-                                <div style="text-align: center; padding: 40px; color: #718096;">Loading receipt...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                        <button type="button" class="btn btn-secondary" onclick="closeTransferredReceiptModal()">Close</button>
                     </div>
                 </div>
             </div>
@@ -6475,10 +6434,10 @@
                     totalEarnings += parseFloat(amount || 0);
                 }
 
-                if (status === 'paid') {
+                if (status === 'paid' || status === 'received') {
                     paidOut += parseFloat(amount || 0);
-                } else if (status === 'pending' || status === 'requested' || status === 'payment_sent') {
-                    // 'pending', 'payment_sent', and 'requested' count as pending payout
+                } else if (status === 'pending' || status === 'requested') {
+                    // Both 'pending' and 'requested' count as pending payout
                     pending += parseFloat(amount || 0);
                 }
             };
@@ -6527,7 +6486,7 @@
                             value.textContent = `$${paidOut.toFixed(2)}`;
                             const subtitleEl = card.querySelector('div[style*="font-size: 11px"]:not([style*="font-size: 12px"])');
                             if (subtitleEl) {
-                                const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid').length;
+                                const payoutCount = data.vendorPayables.filter(vp => vp.status === 'paid' || vp.status === 'received').length;
                                 subtitleEl.textContent = `${payoutCount} payouts`;
                             }
                         }
@@ -6547,7 +6506,7 @@
 
             // Add vendor payables
             data.vendorPayables.forEach(vp => {
-                if (vp.status === 'paid') {
+                if (vp.status === 'paid' || vp.status === 'received') {
                     allPayables.push({
                         id: vp.id,
                         amount: vp.amount_owed,
@@ -6561,7 +6520,7 @@
 
             // Add admin payables
             data.adminPayables.forEach(ap => {
-                if (ap.status === 'paid') {
+                if (ap.status === 'paid' || ap.status === 'received') {
                     allPayables.push({
                         id: ap.id,
                         amount: ap.admin_commission,
@@ -6587,7 +6546,7 @@
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(item.amount).toFixed(2)}</td>
                         <td style="padding: 12px;">
                             <span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-                                Completed
+                                ${item.status === 'received' ? 'Received' : 'Completed'}
                             </span>
                         </td>
                         <td style="padding: 12px; color: #64748b;">${item.method}</td>
@@ -6789,22 +6748,21 @@
             tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables where vendor must send payment (approved, vendor_requested, or payment_requested)
-                // Excludes payment_sent (already sent, in Awaiting tab) and paid (complete, in Verified tab)
+                // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .in('status', ['approved', 'vendor_requested', 'payment_requested'])
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables where vendor must send payment (approved, vendor_requested, or payment_requested, earning_type='own_feedback')
-                // First fetch all buyer payables with own_feedback (no vendor filter yet)
+                // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
+                // First fetch all pending buyer payables with own_feedback (no vendor filter yet)
                 const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('earning_type', 'own_feedback')
-                    .in('status', ['approved', 'vendor_requested', 'payment_requested'])
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
                 // Extract feedback IDs and filter by current vendor
@@ -7057,10 +7015,9 @@
                     <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.feedbackId || 'N/A'}</td>
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.displayAmount).toFixed(2)}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(payout.created_at).toLocaleDateString()}</td>
-                    <td style="padding: 12px; font-size: 11px; color: ${payout.status === 'payment_requested' ? '#10b981' : '#f59e0b'}; font-weight: 600;">${payout.status === 'payment_requested' ? '✓ Requested' : 'Pending'}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        <button onclick="requestPaymentForCommission('${payout.id}')" style="background: ${payout.status === 'payment_requested' ? '#9ca3af' : '#f59e0b'}; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;" ${payout.status === 'payment_requested' ? 'disabled' : ''}>${payout.status === 'payment_requested' ? '✓ Requested' : '📤 Request'}</button>
+                        <button onclick="requestPaymentForCommission('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📤 Request</button>
                     </td>
                 </tr>
                 <tr id="${detailsId}" style="display: none; background: #f0f9ff; border-bottom: 1px solid #e2e8f0;">
@@ -7091,37 +7048,21 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables where V9 workflow: status='payment_sent' (vendor sent, awaiting recipient upload)
-                // Recipient (buyer/referrer) approved and now needs to upload receipt
-                const { data: adminPayouts, error: adminError } = await sbClient
+                // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
+                const { data: payouts, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'payment_sent')
+                    .eq('status', 'pending')
                     .not('split_with_buyer_id', 'is', null)
+                    .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables where status='payment_sent' (vendor sent, awaiting recipient upload)
-                // Reviewer approved and now needs to upload receipt
-                const { data: buyerPayouts, error: buyerError } = await sbClient
-                    .from('buyer_payables')
-                    .select('id, vendor_id, buyer_id, amount_owed, related_feedback_ids, created_at, vendor_flagged, buyer_flagged')
-                    .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'payment_sent')
-                    .order('created_at', { ascending: false });
-
-                if (adminError) {
-                    console.error('Error loading admin payouts:', adminError);
+                if (error) {
+                    console.error('Error loading awaiting receipts:', error);
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
-
-                if (buyerError) {
-                    console.error('Error loading buyer payouts:', buyerError);
-                }
-
-                // Combine both queries
-                let payouts = [...(adminPayouts || []), ...(buyerPayouts || [])];
 
                 if (!payouts || payouts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No receipts awaiting</td></tr>';
@@ -7129,17 +7070,15 @@
                     return;
                 }
 
-                // Fetch buyer details for all split_with_buyer_ids (admin_payables) and buyer_ids (buyer_payables)
-                const adminBuyerIds = adminPayouts?.map(p => p.split_with_buyer_id).filter(Boolean) || [];
-                const buyerIds = buyerPayouts?.map(p => p.buyer_id).filter(Boolean) || [];
-                const allBuyerIds = [...new Set([...adminBuyerIds, ...buyerIds])];
+                // Fetch buyer details for all split_with_buyer_ids
+                const buyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
                 globalAwaitingBuyersMap = {};
 
-                if (allBuyerIds.length > 0) {
+                if (buyerIds.length > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
                         .select('id, full_name, paypal_email')
-                        .in('id', allBuyerIds);
+                        .in('id', buyerIds);
 
                     if (buyers) {
                         buyers.forEach(buyer => {
@@ -7148,18 +7087,14 @@
                     }
                 }
 
-                // Fetch inquiry details for all payouts (both admin_payables and buyer_payables)
-                const feedbackIds = [
-                    ...(adminPayouts?.map(p => p.related_feedback_id).filter(Boolean) || []),
-                    ...(buyerPayouts?.flatMap(p => p.related_feedback_ids || []).filter(Boolean) || [])
-                ];
-                const uniqueFeedbackIds = [...new Set(feedbackIds)];
+                // Fetch inquiry details for all payouts
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
                 globalAwaitingInquiriesMap = {};
 
                 if (feedbackIds.length > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, product_url, image_data')
+                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
                         .in('id', feedbackIds);
 
                     if (inquiries) {
@@ -7190,23 +7125,12 @@
         function renderAwaitingPayoutsTable() {
             const tbody = document.getElementById('manage-awaiting-table-body');
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
-                // Detect record type: admin_payables have split_with_buyer_id, buyer_payables have buyer_id
-                const isAdminPayout = payout.split_with_buyer_id !== null && payout.split_with_buyer_id !== undefined;
-                const recipientId = isAdminPayout ? payout.split_with_buyer_id : payout.buyer_id;
-                const feedbackId = isAdminPayout ? payout.related_feedback_id : (payout.related_feedback_ids?.[0] || null);
-
-                let recipientType;
-                if (isAdminPayout) {
-                    recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
-                } else {
-                    recipientType = 'Reviewer';
-                }
-
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
-                const inquiry = globalAwaitingInquiriesMap[feedbackId];
-                const buyer = globalAwaitingBuyersMap[recipientId];
+                const inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
+                const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                 const detailsId = `awaiting-details-${payout.id}`;
-                const imageData = inquiry?.image_data ? `data:image/png;base64,${inquiry.image_data}` : null;
+                const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                const recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7214,12 +7138,13 @@
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
                     <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
                     <td style="padding: 12px; color: #475569;">${buyer?.paypal_email || 'N/A'}</td>
-                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${feedbackId}</td>
+                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
                         <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
+                        <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
                 <tr id="${detailsId}" style="display: none; background: #fef3c7; border-bottom: 1px solid #e2e8f0;">
@@ -7229,7 +7154,7 @@
                             <div style="flex: 1;">
                                 <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 6px;">📝 Feedback Message:</div>
                                 <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                ${inquiry?.product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.product_url}" target="_blank">${inquiry.product_url}</a></div>` : ''}
+                                ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
                             </div>
                         </div>
                     </td>
@@ -7256,62 +7181,70 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where vendor has uploaded receipt (vendor_receipt_data IS NOT NULL)
+                // Query admin_payables where status='completed' or unflagged_date IS NOT NULL
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, vendor_receipt_data, created_at')
+                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, unflagged_date')
                     .eq('vendor_id', currentVendor.id)
-                    .not('vendor_receipt_data', 'is', null)
-                    .order('created_at', { ascending: false });
+                    .or(`status.eq.completed,unflagged_date.not.is.null`)
+                    .order('unflagged_date', { ascending: false });
 
                 if (error) {
-                    console.error('Error loading transferred payments:', error);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+                    console.error('Error loading verified payouts:', error);
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 if (!payouts || payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No transferred payments found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
                     return;
                 }
 
-                // Fetch buyer information for referral payouts (split_with_buyer_id NOT NULL)
-                const buyerIds = [...new Set(payouts
-                    .filter(p => p.split_with_buyer_id)
-                    .map(p => p.split_with_buyer_id))];
+                // Fetch inquiry details for all payouts
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                const inquiriesMap = {};
 
-                const buyersMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .in('id', feedbackIds);
 
-                    if (buyers) {
-                        buyers.forEach(b => {
-                            buyersMap[b.id] = b;
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
                         });
                     }
                 }
 
-                console.log('[Transferred Payments] Loaded', payouts.length, 'records');
-
                 tbody.innerHTML = payouts.map(payout => {
-                    const commissionType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin Commission';
-                    const recipient = payout.split_with_buyer_id ? buyersMap[payout.split_with_buyer_id] : null;
-                    const fullName = recipient?.full_name || (payout.split_with_buyer_id ? 'Unknown Buyer' : 'Admin');
-                    const paypalEmail = recipient?.paypal_email || '-';
-                    const feedbackIdShort = payout.related_feedback_id ? payout.related_feedback_id.substring(0, 8) : 'N/A';
+                    const inquiry = inquiriesMap[payout.related_feedback_id];
+                    const detailsId = `verified-details-${payout.id}`;
+                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; color: #475569; font-weight: 500;">${commissionType}</td>
-                        <td style="padding: 12px; color: #475569;">${fullName}</td>
-                        <td style="padding: 12px; color: #475569; font-size: 12px;">${paypalEmail}</td>
+                        <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
-                        <td style="padding: 12px; color: #718096; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
+                        <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="openTransferredReceiptModal('${payout.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                            <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="viewManagePayout('${payout.id}')" style="background: #1e5aa8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        </td>
+                    </tr>
+                    <tr id="${detailsId}" style="display: none; background: #f0fdf4; border-bottom: 1px solid #e2e8f0;">
+                        <td colspan="6" style="padding: 16px;">
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
+                                    <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
+                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     `;
@@ -7322,127 +7255,13 @@
             }
         }
 
-        // Transferred Payments Receipt Modal Functions
-        async function openTransferredReceiptModal(payoutId) {
-            if (!sbClient) return;
-
-            try {
-                // Fetch payment record with all details
-                const { data: payout } = await sbClient
-                    .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype')
-                    .eq('id', payoutId)
-                    .single();
-
-                if (!payout) {
-                    showToast('Payment record not found', 'error');
-                    return;
-                }
-
-                // Fetch recipient details if buyer inviter
-                let recipientName = 'Admin';
-                let recipientEmail = '-';
-                let commissionType = 'Admin Commission';
-
-                if (payout.split_with_buyer_id) {
-                    commissionType = 'Buyer Inviter';
-                    const { data: buyer } = await sbClient
-                        .from('buyers')
-                        .select('full_name, paypal_email')
-                        .eq('id', payout.split_with_buyer_id)
-                        .single();
-
-                    if (buyer) {
-                        recipientName = buyer.full_name;
-                        recipientEmail = buyer.paypal_email || '-';
-                    }
-                }
-
-                // Populate modal fields
-                document.getElementById('receipt-commission-type').textContent = commissionType;
-                document.getElementById('receipt-recipient-name').textContent = recipientName;
-                document.getElementById('receipt-recipient-email').textContent = recipientEmail;
-                document.getElementById('receipt-amount').textContent = `$${parseFloat(payout.amount_owed).toFixed(2)}`;
-
-                // Display receipt
-                if (payout.vendor_receipt_data) {
-                    const mimeType = payout.vendor_receipt_filetype || 'image/png';
-                    const receiptUrl = `data:${mimeType};base64,${payout.vendor_receipt_data}`;
-
-                    if (mimeType.includes('pdf')) {
-                        // For PDFs, embed in iframe
-                        document.getElementById('receipt-display-container').innerHTML = `
-                            <iframe src="${receiptUrl}" style="width: 100%; height: 500px; border: none; border-radius: 6px;"></iframe>
-                        `;
-                    } else if (mimeType.includes('image')) {
-                        // For images, display as img
-                        document.getElementById('receipt-display-container').innerHTML = `
-                            <img src="${receiptUrl}" style="max-width: 100%; height: auto; border-radius: 6px;" alt="Receipt">
-                        `;
-                    } else {
-                        document.getElementById('receipt-display-container').innerHTML = `
-                            <div style="text-align: center; padding: 40px; color: #718096;">Unsupported file format: ${mimeType}</div>
-                        `;
-                    }
-                } else {
-                    document.getElementById('receipt-display-container').innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #718096;">No receipt uploaded</div>
-                    `;
-                }
-
-                // Show modal
-                document.getElementById('transferred-receipt-modal').style.display = 'flex';
-            } catch (err) {
-                console.error('Error loading receipt:', err);
-                showToast('Error loading receipt', 'error');
-            }
-        }
-
-        function closeTransferredReceiptModal() {
-            document.getElementById('transferred-receipt-modal').style.display = 'none';
-        }
-
         async function requestPaymentForCommission(payoutId) {
             if (!sbClient || !currentVendor) return;
 
             try {
-                // First, try to find the payout in admin_payables (handles admin, buyer_inviter, vendor_inviter)
-                const { data: adminPayout, error: adminQueryError } = await sbClient
-                    .from('admin_payables')
-                    .select('id, split_with_buyer_id, split_with_vendor_id')
-                    .eq('id', payoutId)
-                    .single();
-
-                if (!adminQueryError && adminPayout) {
-                    // This is an admin commission - update admin_payables with vendor_requested status
-                    const { error: updateError } = await sbClient
-                        .from('admin_payables')
-                        .update({ status: 'vendor_requested' })
-                        .eq('id', payoutId);
-
-                    if (updateError) throw updateError;
-
-                    // Determine recipient type for user feedback
-                    let recipientType = 'admin';
-                    if (adminPayout.split_with_vendor_id) {
-                        recipientType = 'vendor inviter';
-                    } else if (adminPayout.split_with_buyer_id) {
-                        recipientType = 'buyer inviter';
-                    }
-
-                    showToast(`✓ Payment request sent to ${recipientType}. Appears in 'Vendor Requested To Pay' tab.`, 'success');
-                } else {
-                    // This is a non-admin commission (reviewer) - update buyer_payables with vendor_requested status
-                    const { error: updateError } = await sbClient
-                        .from('buyer_payables')
-                        .update({ status: 'vendor_requested' })
-                        .eq('id', payoutId);
-
-                    if (updateError) throw updateError;
-
-                    showToast('✓ Payment request sent to reviewer. Appears in "⏳ Vendor Wants to Pay Me" tab.', 'success');
-                }
-
+                // V9 workflow: No status change needed. Record stays 'pending' until receipt uploaded.
+                // Just notify vendor to upload receipt.
+                showToast('✓ Payment request sent. You have 48 hours to upload receipt.', 'success');
                 await loadManagePendingPayouts();
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -7452,7 +7271,7 @@
 
         async function batchRequestPayment() {
             const selected = Array.from(document.querySelectorAll('#manage-pending-table-body input[type="checkbox"]:checked'))
-                .map(cb => cb.dataset.payoutId || cb.value);
+                .map(cb => cb.dataset.payoutId);
 
             if (selected.length === 0) {
                 showToast('Please select at least one commission to request payment for', 'warning');
@@ -7462,43 +7281,14 @@
             if (!sbClient) return;
 
             try {
-                // Update all selected commissions to payment_requested status, handling both admin and non-admin
-                for (const payoutId of selected) {
-                    // Try to find in admin_payables first (handles admin, buyer_inviter, vendor_inviter)
-                    const { data: adminPayout } = await sbClient
-                        .from('admin_payables')
-                        .select('id')
-                        .eq('id', payoutId)
-                        .single();
+                // V9 workflow: No status changes. Records stay 'pending' until receipt uploaded.
+                // Just notify vendor to upload receipts for selected commissions.
+                const successCount = selected.length;
 
-                    if (adminPayout) {
-                        // Update admin_payables with vendor_requested status
-                        const { error } = await sbClient
-                            .from('admin_payables')
-                            .update({ status: 'vendor_requested' })
-                            .eq('id', payoutId);
-
-                        if (error) {
-                            console.error('Error updating admin payout:', error);
-                            showToast(`Error requesting payment for one or more commissions`, 'error');
-                            return;
-                        }
-                    } else {
-                        // Update buyer_payables (non-admin/reviewer) with vendor_requested status
-                        const { error } = await sbClient
-                            .from('buyer_payables')
-                            .update({ status: 'vendor_requested' })
-                            .eq('id', payoutId);
-
-                        if (error) {
-                            console.error('Error updating buyer payout:', error);
-                            showToast(`Error requesting payment for one or more commissions`, 'error');
-                            return;
-                        }
-                    }
+                if (successCount > 0) {
+                    showToast(`✓ ${successCount} payment request(s) sent. 48-hour timer started.`, 'success');
                 }
 
-                showToast(`✓ ${selected.length} payment request(s) sent. Awaiting approvals.`, 'success');
                 await loadManagePendingPayouts();
                 document.getElementById('manage-pending-select-all').checked = false;
             } catch (err) {
@@ -8042,110 +7832,65 @@
                     const mimeType = file.type;
 
                     try {
-                        // Receipt data to update (common fields for both tables)
-                        const receiptData = {
-                            vendor_paypal_transaction_id: txId,
-                            vendor_receipt_data: base64Data,
-                            vendor_receipt_filename: file.name,
-                            vendor_receipt_filetype: mimeType,
-                            vendor_receipt_filesize: file.size,
-                            vendor_receipt_uploaded_date: new Date().toISOString(),
-                            vendor_flagged: false  // Reset flag when receipt uploaded
-                        };
-
-                        // Try updating admin_payables first
-                        let data = null;
-                        let error = null;
-                        let recordTable = null;
-
-                        const adminResult = await sbClient
+                        // Update admin_payables with receipt data
+                        // RLS policy will validate vendor_id = auth.uid()
+                        // ✅ FIX: Add .select() to return updated rows (UPDATE alone returns empty array)
+                        const { data, error } = await sbClient
                             .from('admin_payables')
-                            .update(receiptData)
+                            .update({
+                                vendor_paypal_transaction_id: txId,
+                                vendor_receipt_data: base64Data,
+                                vendor_receipt_filename: file.name,
+                                vendor_receipt_filetype: mimeType,
+                                vendor_receipt_filesize: file.size,
+                                vendor_receipt_uploaded_date: new Date().toISOString(),
+                                vendor_flagged: false  // Reset flag when receipt uploaded
+                            })
                             .eq('id', payoutId)
                             .select();
 
-                        if (adminResult.error) {
-                            console.error('Admin payables error:', adminResult.error);
-                        } else if (adminResult.data && adminResult.data.length > 0) {
-                            data = adminResult.data;
-                            recordTable = 'admin_payables';
-                        } else {
-                            // Try buyer_payables if admin_payables had no match
-                            const buyerResult = await sbClient
-                                .from('buyer_payables')
-                                .update(receiptData)
-                                .eq('id', payoutId)
-                                .select();
-
-                            if (buyerResult.error) {
-                                console.error('Buyer payables error:', buyerResult.error);
-                                error = buyerResult.error;
-                            } else if (buyerResult.data && buyerResult.data.length > 0) {
-                                data = buyerResult.data;
-                                recordTable = 'buyer_payables';
-                            }
+                        if (error) {
+                            console.error('Database error:', error);
+                            statusDiv.textContent = '❌ Upload failed: ' + (error.message || 'RLS policy blocked update. Try logging in again.');
+                            statusDiv.style.color = '#dc2626';
+                            statusDiv.style.background = '#fee2e2';
+                            return;
                         }
 
                         if (!data || data.length === 0) {
                             statusDiv.textContent = '❌ Record not found or access denied. Try refreshing the page.';
                             statusDiv.style.color = '#dc2626';
                             statusDiv.style.background = '#fee2e2';
-                            if (error) console.error('Database error:', error);
-                            console.error('submitReceiptUpload: No data returned after update', { payoutId, adminError: adminResult.error, buyerError });
                             return;
                         }
 
-                        // ✅ Verify receipt data was persisted
+                        // ✅ NEW: Update status based on payout type
                         const recordData = data[0];
-                        console.log('[Receipt Upload] Verified write:', {
-                            recordTable,
-                            recordId: recordData.id,
-                            vendor_receipt_data_exists: !!recordData.vendor_receipt_data,
-                            vendor_receipt_uploaded_date: recordData.vendor_receipt_uploaded_date,
-                            vendor_flagged: recordData.vendor_flagged
-                        });
+                        const isReferralPayout = recordData.split_with_buyer_id !== null;
 
-                        if (recordTable === 'admin_payables') {
-                            // Referral payout: vendor uploaded, ready for referrer to upload their receipt
+                        if (!isReferralPayout) {
+                            // Admin-only payout: vendor uploaded, ready for admin approval
                             const { error: statusError } = await sbClient
                                 .from('admin_payables')
-                                .update({ status: 'payment_sent' })
+                                .update({ status: 'received' })
                                 .eq('id', payoutId);
 
                             if (statusError) {
                                 console.error('Error updating status:', statusError);
+                                // Non-blocking: show warning but continue
                                 statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
                                 statusDiv.style.color = '#d97706';
                                 statusDiv.style.background = '#fef3c7';
                             } else {
-                                console.log('[Receipt Upload] admin_payables updated, status changed to payment_sent', { payoutId, timestamp: new Date().toISOString() });
-                                statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting referrer to upload their proof.';
-                                statusDiv.style.color = '#059669';
-                                statusDiv.style.background = '#d1fae5';
-                            }
-                        } else if (recordTable === 'buyer_payables') {
-                            // Direct reviewer commission: vendor uploaded proof of payment, now awaiting reviewer to upload their proof
-                            const { error: statusError } = await sbClient
-                                .from('buyer_payables')
-                                .update({ status: 'payment_sent' })
-                                .eq('id', payoutId);
-
-                            if (statusError) {
-                                console.error('Error updating buyer_payables status:', statusError);
-                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
-                                statusDiv.style.color = '#d97706';
-                                statusDiv.style.background = '#fef3c7';
-                            } else {
-                                console.log('[Receipt Upload] buyer_payables updated, status changed to payment_sent', { payoutId, timestamp: new Date().toISOString() });
-                                statusDiv.textContent = '✅ Receipt uploaded successfully! Awaiting reviewer to upload their proof.';
+                                statusDiv.textContent = '✅ Receipt uploaded successfully! Moving to admin verification.';
                                 statusDiv.style.color = '#059669';
                                 statusDiv.style.background = '#d1fae5';
                             }
                         } else {
-                            console.error('[Receipt Upload] Unknown record table type', { recordTable, payoutId });
-                            statusDiv.textContent = '⚠️ Receipt uploaded but table type unknown. Refreshing...';
-                            statusDiv.style.color = '#d97706';
-                            statusDiv.style.background = '#fef3c7';
+                            // Referral payout: vendor uploaded, waiting for buyer to upload
+                            statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
+                            statusDiv.style.color = '#059669';
+                            statusDiv.style.background = '#d1fae5';
                         }
 
                         // Reload data after 1.5 seconds
