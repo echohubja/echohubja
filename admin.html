@@ -2757,7 +2757,7 @@
             }
 
             try {
-                // Query admin_payables awaiting receipt verification (V9: status='payment_requested')
+                // Query admin_payables awaiting receipt verification (V9: status='pending')
                 console.log('[loadAwaitingReceipts] Fetching admin_payables...');
                 const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
@@ -2765,7 +2765,7 @@
                         created_at, vendor_receipt_uploaded_date, vendor_flagged,
                         buyer_receipt_uploaded_date, buyer_flagged, related_feedback_id
                     `)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
                 console.log('[loadAwaitingReceipts] Admin data received:', { count: adminData?.length, hasError: !!adminError });
@@ -2794,6 +2794,15 @@
 
                 const adminCommissions = adminData || [];
                 const reviewerCommissions = reviewerData || [];
+
+                // DIAGNOSTIC: Inspect first admin record structure
+                if (adminCommissions.length > 0) {
+                    const firstRec = adminCommissions[0];
+                    console.log('[loadAwaitingReceipts] DIAGNOSTIC - First admin_payables record structure:');
+                    console.log('[loadAwaitingReceipts] Keys:', Object.keys(firstRec));
+                    console.log('[loadAwaitingReceipts] vendor_id value:', firstRec.vendor_id, 'type:', typeof firstRec.vendor_id);
+                    console.log('[loadAwaitingReceipts] Full record:', firstRec);
+                }
 
                 if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending receipts</td></tr>';
