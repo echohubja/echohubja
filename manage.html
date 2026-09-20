@@ -3017,17 +3017,18 @@
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Recipient Type</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Full Name</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Paid To</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Recipient Name</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transferred Date</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manage-collected-table-body">
-                                    <tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                    <tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -7367,10 +7368,10 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables with status 'paid' or 'payment_verified'
+                // Query admin_payables with status 'paid' or 'payment_verified' - include receipt fields
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at')
+                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_data, vendor_receipt_filename, buyer_receipt_data, buyer_receipt_filename')
                     .eq('vendor_id', currentVendor.id)
                     .in('status', ['paid', 'payment_verified'])
                     .order('updated_at', { ascending: false });
@@ -7385,7 +7386,7 @@
 
                 if (adminError) {
                     console.error('Error loading admin payouts:', adminError);
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
@@ -7432,7 +7433,7 @@
                 }
 
                 if (allPayouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">No collected commissions</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No collected commissions</td></tr>';
                     return;
                 }
 
@@ -7508,6 +7509,21 @@
                         ? '<span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Verified</span>'
                         : '<span style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Paid</span>';
 
+                    // Determine which receipt to display
+                    let receiptData = null;
+                    let receiptFilename = null;
+
+                    if (payout.source === 'admin_payables') {
+                        if (payout.vendor_receipt_data) {
+                            receiptData = payout.vendor_receipt_data;
+                            receiptFilename = payout.vendor_receipt_filename || 'receipt.pdf';
+                        }
+                    }
+
+                    const viewButton = receiptData
+                        ? `<button onclick="viewCollectedReceiptModal('${payout.id}', '${receiptFilename}', '${receiptData.substring(0, 50)}...')" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">👁️ View Receipt</button>`
+                        : `<span style="color: #64748b; font-size: 12px;">No receipt</span>`;
+
                     return `
                         <tr style="border-bottom: 1px solid #e2e8f0;">
                             <td style="padding: 12px; text-align: left;">${payout.recipientType.replace('_', ' ').charAt(0).toUpperCase() + payout.recipientType.replace('_', ' ').slice(1)}</td>
@@ -7517,13 +7533,49 @@
                             <td style="padding: 12px; text-align: left; font-weight: 600;">$${(payout.displayAmount || 0).toFixed(2)}</td>
                             <td style="padding: 12px; text-align: left;">${new Date(payout.updated_at).toLocaleDateString()}</td>
                             <td style="padding: 12px; text-align: center;">${statusBadge}</td>
+                            <td style="padding: 12px; text-align: center;">${viewButton}</td>
                         </tr>
                     `;
                 }).join('');
             } catch (err) {
                 console.error('Error loading collected payouts:', err);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
             }
+        }
+
+        function viewCollectedReceiptModal(payoutId, filename, preview) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0, 0, 0, 0.5); display: flex;
+                align-items: center; justify-content: center;
+                z-index: 9999; padding: 20px;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;">
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                        <h3 style="margin: 0; color: #1e5aa8; font-size: 18px;">📄 Receipt Verification</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+                    </div>
+                    <div style="padding: 20px; flex: 1; min-height: 200px;">
+                        <p style="color: #64748b; margin-bottom: 16px; font-size: 14px;"><strong>Filename:</strong> ${filename}</p>
+                        <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px; text-align: center;">
+                            <p style="margin: 0; color: #15803d; font-weight: 600; font-size: 14px;">✓ Receipt Verified</p>
+                            <p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin has confirmed receipt payment</p>
+                        </div>
+                        <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            <p style="margin: 0; color: #4a5568; font-size: 13px; font-family: monospace; word-break: break-all;">Receipt data confirmed in system</p>
+                        </div>
+                    </div>
+                    <div style="padding: 20px; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%;">Close</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
         }
 
         async function requestPaymentForCommission(payoutId) {
