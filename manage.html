@@ -6752,12 +6752,13 @@
 
             try {
                 // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
-                // Tab 2 shows vendor-initiated commissions (status='pending')
+                // EXCLUDE records that are in awaiting tab (split_with_buyer_id IS NOT NULL AND vendor_receipt_uploaded_date IS NULL)
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending')
+                    .or(`split_with_buyer_id.is.null,vendor_receipt_uploaded_date.not.is.null`)
                     .order('created_at', { ascending: false });
 
                 // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
@@ -7052,12 +7053,13 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables and buyer_payables where status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment' (all commission types)
+                // Query admin_payables where status='pending' and vendor_receipt_uploaded_date IS NULL (all commission types)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
+                    .eq('status', 'pending')
+                    .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -7404,20 +7406,20 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables for recipient-initiated payment requests (status='here_are_people_requesting_for_me_to_pay_them')
+                // Query 1: admin_payables for payment_requested status (Admin, Buyer Inviter, Vendor Inviter)
                 const { data: adminRequests, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                    .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for recipient-initiated payment requests where earning_type='own_feedback' (Reviewer)
+                // Query 2: buyer_payables for payment_requested status where earning_type='own_feedback' (Reviewer)
                 const { data: buyerRequests, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                    .eq('status', 'payment_requested')
                     .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false });
 
@@ -7633,8 +7635,8 @@
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${amount}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="approveIncomingRequest('${request.id}', '${request.source}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✓ Approve</button>
-                        <button onclick="denyIncomingRequest('${request.id}', '${request.source}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">✗ Deny</button>
+                        <button onclick="approveIncomingRequest('${request.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✓ Approve</button>
+                        <button onclick="denyIncomingRequest('${request.id}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">✗ Deny</button>
                     </td>
                 </tr>
                 `;
@@ -7650,10 +7652,7 @@
 
         async function batchApproveIncomingRequests() {
             const selected = Array.from(document.querySelectorAll('#manage-incoming-table-body input[type="checkbox"]:checked'))
-                .map(cb => ({
-                    id: cb.dataset.requestId,
-                    request: tab1AllRequests.find(r => r.id === cb.dataset.requestId)
-                }));
+                .map(cb => cb.dataset.requestId);
 
             if (selected.length === 0) {
                 alert('Please select at least one request to approve');
@@ -7663,25 +7662,14 @@
             if (!sbClient) return;
 
             try {
-                const newStatus = 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment';
-
-                for (const { id, request } of selected) {
-                    if (request?.source === 'admin_payables') {
-                        await sbClient
-                            .from('admin_payables')
-                            .update({ status: newStatus })
-                            .eq('id', id);
-                    } else if (request?.source === 'buyer_payables') {
-                        await sbClient
-                            .from('buyer_payables')
-                            .update({ status: newStatus })
-                            .eq('id', id);
-                    }
+                for (const requestId of selected) {
+                    await sbClient
+                        .from('admin_payables')
+                        .update({ status: 'pending' })  // Move to pending approval for vendor
+                        .eq('id', requestId);
                 }
 
                 alert(`✓ ${selected.length} request(s) approved`);
-                await loadManageAwaitingPayouts();
-                await loadManagePendingPayouts();
                 await loadManageIncomingRequests();
                 document.getElementById('manage-incoming-select-all').checked = false;
             } catch (err) {
@@ -7692,10 +7680,7 @@
 
         async function batchDenyIncomingRequests() {
             const selected = Array.from(document.querySelectorAll('#manage-incoming-table-body input[type="checkbox"]:checked'))
-                .map(cb => ({
-                    id: cb.dataset.requestId,
-                    request: tab1AllRequests.find(r => r.id === cb.dataset.requestId)
-                }));
+                .map(cb => cb.dataset.requestId);
 
             if (selected.length === 0) {
                 alert('Please select at least one request to deny');
@@ -7705,18 +7690,11 @@
             if (!sbClient) return;
 
             try {
-                for (const { id, request } of selected) {
-                    if (request?.source === 'admin_payables') {
-                        await sbClient
-                            .from('admin_payables')
-                            .update({ status: 'denied' })
-                            .eq('id', id);
-                    } else if (request?.source === 'buyer_payables') {
-                        await sbClient
-                            .from('buyer_payables')
-                            .update({ status: 'denied' })
-                            .eq('id', id);
-                    }
+                for (const requestId of selected) {
+                    await sbClient
+                        .from('admin_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', requestId);
                 }
 
                 alert(`✗ ${selected.length} request(s) denied`);
@@ -7728,47 +7706,35 @@
             }
         }
 
-        async function approveIncomingRequest(requestId, source) {
+        async function approveIncomingRequest(requestId) {
             if (!sbClient) return;
 
             try {
-                const newStatus = 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment';
-                console.log(`[Approve] requestId=${requestId}, source=${source}, newStatus=${newStatus}`);
+                // Get the admin_payables record to retrieve related info
+                const { data: payable } = await sbClient
+                    .from('admin_payables')
+                    .select('admin_id, vendor_id')
+                    .eq('id', requestId)
+                    .single();
 
-                if (source === 'admin_payables') {
-                    // Get the admin_payables record to retrieve related info
-                    const { data: payable } = await sbClient
-                        .from('admin_payables')
-                        .select('admin_id, vendor_id')
-                        .eq('id', requestId)
-                        .single();
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'pending' })
+                    .eq('id', requestId);
 
-                    await sbClient
-                        .from('admin_payables')
-                        .update({ status: newStatus })
-                        .eq('id', requestId);
-
-                    // Create notification for admin
-                    if (payable && payable.admin_id) {
-                        await createVendorNotification(
-                            payable.admin_id,
-                            'vendor_approved_payout',
-                            `Vendor has approved a payout request - awaiting admin approval`,
-                            'admin_payables',
-                            requestId
-                        );
-                    }
-                } else if (source === 'buyer_payables') {
-                    // Update buyer_payables record for reviewer commissions
-                    await sbClient
-                        .from('buyer_payables')
-                        .update({ status: newStatus })
-                        .eq('id', requestId);
+                // Create notification for admin
+                if (payable && payable.admin_id) {
+                    await createVendorNotification(
+                        payable.admin_id,
+                        'vendor_approved_payout',
+                        `Vendor has approved a payout request - awaiting admin approval`,
+                        'admin_payables',
+                        requestId
+                    );
                 }
 
                 showToast('✓ Request approved', 'success');
                 await loadManageAwaitingPayouts();
-                await loadManagePendingPayouts();
                 await loadManageIncomingRequests();
             } catch (err) {
                 console.error('Error approving request:', err);
@@ -7776,39 +7742,31 @@
             }
         }
 
-        async function denyIncomingRequest(requestId, source) {
+        async function denyIncomingRequest(requestId) {
             if (!sbClient) return;
 
             try {
-                if (source === 'admin_payables') {
-                    // Get the admin_payables record to retrieve related info
-                    const { data: payable } = await sbClient
-                        .from('admin_payables')
-                        .select('admin_id, vendor_id')
-                        .eq('id', requestId)
-                        .single();
+                // Get the admin_payables record to retrieve related info
+                const { data: payable } = await sbClient
+                    .from('admin_payables')
+                    .select('admin_id, vendor_id')
+                    .eq('id', requestId)
+                    .single();
 
-                    await sbClient
-                        .from('admin_payables')
-                        .update({ status: 'denied' })
-                        .eq('id', requestId);
+                await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'denied' })
+                    .eq('id', requestId);
 
-                    // Create notification for admin
-                    if (payable && payable.admin_id) {
-                        await createVendorNotification(
-                            payable.admin_id,
-                            'vendor_denied_payout',
-                            `Vendor has denied a payout request`,
-                            'admin_payables',
-                            requestId
-                        );
-                    }
-                } else if (source === 'buyer_payables') {
-                    // Update buyer_payables record for reviewer commissions
-                    await sbClient
-                        .from('buyer_payables')
-                        .update({ status: 'denied' })
-                        .eq('id', requestId);
+                // Create notification for admin
+                if (payable && payable.admin_id) {
+                    await createVendorNotification(
+                        payable.admin_id,
+                        'vendor_denied_payout',
+                        `Vendor has denied a payout request`,
+                        'admin_payables',
+                        requestId
+                    );
                 }
 
                 showToast('✗ Request denied', 'success');
@@ -7962,10 +7920,10 @@
                         const isReferralPayout = recordData.split_with_buyer_id !== null;
 
                         if (!isReferralPayout) {
-                            // Admin-only payout: vendor uploaded, ready for admin approval
+                            // Admin-only payout: vendor uploaded, ready for buyer approval
                             const { error: statusError } = await sbClient
                                 .from('admin_payables')
-                                .update({ status: 'received' })
+                                .update({ status: 'payment_sent' })
                                 .eq('id', payoutId);
 
                             if (statusError) {
@@ -7981,9 +7939,21 @@
                             }
                         } else {
                             // Referral payout: vendor uploaded, waiting for buyer to upload
-                            statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
-                            statusDiv.style.color = '#059669';
-                            statusDiv.style.background = '#d1fae5';
+                            const { error: statusError } = await sbClient
+                                .from('admin_payables')
+                                .update({ status: 'payment_sent' })
+                                .eq('id', payoutId);
+
+                            if (statusError) {
+                                console.error('Error updating status:', statusError);
+                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
+                                statusDiv.style.color = '#d97706';
+                                statusDiv.style.background = '#fef3c7';
+                            } else {
+                                statusDiv.textContent = '✅ Vendor receipt uploaded! Awaiting referrer to upload their receipt.';
+                                statusDiv.style.color = '#059669';
+                                statusDiv.style.background = '#d1fae5';
+                            }
                         }
 
                         // Reload data after 1.5 seconds
