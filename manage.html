@@ -7404,20 +7404,20 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables for payment_requested status (Admin, Buyer Inviter, Vendor Inviter)
+                // Query 1: admin_payables for recipient-initiated payment requests (status='here_are_people_requesting_for_me_to_pay_them')
                 const { data: adminRequests, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
                     .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for payment_requested status where earning_type='own_feedback' (Reviewer)
+                // Query 2: buyer_payables for recipient-initiated payment requests where earning_type='own_feedback' (Reviewer)
                 const { data: buyerRequests, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'payment_requested')
+                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
                     .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false });
 
@@ -7681,6 +7681,7 @@
 
                 alert(`✓ ${selected.length} request(s) approved`);
                 await loadManageAwaitingPayouts();
+                await loadManagePendingPayouts();
                 await loadManageIncomingRequests();
                 document.getElementById('manage-incoming-select-all').checked = false;
             } catch (err) {
@@ -7732,6 +7733,7 @@
 
             try {
                 const newStatus = 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment';
+                console.log(`[Approve] requestId=${requestId}, source=${source}, newStatus=${newStatus}`);
 
                 if (source === 'admin_payables') {
                     // Get the admin_payables record to retrieve related info
@@ -7766,6 +7768,7 @@
 
                 showToast('✓ Request approved', 'success');
                 await loadManageAwaitingPayouts();
+                await loadManagePendingPayouts();
                 await loadManageIncomingRequests();
             } catch (err) {
                 console.error('Error approving request:', err);
