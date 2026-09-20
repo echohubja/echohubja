@@ -7211,7 +7211,7 @@
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                         ${inquiry ? `<button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>` : '<span style="color: #999;">—</span>'}
-                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${displayAmount})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
+                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${displayAmount}, '${isBuyerPayable ? 'buyer_payables' : 'admin_payables'}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                         <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
@@ -7894,7 +7894,7 @@
         }
 
         // Receipt Upload Functions (V9)
-        function openReceiptUploadModal(payoutId, recipientType, amountDue) {
+        function openReceiptUploadModal(payoutId, recipientType, amountDue, recordTable = 'admin_payables') {
             if (!currentVendor) return;
 
             document.getElementById('receipt-payout-id').textContent = payoutId;
@@ -7905,8 +7905,9 @@
             document.getElementById('receipt-file').value = '';
             document.getElementById('receipt-upload-status').style.display = 'none';
 
-            // Store payout ID for submission
+            // Store payout ID and record table for submission
             document.getElementById('receipt-upload-modal').dataset.payoutId = payoutId;
+            document.getElementById('receipt-upload-modal').dataset.recordTable = recordTable;
 
             const modal = document.getElementById('receipt-upload-modal');
             modal.style.display = 'flex';
@@ -7916,6 +7917,7 @@
             if (!sbClient || !currentVendor) return;
 
             const payoutId = document.getElementById('receipt-upload-modal').dataset.payoutId;
+            const recordTable = document.getElementById('receipt-upload-modal').dataset.recordTable || 'admin_payables';
             const txId = document.getElementById('receipt-tx-id').value.trim();
             const fileInput = document.getElementById('receipt-file');
             const statusDiv = document.getElementById('receipt-upload-status');
@@ -7981,11 +7983,10 @@
                     const mimeType = file.type;
 
                     try {
-                        // Update admin_payables with receipt data
+                        // Update correct table (admin_payables or buyer_payables) with receipt data
                         // RLS policy will validate vendor_id = auth.uid()
-                        // ✅ FIX: Add .select() to return updated rows (UPDATE alone returns empty array)
                         const { data, error } = await sbClient
-                            .from('admin_payables')
+                            .from(recordTable)
                             .update({
                                 vendor_paypal_transaction_id: txId,
                                 vendor_receipt_data: base64Data,
@@ -8013,54 +8014,46 @@
                             return;
                         }
 
-                        // ✅ NEW: Update status based on payout type
+                        // Update status to indicate vendor has uploaded receipt
+                        // For buyer_payables, move to 'payment_sent' status
+                        // For admin_payables referrals, move to 'awaiting_buyer_inviter_proof' or similar
                         const recordData = data[0];
-                        const buyerInviterPayout = recordData.split_with_buyer_id !== null;
-                        const vendorInviterPayout = recordData.split_with_vendor_id !== null;
+                        let newStatus = 'payment_sent';
 
-                        let newStatus = 'payment_sent';  // Default for admin-only
+                        if (recordTable === 'admin_payables') {
+                            const buyerInviterPayout = recordData.split_with_buyer_id !== null;
+                            const vendorInviterPayout = recordData.split_with_vendor_id !== null;
 
-                        if (buyerInviterPayout) {
-                            newStatus = 'awaiting_buyer_inviter_proof';
-                        } else if (vendorInviterPayout) {
-                            newStatus = 'awaiting_vendor_inviter_proof';
+                            if (buyerInviterPayout) {
+                                newStatus = 'awaiting_buyer_inviter_proof';
+                            } else if (vendorInviterPayout) {
+                                newStatus = 'awaiting_vendor_inviter_proof';
+                            } else {
+                                newStatus = 'payment_sent';
+                            }
                         }
 
-                        if (buyerInviterPayout || vendorInviterPayout) {
-                            // Referral payout: vendor uploaded, recipient must now upload proof
-                            const { error: statusError } = await sbClient
-                                .from('admin_payables')
-                                .update({ status: newStatus })
-                                .eq('id', payoutId);
+                        // Update status
+                        const { error: statusError } = await sbClient
+                            .from(recordTable)
+                            .update({ status: newStatus })
+                            .eq('id', payoutId);
 
-                            if (statusError) {
-                                console.error('Error updating status:', statusError);
-                                // Non-blocking: show warning but continue
-                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
-                                statusDiv.style.color = '#d97706';
-                                statusDiv.style.background = '#fef3c7';
-                            } else {
-                                statusDiv.textContent = '✅ Receipt uploaded successfully! Moving to admin verification.';
-                                statusDiv.style.color = '#059669';
-                                statusDiv.style.background = '#d1fae5';
-                            }
+                        if (statusError) {
+                            console.error('Error updating status:', statusError);
+                            statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
+                            statusDiv.style.color = '#d97706';
+                            statusDiv.style.background = '#fef3c7';
                         } else {
-                            // Admin-only payout: vendor uploaded, ready for final verification
-                            const { error: statusError } = await sbClient
-                                .from('admin_payables')
-                                .update({ status: 'payment_sent' })
-                                .eq('id', payoutId);
+                            statusDiv.textContent = '✅ Receipt uploaded successfully!';
+                            statusDiv.style.color = '#059669';
+                            statusDiv.style.background = '#d1fae5';
 
-                            if (statusError) {
-                                console.error('Error updating status:', statusError);
-                                statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
-                                statusDiv.style.color = '#d97706';
-                                statusDiv.style.background = '#fef3c7';
-                            } else {
-                                statusDiv.textContent = '✅ Admin receipt uploaded successfully!';
-                                statusDiv.style.color = '#059669';
-                                statusDiv.style.background = '#d1fae5';
-                            }
+                            // Reload Tab 3 data after successful upload
+                            setTimeout(() => {
+                                closeCommissionModal('receipt-upload-modal');
+                                loadManagePendingPayouts();
+                            }, 1500);
                         }
 
                         // Reload data after 1.5 seconds
