@@ -2125,7 +2125,7 @@
                 const createdDate = new Date(record.created_at).toLocaleDateString();
                 const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
                 const amount = parseFloat(record.amount_owed || 0).toFixed(2);
-                const status = 'Pending';
+                const status = record.status || 'Pending';
 
                 let recipientDisplay = 'Platform';
                 let paypalEmail = '-';
