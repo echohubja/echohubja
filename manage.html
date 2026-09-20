@@ -7053,13 +7053,12 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
+                // Query admin_payables where status='pending' and vendor_receipt_uploaded_date IS NULL (all commission types)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
+                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending')
-                    .not('split_with_buyer_id', 'is', null)
                     .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
 
@@ -7088,6 +7087,22 @@
                     if (buyers) {
                         buyers.forEach(buyer => {
                             globalAwaitingBuyersMap[buyer.id] = buyer;
+                        });
+                    }
+                }
+
+                // Fetch vendor details for all split_with_vendor_ids (vendor inviters)
+                const vendorIds = payouts.map(p => p.split_with_vendor_id).filter(Boolean);
+
+                if (vendorIds.length > 0) {
+                    const { data: vendors } = await sbClient
+                        .from('vendors')
+                        .select('id, business_name as full_name, paypal_email')
+                        .in('id', vendorIds);
+
+                    if (vendors) {
+                        vendors.forEach(vendor => {
+                            globalAwaitingBuyersMap[vendor.id] = vendor;
                         });
                     }
                 }
@@ -7132,23 +7147,41 @@
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
                 const inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
-                const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                 const detailsId = `awaiting-details-${payout.id}`;
                 const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
-                const recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
+
+                // Determine commission type and display amount
+                let recipientType = 'Admin';
+                let displayAmount = payout.admin_commission || 0;
+                let recipientName = 'N/A';
+                let recipientEmail = 'N/A';
+
+                if (payout.split_with_vendor_id) {
+                    recipientType = 'Vendor Inviter';
+                    displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                    const vendor = globalAwaitingBuyersMap[payout.split_with_vendor_id]; // Using same map for vendor data
+                    recipientName = vendor?.full_name || 'N/A';
+                    recipientEmail = vendor?.paypal_email || 'N/A';
+                } else if (payout.split_with_buyer_id) {
+                    recipientType = 'Buyer Inviter';
+                    displayAmount = payout.buyer_portion || 0;
+                    const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
+                    recipientName = buyer?.full_name || 'N/A';
+                    recipientEmail = buyer?.paypal_email || 'N/A';
+                }
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
-                    <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
-                    <td style="padding: 12px; color: #475569;">${buyer?.paypal_email || 'N/A'}</td>
+                    <td style="padding: 12px; color: #475569;">${recipientName}</td>
+                    <td style="padding: 12px; color: #475569;">${recipientEmail}</td>
                     <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
-                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
+                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${displayAmount})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                         <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
@@ -7189,7 +7222,7 @@
                 // Query admin_payables where status='completed' or unflagged_date IS NOT NULL
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, unflagged_date')
+                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date')
                     .eq('vendor_id', currentVendor.id)
                     .or(`status.eq.completed,unflagged_date.not.is.null`)
                     .order('unflagged_date', { ascending: false });
@@ -7227,11 +7260,23 @@
                     const detailsId = `verified-details-${payout.id}`;
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
 
+                    // Determine commission type and display amount
+                    let commissionType = 'Admin';
+                    let displayAmount = payout.admin_commission || 0;
+
+                    if (payout.split_with_vendor_id) {
+                        commissionType = 'Vendor Inviter';
+                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                    } else if (payout.split_with_buyer_id) {
+                        commissionType = 'Buyer Inviter';
+                        displayAmount = payout.buyer_portion || 0;
+                    }
+
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569;">${commissionType}</td>
                         <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
-                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
@@ -7576,6 +7621,7 @@
 
             tbody.innerHTML = filtered.map(request => {
                 const recipientTypeDisplay = request.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const amount = parseFloat(request.displayAmount || 0).toFixed(2);
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7584,10 +7630,9 @@
                     <td style="padding: 12px; color: #475569;">${request.recipient.name}</td>
                     <td style="padding: 12px; color: #475569; font-size: 12px;">${request.recipient.email}</td>
                     <td style="padding: 12px; color: #475569;">
-                        <div>${recipientTypeDisplay}</div>
-                        <small style="color: #94a3b8; display: block; margin-top: 4px;">Status: <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">REQUESTED</span></small>
+                        <small style="color: #94a3b8; display: block;">Status: <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">REQUESTED</span></small>
                     </td>
-                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(request.displayAmount).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${amount}</td>
                     <td style="padding: 12px; color: #718096; font-size: 12px;">${new Date(request.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="approveIncomingRequest('${request.id}')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 4px;">✓ Approve</button>
@@ -7689,8 +7734,8 @@
                 }
 
                 showToast('✓ Request approved', 'success');
-                await loadManageIncomingRequests();
                 await loadManageAwaitingPayouts();
+                await loadManageIncomingRequests();
             } catch (err) {
                 console.error('Error approving request:', err);
                 showToast('Error approving request', 'error');
