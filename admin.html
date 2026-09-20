@@ -2141,17 +2141,28 @@
             const rows = data.filter(r => typeof r === 'object' && r.id).map((record, idx) => {
                 const feedbackId = (record.related_feedback_id || record.id).substring(0, 8);
                 const createdDate = new Date(record.created_at).toLocaleDateString();
-                const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
+
+                // Match manage.html logic for recipient type classification
+                let recipientType = 'Admin';
+                if (record.split_with_vendor_id) {
+                    recipientType = 'Vendor Inviter';
+                } else if (record.split_with_buyer_id) {
+                    recipientType = 'Buyer Inviter';
+                }
+
                 const amount = parseFloat(record.amount_owed || 0).toFixed(2);
                 const status = record.status || 'Pending';
 
                 let recipientDisplay = 'Platform';
                 let paypalEmail = '-';
 
-                if (recipientType === 'Referrer' && record.split_with_buyer_id && buyerMap[record.split_with_buyer_id]) {
+                if (recipientType === 'Buyer Inviter' && record.split_with_buyer_id && buyerMap[record.split_with_buyer_id]) {
                     const buyer = buyerMap[record.split_with_buyer_id];
                     recipientDisplay = escapeHtml(buyer.name);
                     paypalEmail = escapeHtml(buyer.email);
+                } else if (recipientType === 'Vendor Inviter' && record.split_with_vendor_id && vendorPaypalMap[record.split_with_vendor_id]) {
+                    recipientDisplay = 'Vendor';
+                    paypalEmail = vendorPaypalMap[record.split_with_vendor_id];
                 } else if (recipientType === 'Admin') {
                     recipientDisplay = 'Platform';
                     paypalEmail = '-';
