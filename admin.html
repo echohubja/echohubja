@@ -2009,7 +2009,18 @@
             const rows = [];
             const recordId = record.id;
             const feedbackId = (record.related_feedback_id || recordId).substring(0, 8);
-            const createdDate = new Date(record.created_at).toLocaleDateString();
+
+            // Safe date parsing with fallback
+            let createdDate = 'N/A';
+            if (record.created_at) {
+                try {
+                    createdDate = new Date(record.created_at).toLocaleDateString();
+                } catch (e) {
+                    console.error('[expandCommissionRecord] Date parse error:', record.created_at, e);
+                    createdDate = 'N/A';
+                }
+            }
+
             const status = record.status || 'Pending';
 
             // Row 1: Admin commission (if any)
@@ -2269,24 +2280,38 @@
 
             // Create rows for reviewer commissions (one row per record)
             const expandedReviewerRows = [];
-            reviewerCommissions.forEach(record => {
-                const createdDate = new Date(record.created_at).toLocaleDateString();
-                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
-                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
-                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+            reviewerCommissions.forEach((record, idx) => {
+                try {
+                    let createdDate = 'N/A';
+                    if (record.created_at) {
+                        try {
+                            createdDate = new Date(record.created_at).toLocaleDateString();
+                        } catch (e) {
+                            console.error(`[renderReadyToRequestTable] Reviewer date parse error (record ${idx}):`, record.created_at, e);
+                            createdDate = 'N/A';
+                        }
+                    }
 
-                expandedReviewerRows.push({
-                    id: record.id,
-                    commissionType: 'reviewer',
-                    feedbackId,
-                    createdDate,
-                    recipientType: 'Reviewer',
-                    recipientDisplay: buyerName,
-                    paypalEmail: buyerEmail,
-                    displayAmount: parseFloat(record.amount_owed || 0),
-                    status: record.status,
-                    buyer_id: record.buyer_id
-                });
+                    const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                    const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                    const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+
+                    expandedReviewerRows.push({
+                        id: record.id,
+                        commissionType: 'reviewer',
+                        feedbackId,
+                        createdDate,
+                        created_at: record.created_at,
+                        recipientType: 'Reviewer',
+                        recipientDisplay: buyerName,
+                        paypalEmail: buyerEmail,
+                        displayAmount: parseFloat(record.amount_owed || 0),
+                        status: record.status,
+                        buyer_id: record.buyer_id
+                    });
+                } catch (err) {
+                    console.error(`[renderReadyToRequestTable] Error processing reviewer record ${idx}:`, err, record);
+                }
             });
 
             // Merge and sort all rows by created date (newest first)
@@ -2317,13 +2342,23 @@
                         <td class="p-2.5 text-right">$${amount}</td>
                         <td class="p-2.5 text-xs">${row.status}</td>
                         <td class="p-2.5 text-center">
-                            <button onclick="requestPaymentForAdmin('${row.id}', '${row.commissionType}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📤 Request</button>
+                            <button class="ready-request-btn bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition" data-id="${row.id}" data-commission-type="${row.commissionType}">📤 Request</button>
                         </td>
                     </tr>
                 `;
             }).join('');
 
             tbody.innerHTML = htmlRows;
+
+            // Add event delegation for Request Payment buttons
+            tbody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('ready-request-btn')) {
+                    const id = e.target.dataset.id;
+                    const commissionType = e.target.dataset.commissionType;
+                    console.log('[RequestPayment] Button clicked:', { id, commissionType, typeOf: typeof commissionType });
+                    requestPaymentForAdmin(id, commissionType);
+                }
+            });
 
             // Add checkbox change listeners
             document.querySelectorAll('.ready-checkbox').forEach(cb => {
@@ -2630,23 +2665,37 @@
 
             // Create rows for reviewer commissions
             const expandedReviewerRows = [];
-            reviewerCommissions.forEach(record => {
-                const createdDate = new Date(record.created_at).toLocaleDateString();
-                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
-                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
-                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+            reviewerCommissions.forEach((record, idx) => {
+                try {
+                    let createdDate = 'N/A';
+                    if (record.created_at) {
+                        try {
+                            createdDate = new Date(record.created_at).toLocaleDateString();
+                        } catch (e) {
+                            console.error(`[renderPendingApprovalsTable] Reviewer date parse error (record ${idx}):`, record.created_at, e);
+                            createdDate = 'N/A';
+                        }
+                    }
 
-                expandedReviewerRows.push({
-                    id: record.id,
-                    commissionType: 'reviewer',
-                    feedbackId,
-                    createdDate,
-                    recipientType: 'Reviewer',
-                    recipientDisplay: buyerName,
-                    paypalEmail: buyerEmail,
-                    displayAmount: parseFloat(record.amount_owed || 0),
-                    status: record.status
-                });
+                    const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                    const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                    const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+
+                    expandedReviewerRows.push({
+                        id: record.id,
+                        commissionType: 'reviewer',
+                        feedbackId,
+                        createdDate,
+                        created_at: record.created_at,
+                        recipientType: 'Reviewer',
+                        recipientDisplay: buyerName,
+                        paypalEmail: buyerEmail,
+                        displayAmount: parseFloat(record.amount_owed || 0),
+                        status: record.status
+                    });
+                } catch (err) {
+                    console.error(`[renderPendingApprovalsTable] Error processing reviewer record ${idx}:`, err, record);
+                }
             });
 
             // Merge and sort
@@ -2695,6 +2744,7 @@
         }
 
         async function loadAwaitingReceipts() {
+            console.log('[loadAwaitingReceipts] ===== START =====');
             const tbody = document.getElementById('awaiting-receipts-body');
             if (!tbody) return;
 
@@ -2708,6 +2758,7 @@
 
             try {
                 // Query admin_payables awaiting receipt verification (V9: status='payment_requested')
+                console.log('[loadAwaitingReceipts] Fetching admin_payables...');
                 const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
@@ -2717,13 +2768,24 @@
                     .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
+                console.log('[loadAwaitingReceipts] Admin data received:', { count: adminData?.length, hasError: !!adminError });
+                if (adminData && adminData.length > 0) {
+                    console.log('[loadAwaitingReceipts] First admin record created_at:', adminData[0].created_at, typeof adminData[0].created_at);
+                }
+
                 // Query buyer_payables awaiting receipt verification (V9: status='payment_requested')
+                console.log('[loadAwaitingReceipts] Fetching buyer_payables...');
                 const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
                     .select(`
                         id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
                     `)
                     .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
+
+                console.log('[loadAwaitingReceipts] Reviewer data received:', { count: reviewerData?.length, hasError: !!reviewerError });
+                if (reviewerData && reviewerData.length > 0) {
+                    console.log('[loadAwaitingReceipts] First reviewer record created_at:', reviewerData[0].created_at, typeof reviewerData[0].created_at);
+                }
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -2778,14 +2840,23 @@
                     vendorInviterMap: globalAwaitingVendorInviterMap
                 };
 
+                console.log('[loadAwaitingReceipts] globalAwaitingData created:', {
+                    adminCount: adminCommissions.length,
+                    reviewerCount: reviewerCommissions.length
+                });
+
                 // Calculate expanded row count
                 let expandedCount = 0;
-                adminCommissions.forEach(record => {
+                console.log('[loadAwaitingReceipts] Expanding admin commissions...');
+                adminCommissions.forEach((record, idx) => {
+                    console.log(`[loadAwaitingReceipts] Admin record ${idx} created_at:`, record.created_at, typeof record.created_at);
                     const expanded = expandCommissionRecord(record, globalAwaitingVendorInviterMap, globalAwaitingBuyerMap);
+                    console.log(`[loadAwaitingReceipts] Admin record ${idx} expanded to ${expanded.length} rows`);
                     expandedCount += expanded.length;
                 });
                 expandedCount += reviewerCommissions.length;
 
+                console.log('[loadAwaitingReceipts] Total expanded count:', expandedCount);
                 document.getElementById('metric-awaiting-receipts').textContent = expandedCount;
 
                 // Clear filters
@@ -2794,7 +2865,9 @@
                 document.getElementById('awaiting-date-from').value = '';
                 document.getElementById('awaiting-date-to').value = '';
 
+                console.log('[loadAwaitingReceipts] Calling filterAwaitingReceipts...');
                 filterAwaitingReceipts();
+                console.log('[loadAwaitingReceipts] ===== COMPLETE =====');
 
                 // Set up periodic SLA timer refresh (every 60 seconds)
                 adminAwaitingSLAInterval = setInterval(() => {
@@ -2806,13 +2879,18 @@
         }
 
         function filterAwaitingReceipts() {
+            console.log('[filterAwaitingReceipts] ===== START =====');
             const vendorSearch = document.getElementById('awaiting-vendor-search').value.toLowerCase().trim();
             const recipientFilter = document.getElementById('awaiting-recipient-filter').value;
             const dateFrom = document.getElementById('awaiting-date-from').value;
             const dateTo = document.getElementById('awaiting-date-to').value;
 
+            console.log('[filterAwaitingReceipts] Filters:', { vendorSearch, recipientFilter, dateFrom, dateTo });
+
             let filteredAdmin = globalAwaitingData.adminCommissions || [];
             let filteredReviewer = globalAwaitingData.reviewerCommissions || [];
+
+            console.log('[filterAwaitingReceipts] Initial counts:', { adminCount: filteredAdmin.length, reviewerCount: filteredReviewer.length });
 
             // Filter admin commissions
             if (vendorSearch) {
@@ -2824,35 +2902,69 @@
 
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredAdmin = filteredAdmin.filter(record => {
+                    if (!record.created_at) return false;
+                    const recordTime = new Date(record.created_at).getTime();
+                    return !isNaN(recordTime) && recordTime >= fromDate;
+                });
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredAdmin = filteredAdmin.filter(record => {
+                    if (!record.created_at) return false;
+                    const recordTime = new Date(record.created_at).getTime();
+                    return !isNaN(recordTime) && recordTime <= toDate;
+                });
             }
 
             // Filter reviewer commissions
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredReviewer = filteredReviewer.filter(record => {
+                    if (!record.created_at) return false;
+                    const recordTime = new Date(record.created_at).getTime();
+                    return !isNaN(recordTime) && recordTime >= fromDate;
+                });
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredReviewer = filteredReviewer.filter(record => {
+                    if (!record.created_at) return false;
+                    const recordTime = new Date(record.created_at).getTime();
+                    return !isNaN(recordTime) && recordTime <= toDate;
+                });
             }
 
-            renderAwaitingReceiptsTable({
-                adminCommissions: filteredAdmin,
-                reviewerCommissions: filteredReviewer,
-                buyerMap: globalAwaitingData.buyerMap || {},
-                vendorInviterMap: globalAwaitingData.vendorInviterMap || {},
-                recipientFilter
-            });
+            console.log('[filterAwaitingReceipts] After filtering:', { adminCount: filteredAdmin.length, reviewerCount: filteredReviewer.length });
+
+            // Log created_at values
+            if (filteredAdmin.length > 0) {
+                console.log('[filterAwaitingReceipts] Admin created_at values:', filteredAdmin.map(r => ({ id: r.id.substring(0, 8), created_at: r.created_at, type: typeof r.created_at })));
+            }
+            if (filteredReviewer.length > 0) {
+                console.log('[filterAwaitingReceipts] Reviewer created_at values:', filteredReviewer.map(r => ({ id: r.id.substring(0, 8), created_at: r.created_at, type: typeof r.created_at })));
+            }
+
+            console.log('[filterAwaitingReceipts] Calling renderAwaitingReceiptsTable...');
+            try {
+                renderAwaitingReceiptsTable({
+                    adminCommissions: filteredAdmin,
+                    reviewerCommissions: filteredReviewer,
+                    buyerMap: globalAwaitingData.buyerMap || {},
+                    vendorInviterMap: globalAwaitingData.vendorInviterMap || {},
+                    recipientFilter
+                });
+                console.log('[filterAwaitingReceipts] ===== COMPLETE =====');
+            } catch (err) {
+                console.error('[filterAwaitingReceipts] ERROR:', err);
+                throw err;
+            }
         }
 
         function renderAwaitingReceiptsTable(data) {
+            console.log('[renderAwaitingReceiptsTable] ===== START =====');
             const tbody = document.getElementById('awaiting-receipts-body');
 
             const adminCommissions = data.adminCommissions || [];
@@ -2861,32 +2973,62 @@
             const vendorInviterMap = data.vendorInviterMap || {};
             const recipientFilter = data.recipientFilter || '';
 
+            console.log('[renderAwaitingReceiptsTable] Input data:', { adminCount: adminCommissions.length, reviewerCount: reviewerCommissions.length });
+
             // Expand admin commissions using helper
             const expandedAdminRows = [];
-            adminCommissions.forEach(record => {
-                const recipientRows = expandCommissionRecord(record, vendorInviterMap, buyerMap);
-                expandedAdminRows.push(...recipientRows);
+            console.log('[renderAwaitingReceiptsTable] Expanding admin commissions...');
+            adminCommissions.forEach((record, idx) => {
+                try {
+                    console.log(`[renderAwaitingReceiptsTable] Admin record ${idx}:`, { id: record.id.substring(0, 8), created_at: record.created_at, type: typeof record.created_at });
+                    const recipientRows = expandCommissionRecord(record, vendorInviterMap, buyerMap);
+                    console.log(`[renderAwaitingReceiptsTable] Admin record ${idx} expanded to ${recipientRows.length} rows`);
+                    recipientRows.forEach((r, ridx) => {
+                        console.log(`[renderAwaitingReceiptsTable]   Row ${ridx}: created_at=${r.created_at}, type=${typeof r.created_at}`);
+                    });
+                    expandedAdminRows.push(...recipientRows);
+                } catch (err) {
+                    console.error(`[renderAwaitingReceiptsTable] Error expanding admin record ${idx}:`, err);
+                    throw err;
+                }
             });
 
             // Create rows for reviewer commissions
             const expandedReviewerRows = [];
-            reviewerCommissions.forEach(record => {
-                const createdDate = new Date(record.created_at).toLocaleDateString();
-                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
-                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
-                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+            reviewerCommissions.forEach((record, idx) => {
+                try {
+                    console.log(`[renderAwaitingReceiptsTable] Reviewer record ${idx}:`, { id: record.id.substring(0, 8), created_at: record.created_at, type: typeof record.created_at });
 
-                expandedReviewerRows.push({
-                    id: record.id,
-                    commissionType: 'reviewer',
-                    feedbackId,
-                    createdDate,
-                    recipientType: 'Reviewer',
-                    recipientDisplay: buyerName,
-                    paypalEmail: buyerEmail,
-                    displayAmount: parseFloat(record.amount_owed || 0),
-                    status: record.status
-                });
+                    let createdDate = 'N/A';
+                    if (record.created_at) {
+                        try {
+                            createdDate = new Date(record.created_at).toLocaleDateString();
+                        } catch (e) {
+                            console.error(`[renderAwaitingReceiptsTable] Reviewer date parse error (record ${idx}):`, record.created_at, e);
+                            createdDate = 'N/A';
+                        }
+                    }
+
+                    const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                    const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                    const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+
+                    expandedReviewerRows.push({
+                        id: record.id,
+                        commissionType: 'reviewer',
+                        feedbackId,
+                        createdDate,
+                        created_at: record.created_at,
+                        recipientType: 'Reviewer',
+                        recipientDisplay: buyerName,
+                        paypalEmail: buyerEmail,
+                        displayAmount: parseFloat(record.amount_owed || 0),
+                        status: record.status
+                    });
+                    console.log(`[renderAwaitingReceiptsTable] Reviewer record ${idx} created successfully`);
+                } catch (err) {
+                    console.error(`[renderAwaitingReceiptsTable] Error processing reviewer record ${idx}:`, err, record);
+                }
             });
 
             // Merge and sort
@@ -2898,9 +3040,39 @@
             }
 
             expandedRows.sort((a, b) => {
-                const dateA = a.created_at ? new Date(a.created_at).getTime() : new Date(a.createdDate).getTime();
-                const dateB = b.created_at ? new Date(b.created_at).getTime() : new Date(b.createdDate).getTime();
-                return dateB - dateA;
+                try {
+                    let timeA = 0;
+                    if (a.created_at) {
+                        console.log('[SORT] Row A created_at:', a.created_at, typeof a.created_at);
+                        const dateA = new Date(a.created_at);
+                        console.log('[SORT] dateA object:', dateA, 'getTime():', dateA.getTime());
+                        timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                    } else if (a.createdDate) {
+                        console.log('[SORT] Row A createdDate:', a.createdDate, typeof a.createdDate);
+                        const dateA = new Date(a.createdDate);
+                        console.log('[SORT] dateA from createdDate:', dateA, 'getTime():', dateA.getTime());
+                        timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                    }
+
+                    let timeB = 0;
+                    if (b.created_at) {
+                        console.log('[SORT] Row B created_at:', b.created_at, typeof b.created_at);
+                        const dateB = new Date(b.created_at);
+                        console.log('[SORT] dateB object:', dateB, 'getTime():', dateB.getTime());
+                        timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                    } else if (b.createdDate) {
+                        console.log('[SORT] Row B createdDate:', b.createdDate, typeof b.createdDate);
+                        const dateB = new Date(b.createdDate);
+                        console.log('[SORT] dateB from createdDate:', dateB, 'getTime():', dateB.getTime());
+                        timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                    }
+
+                    console.log('[SORT] Final comparison: timeB - timeA =', timeB - timeA);
+                    return timeB - timeA;
+                } catch (e) {
+                    console.error('[renderAwaitingReceiptsTable] Sort error:', e, 'Stack:', e.stack);
+                    return 0;
+                }
             });
 
             document.getElementById('awaiting-record-count').textContent = `${expandedRows.length} rows`;
@@ -2910,29 +3082,56 @@
                 return;
             }
 
-            const htmlRows = expandedRows.map(row => {
-                const vendorName = globalAwaitingVendorMap[row.vendor_id] || 'Unknown';
-                const amount = parseFloat(row.displayAmount).toFixed(2);
+            const htmlRows = expandedRows.map((row, mapIdx) => {
+                try {
+                    console.log(`[MAP] Processing row ${mapIdx}:`, { id: row.id?.substring(0, 8), recipientType: row.recipientType, created_at: row.created_at, type: typeof row.created_at });
 
-                // Calculate SLA timer for vendor (T+48h)
-                const slaTimer = calculateSLATimer(row.created_at, 'vendor');
-                const slaStatus = slaTimer.displayText;
-                const slaColor = slaTimer.statusColor;
+                    const vendorName = globalAwaitingVendorMap[row.vendor_id] || 'Unknown';
+                    const amount = parseFloat(row.displayAmount).toFixed(2);
 
-                return `
-                    <tr class="hover:bg-orange-50">
-                        <td class="p-2.5"><input type="checkbox" class="awaiting-checkbox rounded" data-id="${row.id}"></td>
-                        <td class="p-2.5">${escapeHtml(vendorName)}</td>
-                        <td class="p-2.5">${row.recipientType}</td>
-                        <td class="p-2.5 text-xs">${row.recipientDisplay}</td>
-                        <td class="p-2.5 text-right">$${amount}</td>
-                        <td class="p-2.5">${row.created_at ? new Date(row.created_at).toLocaleDateString() : row.createdDate}</td>
-                        <td class="p-2.5 sla-timer-cell-${row.id}" style="color: ${slaColor};">${slaStatus}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="requestInfoCommission('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
-                        </td>
-                    </tr>
-                `;
+                    // Validate created_at before using
+                    if (!row.created_at) {
+                        console.warn('[renderAwaitingReceiptsTable] Row missing created_at:', { id: row.id, recipientType: row.recipientType });
+                    }
+
+                    // Calculate SLA timer for vendor (T+48h)
+                    console.log(`[MAP] Calling calculateSLATimer with:`, row.created_at, 'vendor');
+                    const slaTimer = calculateSLATimer(row.created_at, 'vendor');
+                    console.log(`[MAP] SLA timer result:`, slaTimer);
+                    const slaStatus = slaTimer.displayText;
+                    const slaColor = slaTimer.statusColor;
+
+                    // Format date safely
+                    let displayDate = 'N/A';
+                    if (row.created_at) {
+                        try {
+                            displayDate = new Date(row.created_at).toLocaleDateString();
+                        } catch (e) {
+                            console.error('[renderAwaitingReceiptsTable] Date parsing error for:', row.created_at, e);
+                            displayDate = row.createdDate || 'N/A';
+                        }
+                    } else if (row.createdDate) {
+                        displayDate = row.createdDate;
+                    }
+
+                    return `
+                        <tr class="hover:bg-orange-50">
+                            <td class="p-2.5"><input type="checkbox" class="awaiting-checkbox rounded" data-id="${row.id}"></td>
+                            <td class="p-2.5">${escapeHtml(vendorName)}</td>
+                            <td class="p-2.5">${row.recipientType}</td>
+                            <td class="p-2.5 text-xs">${row.recipientDisplay}</td>
+                            <td class="p-2.5 text-right">$${amount}</td>
+                            <td class="p-2.5">${displayDate}</td>
+                            <td class="p-2.5 sla-timer-cell-${row.id}" style="color: ${slaColor};">${slaStatus}</td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="requestInfoCommission('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
+                            </td>
+                        </tr>
+                    `;
+                } catch (err) {
+                    console.error('[renderAwaitingReceiptsTable] Error rendering row:', err, row);
+                    return `<tr><td colspan="8" class="p-2.5 text-red-600">Error rendering row: ${escapeHtml(err.message)}</td></tr>`;
+                }
             }).join('');
 
             tbody.innerHTML = htmlRows;
@@ -2944,15 +3143,40 @@
         }
 
         function refreshAdminAwaitingSLATimers() {
-            if (!globalAwaitingData || globalAwaitingData.length === 0) return;
+            if (!globalAwaitingData) return;
 
-            globalAwaitingData.forEach(payout => {
+            const adminCommissions = globalAwaitingData.adminCommissions || [];
+            const reviewerCommissions = globalAwaitingData.reviewerCommissions || [];
+
+            if (adminCommissions.length === 0 && reviewerCommissions.length === 0) return;
+
+            // Update admin commission timers
+            adminCommissions.forEach(payout => {
+                // For each expanded row (each recipient gets its own timer)
                 const timerCell = document.querySelector(`.sla-timer-cell-${payout.id}`);
                 if (!timerCell) return;
 
-                const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
-                timerCell.textContent = slaTimer.displayText;
-                timerCell.style.color = slaTimer.statusColor;
+                try {
+                    const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
+                    timerCell.textContent = slaTimer.displayText;
+                    timerCell.style.color = slaTimer.statusColor;
+                } catch (err) {
+                    console.error('[refreshAdminAwaitingSLATimers] Error updating admin timer:', err);
+                }
+            });
+
+            // Update reviewer commission timers
+            reviewerCommissions.forEach(payout => {
+                const timerCell = document.querySelector(`.sla-timer-cell-${payout.id}`);
+                if (!timerCell) return;
+
+                try {
+                    const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
+                    timerCell.textContent = slaTimer.displayText;
+                    timerCell.style.color = slaTimer.statusColor;
+                } catch (err) {
+                    console.error('[refreshAdminAwaitingSLATimers] Error updating reviewer timer:', err);
+                }
             });
         }
 
@@ -3085,22 +3309,26 @@
                 });
 
                 // Expand reviewer commissions
-                reviewerCommissions.forEach(record => {
-                    const commissionId = record.id.substring(0, 8);
-                    const hasVendorReceipt = !!record.vendor_receipt_data;
+                reviewerCommissions.forEach((record, idx) => {
+                    try {
+                        const commissionId = record.id.substring(0, 8);
+                        const hasVendorReceipt = !!record.vendor_receipt_data;
 
-                    expandedRows.push({
-                        ...record,
-                        commissionType: 'reviewer',
-                        recipientType: 'Reviewer',
-                        displayAmount: parseFloat(record.amount_owed || 0),
-                        commissionId,
-                        hasVendorReceipt,
-                        hasBuyerReceipt: true, // Reviewer only needs vendor receipt (proof from vendor to reviewer)
-                        rowType: 'reviewer',
-                        buyerName: buyerMap[record.buyer_id]?.name || 'Unknown',
-                        buyerEmail: buyerMap[record.buyer_id]?.email || 'N/A'
-                    });
+                        expandedRows.push({
+                            ...record,
+                            commissionType: 'reviewer',
+                            recipientType: 'Reviewer',
+                            displayAmount: parseFloat(record.amount_owed || 0),
+                            commissionId,
+                            hasVendorReceipt,
+                            hasBuyerReceipt: true, // Reviewer only needs vendor receipt (proof from vendor to reviewer)
+                            rowType: 'reviewer',
+                            buyerName: buyerMap[record.buyer_id]?.name || 'Unknown',
+                            buyerEmail: buyerMap[record.buyer_id]?.email || 'N/A'
+                        });
+                    } catch (err) {
+                        console.error(`[loadReceiptVerifications] Error processing reviewer record ${idx}:`, err, record);
+                    }
                 });
 
                 // Sort by creation date descending
@@ -3325,6 +3553,7 @@
                     commissionType: 'reviewer',
                     feedbackId,
                     createdDate,
+                    created_at: record.created_at,
                     recipientType: 'Reviewer',
                     recipientDisplay: buyerName,
                     paypalEmail: buyerEmail,
@@ -3551,7 +3780,17 @@
 
         // SINGLE COMMISSION ACTIONS
         async function requestPaymentForAdmin(id, commissionType) {
-            if (!confirm('Request payment for this commission?')) return;
+            console.log('[RequestPayment] ===== START =====');
+            console.log('[RequestPayment] Raw params:', { id, commissionType, typeOfCommissionType: typeof commissionType });
+
+            // Trim whitespace from commissionType
+            const trimmedType = commissionType ? commissionType.trim() : commissionType;
+            console.log('[RequestPayment] After trim:', { trimmedType, match_admin: trimmedType === 'admin', match_reviewer: trimmedType === 'reviewer' });
+
+            if (!confirm('Request payment for this commission?')) {
+                console.log('[RequestPayment] User cancelled');
+                return;
+            }
 
             showToast('Requesting payment...', 'info');
 
@@ -3560,15 +3799,20 @@
                     throw new Error('Database client not initialized');
                 }
 
-                if (commissionType === 'admin') {
+                console.log('[RequestPayment] DB initialized, checking commission type...');
+                if (trimmedType === 'admin') {
+                    console.log('[RequestPayment] → Taking ADMIN branch');
                     // Update admin_payables status from 'pending' to 'payment_requested'
+                    console.log('[RequestPayment] Updating admin_payables id:', id);
                     const { error: updateError } = await db.from('admin_payables')
                         .update({ status: 'payment_requested' })
                         .eq('id', id);
 
                     if (updateError) {
+                        console.error('[RequestPayment] Admin update error:', updateError);
                         throw new Error(`Database update failed: ${updateError.message}`);
                     }
+                    console.log('[RequestPayment] ✓ Admin_payables updated successfully');
 
                     // Fetch updated record to get vendor_id for notification
                     const { data: record, error: fetchError } = await db.from('admin_payables')
@@ -3577,8 +3821,10 @@
                         .single();
 
                     if (fetchError || !record) {
+                        console.error('[RequestPayment] Fetch error:', fetchError);
                         throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
                     }
+                    console.log('[RequestPayment] ✓ Record fetched:', record);
 
                     // TODO: Implement createAdminNotification() or remove vendor notification
                     // if (record.vendor_id) {
@@ -3591,18 +3837,25 @@
                     //     );
                     // }
 
+                    console.log('[RequestPayment] Reloading tables...');
                     await loadAdminReadyToRequest();
                     await loadPendingApprovals();
+                    console.log('[RequestPayment] ✓ Tables reloaded');
                     showToast('✓ Payment request sent. Vendor will upload receipt within 48 hours.', 'success');
-                } else if (commissionType === 'reviewer') {
+                    console.log('[RequestPayment] ===== ADMIN SUCCESS =====');
+                } else if (trimmedType === 'reviewer') {
+                    console.log('[RequestPayment] → Taking REVIEWER branch');
                     // Update buyer_payables status from 'pending' to 'payment_requested'
+                    console.log('[RequestPayment] Updating buyer_payables id:', id);
                     const { error: updateError } = await db.from('buyer_payables')
                         .update({ status: 'payment_requested' })
                         .eq('id', id);
 
                     if (updateError) {
+                        console.error('[RequestPayment] Reviewer update error:', updateError);
                         throw new Error(`Database update failed: ${updateError.message}`);
                     }
+                    console.log('[RequestPayment] ✓ Buyer_payables updated successfully');
 
                     // Fetch updated record to get buyer_id for notification
                     const { data: record, error: fetchError } = await db.from('buyer_payables')
@@ -3611,8 +3864,10 @@
                         .single();
 
                     if (fetchError || !record) {
+                        console.error('[RequestPayment] Fetch error:', fetchError);
                         throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
                     }
+                    console.log('[RequestPayment] ✓ Record fetched:', record);
 
                     // TODO: Implement createAdminNotification() for buyer notification
                     // if (record.buyer_id) {
@@ -3625,12 +3880,18 @@
                     //     );
                     // }
 
+                    console.log('[RequestPayment] Reloading tables...');
                     await loadAdminReadyToRequest();
                     await loadPendingApprovals();
+                    console.log('[RequestPayment] ✓ Tables reloaded');
                     showToast('✓ Payment request sent. Reviewer will upload receipt within 48 hours.', 'success');
+                    console.log('[RequestPayment] ===== REVIEWER SUCCESS =====');
+                } else {
+                    console.error('[RequestPayment] UNKNOWN TYPE:', trimmedType, 'expected "admin" or "reviewer"');
+                    throw new Error(`Unknown commission type: ${trimmedType}`);
                 }
             } catch (err) {
-                console.error('Request payment error:', err);
+                console.error('[RequestPayment] ===== ERROR =====', err);
                 showToast(`Error requesting payment: ${err.message}`, 'error');
             }
         }
@@ -4696,21 +4957,65 @@
         }
 
         function calculateSLATimer(createdAt, stage) {
-            const created = new Date(createdAt);
+            console.log('[calculateSLATimer] INPUT:', createdAt, typeof createdAt, 'stage:', stage);
+
+            // Safety check: validate timestamp
+            if (!createdAt) {
+                console.warn('[calculateSLATimer] NULL/EMPTY createdAt - returning N/A');
+                return { status: 'error', timeLeft: 0, displayText: 'N/A', statusColor: '#9ca3af' };
+            }
+
+            // Normalize input: if it's a number, ensure it's within valid range
+            let normalizedInput = createdAt;
+            if (typeof createdAt === 'number') {
+                console.log('[calculateSLATimer] Input is NUMBER:', createdAt);
+                // If it's a 10-digit Unix timestamp (seconds), convert to ms
+                if (createdAt < 10000000000) {
+                    normalizedInput = createdAt * 1000;
+                    console.log('[calculateSLATimer] Converted seconds timestamp to ms:', normalizedInput);
+                }
+                // Check if number is in valid Date range
+                if (normalizedInput < -8640000000000000 || normalizedInput > 8640000000000000) {
+                    console.error('[calculateSLATimer] Number out of valid Date range:', normalizedInput);
+                    return { status: 'error', timeLeft: 0, displayText: 'N/A', statusColor: '#9ca3af' };
+                }
+            }
+
+            let created;
+            try {
+                console.log('[calculateSLATimer] Creating Date object from:', normalizedInput);
+                created = new Date(normalizedInput);
+                console.log('[calculateSLATimer] Date object created:', created);
+
+                const timeValue = created.getTime();
+                console.log('[calculateSLATimer] getTime() result:', timeValue);
+
+                if (isNaN(timeValue)) {
+                    console.warn('[calculateSLATimer] Date.getTime() returned NaN - invalid date:', createdAt);
+                    return { status: 'error', timeLeft: 0, displayText: 'N/A', statusColor: '#9ca3af' };
+                }
+            } catch (err) {
+                console.error('[calculateSLATimer] ERROR creating/parsing date:', err, 'Input was:', createdAt);
+                return { status: 'error', timeLeft: 0, displayText: 'N/A', statusColor: '#9ca3af' };
+            }
+
             const now = new Date();
 
             let deadline;
             if (stage === 'vendor') {
                 // T+48 hours
+                console.log('[calculateSLATimer] Creating vendor deadline: created.getTime()=', created.getTime(), 'stage=vendor');
                 deadline = new Date(created.getTime() + 48 * 60 * 60 * 1000);
             } else if (stage === 'buyer') {
                 // T+8 hours from vendor receipt upload
+                console.log('[calculateSLATimer] Creating buyer deadline: created.getTime()=', created.getTime(), 'stage=buyer');
                 deadline = new Date(created.getTime() + 8 * 60 * 60 * 1000);
             } else {
                 return { status: 'completed', timeLeft: 0, displayText: '✓ Completed', statusColor: '#16a34a' };
             }
 
             const timeLeft = deadline - now;
+            console.log('[calculateSLATimer] FINAL: deadline=', deadline, 'now=', now, 'timeLeft ms=', timeLeft);
 
             if (timeLeft <= 0) {
                 return { status: 'timeout', timeLeft: 0, displayText: '⏱️ Time Expired', statusColor: '#dc2626', deadline: deadline.toISOString() };
