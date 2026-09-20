@@ -2098,7 +2098,7 @@
                 const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
-                        created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id, commission_type
+                        created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id
                     `)
                     .eq('status', 'pending')
                     .order('created_at', { ascending: false });
