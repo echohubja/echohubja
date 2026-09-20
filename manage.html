@@ -6752,13 +6752,12 @@
 
             try {
                 // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
-                // EXCLUDE records that are in awaiting tab (split_with_buyer_id IS NOT NULL AND vendor_receipt_uploaded_date IS NULL)
+                // Tab 2 shows vendor-initiated commissions (status='pending')
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending')
-                    .or(`split_with_buyer_id.is.null,vendor_receipt_uploaded_date.not.is.null`)
                     .order('created_at', { ascending: false });
 
                 // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
@@ -7053,13 +7052,12 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='pending' and vendor_receipt_uploaded_date IS NULL (all commission types)
+                // Query admin_payables and buyer_payables where status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment' (all commission types)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'pending')
-                    .is('vendor_receipt_uploaded_date', null)
+                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -7665,16 +7663,18 @@
             if (!sbClient) return;
 
             try {
+                const newStatus = 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment';
+
                 for (const { id, request } of selected) {
                     if (request?.source === 'admin_payables') {
                         await sbClient
                             .from('admin_payables')
-                            .update({ status: 'pending' })
+                            .update({ status: newStatus })
                             .eq('id', id);
                     } else if (request?.source === 'buyer_payables') {
                         await sbClient
                             .from('buyer_payables')
-                            .update({ status: 'pending' })
+                            .update({ status: newStatus })
                             .eq('id', id);
                     }
                 }
@@ -7731,6 +7731,8 @@
             if (!sbClient) return;
 
             try {
+                const newStatus = 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment';
+
                 if (source === 'admin_payables') {
                     // Get the admin_payables record to retrieve related info
                     const { data: payable } = await sbClient
@@ -7741,7 +7743,7 @@
 
                     await sbClient
                         .from('admin_payables')
-                        .update({ status: 'pending' })
+                        .update({ status: newStatus })
                         .eq('id', requestId);
 
                     // Create notification for admin
@@ -7758,7 +7760,7 @@
                     // Update buyer_payables record for reviewer commissions
                     await sbClient
                         .from('buyer_payables')
-                        .update({ status: 'pending' })
+                        .update({ status: newStatus })
                         .eq('id', requestId);
                 }
 
