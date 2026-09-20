@@ -2123,6 +2123,12 @@
                 const adminCommissions = adminData || [];
                 const reviewerCommissions = reviewerData || [];
 
+                // DEBUG: Log reviewer data
+                console.log('=== REVIEWER DATA ===');
+                console.log('Reviewer records count:', reviewerCommissions.length);
+                console.log('Reviewer data:', reviewerCommissions);
+                console.log('Admin records count:', adminCommissions.length);
+
                 if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No commissions ready to request</td></tr>';
                     document.getElementById('metric-ready-to-request').textContent = '0';
