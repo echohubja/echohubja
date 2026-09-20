@@ -7053,14 +7053,25 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment' and vendor_receipt_uploaded_date IS NULL (all commission types)
-                const { data: payouts, error } = await sbClient
+                // Query admin_payables where status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'
+                const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
                     .is('vendor_receipt_uploaded_date', null)
                     .order('created_at', { ascending: false });
+
+                // Query buyer_payables where vendor must send payment to reviewer/buyer/inviter
+                const { data: buyerPayouts, error: buyerError } = await sbClient
+                    .from('buyer_payables')
+                    .select('id, vendor_id, buyer_id, amount_owed, earning_type, created_at, payment_date')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
+                    .order('created_at', { ascending: false });
+
+                const error = adminError || buyerError;
+                const payouts = [...(adminPayouts || []), ...(buyerPayouts || [])];
 
                 if (error) {
                     console.error('Error loading awaiting receipts:', error);
@@ -7074,15 +7085,17 @@
                     return;
                 }
 
-                // Fetch buyer details for all split_with_buyer_ids
-                const buyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
+                // Fetch buyer details for both split_with_buyer_ids and buyer_ids
+                const splitBuyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
+                const directBuyerIds = payouts.map(p => p.buyer_id).filter(Boolean);
+                const allBuyerIds = [...new Set([...splitBuyerIds, ...directBuyerIds])];
                 globalAwaitingBuyersMap = {};
 
-                if (buyerIds.length > 0) {
+                if (allBuyerIds.length > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
                         .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
+                        .in('id', allBuyerIds);
 
                     if (buyers) {
                         buyers.forEach(buyer => {
@@ -7146,28 +7159,45 @@
             const tbody = document.getElementById('manage-awaiting-table-body');
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
-                const inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
                 const detailsId = `awaiting-details-${payout.id}`;
-                const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
 
-                // Determine commission type and display amount
+                // Determine if this is admin_payables or buyer_payables
+                const isBuyerPayable = payout.buyer_id && !payout.split_with_buyer_id;
+
                 let recipientType = 'Admin';
-                let displayAmount = payout.admin_commission || 0;
+                let displayAmount = 0;
                 let recipientName = 'N/A';
                 let recipientEmail = 'N/A';
+                let inquiry = null;
+                let imageData = null;
 
-                if (payout.split_with_vendor_id) {
-                    recipientType = 'Vendor Inviter';
-                    displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
-                    const vendor = globalAwaitingBuyersMap[payout.split_with_vendor_id]; // Using same map for vendor data
-                    recipientName = vendor?.full_name || 'N/A';
-                    recipientEmail = vendor?.paypal_email || 'N/A';
-                } else if (payout.split_with_buyer_id) {
-                    recipientType = 'Buyer Inviter';
-                    displayAmount = payout.buyer_portion || 0;
-                    const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
+                if (isBuyerPayable) {
+                    // buyer_payables record (Reviewer)
+                    recipientType = 'Reviewer';
+                    displayAmount = payout.amount_owed || 0;
+                    const buyer = globalAwaitingBuyersMap[payout.buyer_id];
                     recipientName = buyer?.full_name || 'N/A';
                     recipientEmail = buyer?.paypal_email || 'N/A';
+                    // buyer_payables doesn't have feedback data, show minimal info
+                } else {
+                    // admin_payables record (Admin, Buyer Inviter, or Vendor Inviter)
+                    displayAmount = payout.admin_commission || 0;
+                    inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
+                    imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+
+                    if (payout.split_with_vendor_id) {
+                        recipientType = 'Vendor Inviter';
+                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                        const vendor = globalAwaitingBuyersMap[payout.split_with_vendor_id];
+                        recipientName = vendor?.full_name || 'N/A';
+                        recipientEmail = vendor?.paypal_email || 'N/A';
+                    } else if (payout.split_with_buyer_id) {
+                        recipientType = 'Buyer Inviter';
+                        displayAmount = payout.buyer_portion || 0;
+                        const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
+                        recipientName = buyer?.full_name || 'N/A';
+                        recipientEmail = buyer?.paypal_email || 'N/A';
+                    }
                 }
 
                 return `
@@ -7176,15 +7206,16 @@
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
                     <td style="padding: 12px; color: #475569;">${recipientName}</td>
                     <td style="padding: 12px; color: #475569;">${recipientEmail}</td>
-                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
+                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id || '—'}</td>
                     <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-                        <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                        ${inquiry ? `<button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>` : '<span style="color: #999;">—</span>'}
                         <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${displayAmount})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                         <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
+                ${inquiry ? `
                 <tr id="${detailsId}" style="display: none; background: #fef3c7; border-bottom: 1px solid #e2e8f0;">
                     <td colspan="8" style="padding: 16px;">
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
@@ -7197,6 +7228,7 @@
                         </div>
                     </td>
                 </tr>
+                ` : ''}
                 `;
             }).join('');
         }
