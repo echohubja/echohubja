@@ -2016,6 +2016,7 @@
             if (record.admin_commission && parseFloat(record.admin_commission) > 0) {
                 rows.push({
                     ...record,
+                    commissionType: 'admin',
                     recipientType: 'Admin',
                     displayAmount: parseFloat(record.admin_commission),
                     recipientDisplay: 'Platform',
@@ -2032,6 +2033,7 @@
                 const buyer = buyerMap[record.split_with_buyer_id];
                 rows.push({
                     ...record,
+                    commissionType: 'admin',
                     recipientType: 'Buyer Inviter',
                     displayAmount: parseFloat(record.buyer_portion),
                     recipientDisplay: escapeHtml(buyer?.name || 'Unknown'),
@@ -2049,6 +2051,7 @@
                 if (vendorInviterAmount > 0) {
                     rows.push({
                         ...record,
+                        commissionType: 'admin',
                         recipientType: 'Vendor Inviter',
                         displayAmount: vendorInviterAmount,
                         recipientDisplay: 'Vendor',
@@ -2065,6 +2068,7 @@
             if (rows.length === 0) {
                 rows.push({
                     ...record,
+                    commissionType: 'admin',
                     recipientType: 'Admin',
                     displayAmount: parseFloat(record.amount_owed || 0),
                     recipientDisplay: 'Platform',
@@ -2090,21 +2094,36 @@
             tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='pending' — vendor-requested payments (before admin approval)
-                const { data, error } = await db.from('admin_payables')
+                // Query admin_payables where status='pending'
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
-                        created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id
+                        created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id, commission_type
                     `)
                     .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                // Query buyer_payables where status='pending' (reviewer commissions)
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                    `)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                if (reviewerError) {
+                    console.error('Reviewer data fetch error:', reviewerError);
+                }
+
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No commissions ready to request</td></tr>';
                     document.getElementById('metric-ready-to-request').textContent = '0';
                     globalReadyToRequestData = [];
@@ -2112,24 +2131,8 @@
                     return;
                 }
 
-                // DEBUG: Log all fetched records
-                console.log('=== Admin Ready to Request - Raw Data ===');
-                console.log(`Total records: ${data.length}`);
-                data.forEach((record, idx) => {
-                    console.log(`Record ${idx}:`, {
-                        id: record.id,
-                        related_feedback_id: record.related_feedback_id,
-                        amount_owed: record.amount_owed,
-                        admin_commission: record.admin_commission,
-                        buyer_portion: record.buyer_portion,
-                        status: record.status,
-                        split_with_buyer_id: record.split_with_buyer_id,
-                        split_with_vendor_id: record.split_with_vendor_id
-                    });
-                });
-
-                // Fetch vendor details
-                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                // Fetch vendor details for admin_payables
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
                 globalReadyToRequestVendorMap = {};
                 const globalReadyVendorPaypalMap = {};
@@ -2140,20 +2143,44 @@
                     });
                 }
 
-                // Fetch buyer details for referrer payouts
-                const buyerIds = [...new Set(data.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Fetch buyer details for split_with_buyer_id lookups
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Also fetch reviewer buyer IDs
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
                 const globalReadyBuyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
-                    console.log('Fetched buyers for map:', { buyerIds, buyers });
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
                     if (buyers) buyers.forEach(b => globalReadyBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
-                    console.log('BuyerMap populated:', globalReadyBuyerMap);
                 }
 
-                globalReadyToRequestData = data;
-                globalReadyToRequestData.vendorPaypalMap = globalReadyVendorPaypalMap;
-                globalReadyToRequestData.buyerMap = globalReadyBuyerMap;
-                document.getElementById('metric-ready-to-request').textContent = data.length;
+                // Fetch vendor inviters for split_with_vendor_id lookups
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const globalReadyVendorInviterMap = {};
+                if (vendorInviterIds.length > 0) {
+                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
+                    if (vendorInviters) vendorInviters.forEach(v => globalReadyVendorInviterMap[v.id] = v.paypal_email || 'N/A');
+                }
+
+                // Store combined data with metadata
+                globalReadyToRequestData = {
+                    adminCommissions,
+                    reviewerCommissions,
+                    vendorPaypalMap: globalReadyVendorPaypalMap,
+                    buyerMap: globalReadyBuyerMap,
+                    vendorInviterMap: globalReadyVendorInviterMap
+                };
+
+                // Calculate total expanded rows for metric
+                let expandedCount = 0;
+                adminCommissions.forEach(record => {
+                    const expanded = expandCommissionRecord(record, globalReadyVendorInviterMap, globalReadyBuyerMap);
+                    expandedCount += expanded.length;
+                });
+                expandedCount += reviewerCommissions.length; // Each reviewer commission is 1 row
+
+                document.getElementById('metric-ready-to-request').textContent = expandedCount;
 
                 // Clear filters
                 document.getElementById('ready-vendor-search').value = '';
@@ -2175,70 +2202,116 @@
             const dateFrom = document.getElementById('ready-date-from').value;
             const dateTo = document.getElementById('ready-date-to').value;
 
-            let filtered = globalReadyToRequestData;
+            let filteredAdmin = globalReadyToRequestData.adminCommissions || [];
+            let filteredReviewer = globalReadyToRequestData.reviewerCommissions || [];
 
+            // Filter admin commissions by vendor name
             if (vendorSearch) {
-                filtered = filtered.filter(record => {
+                filteredAdmin = filteredAdmin.filter(record => {
                     const vendorName = (globalReadyToRequestVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
                     return vendorName.includes(vendorSearch);
                 });
             }
 
-            filtered = filtered.filter(record => {
+            // Filter by amount (on total amount_owed)
+            filteredAdmin = filteredAdmin.filter(record => {
+                const amount = parseFloat(record.amount_owed || 0);
+                return amount >= minAmount && amount <= maxAmount;
+            });
+            filteredReviewer = filteredReviewer.filter(record => {
                 const amount = parseFloat(record.amount_owed || 0);
                 return amount >= minAmount && amount <= maxAmount;
             });
 
+            // Filter by date range
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
-            // Preserve maps when passing to render
-            filtered.vendorPaypalMap = globalReadyToRequestData.vendorPaypalMap;
-            filtered.buyerMap = globalReadyToRequestData.buyerMap;
-            renderReadyToRequestTable(filtered);
+            renderReadyToRequestTable({
+                adminCommissions: filteredAdmin,
+                reviewerCommissions: filteredReviewer,
+                vendorPaypalMap: globalReadyToRequestData.vendorPaypalMap,
+                buyerMap: globalReadyToRequestData.buyerMap,
+                vendorInviterMap: globalReadyToRequestData.vendorInviterMap
+            });
         }
 
         function renderReadyToRequestTable(data) {
             const tbody = document.getElementById('ready-body');
 
-            if (data.length === 0) {
+            const vendorPaypalMap = data.vendorPaypalMap || {};
+            const buyerMap = data.buyerMap || {};
+            const vendorInviterMap = data.vendorInviterMap || {};
+            const adminCommissions = data.adminCommissions || [];
+            const reviewerCommissions = data.reviewerCommissions || [];
+
+            // Expand admin commissions into per-recipient rows
+            const expandedAdminRows = [];
+            adminCommissions.forEach(record => {
+                const recipientRows = expandCommissionRecord(record, vendorInviterMap, buyerMap);
+                expandedAdminRows.push(...recipientRows);
+            });
+
+            // Create rows for reviewer commissions (one row per record)
+            const expandedReviewerRows = [];
+            reviewerCommissions.forEach(record => {
+                const createdDate = new Date(record.created_at).toLocaleDateString();
+                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+
+                expandedReviewerRows.push({
+                    id: record.id,
+                    commissionType: 'reviewer',
+                    feedbackId,
+                    createdDate,
+                    recipientType: 'Reviewer',
+                    recipientDisplay: buyerName,
+                    paypalEmail: buyerEmail,
+                    displayAmount: parseFloat(record.amount_owed || 0),
+                    status: record.status,
+                    buyer_id: record.buyer_id
+                });
+            });
+
+            // Merge and sort all rows by created date (newest first)
+            const allRows = [...expandedAdminRows, ...expandedReviewerRows];
+            allRows.sort((a, b) => {
+                const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+                const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+                return dateB - dateA;
+            });
+
+            if (allRows.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
                 return;
             }
 
-            const vendorPaypalMap = data.vendorPaypalMap || {};
-            const buyerMap = data.buyerMap || {};
+            document.getElementById('ready-record-count').textContent = `${allRows.length} rows`;
 
-            // Expand records: each record can generate multiple rows (one per recipient)
-            const expandedRows = [];
-            data.filter(r => typeof r === 'object' && r.id).forEach(record => {
-                const recipientRows = expandCommissionRecord(record, vendorPaypalMap, buyerMap);
-                expandedRows.push(...recipientRows);
-            });
-
-            document.getElementById('ready-record-count').textContent = `${expandedRows.length} rows`;
-
-            const htmlRows = expandedRows.map(row => {
+            const htmlRows = allRows.map(row => {
                 const amount = parseFloat(row.displayAmount).toFixed(2);
                 return `
                     <tr class="hover:bg-gray-50">
-                        <td class="p-2.5"><input type="checkbox" class="ready-checkbox rounded" data-id="${row.id}"></td>
+                        <td class="p-2.5"><input type="checkbox" class="ready-checkbox rounded" data-id="${row.id}" data-commission-type="${row.commissionType}"></td>
                         <td class="p-2.5 font-mono text-xs">${row.feedbackId}...</td>
                         <td class="p-2.5">${row.createdDate}</td>
                         <td class="p-2.5">${row.recipientType}</td>
-                        <td class="p-2.5">${row.recipientDisplay}</td>
-                        <td class="p-2.5 text-xs">${row.paypalEmail}</td>
+                        <td class="p-2.5">${escapeHtml(row.recipientDisplay)}</td>
+                        <td class="p-2.5 text-xs">${escapeHtml(row.paypalEmail)}</td>
                         <td class="p-2.5 text-right">$${amount}</td>
                         <td class="p-2.5 text-xs">${row.status}</td>
                         <td class="p-2.5 text-center">
-                            <button onclick="requestPaymentForAdmin('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📤 Request</button>
+                            <button onclick="requestPaymentForAdmin('${row.id}', '${row.commissionType}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">📤 Request</button>
                         </td>
                     </tr>
                 `;
@@ -2292,42 +2365,82 @@
 
             for (const checkbox of selected) {
                 const id = checkbox.getAttribute('data-id');
+                const commissionType = checkbox.getAttribute('data-commission-type');
+
                 try {
-                    // Update status from 'pending' to 'payment_requested' so vendor sees it in Incoming Requests
-                    const { error: updateError } = await db.from('admin_payables')
-                        .update({ status: 'payment_requested' })
-                        .eq('id', id);
+                    if (commissionType === 'admin') {
+                        // Update admin_payables status from 'pending' to 'payment_requested'
+                        const { error: updateError } = await db.from('admin_payables')
+                            .update({ status: 'payment_requested' })
+                            .eq('id', id);
 
-                    if (updateError) {
-                        console.error(`Database error for ${id}:`, updateError);
-                        failCount++;
-                        continue;
+                        if (updateError) {
+                            console.error(`Database error for admin ${id}:`, updateError);
+                            failCount++;
+                            continue;
+                        }
+
+                        // Fetch updated record to get vendor_id for notification
+                        const { data: record, error: fetchError } = await db.from('admin_payables')
+                            .select('vendor_id, amount_owed, payable_reason')
+                            .eq('id', id)
+                            .single();
+
+                        if (fetchError || !record) {
+                            console.error(`Could not fetch admin record ${id}:`, fetchError);
+                            failCount++;
+                            continue;
+                        }
+
+                        // Send notification to vendor
+                        if (record.vendor_id) {
+                            await createAdminNotification(
+                                record.vendor_id,
+                                'admin_payment_request',
+                                `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
+                                'admin_payables',
+                                id
+                            );
+                        }
+
+                        successCount++;
+                    } else if (commissionType === 'reviewer') {
+                        // Update buyer_payables status from 'pending' to 'payment_requested'
+                        const { error: updateError } = await db.from('buyer_payables')
+                            .update({ status: 'payment_requested' })
+                            .eq('id', id);
+
+                        if (updateError) {
+                            console.error(`Database error for reviewer ${id}:`, updateError);
+                            failCount++;
+                            continue;
+                        }
+
+                        // Fetch updated record to get buyer_id for notification
+                        const { data: record, error: fetchError } = await db.from('buyer_payables')
+                            .select('buyer_id, amount_owed')
+                            .eq('id', id)
+                            .single();
+
+                        if (fetchError || !record) {
+                            console.error(`Could not fetch reviewer record ${id}:`, fetchError);
+                            failCount++;
+                            continue;
+                        }
+
+                        // Send notification to buyer (reviewer)
+                        if (record.buyer_id) {
+                            await createAdminNotification(
+                                record.buyer_id,
+                                'reviewer_payment_request',
+                                `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} for your feedback reviews`,
+                                'buyer_payables',
+                                id
+                            );
+                        }
+
+                        successCount++;
                     }
-
-                    // Fetch updated record to get vendor_id for notification
-                    const { data: record, error: fetchError } = await db.from('admin_payables')
-                        .select('vendor_id, amount_owed, payable_reason')
-                        .eq('id', id)
-                        .single();
-
-                    if (fetchError || !record) {
-                        console.error(`Could not fetch record ${id}:`, fetchError);
-                        failCount++;
-                        continue;
-                    }
-
-                    // Send notification to vendor
-                    if (record.vendor_id) {
-                        await createAdminNotification(
-                            record.vendor_id,
-                            'admin_payment_request',
-                            `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
-                            'admin_payables',
-                            id
-                        );
-                    }
-
-                    successCount++;
                 } catch (err) {
                     console.error(`Error requesting payment for ${id}:`, err);
                     failCount++;
@@ -2361,8 +2474,8 @@
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Loading pending approvals...</td></tr>';
 
             try {
-                // Query admin_payables where status='vendor_requested' (awaiting admin approval)
-                const { data, error } = await db.from('admin_payables')
+                // Query admin_payables where status='vendor_requested'
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
                         split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
@@ -2370,19 +2483,30 @@
                     .eq('status', 'vendor_requested')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                // Query buyer_payables where status='vendor_requested'
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                    `)
+                    .eq('status', 'vendor_requested')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending approvals</td></tr>';
                     document.getElementById('metric-pending-approvals').textContent = '0';
                     return;
                 }
 
-                // Fetch vendor details (for vendor name and PayPal)
-                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                // Fetch vendor details
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
                 globalPendingVendorMap = {};
                 const globalPendingVendorPaypalMap = {};
@@ -2393,27 +2517,42 @@
                     });
                 }
 
-                // Fetch buyer details for referrer payouts
-                const buyerIds = [...new Set(data.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Fetch buyer details for split_with_buyer_id and reviewers
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
                 const globalPendingBuyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
                     if (buyers) buyers.forEach(b => globalPendingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
                 // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(data.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const globalPendingVendorInviterMap = {};
                 if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => globalPendingVendorInviterMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' });
+                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
+                    if (vendorInviters) vendorInviters.forEach(v => globalPendingVendorInviterMap[v.id] = v.paypal_email || 'N/A');
                 }
 
-                globalPendingData = data;
-                globalPendingData.buyerMap = globalPendingBuyerMap;
-                globalPendingData.vendorPaypalMap = globalPendingVendorPaypalMap;
-                globalPendingData.vendorInviterMap = globalPendingVendorInviterMap;
-                document.getElementById('metric-pending-approvals').textContent = data.length;
+                globalPendingData = {
+                    adminCommissions,
+                    reviewerCommissions,
+                    vendorPaypalMap: globalPendingVendorPaypalMap,
+                    buyerMap: globalPendingBuyerMap,
+                    vendorInviterMap: globalPendingVendorInviterMap
+                };
+
+                // Calculate expanded row count for metric
+                let expandedCount = 0;
+                adminCommissions.forEach(record => {
+                    const expanded = expandCommissionRecord(record, globalPendingVendorInviterMap, globalPendingBuyerMap);
+                    expandedCount += expanded.length;
+                });
+                expandedCount += reviewerCommissions.length;
+
+                document.getElementById('metric-pending-approvals').textContent = expandedCount;
 
                 // Clear filters
                 document.getElementById('pending-vendor-search').value = '';
@@ -2433,103 +2572,89 @@
             const dateFrom = document.getElementById('pending-date-from').value;
             const dateTo = document.getElementById('pending-date-to').value;
 
-            let filtered = globalPendingData;
+            let filteredAdmin = globalPendingData.adminCommissions || [];
+            let filteredReviewer = globalPendingData.reviewerCommissions || [];
 
+            // Filter admin commissions
             if (vendorSearch) {
-                filtered = filtered.filter(record => {
+                filteredAdmin = filteredAdmin.filter(record => {
                     const vendorName = (globalPendingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
                     return vendorName.includes(vendorSearch);
                 });
             }
 
-            if (recipientFilter) {
-                filtered = filtered.filter(record => {
-                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
-                    return recipientType === recipientFilter;
-                });
-            }
-
+            // Filter by date range
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
-            renderPendingApprovalsTable(filtered);
+            renderPendingApprovalsTable({
+                adminCommissions: filteredAdmin,
+                reviewerCommissions: filteredReviewer,
+                vendorPaypalMap: globalPendingData.vendorPaypalMap,
+                buyerMap: globalPendingData.buyerMap,
+                vendorInviterMap: globalPendingData.vendorInviterMap,
+                recipientFilter
+            });
         }
 
         function renderPendingApprovalsTable(data) {
             const tbody = document.getElementById('pending-approvals-body');
 
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
-                return;
-            }
-
             const buyerMap = data.buyerMap || {};
             const vendorInviterMap = data.vendorInviterMap || {};
+            const adminCommissions = data.adminCommissions || [];
+            const reviewerCommissions = data.reviewerCommissions || [];
+            const recipientFilter = data.recipientFilter || '';
 
-            // Expand records: each record can generate multiple rows (one per recipient)
-            const expandedRows = [];
-            data.filter(r => typeof r === 'object' && r.id).forEach(record => {
-                const submittedDate = new Date(record.created_at).toLocaleDateString();
+            // Expand admin commissions using helper
+            const expandedAdminRows = [];
+            adminCommissions.forEach(record => {
+                const recipientRows = expandCommissionRecord(record, vendorInviterMap, buyerMap);
+                expandedAdminRows.push(...recipientRows);
+            });
 
-                // Row 1: Admin commission (if any)
-                if (record.admin_commission && parseFloat(record.admin_commission) > 0) {
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Admin',
-                        displayAmount: parseFloat(record.admin_commission),
-                        recipientDisplay: 'Platform',
-                        submittedDate,
-                        rowType: 'admin'
-                    });
-                }
+            // Create rows for reviewer commissions
+            const expandedReviewerRows = [];
+            reviewerCommissions.forEach(record => {
+                const createdDate = new Date(record.created_at).toLocaleDateString();
+                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
 
-                // Row 2: Buyer Inviter (referrer) commission (if split_with_buyer_id and buyer_portion)
-                if (record.split_with_buyer_id && record.buyer_portion && parseFloat(record.buyer_portion) > 0) {
-                    const buyer = buyerMap[record.split_with_buyer_id];
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Buyer Inviter',
-                        displayAmount: parseFloat(record.buyer_portion),
-                        recipientDisplay: `${escapeHtml(buyer?.name || 'Unknown')} (${escapeHtml(buyer?.email || 'N/A')})`,
-                        submittedDate,
-                        rowType: 'buyer_inviter'
-                    });
-                }
+                expandedReviewerRows.push({
+                    id: record.id,
+                    commissionType: 'reviewer',
+                    feedbackId,
+                    createdDate,
+                    recipientType: 'Reviewer',
+                    recipientDisplay: buyerName,
+                    paypalEmail: buyerEmail,
+                    displayAmount: parseFloat(record.amount_owed || 0),
+                    status: record.status
+                });
+            });
 
-                // Row 3: Vendor Inviter commission (if split_with_vendor_id)
-                if (record.split_with_vendor_id) {
-                    const vendorInviterAmount = record.amount_owed - (record.admin_commission || 0) - (record.buyer_portion || 0);
-                    if (vendorInviterAmount > 0) {
-                        const vendor = vendorInviterMap[record.split_with_vendor_id];
-                        expandedRows.push({
-                            ...record,
-                            recipientType: 'Vendor Inviter',
-                            displayAmount: vendorInviterAmount,
-                            recipientDisplay: `${escapeHtml(vendor?.name || 'Vendor')} (${escapeHtml(vendor?.email || 'N/A')})`,
-                            submittedDate,
-                            rowType: 'vendor_inviter'
-                        });
-                    }
-                }
+            // Merge and sort
+            let expandedRows = [...expandedAdminRows, ...expandedReviewerRows];
 
-                // If no splits, show admin-only
-                if (expandedRows.filter(r => r.id === record.id).length === 0) {
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Admin',
-                        displayAmount: parseFloat(record.amount_owed || 0),
-                        recipientDisplay: 'Platform',
-                        submittedDate,
-                        rowType: 'admin'
-                    });
-                }
+            // Apply recipient filter after expansion
+            if (recipientFilter) {
+                expandedRows = expandedRows.filter(row => row.recipientType === recipientFilter);
+            }
+
+            expandedRows.sort((a, b) => {
+                const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+                const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+                return dateB - dateA;
             });
 
             document.getElementById('pending-record-count').textContent = `${expandedRows.length} rows`;
@@ -2577,8 +2702,7 @@
 
             try {
                 // Query admin_payables awaiting receipt verification (V9: status='payment_requested')
-                // Shows payouts where admin/buyer requested payment, waiting for vendor to upload proof
-                const { data, error } = await db.from('admin_payables')
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
                         created_at, vendor_receipt_uploaded_date, vendor_flagged,
@@ -2587,19 +2711,30 @@
                     .eq('status', 'payment_requested')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                // Query buyer_payables awaiting receipt verification (V9: status='payment_requested')
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                    `)
+                    .eq('status', 'payment_requested')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending receipts</td></tr>';
                     document.getElementById('metric-awaiting-receipts').textContent = '0';
                     return;
                 }
 
                 // Fetch vendor details
-                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
                 globalAwaitingVendorMap = {};
                 const globalAwaitingVendorPaypalMap = {};
@@ -2610,27 +2745,42 @@
                     });
                 }
 
-                // Fetch buyer details for referrer payouts
-                const buyerIds = [...new Set(data.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Fetch buyer details for split_with_buyer_id and reviewers
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
                 const globalAwaitingBuyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
                     if (buyers) buyers.forEach(b => globalAwaitingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
                 // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(data.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const globalAwaitingVendorInviterMap = {};
                 if (vendorInviterIds.length > 0) {
                     const { data: vendorInviters } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorInviterIds);
                     if (vendorInviters) vendorInviters.forEach(v => globalAwaitingVendorInviterMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' });
                 }
 
-                globalAwaitingData = data;
-                globalAwaitingData.buyerMap = globalAwaitingBuyerMap;
-                globalAwaitingData.vendorPaypalMap = globalAwaitingVendorPaypalMap;
-                globalAwaitingData.vendorInviterMap = globalAwaitingVendorInviterMap;
-                document.getElementById('metric-awaiting-receipts').textContent = data.length;
+                globalAwaitingData = {
+                    adminCommissions,
+                    reviewerCommissions,
+                    vendorPaypalMap: globalAwaitingVendorPaypalMap,
+                    buyerMap: globalAwaitingBuyerMap,
+                    vendorInviterMap: globalAwaitingVendorInviterMap
+                };
+
+                // Calculate expanded row count
+                let expandedCount = 0;
+                adminCommissions.forEach(record => {
+                    const expanded = expandCommissionRecord(record, globalAwaitingVendorInviterMap, globalAwaitingBuyerMap);
+                    expandedCount += expanded.length;
+                });
+                expandedCount += reviewerCommissions.length;
+
+                document.getElementById('metric-awaiting-receipts').textContent = expandedCount;
 
                 // Clear filters
                 document.getElementById('awaiting-vendor-search').value = '';
@@ -2655,106 +2805,104 @@
             const dateFrom = document.getElementById('awaiting-date-from').value;
             const dateTo = document.getElementById('awaiting-date-to').value;
 
-            let filtered = globalAwaitingData;
+            let filteredAdmin = globalAwaitingData.adminCommissions || [];
+            let filteredReviewer = globalAwaitingData.reviewerCommissions || [];
 
+            // Filter admin commissions
             if (vendorSearch) {
-                filtered = filtered.filter(record => {
+                filteredAdmin = filteredAdmin.filter(record => {
                     const vendorName = (globalAwaitingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
                     return vendorName.includes(vendorSearch);
                 });
             }
 
-            if (recipientFilter) {
-                filtered = filtered.filter(record => {
-                    const recipientType = record.split_with_buyer_id ? 'Referrer' : 'Admin';
-                    return recipientType === recipientFilter;
-                });
-            }
-
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
-            renderAwaitingReceiptsTable(filtered);
+            // Filter reviewer commissions
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderAwaitingReceiptsTable({
+                adminCommissions: filteredAdmin,
+                reviewerCommissions: filteredReviewer,
+                buyerMap: globalAwaitingData.buyerMap || {},
+                vendorInviterMap: globalAwaitingData.vendorInviterMap || {},
+                recipientFilter
+            });
         }
 
         function renderAwaitingReceiptsTable(data) {
             const tbody = document.getElementById('awaiting-receipts-body');
 
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
-                return;
-            }
-
+            const adminCommissions = data.adminCommissions || [];
+            const reviewerCommissions = data.reviewerCommissions || [];
             const buyerMap = data.buyerMap || {};
             const vendorInviterMap = data.vendorInviterMap || {};
+            const recipientFilter = data.recipientFilter || '';
 
-            // Expand records: each record can generate multiple rows (one per recipient)
-            const expandedRows = [];
-            data.filter(r => typeof r === 'object' && r.id).forEach(record => {
-                const approvedDate = new Date(record.created_at).toLocaleDateString();
+            // Expand admin commissions using helper
+            const expandedAdminRows = [];
+            adminCommissions.forEach(record => {
+                const recipientRows = expandCommissionRecord(record, vendorInviterMap, buyerMap);
+                expandedAdminRows.push(...recipientRows);
+            });
 
-                // Row 1: Admin commission (if any)
-                if (record.admin_commission && parseFloat(record.admin_commission) > 0) {
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Admin',
-                        displayAmount: parseFloat(record.admin_commission),
-                        recipientDisplay: 'Platform',
-                        approvedDate,
-                        rowType: 'admin'
-                    });
-                }
+            // Create rows for reviewer commissions
+            const expandedReviewerRows = [];
+            reviewerCommissions.forEach(record => {
+                const createdDate = new Date(record.created_at).toLocaleDateString();
+                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
 
-                // Row 2: Buyer Inviter (referrer) commission (if split_with_buyer_id and buyer_portion)
-                if (record.split_with_buyer_id && record.buyer_portion && parseFloat(record.buyer_portion) > 0) {
-                    const buyer = buyerMap[record.split_with_buyer_id];
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Buyer Inviter',
-                        displayAmount: parseFloat(record.buyer_portion),
-                        recipientDisplay: `${escapeHtml(buyer?.name || 'Unknown')} (${escapeHtml(buyer?.email || 'N/A')})`,
-                        approvedDate,
-                        rowType: 'buyer_inviter'
-                    });
-                }
+                expandedReviewerRows.push({
+                    id: record.id,
+                    commissionType: 'reviewer',
+                    feedbackId,
+                    createdDate,
+                    recipientType: 'Reviewer',
+                    recipientDisplay: buyerName,
+                    paypalEmail: buyerEmail,
+                    displayAmount: parseFloat(record.amount_owed || 0),
+                    status: record.status
+                });
+            });
 
-                // Row 3: Vendor Inviter commission (if split_with_vendor_id)
-                if (record.split_with_vendor_id) {
-                    const vendorInviterAmount = record.amount_owed - (record.admin_commission || 0) - (record.buyer_portion || 0);
-                    if (vendorInviterAmount > 0) {
-                        const vendor = vendorInviterMap[record.split_with_vendor_id];
-                        expandedRows.push({
-                            ...record,
-                            recipientType: 'Vendor Inviter',
-                            displayAmount: vendorInviterAmount,
-                            recipientDisplay: `${escapeHtml(vendor?.name || 'Vendor')} (${escapeHtml(vendor?.email || 'N/A')})`,
-                            approvedDate,
-                            rowType: 'vendor_inviter'
-                        });
-                    }
-                }
+            // Merge and sort
+            let expandedRows = [...expandedAdminRows, ...expandedReviewerRows];
 
-                // If no splits, show admin-only
-                if (expandedRows.filter(r => r.id === record.id).length === 0) {
-                    expandedRows.push({
-                        ...record,
-                        recipientType: 'Admin',
-                        displayAmount: parseFloat(record.amount_owed || 0),
-                        recipientDisplay: 'Platform',
-                        approvedDate,
-                        rowType: 'admin'
-                    });
-                }
+            // Apply recipient filter after expansion
+            if (recipientFilter) {
+                expandedRows = expandedRows.filter(row => row.recipientType === recipientFilter);
+            }
+
+            expandedRows.sort((a, b) => {
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : new Date(a.createdDate).getTime();
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : new Date(b.createdDate).getTime();
+                return dateB - dateA;
             });
 
             document.getElementById('awaiting-record-count').textContent = `${expandedRows.length} rows`;
+
+            if (expandedRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No records match your filters</td></tr>';
+                return;
+            }
 
             const htmlRows = expandedRows.map(row => {
                 const vendorName = globalAwaitingVendorMap[row.vendor_id] || 'Unknown';
@@ -2772,7 +2920,7 @@
                         <td class="p-2.5">${row.recipientType}</td>
                         <td class="p-2.5 text-xs">${row.recipientDisplay}</td>
                         <td class="p-2.5 text-right">$${amount}</td>
-                        <td class="p-2.5">${row.approvedDate}</td>
+                        <td class="p-2.5">${row.created_at ? new Date(row.created_at).toLocaleDateString() : row.createdDate}</td>
                         <td class="p-2.5 sla-timer-cell-${row.id}" style="color: ${slaColor};">${slaStatus}</td>
                         <td class="p-2.5 text-center">
                             <button onclick="requestInfoCommission('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">💬</button>
@@ -2810,7 +2958,7 @@
 
             try {
                 // Query admin_payables where status='paid' (both vendor and buyer have uploaded receipts)
-                const { data, error } = await db.from('admin_payables')
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
                         vendor_paypal_transaction_id, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype,
@@ -2820,41 +2968,56 @@
                     .eq('status', 'paid')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                // Query buyer_payables where status='paid' (vendor has uploaded receipt proof)
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype,
+                        vendor_paypal_transaction_id, created_at, related_feedback_ids
+                    `)
+                    .eq('status', 'paid')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No receipts pending verification</td></tr>';
                     return;
                 }
 
                 // Fetch vendor details
-                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
                 const vendorMap = {};
                 if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
 
-                // Fetch buyer details for referrer payouts
-                const buyerIds = [...new Set(data.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Fetch buyer details for referrer payouts and reviewers
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
                 const buyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
                     if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
                 // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(data.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const vendorInviterMap = {};
                 if (vendorInviterIds.length > 0) {
                     const { data: vendorInviters } = await db.from('vendors').select('id, business_name').in('id', vendorInviterIds);
                     if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.business_name || 'Unknown');
                 }
 
-                // Expand records into per-recipient rows
+                // Expand admin records into per-recipient rows
                 const expandedRows = [];
-                data.forEach(record => {
+                adminCommissions.forEach(record => {
                     const commissionId = record.id.substring(0, 8);
                     const hasVendorReceipt = !!record.vendor_receipt_data;
                     const hasBuyerReceipt = !!record.buyer_receipt_data;
@@ -2915,20 +3078,48 @@
                     }
                 });
 
+                // Expand reviewer commissions
+                reviewerCommissions.forEach(record => {
+                    const commissionId = record.id.substring(0, 8);
+                    const hasVendorReceipt = !!record.vendor_receipt_data;
+
+                    expandedRows.push({
+                        ...record,
+                        commissionType: 'reviewer',
+                        recipientType: 'Reviewer',
+                        displayAmount: parseFloat(record.amount_owed || 0),
+                        commissionId,
+                        hasVendorReceipt,
+                        hasBuyerReceipt: true, // Reviewer only needs vendor receipt (proof from vendor to reviewer)
+                        rowType: 'reviewer',
+                        buyerName: buyerMap[record.buyer_id]?.name || 'Unknown',
+                        buyerEmail: buyerMap[record.buyer_id]?.email || 'N/A'
+                    });
+                });
+
+                // Sort by creation date descending
+                expandedRows.sort((a, b) => {
+                    const dateA = new Date(a.created_at).getTime();
+                    const dateB = new Date(b.created_at).getTime();
+                    return dateB - dateA;
+                });
+
                 const rows = expandedRows.map(row => {
-                    const vendorName = vendorMap[row.vendor_id] || 'Unknown';
+                    const vendorName = row.commissionType === 'reviewer' ? 'N/A' : (vendorMap[row.vendor_id] || 'Unknown');
                     const amount = parseFloat(row.displayAmount).toFixed(2);
+                    const vendorReceiptLabel = row.commissionType === 'reviewer' ? 'Vendor Proof' : 'Vendor Receipt';
+                    const buyerReceiptLabel = row.commissionType === 'reviewer' ? 'N/A' : 'Buyer Receipt';
 
                     return `
                         <tr class="hover:bg-blue-50">
                             <td class="p-2.5 font-mono text-xs">${row.commissionId}... [${row.recipientType}]</td>
                             <td class="p-2.5">${escapeHtml(vendorName)}</td>
                             <td class="p-2.5 text-right">$${amount}</td>
-                            <td class="p-2.5 text-center">
+                            <td class="p-2.5 text-center" title="${vendorReceiptLabel}">
                                 ${row.hasVendorReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>'}
                             </td>
-                            <td class="p-2.5 text-center">
-                                ${row.hasBuyerReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>'}
+                            <td class="p-2.5 text-center" title="${buyerReceiptLabel}">
+                                ${row.commissionType === 'reviewer' ? '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-semibold">—</span>' : (row.hasBuyerReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>')}
                             </td>
                             <td class="p-2.5 text-center">
                                 <button onclick="openReceiptVerificationModal('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">👁️ Review</button>
@@ -2952,7 +3143,7 @@
 
             try {
                 // Query admin_payables where status='payment_verified'
-                const { data, error } = await db.from('admin_payables')
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
                         admin_commission, buyer_portion, related_feedback_id,
@@ -2961,12 +3152,23 @@
                     .eq('status', 'payment_verified')
                     .order('unflagged_date', { ascending: false });
 
-                if (error) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(error.message)}</td></tr>`;
+                // Query buyer_payables where status='payment_verified'
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                    `)
+                    .eq('status', 'payment_verified')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No verified payments yet</td></tr>';
                     document.getElementById('metric-verified').textContent = '0';
                     document.getElementById('metric-total-verified-amount').textContent = '$0.00';
@@ -2974,7 +3176,7 @@
                 }
 
                 // Fetch vendor details
-                const vendorIds = [...new Set(data.map(d => d.vendor_id))];
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
                 globalVerifiedVendorMap = {};
                 const vendorPaypalMap = {};
@@ -2986,34 +3188,44 @@
                 }
 
                 // Fetch vendor inviter PayPal emails for split_with_vendor_id lookups
-                const vendorInviterIds = [...new Set(data.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const vendorInviterMap = {};
                 if (vendorInviterIds.length > 0) {
                     const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
                     if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
                 }
 
-                // Fetch buyer details for referrer payouts
-                const buyerIds = [...new Set(data.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                // Fetch buyer details for split_with_buyer_id and reviewers
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
                 const globalVerifiedBuyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
                     if (buyers) buyers.forEach(b => globalVerifiedBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
-                globalVerifiedData = data;
-                globalVerifiedData.buyerMap = globalVerifiedBuyerMap;
-                globalVerifiedData.vendorPaypalMap = vendorInviterMap;
+                globalVerifiedData = {
+                    adminCommissions,
+                    reviewerCommissions,
+                    buyerMap: globalVerifiedBuyerMap,
+                    vendorPaypalMap: vendorInviterMap
+                };
 
                 // Calculate total verified amount (sum of per-recipient amounts)
                 let expandedCount = 0;
                 let totalAmount = 0;
-                data.forEach(record => {
+                adminCommissions.forEach(record => {
                     const expandedRows = expandCommissionRecord(record, vendorInviterMap, globalVerifiedBuyerMap);
                     expandedCount += expandedRows.length;
                     expandedRows.forEach(row => {
                         totalAmount += row.displayAmount || 0;
                     });
+                });
+                reviewerCommissions.forEach(record => {
+                    expandedCount += 1;
+                    totalAmount += parseFloat(record.amount_owed || 0);
                 });
 
                 document.getElementById('metric-verified').textContent = expandedCount;
@@ -3037,50 +3249,97 @@
             const dateFrom = document.getElementById('verified-date-from').value;
             const dateTo = document.getElementById('verified-date-to').value;
 
-            let filtered = globalVerifiedData;
+            let filteredAdmin = globalVerifiedData.adminCommissions || [];
+            let filteredReviewer = globalVerifiedData.reviewerCommissions || [];
 
-            // Filter by vendor name
+            // Filter admin commissions
             if (vendorSearch) {
-                filtered = filtered.filter(record => {
+                filteredAdmin = filteredAdmin.filter(record => {
                     const vendorName = (globalVerifiedVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
                     return vendorName.includes(vendorSearch);
                 });
             }
 
-            // Filter by date range (on original records)
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filtered = filtered.filter(record => new Date(record.unflagged_date || record.created_at).getTime() >= fromDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.unflagged_date || record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filtered = filtered.filter(record => new Date(record.unflagged_date || record.created_at).getTime() <= toDate);
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.unflagged_date || record.created_at).getTime() <= toDate);
             }
 
-            // Copy map references for renderer
-            filtered.buyerMap = globalVerifiedData.buyerMap || {};
-            filtered.vendorPaypalMap = globalVerifiedData.vendorPaypalMap || {};
+            // Filter reviewer commissions
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
 
-            renderVerifiedPaymentsTable(filtered, recipientFilter);
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderVerifiedPaymentsTable({
+                adminCommissions: filteredAdmin,
+                reviewerCommissions: filteredReviewer,
+                buyerMap: globalVerifiedData.buyerMap || {},
+                vendorPaypalMap: globalVerifiedData.vendorPaypalMap || {},
+                recipientFilter
+            });
         }
 
-        function renderVerifiedPaymentsTable(data, recipientFilter) {
+        function renderVerifiedPaymentsTable(data) {
             const tbody = document.getElementById('verified-body');
+
+            const adminCommissions = data.adminCommissions || [];
+            const reviewerCommissions = data.reviewerCommissions || [];
             const buyerMap = data.buyerMap || {};
             const vendorPaypalMap = data.vendorPaypalMap || {};
+            const recipientFilter = data.recipientFilter || '';
 
-            // Expand records into per-recipient rows
-            let expandedRows = [];
-            data.filter(r => typeof r === 'object' && r.id).forEach(record => {
+            // Expand admin commissions using helper
+            const expandedAdminRows = [];
+            adminCommissions.forEach(record => {
                 const recipientRows = expandCommissionRecord(record, vendorPaypalMap, buyerMap);
-                expandedRows.push(...recipientRows);
+                expandedAdminRows.push(...recipientRows);
             });
 
-            // Apply recipient type filter if specified
+            // Create rows for reviewer commissions
+            const expandedReviewerRows = [];
+            reviewerCommissions.forEach(record => {
+                const createdDate = new Date(record.created_at).toLocaleDateString();
+                const feedbackId = (record.related_feedback_ids && record.related_feedback_ids[0]) ? record.related_feedback_ids[0].substring(0, 8) : record.id.substring(0, 8);
+                const buyerName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                const buyerEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+
+                expandedReviewerRows.push({
+                    id: record.id,
+                    commissionType: 'reviewer',
+                    feedbackId,
+                    createdDate,
+                    recipientType: 'Reviewer',
+                    recipientDisplay: buyerName,
+                    paypalEmail: buyerEmail,
+                    displayAmount: parseFloat(record.amount_owed || 0),
+                    status: record.status
+                });
+            });
+
+            // Merge and sort
+            let expandedRows = [...expandedAdminRows, ...expandedReviewerRows];
+
+            // Apply recipient filter after expansion
             if (recipientFilter) {
                 expandedRows = expandedRows.filter(row => row.recipientType === recipientFilter);
             }
+
+            expandedRows.sort((a, b) => {
+                const dateA = a.unflagged_date ? new Date(a.unflagged_date).getTime() : new Date(a.createdDate).getTime();
+                const dateB = b.unflagged_date ? new Date(b.unflagged_date).getTime() : new Date(b.createdDate).getTime();
+                return dateB - dateA;
+            });
 
             document.getElementById('verified-record-count').textContent = `${expandedRows.length} records`;
 
@@ -3091,8 +3350,8 @@
 
             let totalAmount = 0;
             const rows = expandedRows.map(row => {
-                const vendorName = globalVerifiedVendorMap[row.vendor_id] || 'Unknown';
-                const verifiedDate = row.unflagged_date ? new Date(row.unflagged_date).toLocaleDateString() : 'N/A';
+                const vendorName = row.commissionType === 'reviewer' ? 'N/A' : (globalVerifiedVendorMap[row.vendor_id] || 'Unknown');
+                const verifiedDate = row.unflagged_date ? new Date(row.unflagged_date).toLocaleDateString() : (row.createdDate || 'N/A');
                 const amount = row.displayAmount || 0;
                 totalAmount += amount;
 
@@ -3285,7 +3544,7 @@
         }
 
         // SINGLE COMMISSION ACTIONS
-        async function requestPaymentForAdmin(id) {
+        async function requestPaymentForAdmin(id, commissionType) {
             if (!confirm('Request payment for this commission?')) return;
 
             showToast('Requesting payment...', 'info');
@@ -3295,39 +3554,75 @@
                     throw new Error('Database client not initialized');
                 }
 
-                // Update status from 'pending' to 'payment_requested' so vendor sees it in Incoming Requests
-                const { error: updateError } = await db.from('admin_payables')
-                    .update({ status: 'payment_requested' })
-                    .eq('id', id);
+                if (commissionType === 'admin') {
+                    // Update admin_payables status from 'pending' to 'payment_requested'
+                    const { error: updateError } = await db.from('admin_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', id);
 
-                if (updateError) {
-                    throw new Error(`Database update failed: ${updateError.message}`);
+                    if (updateError) {
+                        throw new Error(`Database update failed: ${updateError.message}`);
+                    }
+
+                    // Fetch updated record to get vendor_id for notification
+                    const { data: record, error: fetchError } = await db.from('admin_payables')
+                        .select('vendor_id, amount_owed, payable_reason')
+                        .eq('id', id)
+                        .single();
+
+                    if (fetchError || !record) {
+                        throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
+                    }
+
+                    // TODO: Implement createAdminNotification() or remove vendor notification
+                    // if (record.vendor_id) {
+                    //     await createAdminNotification(
+                    //         record.vendor_id,
+                    //         'admin_payment_request',
+                    //         `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
+                    //         'admin_payables',
+                    //         id
+                    //     );
+                    // }
+
+                    await loadAdminReadyToRequest();
+                    await loadPendingApprovals();
+                    showToast('✓ Payment request sent. Vendor will upload receipt within 48 hours.', 'success');
+                } else if (commissionType === 'reviewer') {
+                    // Update buyer_payables status from 'pending' to 'payment_requested'
+                    const { error: updateError } = await db.from('buyer_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', id);
+
+                    if (updateError) {
+                        throw new Error(`Database update failed: ${updateError.message}`);
+                    }
+
+                    // Fetch updated record to get buyer_id for notification
+                    const { data: record, error: fetchError } = await db.from('buyer_payables')
+                        .select('buyer_id, amount_owed')
+                        .eq('id', id)
+                        .single();
+
+                    if (fetchError || !record) {
+                        throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
+                    }
+
+                    // TODO: Implement createAdminNotification() for buyer notification
+                    // if (record.buyer_id) {
+                    //     await createAdminNotification(
+                    //         record.buyer_id,
+                    //         'reviewer_payment_request',
+                    //         `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} for your feedback reviews`,
+                    //         'buyer_payables',
+                    //         id
+                    //     );
+                    // }
+
+                    await loadAdminReadyToRequest();
+                    await loadPendingApprovals();
+                    showToast('✓ Payment request sent. Reviewer will upload receipt within 48 hours.', 'success');
                 }
-
-                // Fetch updated record to get vendor_id for notification
-                const { data: record, error: fetchError } = await db.from('admin_payables')
-                    .select('vendor_id, amount_owed, payable_reason')
-                    .eq('id', id)
-                    .single();
-
-                if (fetchError || !record) {
-                    throw new Error(`Could not fetch record: ${fetchError?.message || 'Record not found'}`);
-                }
-
-                // TODO: Implement createAdminNotification() or remove vendor notification
-                // if (record.vendor_id) {
-                //     await createAdminNotification(
-                //         record.vendor_id,
-                //         'admin_payment_request',
-                //         `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
-                //         'admin_payables',
-                //         id
-                //     );
-                // }
-
-                await loadAdminReadyToRequest();
-                await loadPendingApprovals();
-                showToast('✓ Payment request sent. Vendor will upload receipt within 48 hours.', 'success');
             } catch (err) {
                 console.error('Request payment error:', err);
                 showToast(`Error requesting payment: ${err.message}`, 'error');
