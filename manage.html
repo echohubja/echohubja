@@ -4401,85 +4401,6 @@
             }
         }
 
-        // HELPER: Expand admin_payables record into per-recipient rows for full split breakdown
-        function expandCommissionRecord(record, vendorPaypalMap, buyerMap) {
-            const rows = [];
-            const recordId = record.id;
-            const feedbackId = (record.related_feedback_id || recordId).substring(0, 8);
-            const createdDate = new Date(record.created_at).toLocaleDateString();
-            const status = record.status || 'Pending';
-
-            // Row 1: Admin commission (if any)
-            if (record.admin_commission && parseFloat(record.admin_commission) > 0) {
-                rows.push({
-                    ...record,
-                    commissionType: 'admin',
-                    recipientType: 'Admin',
-                    displayAmount: parseFloat(record.admin_commission),
-                    recipientDisplay: 'Platform',
-                    paypalEmail: '-',
-                    feedbackId,
-                    createdDate,
-                    status,
-                    rowType: 'admin'
-                });
-            }
-
-            // Row 2: Buyer Inviter (referrer) commission (if split_with_buyer_id and buyer_portion)
-            if (record.split_with_buyer_id && record.buyer_portion && parseFloat(record.buyer_portion) > 0) {
-                const buyer = buyerMap[record.split_with_buyer_id];
-                rows.push({
-                    ...record,
-                    commissionType: 'admin',
-                    recipientType: 'Buyer Inviter',
-                    displayAmount: parseFloat(record.buyer_portion),
-                    recipientDisplay: escapeHtml(buyer?.name || 'Unknown'),
-                    paypalEmail: escapeHtml(buyer?.email || 'N/A'),
-                    feedbackId,
-                    createdDate,
-                    status,
-                    rowType: 'buyer_inviter'
-                });
-            }
-
-            // Row 3: Vendor Inviter commission (if split_with_vendor_id and calculated remainder)
-            if (record.split_with_vendor_id) {
-                const vendorInviterAmount = record.amount_owed - (record.admin_commission || 0) - (record.buyer_portion || 0);
-                if (vendorInviterAmount > 0) {
-                    rows.push({
-                        ...record,
-                        commissionType: 'admin',
-                        recipientType: 'Vendor Inviter',
-                        displayAmount: vendorInviterAmount,
-                        recipientDisplay: 'Vendor',
-                        paypalEmail: vendorPaypalMap[record.split_with_vendor_id] || 'N/A',
-                        feedbackId,
-                        createdDate,
-                        status,
-                        rowType: 'vendor_inviter'
-                    });
-                }
-            }
-
-            // If no splits applied, show as admin-only
-            if (rows.length === 0) {
-                rows.push({
-                    ...record,
-                    commissionType: 'admin',
-                    recipientType: 'Admin',
-                    displayAmount: parseFloat(record.amount_owed || 0),
-                    recipientDisplay: 'Platform',
-                    paypalEmail: '-',
-                    feedbackId,
-                    createdDate,
-                    status,
-                    rowType: 'admin'
-                });
-            }
-
-            return rows;
-        }
-
         // Confirmation Modal Function
         function showConfirmation(title, message, onConfirm, onCancel = null, isDangerous = false) {
             const overlay = document.createElement('div');
@@ -6574,6 +6495,9 @@
             } else {
                 console.error('[Payout] ❌ Summary container not found! Selector failed.');
             }
+
+            // Update commission-pending metric in "Your Payment Proof Uploads" section
+            document.getElementById('commission-pending').textContent = `$${pending.toFixed(2)}`;
         }
 
         function renderPayoutHistoryTable() {
@@ -6828,11 +6752,13 @@
 
             try {
                 // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
+                // EXCLUDE records that are in awaiting tab (split_with_buyer_id IS NOT NULL AND vendor_receipt_uploaded_date IS NULL)
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending')
+                    .or(`split_with_buyer_id.is.null,vendor_receipt_uploaded_date.not.is.null`)
                     .order('created_at', { ascending: false });
 
                 // Query 2: buyer_payables for pending status where earning_type='own_feedback' (Reviewer)
@@ -6890,72 +6816,35 @@
                     });
                 }
 
-                // Fetch buyer data (for inviter display) - MUST DO BEFORE expandCommissionRecord
-                const buyerIds = adminPayouts
-                    .filter(p => p.split_with_buyer_id)
-                    .map(p => p.split_with_buyer_id)
-                    .filter(Boolean);
-                const buyersMap = {};
-
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyersMap[buyer.id] = {
-                                name: buyer.full_name,
-                                email: buyer.paypal_email
-                            };
-                        });
-                    }
-                }
-
-                // Fetch vendor data (for vendor inviter display) - MUST DO BEFORE expandCommissionRecord
-                const vendorIds = adminPayouts
-                    .filter(p => p.split_with_vendor_id)
-                    .map(p => p.split_with_vendor_id)
-                    .filter(Boolean);
-                const vendorPaypalMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name, paypal_email')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorPaypalMap[vendor.id] = vendor.paypal_email;
-                        });
-                    }
-                }
-
-                console.log('[Pending] ✓ Maps created:', { buyersMap, vendorPaypalMap });
-
                 // Combine all payouts and add recipient type mapping
                 let allPayouts = [];
 
-                // Process admin_payables - expand each record into per-recipient rows
+                // Process admin_payables
                 if (adminPayouts && adminPayouts.length > 0) {
-                    console.log('[Pending] Expanding', adminPayouts.length, 'admin payouts...');
                     adminPayouts.forEach(payout => {
-                        const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMap);
-                        console.log('[Pending] Expanded', payout.id, '→', expandedRows.length, 'rows');
-                        expandedRows.forEach(row => {
-                            allPayouts.push({
-                                ...row,
-                                source: 'admin_payables'
-                            });
+                        let recipientType = 'admin';
+                        let displayAmount = payout.admin_commission || 0;
+
+                        if (payout.split_with_vendor_id) {
+                            recipientType = 'vendor_inviter';
+                            // For vendor inviter, calculate the split amount
+                            displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                        } else if (payout.split_with_buyer_id) {
+                            recipientType = 'buyer_inviter';
+                            displayAmount = payout.buyer_portion || 0;
+                        }
+
+                        allPayouts.push({
+                            ...payout,
+                            recipientType,
+                            displayAmount,
+                            source: 'admin_payables'
                         });
                     });
                 }
 
                 // Process buyer_payables (Reviewers)
                 if (buyerPayouts && buyerPayouts.length > 0) {
-                    console.log('[Pending] Adding', buyerPayouts.length, 'reviewer payouts...');
                     buyerPayouts.forEach(payout => {
                         allPayouts.push({
                             ...payout,
@@ -6965,8 +6854,6 @@
                         });
                     });
                 }
-
-                console.log('[Pending] Final total:', allPayouts.length, 'rows (admin + reviewer)');
 
                 if (allPayouts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">No pending payouts</td></tr>';
@@ -6989,6 +6876,46 @@
                     if (inquiries) {
                         inquiries.forEach(inq => {
                             inquiriesMap[inq.id] = inq;
+                        });
+                    }
+                }
+
+                // Fetch buyer data (for inviter display)
+                const buyerIds = allPayouts
+                    .filter(p => p.split_with_buyer_id)
+                    .map(p => p.split_with_buyer_id)
+                    .filter(Boolean);
+                const buyersMap = {};
+
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await sbClient
+                        .from('buyers')
+                        .select('id, full_name, paypal_email')
+                        .in('id', buyerIds);
+
+                    if (buyers) {
+                        buyers.forEach(buyer => {
+                            buyersMap[buyer.id] = buyer;
+                        });
+                    }
+                }
+
+                // Fetch vendor data (for vendor inviter display)
+                const vendorIds = allPayouts
+                    .filter(p => p.split_with_vendor_id)
+                    .map(p => p.split_with_vendor_id)
+                    .filter(Boolean);
+                const vendorsMap = {};
+
+                if (vendorIds.length > 0) {
+                    const { data: vendors } = await sbClient
+                        .from('vendors')
+                        .select('id, business_name, paypal_email')
+                        .in('id', vendorIds);
+
+                    if (vendors) {
+                        vendors.forEach(vendor => {
+                            vendorsMap[vendor.id] = vendor;
                         });
                     }
                 }
@@ -7021,14 +6948,13 @@
                 tab2AllPayouts = allPayouts.map(payout => {
                     let recipient = { name: 'N/A', email: 'N/A' };
 
-                    if (payout.source === 'admin_payables') {
-                        // For expanded admin_payables rows, use recipientDisplay and paypalEmail from expandCommissionRecord
-                        recipient = {
-                            name: payout.recipientDisplay || 'N/A',
-                            email: payout.paypalEmail || 'N/A'
-                        };
+                    if (payout.recipientType === 'buyer_inviter') {
+                        const buyer = buyersMap[payout.split_with_buyer_id];
+                        recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
+                    } else if (payout.recipientType === 'vendor_inviter') {
+                        const vendor = vendorsMap[payout.split_with_vendor_id];
+                        recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
                     } else if (payout.recipientType === 'reviewer') {
-                        // For buyer_payables reviewer rows
                         const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0];
                         const buyerId = inquiriesByFeedbackId[feedbackId]?.buyer_id;
                         const reviewer = reviewersMap[buyerId];
@@ -7063,11 +6989,7 @@
             let filtered = tab2AllPayouts;
 
             if (tab2FilterRecipientType !== 'all') {
-                // For expanded admin_payables rows, use rowType; for reviewer rows, use recipientType
-                filtered = filtered.filter(p => {
-                    const filterField = p.source === 'admin_payables' ? p.rowType : p.recipientType;
-                    return filterField === tab2FilterRecipientType;
-                });
+                filtered = filtered.filter(p => p.recipientType === tab2FilterRecipientType);
             }
 
             if (tab2FilterAmountThreshold > 0) {
@@ -7075,10 +6997,7 @@
             }
 
             if (tab2AdminOnly) {
-                filtered = filtered.filter(p => {
-                    const filterField = p.source === 'admin_payables' ? p.rowType : p.recipientType;
-                    return filterField === 'admin';
-                });
+                filtered = filtered.filter(p => p.recipientType === 'admin');
             }
 
             // Render filtered results
@@ -7090,8 +7009,7 @@
             tbody.innerHTML = filtered.map(payout => {
                 const detailsId = `details-${payout.id}`;
                 const imageData = payout.inquiry?.image_data ? `data:${payout.inquiry.image_mime};base64,${payout.inquiry.image_data}` : null;
-                // For admin_payables rows (expanded), use recipientType which is the display name from expandCommissionRecord
-                const recipientTypeDisplay = payout.source === 'admin_payables' ? payout.recipientType : payout.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const recipientTypeDisplay = payout.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7138,7 +7056,7 @@
                 // Query admin_payables where referral payout needs receipt (V9 workflow: status='pending' with split_with_buyer_id)
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged, status')
+                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending')
                     .not('split_with_buyer_id', 'is', null)
@@ -7159,7 +7077,7 @@
 
                 // Fetch buyer details for all split_with_buyer_ids
                 const buyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
-                const buyersMapLocal = {};
+                globalAwaitingBuyersMap = {};
 
                 if (buyerIds.length > 0) {
                     const { data: buyers } = await sbClient
@@ -7169,32 +7087,7 @@
 
                     if (buyers) {
                         buyers.forEach(buyer => {
-                            buyersMapLocal[buyer.id] = {
-                                name: buyer.full_name,
-                                email: buyer.paypal_email
-                            };
-                            // Also store in global map for rendering
                             globalAwaitingBuyersMap[buyer.id] = buyer;
-                        });
-                    }
-                }
-
-                // Fetch vendor data for vendor inviters (if any records have split_with_vendor_id)
-                const vendorIds = payouts
-                    .filter(p => p.split_with_vendor_id)
-                    .map(p => p.split_with_vendor_id)
-                    .filter(Boolean);
-                const vendorPaypalMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name, paypal_email')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorPaypalMap[vendor.id] = vendor.paypal_email;
                         });
                     }
                 }
@@ -7216,21 +7109,8 @@
                     }
                 }
 
-                console.log('[Awaiting] ✓ Maps created:', { buyersMapLocal, vendorPaypalMap });
-
-                // Expand admin_payables records into per-recipient rows
-                let expandedPayouts = [];
-                if (payouts && payouts.length > 0) {
-                    console.log('[Awaiting] Expanding', payouts.length, 'payouts...');
-                    payouts.forEach(payout => {
-                        const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMapLocal);
-                        console.log('[Awaiting] Expanded', payout.id, '→', expandedRows.length, 'rows');
-                        expandedPayouts = expandedPayouts.concat(expandedRows);
-                    });
-                }
-
-                // Store expanded data globally for SLA timer refresh
-                globalAwaitingPayouts = expandedPayouts;
+                // Store data globally for SLA timer refresh
+                globalAwaitingPayouts = payouts;
                 renderAwaitingPayoutsTable();
 
                 // Clear existing interval
@@ -7252,26 +7132,23 @@
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
                 const inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
+                const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                 const detailsId = `awaiting-details-${payout.id}`;
                 const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
-                // For expanded rows, use recipientType which is the display name (Admin, Buyer Inviter, Vendor Inviter)
-                const recipientType = payout.recipientType;
-                // For expanded rows, use recipientDisplay and paypalEmail
-                const recipientName = payout.recipientDisplay || 'N/A';
-                const recipientEmail = payout.paypalEmail || 'N/A';
+                const recipientType = payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin';
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
-                    <td style="padding: 12px; color: #475569;">${recipientName}</td>
-                    <td style="padding: 12px; color: #475569;">${recipientEmail}</td>
-                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.feedbackId || payout.related_feedback_id}</td>
-                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.displayAmount).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #475569;">${buyer?.full_name || 'N/A'}</td>
+                    <td style="padding: 12px; color: #475569;">${buyer?.paypal_email || 'N/A'}</td>
+                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
+                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                     <td style="padding: 12px; color: ${slaTimer.statusColor}; font-weight: 600;" class="sla-timer-cell-${payout.id}">${slaTimer.displayText}</td>
                     <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center;">
                         <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.displayAmount})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
+                        <button onclick="openReceiptUploadModal('${payout.id}', '${recipientType}', ${payout.amount_owed})" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">📨 Upload</button>
                         <button onclick="requestInfoManagePayout('${payout.id}')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Request Info</button>
                     </td>
                 </tr>
@@ -7312,7 +7189,7 @@
                 // Query admin_payables where status='completed' or unflagged_date IS NOT NULL
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, created_at, status')
+                    .select('id, vendor_id, split_with_buyer_id, amount_owed, related_feedback_id, unflagged_date')
                     .eq('vendor_id', currentVendor.id)
                     .or(`status.eq.completed,unflagged_date.not.is.null`)
                     .order('unflagged_date', { ascending: false });
@@ -7326,49 +7203,6 @@
                 if (!payouts || payouts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
                     return;
-                }
-
-                // Fetch buyer details for split_with_buyer_ids
-                const buyerIds = payouts
-                    .filter(p => p.split_with_buyer_id)
-                    .map(p => p.split_with_buyer_id)
-                    .filter(Boolean);
-                const buyersMap = {};
-
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyersMap[buyer.id] = {
-                                name: buyer.full_name,
-                                email: buyer.paypal_email
-                            };
-                        });
-                    }
-                }
-
-                // Fetch vendor data for vendor inviters
-                const vendorIds = payouts
-                    .filter(p => p.split_with_vendor_id)
-                    .map(p => p.split_with_vendor_id)
-                    .filter(Boolean);
-                const vendorPaypalMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name, paypal_email')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorPaypalMap[vendor.id] = vendor.paypal_email;
-                        });
-                    }
                 }
 
                 // Fetch inquiry details for all payouts
@@ -7388,31 +7222,16 @@
                     }
                 }
 
-                console.log('[Verified] ✓ Maps created:', { buyersMap, vendorPaypalMap });
-
-                // Expand admin_payables records into per-recipient rows
-                let expandedPayouts = [];
-                if (payouts && payouts.length > 0) {
-                    console.log('[Verified] Expanding', payouts.length, 'payouts...');
-                    payouts.forEach(payout => {
-                        const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMap);
-                        console.log('[Verified] Expanded', payout.id, '→', expandedRows.length, 'rows');
-                        expandedPayouts = expandedPayouts.concat(expandedRows);
-                    });
-                }
-
-                console.log('[Verified] Final expanded count:', expandedPayouts.length);
-
-                tbody.innerHTML = expandedPayouts.map(payout => {
+                tbody.innerHTML = payouts.map(payout => {
                     const inquiry = inquiriesMap[payout.related_feedback_id];
                     const detailsId = `verified-details-${payout.id}`;
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; color: #475569;">${payout.recipientType}</td>
-                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.feedbackId || payout.related_feedback_id}</td>
-                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.displayAmount).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #475569;">${payout.split_with_buyer_id ? 'Buyer Inviter' : 'Admin'}</td>
+                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
+                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(payout.amount_owed).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
@@ -7569,72 +7388,34 @@
                     console.error('[Incoming] Error loading buyer requests:', buyerError);
                 }
 
-                // Fetch buyer data (for inviter display) - MUST DO BEFORE expandCommissionRecord
-                const buyerIds = adminRequests
-                    .filter(r => r.split_with_buyer_id)
-                    .map(r => r.split_with_buyer_id)
-                    .filter(Boolean);
-                const buyersMap = {};
-
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyersMap[buyer.id] = {
-                                name: buyer.full_name,
-                                email: buyer.paypal_email
-                            };
-                        });
-                    }
-                }
-
-                // Fetch vendor data (for vendor inviter display) - MUST DO BEFORE expandCommissionRecord
-                const vendorIds = adminRequests
-                    .filter(r => r.split_with_vendor_id)
-                    .map(r => r.split_with_vendor_id)
-                    .filter(Boolean);
-                const vendorPaypalMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name, paypal_email')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorPaypalMap[vendor.id] = vendor.paypal_email;
-                        });
-                    }
-                }
-
-                console.log('[Incoming] ✓ Maps created:', { buyersMap, vendorPaypalMap });
-
                 // Combine all requests and add recipient type mapping
                 let allRequests = [];
 
-                // Process admin_payables - expand each record into per-recipient rows
+                // Process admin_payables
                 if (adminRequests && adminRequests.length > 0) {
-                    console.log('[Incoming] Expanding', adminRequests.length, 'admin requests...');
                     adminRequests.forEach(request => {
-                        const expandedRows = expandCommissionRecord(request, vendorPaypalMap, buyersMap);
-                        console.log('[Incoming] Expanded', request.id, '→', expandedRows.length, 'rows');
-                        expandedRows.forEach(row => {
-                            allRequests.push({
-                                ...row,
-                                source: 'admin_payables'
-                            });
+                        let recipientType = 'admin';
+                        let displayAmount = request.admin_commission || 0;
+
+                        if (request.split_with_vendor_id) {
+                            recipientType = 'vendor_inviter';
+                            displayAmount = request.amount_owed - (request.admin_commission || 0) - (request.buyer_portion || 0);
+                        } else if (request.split_with_buyer_id) {
+                            recipientType = 'buyer_inviter';
+                            displayAmount = request.buyer_portion || 0;
+                        }
+
+                        allRequests.push({
+                            ...request,
+                            recipientType,
+                            displayAmount,
+                            source: 'admin_payables'
                         });
                     });
                 }
 
                 // Process buyer_payables (Reviewers)
                 if (buyerRequests && buyerRequests.length > 0) {
-                    console.log('[Incoming] Adding', buyerRequests.length, 'reviewer requests...');
                     buyerRequests.forEach(request => {
                         allRequests.push({
                             ...request,
@@ -7644,8 +7425,6 @@
                         });
                     });
                 }
-
-                console.log('[Incoming] Final total:', allRequests.length, 'rows (admin + reviewer)');
 
                 if (allRequests.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No incoming payment requests</td></tr>';
@@ -7667,6 +7446,46 @@
                     if (inquiries) {
                         inquiries.forEach(inq => {
                             inquiriesMap[inq.id] = inq;
+                        });
+                    }
+                }
+
+                // Fetch buyer data (for inviter display)
+                const buyerIds = allRequests
+                    .filter(r => r.split_with_buyer_id)
+                    .map(r => r.split_with_buyer_id)
+                    .filter(Boolean);
+                const buyersMap = {};
+
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await sbClient
+                        .from('buyers')
+                        .select('id, full_name, paypal_email')
+                        .in('id', buyerIds);
+
+                    if (buyers) {
+                        buyers.forEach(buyer => {
+                            buyersMap[buyer.id] = buyer;
+                        });
+                    }
+                }
+
+                // Fetch vendor data (for vendor inviter display)
+                const vendorIds = allRequests
+                    .filter(r => r.split_with_vendor_id)
+                    .map(r => r.split_with_vendor_id)
+                    .filter(Boolean);
+                const vendorsMap = {};
+
+                if (vendorIds.length > 0) {
+                    const { data: vendors } = await sbClient
+                        .from('vendors')
+                        .select('id, business_name, paypal_email')
+                        .in('id', vendorIds);
+
+                    if (vendors) {
+                        vendors.forEach(vendor => {
+                            vendorsMap[vendor.id] = vendor;
                         });
                     }
                 }
@@ -7695,14 +7514,13 @@
                 tab1AllRequests = allRequests.map(request => {
                     let recipient = { name: 'N/A', email: 'N/A' };
 
-                    if (request.source === 'admin_payables') {
-                        // For expanded admin_payables rows, use recipientDisplay and paypalEmail from expandCommissionRecord
-                        recipient = {
-                            name: request.recipientDisplay || 'N/A',
-                            email: request.paypalEmail || 'N/A'
-                        };
+                    if (request.recipientType === 'buyer_inviter') {
+                        const buyer = buyersMap[request.split_with_buyer_id];
+                        recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
+                    } else if (request.recipientType === 'vendor_inviter') {
+                        const vendor = vendorsMap[request.split_with_vendor_id];
+                        recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
                     } else if (request.recipientType === 'reviewer') {
-                        // For buyer_payables reviewer rows
                         const reviewer = reviewersMap[request.vendor_id];
                         recipient = { name: reviewer?.full_name || 'N/A', email: reviewer?.paypal_email || 'N/A' };
                     }
@@ -7739,11 +7557,7 @@
             let filtered = tab1AllRequests;
 
             if (tab1FilterRecipientType !== 'all') {
-                // For expanded admin_payables rows, use rowType; for reviewer rows, use recipientType
-                filtered = filtered.filter(r => {
-                    const filterField = r.source === 'admin_payables' ? r.rowType : r.recipientType;
-                    return filterField === tab1FilterRecipientType;
-                });
+                filtered = filtered.filter(r => r.recipientType === tab1FilterRecipientType);
             }
 
             if (tab1FilterAmountThreshold > 0) {
@@ -7751,10 +7565,7 @@
             }
 
             if (tab1AdminOnly) {
-                filtered = filtered.filter(r => {
-                    const filterField = r.source === 'admin_payables' ? r.rowType : r.recipientType;
-                    return filterField === 'admin';
-                });
+                filtered = filtered.filter(r => r.recipientType === 'admin');
             }
 
             // Render filtered results
@@ -7764,8 +7575,7 @@
             }
 
             tbody.innerHTML = filtered.map(request => {
-                // For admin_payables rows (expanded), use recipientType which is the display name from expandCommissionRecord
-                const recipientTypeDisplay = request.source === 'admin_payables' ? request.recipientType : request.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const recipientTypeDisplay = request.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7880,6 +7690,7 @@
 
                 showToast('✓ Request approved', 'success');
                 await loadManageIncomingRequests();
+                await loadManageAwaitingPayouts();
             } catch (err) {
                 console.error('Error approving request:', err);
                 showToast('Error approving request', 'error');
