@@ -4589,15 +4589,27 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query status='payment_requested': Buyer requested payment, vendor reviewing/processing
-                const { data } = await db
+                // Query buyer_payables with multiple statuses for requests awaiting vendor review
+                const { data: buyerPayables } = await db
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .eq('status', 'payment_requested')
+                    .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
                     .order('created_at', { ascending: false });
 
-                globalReviewerPendingRequestsData = data || [];
+                // Query admin_payables where this buyer is the referrer (split_with_buyer_id)
+                const { data: adminPayables } = await db
+                    .from('admin_payables')
+                    .select('*')
+                    .eq('split_with_buyer_id', buyerId)
+                    .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
+                    .order('created_at', { ascending: false });
+
+                // Combine both commission types and sort by created_at
+                const allPayables = [...(buyerPayables || []), ...(adminPayables || [])];
+                allPayables.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                globalReviewerPendingRequestsData = allPayables;
 
                 if (globalReviewerPendingRequestsData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #718096;">No pending payment requests</td></tr>';
@@ -4651,14 +4663,24 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(req => `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${req.related_feedback_ids?.[0]?.substring(0, 8) || 'N/A'}...</td>
-                    <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
-                    <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = data.map(req => {
+                // Determine commission type (buyer_payables vs admin_payables)
+                // admin_payables has split_with_buyer_id, buyer_payables doesn't
+                const isBuyerCommission = req.related_feedback_ids !== undefined;
+                const feedbackId = isBuyerCommission
+                    ? req.related_feedback_ids?.[0]
+                    : req.related_feedback_id;
+                const feedbackIdShort = feedbackId ? feedbackId.substring(0, 8) : 'N/A';
+
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
+                        <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(req.amount_owed || 0).toFixed(2)}</td>
+                        <td style="padding: 12px; color: #718096; font-size: 12px;">Awaiting Vendor Receipt</td>
+                        <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(req.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // ========== REVIEWER VERIFIED FILTER FUNCTIONS ==========
