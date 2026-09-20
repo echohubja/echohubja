@@ -2121,6 +2121,9 @@
                 filtered = filtered.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
+            // Preserve maps when passing to render
+            filtered.vendorPaypalMap = globalReadyToRequestData.vendorPaypalMap;
+            filtered.buyerMap = globalReadyToRequestData.buyerMap;
             renderReadyToRequestTable(filtered);
         }
 
