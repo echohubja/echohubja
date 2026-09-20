@@ -6890,60 +6890,7 @@
                     });
                 }
 
-                // Combine all payouts and add recipient type mapping
-                let allPayouts = [];
-
-                // Process admin_payables - expand each record into per-recipient rows
-                if (adminPayouts && adminPayouts.length > 0) {
-                    adminPayouts.forEach(payout => {
-                        const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMap);
-                        expandedRows.forEach(row => {
-                            allPayouts.push({
-                                ...row,
-                                source: 'admin_payables'
-                            });
-                        });
-                    });
-                }
-
-                // Process buyer_payables (Reviewers)
-                if (buyerPayouts && buyerPayouts.length > 0) {
-                    buyerPayouts.forEach(payout => {
-                        allPayouts.push({
-                            ...payout,
-                            recipientType: 'reviewer',
-                            displayAmount: payout.amount_owed,
-                            source: 'buyer_payables'
-                        });
-                    });
-                }
-
-                if (allPayouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">No pending payouts</td></tr>';
-                    return;
-                }
-
-                // Fetch all related feedback data (inquiries)
-                // Combine feedback IDs from both admin and buyer payouts
-                const feedbackIds = allPayouts.map(p => p.related_feedback_id || p.related_feedback_ids?.[0]).filter(Boolean);
-                const inquiriesMap = { ...inquiriesByFeedbackId }; // Start with already fetched inquiries
-
-                // Fetch additional inquiries that aren't already loaded (those from admin_payables only)
-                const missingFeedbackIds = feedbackIds.filter(fbId => !inquiriesMap[fbId]);
-                if (missingFeedbackIds.length > 0) {
-                    const { data: inquiries } = await sbClient
-                        .from('inquiries')
-                        .select('id, message, product_url, image_data, image_mime, vendor_id, buyer_id')
-                        .in('id', missingFeedbackIds);
-
-                    if (inquiries) {
-                        inquiries.forEach(inq => {
-                            inquiriesMap[inq.id] = inq;
-                        });
-                    }
-                }
-
-                // Fetch buyer data (for inviter display)
+                // Fetch buyer data (for inviter display) - MUST DO BEFORE expandCommissionRecord
                 const buyerIds = adminPayouts
                     .filter(p => p.split_with_buyer_id)
                     .map(p => p.split_with_buyer_id)
@@ -6966,7 +6913,7 @@
                     }
                 }
 
-                // Fetch vendor data (for vendor inviter display)
+                // Fetch vendor data (for vendor inviter display) - MUST DO BEFORE expandCommissionRecord
                 const vendorIds = adminPayouts
                     .filter(p => p.split_with_vendor_id)
                     .map(p => p.split_with_vendor_id)
@@ -6982,6 +6929,66 @@
                     if (vendors) {
                         vendors.forEach(vendor => {
                             vendorPaypalMap[vendor.id] = vendor.paypal_email;
+                        });
+                    }
+                }
+
+                console.log('[Pending] ✓ Maps created:', { buyersMap, vendorPaypalMap });
+
+                // Combine all payouts and add recipient type mapping
+                let allPayouts = [];
+
+                // Process admin_payables - expand each record into per-recipient rows
+                if (adminPayouts && adminPayouts.length > 0) {
+                    console.log('[Pending] Expanding', adminPayouts.length, 'admin payouts...');
+                    adminPayouts.forEach(payout => {
+                        const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMap);
+                        console.log('[Pending] Expanded', payout.id, '→', expandedRows.length, 'rows');
+                        expandedRows.forEach(row => {
+                            allPayouts.push({
+                                ...row,
+                                source: 'admin_payables'
+                            });
+                        });
+                    });
+                }
+
+                // Process buyer_payables (Reviewers)
+                if (buyerPayouts && buyerPayouts.length > 0) {
+                    console.log('[Pending] Adding', buyerPayouts.length, 'reviewer payouts...');
+                    buyerPayouts.forEach(payout => {
+                        allPayouts.push({
+                            ...payout,
+                            recipientType: 'reviewer',
+                            displayAmount: payout.amount_owed,
+                            source: 'buyer_payables'
+                        });
+                    });
+                }
+
+                console.log('[Pending] Final total:', allPayouts.length, 'rows (admin + reviewer)');
+
+                if (allPayouts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">No pending payouts</td></tr>';
+                    return;
+                }
+
+                // Fetch all related feedback data (inquiries)
+                // Combine feedback IDs from both admin and buyer payouts
+                const feedbackIds = allPayouts.map(p => p.related_feedback_id || p.related_feedback_ids?.[0]).filter(Boolean);
+                const inquiriesMap = { ...inquiriesByFeedbackId }; // Start with already fetched inquiries
+
+                // Fetch additional inquiries that aren't already loaded (those from admin_payables only)
+                const missingFeedbackIds = feedbackIds.filter(fbId => !inquiriesMap[fbId]);
+                if (missingFeedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, product_url, image_data, image_mime, vendor_id, buyer_id')
+                        .in('id', missingFeedbackIds);
+
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
                         });
                     }
                 }
@@ -7209,11 +7216,15 @@
                     }
                 }
 
+                console.log('[Awaiting] ✓ Maps created:', { buyersMapLocal, vendorPaypalMap });
+
                 // Expand admin_payables records into per-recipient rows
                 let expandedPayouts = [];
                 if (payouts && payouts.length > 0) {
+                    console.log('[Awaiting] Expanding', payouts.length, 'payouts...');
                     payouts.forEach(payout => {
                         const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMapLocal);
+                        console.log('[Awaiting] Expanded', payout.id, '→', expandedRows.length, 'rows');
                         expandedPayouts = expandedPayouts.concat(expandedRows);
                     });
                 }
@@ -7377,14 +7388,20 @@
                     }
                 }
 
+                console.log('[Verified] ✓ Maps created:', { buyersMap, vendorPaypalMap });
+
                 // Expand admin_payables records into per-recipient rows
                 let expandedPayouts = [];
                 if (payouts && payouts.length > 0) {
+                    console.log('[Verified] Expanding', payouts.length, 'payouts...');
                     payouts.forEach(payout => {
                         const expandedRows = expandCommissionRecord(payout, vendorPaypalMap, buyersMap);
+                        console.log('[Verified] Expanded', payout.id, '→', expandedRows.length, 'rows');
                         expandedPayouts = expandedPayouts.concat(expandedRows);
                     });
                 }
+
+                console.log('[Verified] Final expanded count:', expandedPayouts.length);
 
                 tbody.innerHTML = expandedPayouts.map(payout => {
                     const inquiry = inquiriesMap[payout.related_feedback_id];
@@ -7552,59 +7569,7 @@
                     console.error('[Incoming] Error loading buyer requests:', buyerError);
                 }
 
-                // Combine all requests and add recipient type mapping
-                let allRequests = [];
-
-                // Process admin_payables - expand each record into per-recipient rows
-                if (adminRequests && adminRequests.length > 0) {
-                    adminRequests.forEach(request => {
-                        const expandedRows = expandCommissionRecord(request, vendorPaypalMap, buyersMap);
-                        expandedRows.forEach(row => {
-                            allRequests.push({
-                                ...row,
-                                source: 'admin_payables'
-                            });
-                        });
-                    });
-                }
-
-                // Process buyer_payables (Reviewers)
-                if (buyerRequests && buyerRequests.length > 0) {
-                    buyerRequests.forEach(request => {
-                        allRequests.push({
-                            ...request,
-                            recipientType: 'reviewer',
-                            displayAmount: request.amount_owed,
-                            source: 'buyer_payables'
-                        });
-                    });
-                }
-
-                if (allRequests.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No incoming payment requests</td></tr>';
-                    console.log('[Incoming] ✓ No requests found');
-                    console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
-                    return;
-                }
-
-                // Fetch all related data
-                const feedbackIds = allRequests.map(r => r.related_feedback_id || r.related_feedback_ids?.[0]).filter(Boolean);
-                const inquiriesMap = {};
-
-                if (feedbackIds.length > 0) {
-                    const { data: inquiries } = await sbClient
-                        .from('inquiries')
-                        .select('id, message, product_url, image_data, image_mime')
-                        .in('id', feedbackIds);
-
-                    if (inquiries) {
-                        inquiries.forEach(inq => {
-                            inquiriesMap[inq.id] = inq;
-                        });
-                    }
-                }
-
-                // Fetch buyer data (for inviter display)
+                // Fetch buyer data (for inviter display) - MUST DO BEFORE expandCommissionRecord
                 const buyerIds = adminRequests
                     .filter(r => r.split_with_buyer_id)
                     .map(r => r.split_with_buyer_id)
@@ -7627,7 +7592,7 @@
                     }
                 }
 
-                // Fetch vendor data (for vendor inviter display)
+                // Fetch vendor data (for vendor inviter display) - MUST DO BEFORE expandCommissionRecord
                 const vendorIds = adminRequests
                     .filter(r => r.split_with_vendor_id)
                     .map(r => r.split_with_vendor_id)
@@ -7643,6 +7608,65 @@
                     if (vendors) {
                         vendors.forEach(vendor => {
                             vendorPaypalMap[vendor.id] = vendor.paypal_email;
+                        });
+                    }
+                }
+
+                console.log('[Incoming] ✓ Maps created:', { buyersMap, vendorPaypalMap });
+
+                // Combine all requests and add recipient type mapping
+                let allRequests = [];
+
+                // Process admin_payables - expand each record into per-recipient rows
+                if (adminRequests && adminRequests.length > 0) {
+                    console.log('[Incoming] Expanding', adminRequests.length, 'admin requests...');
+                    adminRequests.forEach(request => {
+                        const expandedRows = expandCommissionRecord(request, vendorPaypalMap, buyersMap);
+                        console.log('[Incoming] Expanded', request.id, '→', expandedRows.length, 'rows');
+                        expandedRows.forEach(row => {
+                            allRequests.push({
+                                ...row,
+                                source: 'admin_payables'
+                            });
+                        });
+                    });
+                }
+
+                // Process buyer_payables (Reviewers)
+                if (buyerRequests && buyerRequests.length > 0) {
+                    console.log('[Incoming] Adding', buyerRequests.length, 'reviewer requests...');
+                    buyerRequests.forEach(request => {
+                        allRequests.push({
+                            ...request,
+                            recipientType: 'reviewer',
+                            displayAmount: request.amount_owed,
+                            source: 'buyer_payables'
+                        });
+                    });
+                }
+
+                console.log('[Incoming] Final total:', allRequests.length, 'rows (admin + reviewer)');
+
+                if (allRequests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No incoming payment requests</td></tr>';
+                    console.log('[Incoming] ✓ No requests found');
+                    console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
+                    return;
+                }
+
+                // Fetch all related data
+                const feedbackIds = allRequests.map(r => r.related_feedback_id || r.related_feedback_ids?.[0]).filter(Boolean);
+                const inquiriesMap = {};
+
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, message, product_url, image_data, image_mime')
+                        .in('id', feedbackIds);
+
+                    if (inquiries) {
+                        inquiries.forEach(inq => {
+                            inquiriesMap[inq.id] = inq;
                         });
                     }
                 }
