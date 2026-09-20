@@ -2067,7 +2067,9 @@
                 const globalReadyBuyerMap = {};
                 if (buyerIds.length > 0) {
                     const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                    console.log('Fetched buyers for map:', { buyerIds, buyers });
                     if (buyers) buyers.forEach(b => globalReadyBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                    console.log('BuyerMap populated:', globalReadyBuyerMap);
                 }
 
                 globalReadyToRequestData = data;
