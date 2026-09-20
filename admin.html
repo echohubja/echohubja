@@ -2037,6 +2037,19 @@
                     return;
                 }
 
+                // DEBUG: Log all fetched records
+                console.log('=== Admin Ready to Request - Raw Data ===');
+                console.log(`Total records: ${data.length}`);
+                data.forEach((record, idx) => {
+                    console.log(`Record ${idx}:`, {
+                        id: record.id,
+                        related_feedback_id: record.related_feedback_id,
+                        amount_owed: record.amount_owed,
+                        status: record.status,
+                        split_with_buyer_id: record.split_with_buyer_id
+                    });
+                });
+
                 // Fetch vendor details
                 const vendorIds = [...new Set(data.map(d => d.vendor_id))];
                 const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
