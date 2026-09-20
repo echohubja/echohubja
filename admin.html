@@ -2803,14 +2803,23 @@
 
                 // Fetch vendor details
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                console.log('[loadAwaitingReceipts] Vendor IDs to fetch:', vendorIds, 'count:', vendorIds.length);
+
                 globalAwaitingVendorMap = {};
                 const globalAwaitingVendorPaypalMap = {};
-                if (vendors) {
-                    vendors.forEach(v => {
-                        globalAwaitingVendorMap[v.id] = v.business_name || 'Unknown';
-                        globalAwaitingVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
-                    });
+
+                if (vendorIds.length > 0) {
+                    const { data: vendors, error: vendorError } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                    console.log('[loadAwaitingReceipts] Vendor fetch result:', { vendorsCount: vendors?.length, hasError: !!vendorError, error: vendorError?.message });
+                    if (vendors) {
+                        vendors.forEach(v => {
+                            globalAwaitingVendorMap[v.id] = v.business_name || 'Unknown';
+                            globalAwaitingVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
+                            console.log('[loadAwaitingReceipts] Vendor mapped:', v.id, '->', v.business_name);
+                        });
+                    }
+                } else {
+                    console.log('[loadAwaitingReceipts] No vendor IDs found in admin commissions');
                 }
 
                 // Fetch buyer details for split_with_buyer_id and reviewers
