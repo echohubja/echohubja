@@ -1808,14 +1808,14 @@
     <div class="code-viewer-modal" id="code-viewer-modal" style="display: none;">
         <div class="code-viewer-header">
             <h2>📄 Source Code Viewer</h2>
-            <button class="code-viewer-close" onclick="closeCodeViewer()">×</button>
+            <button class="code-viewer-close" onclick="event.stopPropagation(); closeCodeViewer();">×</button>
         </div>
         <div class="code-viewer-body">
             <div class="code-viewer-content" id="code-viewer-content">Loading source code...</div>
         </div>
         <div class="code-viewer-footer">
-            <button onclick="copyCodeToClipboard()" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">📋 Copy Code</button>
-            <button onclick="closeCodeViewer()" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
+            <button onclick="event.stopPropagation(); copyCodeToClipboard();" style="background: #1e5aa8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">📋 Copy Code</button>
+            <button onclick="event.stopPropagation(); closeCodeViewer();" style="background: #e2e8f0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
         </div>
     </div>
 
@@ -4205,7 +4205,7 @@
                     .from('buyer_payables')
                     .select('*')
                     .eq('buyer_id', buyerId)
-                    .in('status', ['pending', 'approved'])
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
                 globalReviewerReadyData = data || [];
@@ -4958,7 +4958,7 @@
                     .from('admin_payables')
                     .select('*')
                     .eq('split_with_buyer_id', buyerId)
-                    .in('status', ['pending', 'approved'])
+                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
                 globalBuyerInviterReadyData = data || [];
