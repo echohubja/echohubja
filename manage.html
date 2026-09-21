@@ -8601,6 +8601,23 @@
             pollingIntervals.payoutData = setInterval(async () => {
                 try {
                     await loadPayoutDataFromDB();
+
+                    // Refresh the currently active Payout Lifecycle Hub tab
+                    const activeTab = document.querySelector('.lifecycle-tab-btn.active');
+                    if (activeTab) {
+                        const tabId = activeTab.id;
+                        if (tabId === 'manage-incoming-tab') {
+                            await loadManageIncomingRequests();
+                        } else if (tabId === 'manage-pending-tab') {
+                            await loadManagePendingPayouts();
+                        } else if (tabId === 'manage-awaiting-tab') {
+                            await loadManageAwaitingPayouts();
+                        } else if (tabId === 'manage-verified-tab') {
+                            await loadManageVerifiedPayouts();
+                        } else if (tabId === 'manage-payment-history-tab') {
+                            await loadManagePaymentHistory();
+                        }
+                    }
                 } catch (err) {
                     console.error('Error polling payout data:', err);
                 }
