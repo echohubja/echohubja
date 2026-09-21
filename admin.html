@@ -1803,6 +1803,101 @@
         let currentPaymentProofType = null;
         let currentRequestId = null;
 
+        // ===== EARLY FUNCTION DEFINITIONS (Must be defined before HTML rendering) =====
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+
+            // Clear SLA timer intervals when switching away from commissions tab
+            if (tabName !== 'commissions' && adminAwaitingSLAInterval) {
+                clearInterval(adminAwaitingSLAInterval);
+                adminAwaitingSLAInterval = null;
+            }
+
+            document.getElementById('section-monitor').classList.add('hidden');
+            document.getElementById('section-accounts').classList.add('hidden');
+            document.getElementById('section-buyers').classList.add('hidden');
+            document.getElementById('section-approvals').classList.add('hidden');
+            document.getElementById('section-inquiries').classList.add('hidden');
+            document.getElementById('section-commissions').classList.add('hidden');
+            document.getElementById('section-vendor-settings').classList.add('hidden');
+            document.getElementById('section-payments').classList.add('hidden');
+            document.getElementById('section-alerts').classList.add('hidden');
+            document.getElementById('section-reversals').classList.add('hidden');
+            document.getElementById('section-circuit').classList.add('hidden');
+            document.getElementById('section-balance').classList.add('hidden');
+            document.getElementById('section-messaging').classList.add('hidden');
+            document.getElementById('section-flagged').classList.add('hidden');
+            document.getElementById('section-fraud').classList.add('hidden');
+            document.getElementById('section-compliance').classList.add('hidden');
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+
+            if (tabName === 'monitor') loadMonitoringDashboard();
+            else if (tabName === 'accounts') initializeAccountLookup();
+            else if (tabName === 'buyers') loadBuyersPortal();
+            else if (tabName === 'approvals') loadApprovalsTab();
+            else if (tabName === 'alerts') loadAlertCenter();
+            else if (tabName === 'reversals') loadReversalPanel();
+            else if (tabName === 'circuit') loadCircuitBreakerStatus();
+            else if (tabName === 'balance') loadBalanceHealthReport();
+            else if (tabName === 'inquiries') loadInquiriesPortal();
+            else if (tabName === 'commissions') loadCommissionsPortal();
+            else if (tabName === 'vendor-settings') initVendorSettingsTab();
+            else if (tabName === 'payments') loadPaymentProofsPortal();
+            else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
+            else if (tabName === 'flagged') handleFlaggedTabSwitch();
+            else if (tabName === 'fraud') setTimeout(() => loadFraudDashboard(), 300);
+            else if (tabName === 'compliance') setTimeout(() => loadComplianceDashboard(), 300);
+        }
+
+        // LIFECYCLE TAB SWITCHING
+        function switchLifecycleTab(tabName) {
+            // Hide all lifecycle sections
+            document.querySelectorAll('.lifecycle-section').forEach(s => s.classList.add('hidden'));
+            // Remove active class from all tabs
+            document.querySelectorAll('.lifecycle-tab-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.borderBottomColor = 'transparent';
+                b.style.color = '#888';
+            });
+
+            // Show selected section and mark tab active
+            document.getElementById(`lifecycle-${tabName}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`lifecycle-tab-${tabName}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+                if (tabName === 'ready') {
+                    activeTab.style.borderBottomColor = '#16a34a';
+                    activeTab.style.color = '#15803d';
+                } else if (tabName === 'pending') {
+                    activeTab.style.borderBottomColor = '#f59e0b';
+                    activeTab.style.color = '#b45309';
+                } else if (tabName === 'awaiting') {
+                    activeTab.style.borderBottomColor = '#fb923c';
+                    activeTab.style.color = '#92400e';
+                } else if (tabName === 'verification') {
+                    activeTab.style.borderBottomColor = '#3b82f6';
+                    activeTab.style.color = '#1e40af';
+                } else if (tabName === 'verified') {
+                    activeTab.style.borderBottomColor = '#16a34a';
+                    activeTab.style.color = '#15803d';
+                } else if (tabName === 'payment-history') {
+                    activeTab.style.borderBottomColor = '#3b82f6';
+                    activeTab.style.color = '#1e40af';
+                }
+            }
+
+            // Load data for the selected tab
+            if (tabName === 'ready') loadAdminReadyToRequest();
+            else if (tabName === 'pending') loadPendingApprovals();
+            else if (tabName === 'awaiting') loadAwaitingReceipts();
+            else if (tabName === 'verification') loadReceiptVerifications();
+            else if (tabName === 'verified') loadVerifiedPayments();
+            else if (tabName === 'payment-history') loadAdminPaymentHistory();
+        }
+
         // Phase 3.5 API Functions
         async function submitFeedbackWithProof(buyerId, vendorId, productId, imageUrl, amazonUrl, message) {
             try {
@@ -1952,99 +2047,6 @@
                 console.error("Supabase library failed to load.");
             }
         });
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-btn-${tabName}`).classList.add('active');
-
-            // Clear SLA timer intervals when switching away from commissions tab
-            if (tabName !== 'commissions' && adminAwaitingSLAInterval) {
-                clearInterval(adminAwaitingSLAInterval);
-                adminAwaitingSLAInterval = null;
-            }
-
-            document.getElementById('section-monitor').classList.add('hidden');
-            document.getElementById('section-accounts').classList.add('hidden');
-            document.getElementById('section-buyers').classList.add('hidden');
-            document.getElementById('section-approvals').classList.add('hidden');
-            document.getElementById('section-inquiries').classList.add('hidden');
-            document.getElementById('section-commissions').classList.add('hidden');
-            document.getElementById('section-vendor-settings').classList.add('hidden');
-            document.getElementById('section-payments').classList.add('hidden');
-            document.getElementById('section-alerts').classList.add('hidden');
-            document.getElementById('section-reversals').classList.add('hidden');
-            document.getElementById('section-circuit').classList.add('hidden');
-            document.getElementById('section-balance').classList.add('hidden');
-            document.getElementById('section-messaging').classList.add('hidden');
-            document.getElementById('section-flagged').classList.add('hidden');
-            document.getElementById('section-fraud').classList.add('hidden');
-            document.getElementById('section-compliance').classList.add('hidden');
-
-            document.getElementById(`section-${tabName}`).classList.remove('hidden');
-
-            if (tabName === 'monitor') loadMonitoringDashboard();
-            else if (tabName === 'accounts') initializeAccountLookup();
-            else if (tabName === 'buyers') loadBuyersPortal();
-            else if (tabName === 'approvals') loadApprovalsTab();
-            else if (tabName === 'alerts') loadAlertCenter();
-            else if (tabName === 'reversals') loadReversalPanel();
-            else if (tabName === 'circuit') loadCircuitBreakerStatus();
-            else if (tabName === 'balance') loadBalanceHealthReport();
-            else if (tabName === 'inquiries') loadInquiriesPortal();
-            else if (tabName === 'commissions') loadCommissionsPortal();
-            else if (tabName === 'vendor-settings') initVendorSettingsTab();
-            else if (tabName === 'payments') loadPaymentProofsPortal();
-            else if (tabName === 'messaging') setTimeout(() => initMessagingHub(), 300);
-            else if (tabName === 'flagged') handleFlaggedTabSwitch();
-            else if (tabName === 'fraud') setTimeout(() => loadFraudDashboard(), 300);
-            else if (tabName === 'compliance') setTimeout(() => loadComplianceDashboard(), 300);
-        }
-
-        // LIFECYCLE TAB SWITCHING
-        function switchLifecycleTab(tabName) {
-            // Hide all lifecycle sections
-            document.querySelectorAll('.lifecycle-section').forEach(s => s.classList.add('hidden'));
-            // Remove active class from all tabs
-            document.querySelectorAll('.lifecycle-tab-btn').forEach(b => {
-                b.classList.remove('active');
-                b.style.borderBottomColor = 'transparent';
-                b.style.color = '#888';
-            });
-
-            // Show selected section and mark tab active
-            document.getElementById(`lifecycle-${tabName}`).classList.remove('hidden');
-            const activeTab = document.getElementById(`lifecycle-tab-${tabName}`);
-            if (activeTab) {
-                activeTab.classList.add('active');
-                if (tabName === 'ready') {
-                    activeTab.style.borderBottomColor = '#16a34a';
-                    activeTab.style.color = '#15803d';
-                } else if (tabName === 'pending') {
-                    activeTab.style.borderBottomColor = '#f59e0b';
-                    activeTab.style.color = '#b45309';
-                } else if (tabName === 'awaiting') {
-                    activeTab.style.borderBottomColor = '#fb923c';
-                    activeTab.style.color = '#92400e';
-                } else if (tabName === 'verification') {
-                    activeTab.style.borderBottomColor = '#3b82f6';
-                    activeTab.style.color = '#1e40af';
-                } else if (tabName === 'verified') {
-                    activeTab.style.borderBottomColor = '#16a34a';
-                    activeTab.style.color = '#15803d';
-                } else if (tabName === 'payment-history') {
-                    activeTab.style.borderBottomColor = '#3b82f6';
-                    activeTab.style.color = '#1e40af';
-                }
-            }
-
-            // Load data for the selected tab
-            if (tabName === 'ready') loadAdminReadyToRequest();
-            else if (tabName === 'pending') loadPendingApprovals();
-            else if (tabName === 'awaiting') loadAwaitingReceipts();
-            else if (tabName === 'verification') loadReceiptVerifications();
-            else if (tabName === 'verified') loadVerifiedPayments();
-            else if (tabName === 'payment-history') loadAdminPaymentHistory();
-        }
 
         // LIFECYCLE HUB DATA LOADING
         async function refreshCommissionLifecycle() {
@@ -3745,7 +3747,6 @@
                 }
 
                 // Fetch vendor inviter details (could be buyer or admin)
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 if (vendorInviterIds.length > 0) {
                     // Try buyers table first
                     const { data: buyerInviters } = await db.from('buyers').select('id, full_name, paypal_email').in('id', vendorInviterIds);
