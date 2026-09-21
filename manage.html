@@ -7334,21 +7334,33 @@
         }
 
         async function loadManageVerifiedPayouts() {
-            if (!sbClient || !currentVendor) return;
+            console.log('[Tab 4] loadManageVerifiedPayouts CALLED - vendor:', currentVendor?.id);
+            if (!sbClient || !currentVendor) {
+                console.log('[Tab 4] ERROR - sbClient or currentVendor missing');
+                return;
+            }
 
             const tbody = document.getElementById('manage-verified-table-body');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables where status='payment_sent' or 'completed' or unflagged_date IS NOT NULL
+                console.log('[Tab 4] QUERYING admin_payables with vendor_id:', currentVendor.id);
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date')
+                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status')
                     .eq('vendor_id', currentVendor.id)
                     .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
                     .order('unflagged_date', { ascending: false });
 
+                console.log('[Tab 4] admin_payables RESPONSE:', {
+                    count: payouts?.length,
+                    records: payouts?.map(p => ({ id: p.id, status: p.status, admin_commission: p.admin_commission, amount_owed: p.amount_owed })),
+                    error
+                });
+
                 // Query buyer_payables where status='payment_sent' or 'completed'
+                console.log('[Tab 4] QUERYING buyer_payables with vendor_id:', currentVendor.id);
                 const { data: buyerPayouts, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids')
@@ -7356,19 +7368,34 @@
                     .in('status', ['payment_sent', 'completed'])
                     .order('created_at', { ascending: false });
 
+                console.log('[Tab 4] buyer_payables RESPONSE:', {
+                    count: buyerPayouts?.length,
+                    records: buyerPayouts?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
+                    error: buyerError
+                });
+
                 if (error || buyerError) {
-                    console.error('Error loading verified payouts:', error || buyerError);
+                    console.error('[Tab 4] ERROR loading verified payouts:', error || buyerError);
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
                 // Merge both result sets
                 const allPayouts = [...(payouts || []), ...(buyerPayouts || [])];
+                console.log('[Tab 4] MERGED payouts:', {
+                    totalCount: allPayouts.length,
+                    adminCount: payouts?.length || 0,
+                    buyerCount: buyerPayouts?.length || 0,
+                    summary: allPayouts.map(p => ({ id: p.id, type: p.admin_commission ? 'admin' : 'buyer', amount: p.amount_owed || p.admin_commission }))
+                });
 
                 if (!allPayouts || allPayouts.length === 0) {
+                    console.log('[Tab 4] NO PAYOUTS TO DISPLAY');
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
                     return;
                 }
+
+                console.log('[Tab 4] PROCEEDING TO FETCH INQUIRY DETAILS for', allPayouts.length, 'payouts');
 
                 // Fetch inquiry details for all payouts
                 const feedbackIds = [];
@@ -7379,13 +7406,17 @@
                         feedbackIds.push(...p.related_feedback_ids);
                     }
                 });
+                console.log('[Tab 4] Extracted feedbackIds:', feedbackIds);
                 const inquiriesMap = {};
 
                 if (feedbackIds.length > 0) {
+                    console.log('[Tab 4] FETCHING inquiry details for', feedbackIds.length, 'feedback items');
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
                         .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
                         .in('id', feedbackIds);
+
+                    console.log('[Tab 4] Inquiry fetch result:', { count: inquiries?.length, data: inquiries });
 
                     if (inquiries) {
                         inquiries.forEach(inq => {
@@ -7394,16 +7425,30 @@
                     }
                 }
 
-                tbody.innerHTML = allPayouts.map(payout => {
+                console.log('[Tab 4] RENDERING', allPayouts.length, 'rows to table');
+                tbody.innerHTML = allPayouts.map((payout, index) => {
                     const detailsId = `verified-details-${payout.id}`;
+
+                    console.log(`[Tab 4] RENDERING ROW ${index + 1}:`, {
+                        id: payout.id,
+                        buyer_id: payout.buyer_id,
+                        vendor_id: payout.vendor_id,
+                        admin_commission: payout.admin_commission,
+                        amount_owed: payout.amount_owed,
+                        split_with_buyer_id: payout.split_with_buyer_id,
+                        split_with_vendor_id: payout.split_with_vendor_id,
+                        keys: Object.keys(payout)
+                    });
 
                     // Determine if admin_payables or buyer_payables
                     const isBuyerPayable = payout.buyer_id && !payout.admin_commission;
+                    console.log(`[Tab 4] ROW ${index + 1} detection: isBuyerPayable=${isBuyerPayable} (buyer_id=${payout.buyer_id}, admin_commission=${payout.admin_commission})`);
 
                     let feedbackId = payout.related_feedback_id;
                     if (!feedbackId && payout.related_feedback_ids && Array.isArray(payout.related_feedback_ids) && payout.related_feedback_ids.length > 0) {
                         feedbackId = payout.related_feedback_ids[0];
                     }
+                    console.log(`[Tab 4] ROW ${index + 1} feedbackId: ${feedbackId}`);
 
                     const inquiry = inquiriesMap[feedbackId];
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
@@ -7424,6 +7469,8 @@
                             displayAmount = payout.buyer_portion || 0;
                         }
                     }
+
+                    console.log(`[Tab 4] ROW ${index + 1} FINAL: type=${commissionType}, amount=$${displayAmount}`);
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7452,8 +7499,12 @@
                     </tr>
                     `;
                 }).join('');
+
+                console.log('[Tab 4] TABLE RENDERING COMPLETE - Total rows rendered:', allPayouts.length);
+                console.log('[Tab 4] TABLE BODY HTML LENGTH:', tbody.innerHTML.length);
             } catch (err) {
-                console.error('Unexpected error:', err);
+                console.error('[Tab 4] UNEXPECTED ERROR:', err);
+                console.error('[Tab 4] ERROR STACK:', err.stack);
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
             }
         }
