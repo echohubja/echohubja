@@ -7154,7 +7154,7 @@
                 // Query buyer_payables where vendor must send payment to reviewer/buyer/inviter
                 const { data: buyerPayouts, error: buyerError } = await sbClient
                     .from('buyer_payables')
-                    .select('id, vendor_id, buyer_id, amount_owed, earning_type, created_at, payment_date')
+                    .select('id, vendor_id, buyer_id, amount_owed, earning_type, created_at, payment_date, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, related_feedback_id')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
                     .order('created_at', { ascending: false });
