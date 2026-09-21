@@ -7340,12 +7340,12 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='completed' or unflagged_date IS NOT NULL
+                // Query admin_payables where status='payment_sent' or 'completed' or unflagged_date IS NOT NULL
                 const { data: payouts, error } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date')
                     .eq('vendor_id', currentVendor.id)
-                    .or(`status.eq.completed,unflagged_date.not.is.null`)
+                    .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
                     .order('unflagged_date', { ascending: false });
 
                 if (error) {
