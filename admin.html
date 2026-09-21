@@ -2506,6 +2506,9 @@
 
             if (!confirm(`Request payment for ${selected.length} commission(s)?`)) return;
 
+            // Ensure confirm dialog fully dismisses before starting async operations
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             showToast('Processing...', 'info');
             let successCount = 0;
             let failCount = 0;
