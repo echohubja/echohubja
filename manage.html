@@ -7763,12 +7763,12 @@
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: admin_payables for here_are_people_requesting_for_me_to_pay_them status (Admin, Buyer Inviter, Vendor Inviter)
+                // Query 1: admin_payables for my_payment_requests_awaiting_vendor_review_transfer status (Admin, Buyer Inviter, Vendor Inviter)
                 const { data: adminRequests, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                    .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
                     .order('created_at', { ascending: false });
 
                 // Query 2: buyer_payables for here_are_people_requesting_for_me_to_pay_them status where earning_type='own_feedback' (Reviewer)
