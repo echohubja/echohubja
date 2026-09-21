@@ -3693,16 +3693,18 @@
                         created_at, updated_at, vendor_receipt_uploaded_date, vendor_paypal_transaction_id,
                         buyer_receipt_uploaded_date, buyer_paypal_transaction_id, status
                     `)
-                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
+                    .in('status', ['payment_verified', 'completed'])
+                    .or(`vendor_receipt_data.not.is.null,buyer_receipt_data.not.is.null`)
                     .order('updated_at', { ascending: false });
 
-                // Query buyer_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
+                // Query buyer_payables - only show after vendor receipt uploaded and status is final (payment_verified or completed)
                 const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
                     .select(`
                         id, buyer_id, amount_owed, earning_type, status, created_at, updated_at,
-                        related_feedback_ids, payment_date, payment_method
+                        related_feedback_ids, payment_date, payment_method, vendor_receipt_data
                     `)
-                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
+                    .in('status', ['payment_verified', 'completed'])
+                    .not('vendor_receipt_data', 'is', null)
                     .order('updated_at', { ascending: false });
 
                 if (adminError) {
