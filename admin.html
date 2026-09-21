@@ -2544,7 +2544,7 @@
 
                         // Send notification to vendor
                         if (record.vendor_id) {
-                            await createAdminNotification(
+                            await createNotification(
                                 record.vendor_id,
                                 'admin_payment_request',
                                 `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} (${record.payable_reason})`,
@@ -2580,7 +2580,7 @@
 
                         // Send notification to buyer (reviewer)
                         if (record.buyer_id) {
-                            await createAdminNotification(
+                            await createNotification(
                                 record.buyer_id,
                                 'reviewer_payment_request',
                                 `Admin has requested payment of $${parseFloat(record.amount_owed).toFixed(2)} for your feedback reviews`,
