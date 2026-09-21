@@ -3369,6 +3369,13 @@
         let searchQuery = '';
         let isLoadingInquiries = false;  // Prevent concurrent calls to loadPendingInquiries
 
+        // Payout Lifecycle Hub Loading Flags (prevent concurrent loads)
+        let isLoadingManageIncoming = false;
+        let isLoadingManagePending = false;
+        let isLoadingManageAwaiting = false;
+        let isLoadingManageVerified = false;
+        let isLoadingManagePaymentHistory = false;
+
         // Payout Lifecycle Hub Filter State
         let tab2FilterRecipientType = 'all';  // Tab 2 (Pending Payouts) recipient type filter
         let tab2FilterAmountThreshold = 0;     // Tab 2 commission amount threshold
@@ -6835,10 +6842,14 @@
         }
 
         async function loadManagePendingPayouts() {
-            if (!sbClient || !currentVendor) return;
+            if (isLoadingManagePending) return;
+            isLoadingManagePending = true;
 
-            const tbody = document.getElementById('manage-pending-table-body');
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            try {
+                if (!sbClient || !currentVendor) return;
+
+                const tbody = document.getElementById('manage-pending-table-body');
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
@@ -7128,6 +7139,9 @@
                 </tr>
                 `;
             }).join('');
+            } finally {
+                isLoadingManagePending = false;
+            }
         }
 
         let globalAwaitingPayouts = [];
@@ -7136,12 +7150,14 @@
         let awaitingPayoutsSLAInterval = null;
 
         async function loadManageAwaitingPayouts() {
-            if (!sbClient || !currentVendor) return;
-
-            const tbody = document.getElementById('manage-awaiting-table-body');
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            if (isLoadingManageAwaiting) return;
+            isLoadingManageAwaiting = true;
 
             try {
+                if (!sbClient || !currentVendor) return;
+
+                const tbody = document.getElementById('manage-awaiting-table-body');
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
                 // Query admin_payables where status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
@@ -7331,13 +7347,24 @@
                     timerCell.style.color = slaTimer.statusColor;
                 }
             });
+            } catch (err) {
+                console.error('[Awaiting] Error:', err);
+                const tbody = document.getElementById('manage-awaiting-table-body');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
+            } finally {
+                isLoadingManageAwaiting = false;
+            }
         }
 
         async function loadManageVerifiedPayouts() {
-            console.log('[Tab 4] loadManageVerifiedPayouts CALLED - vendor:', currentVendor?.id);
-            if (!sbClient || !currentVendor) {
-                console.log('[Tab 4] ERROR - sbClient or currentVendor missing');
-                return;
+            if (isLoadingManageVerified) return;
+            isLoadingManageVerified = true;
+
+            try {
+                console.log('[Tab 4] loadManageVerifiedPayouts CALLED - vendor:', currentVendor?.id);
+                if (!sbClient || !currentVendor) {
+                    console.log('[Tab 4] ERROR - sbClient or currentVendor missing');
+                    return;
             }
 
             const tbody = document.getElementById('manage-verified-table-body');
@@ -7506,14 +7533,20 @@
                 console.error('[Tab 4] UNEXPECTED ERROR:', err);
                 console.error('[Tab 4] ERROR STACK:', err.stack);
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+            } finally {
+                isLoadingManageVerified = false;
             }
         }
 
         async function loadManagePaymentHistory() {
-            console.log('[Payment History] loadManagePaymentHistory CALLED - vendor:', currentVendor?.id);
-            if (!sbClient || !currentVendor) {
-                console.log('[Payment History] ERROR - sbClient or currentVendor missing');
-                return;
+            if (isLoadingManagePaymentHistory) return;
+            isLoadingManagePaymentHistory = true;
+
+            try {
+                console.log('[Payment History] loadManagePaymentHistory CALLED - vendor:', currentVendor?.id);
+                if (!sbClient || !currentVendor) {
+                    console.log('[Payment History] ERROR - sbClient or currentVendor missing');
+                    return;
             }
 
             const tbody = document.getElementById('manage-payment-history-table-body');
@@ -7797,6 +7830,8 @@
             } catch (err) {
                 console.error('Error loading collected payouts:', err);
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+            } finally {
+                isLoadingManagePaymentHistory = false;
             }
         }
 
@@ -7931,12 +7966,16 @@
 
         // Incoming Requests Functions (Bidirectional Payout)
         async function loadManageIncomingRequests() {
-            console.log('\n========== INCOMING PAYMENT REQUESTS - VERBOSE DEBUG ==========');
-            if (!sbClient || !currentVendor) {
-                const msg = `[Incoming] ABORT: sbClient or currentVendor missing: sbClient=${!!sbClient}, currentVendor=${!!currentVendor}`;
-                console.error(msg);
-                return;
-            }
+            if (isLoadingManageIncoming) return;
+            isLoadingManageIncoming = true;
+
+            try {
+                console.log('\n========== INCOMING PAYMENT REQUESTS - VERBOSE DEBUG ==========');
+                if (!sbClient || !currentVendor) {
+                    const msg = `[Incoming] ABORT: sbClient or currentVendor missing: sbClient=${!!sbClient}, currentVendor=${!!currentVendor}`;
+                    console.error(msg);
+                    return;
+                }
 
             console.log('[Incoming] ✓ Current Vendor:', { id: currentVendor.id, name: currentVendor.business_name });
 
@@ -8134,6 +8173,8 @@
                 console.error('[Incoming] ❌ CATCH ERROR:', err);
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error: ' + err.message + '</td></tr>';
                 console.error('========== END INCOMING PAYMENT REQUESTS DEBUG (ERROR) ==========\n');
+            } finally {
+                isLoadingManageIncoming = false;
             }
         }
 
@@ -8595,35 +8636,35 @@
         }
 
         async function initPayoutDataPolling() {
-            // Poll payout data every 15 seconds
+            // Poll payout data every 30 seconds (increased from 15s to reduce database load)
             if (pollingIntervals.payoutData) clearInterval(pollingIntervals.payoutData);
 
             pollingIntervals.payoutData = setInterval(async () => {
                 try {
                     await loadPayoutDataFromDB();
 
-                    // Refresh the currently active Payout Lifecycle Hub tab
+                    // Refresh the currently active Payout Lifecycle Hub tab (only if not already loading)
                     const activeTab = document.querySelector('.lifecycle-tab-btn.active');
                     if (activeTab) {
                         const tabId = activeTab.id;
-                        if (tabId === 'manage-incoming-tab') {
+                        if (tabId === 'manage-incoming-tab' && !isLoadingManageIncoming) {
                             await loadManageIncomingRequests();
-                        } else if (tabId === 'manage-pending-tab') {
+                        } else if (tabId === 'manage-pending-tab' && !isLoadingManagePending) {
                             await loadManagePendingPayouts();
-                        } else if (tabId === 'manage-awaiting-tab') {
+                        } else if (tabId === 'manage-awaiting-tab' && !isLoadingManageAwaiting) {
                             await loadManageAwaitingPayouts();
-                        } else if (tabId === 'manage-verified-tab') {
+                        } else if (tabId === 'manage-verified-tab' && !isLoadingManageVerified) {
                             await loadManageVerifiedPayouts();
-                        } else if (tabId === 'manage-payment-history-tab') {
+                        } else if (tabId === 'manage-payment-history-tab' && !isLoadingManagePaymentHistory) {
                             await loadManagePaymentHistory();
                         }
                     }
                 } catch (err) {
                     console.error('Error polling payout data:', err);
                 }
-            }, 15000); // 15 second interval
+            }, 30000); // 30 second interval (reduced frequency to prevent database overload)
 
-            console.log('💳 Payout data polling started (15s interval)');
+            console.log('💳 Payout data polling started (30s interval)');
         }
 
         // Logout Handler
