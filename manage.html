@@ -6851,7 +6851,6 @@
                 const tbody = document.getElementById('manage-pending-table-body');
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
-            try {
                 // Query 1: admin_payables for pending status (Admin, Buyer Inviter, Vendor Inviter)
                 // EXCLUDE records that are in awaiting tab (split_with_buyer_id IS NOT NULL AND vendor_receipt_uploaded_date IS NULL)
                 const { data: adminPayouts, error: adminError } = await sbClient
@@ -7076,6 +7075,8 @@
             } catch (err) {
                 console.error('Unexpected error:', err);
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #ef4444;">Unexpected error</td></tr>';
+            } finally {
+                isLoadingManagePending = false;
             }
         }
 
@@ -7364,11 +7365,12 @@
                 console.log('[Tab 4] loadManageVerifiedPayouts CALLED - vendor:', currentVendor?.id);
                 if (!sbClient || !currentVendor) {
                     console.log('[Tab 4] ERROR - sbClient or currentVendor missing');
+                    isLoadingManageVerified = false;
                     return;
-            }
+                }
 
-            const tbody = document.getElementById('manage-verified-table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+                const tbody = document.getElementById('manage-verified-table-body');
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
                 // Query admin_payables where status='payment_sent' or 'completed' or unflagged_date IS NOT NULL
@@ -7546,13 +7548,13 @@
                 console.log('[Payment History] loadManagePaymentHistory CALLED - vendor:', currentVendor?.id);
                 if (!sbClient || !currentVendor) {
                     console.log('[Payment History] ERROR - sbClient or currentVendor missing');
+                    isLoadingManagePaymentHistory = false;
                     return;
-            }
+                }
 
-            const tbody = document.getElementById('manage-payment-history-table-body');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+                const tbody = document.getElementById('manage-payment-history-table-body');
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
-            try {
                 // Query admin_payables for vendor's own commissions and vendor inviter payouts
                 // Show payment_sent (sent but not yet final), payment_verified, and completed states
                 console.log('[Payment History] QUERYING admin_payables with vendor_id:', currentVendor.id);
