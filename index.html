@@ -4069,7 +4069,8 @@
             try {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    const base64Data = e.target.result.split(',')[1];
+                    const fullDataUrl = e.target.result;
+                    const base64Data = fullDataUrl.split(',')[1];
                     const filetype = file.type || 'application/octet-stream';
                     const filename = file.name;
 
@@ -4084,7 +4085,7 @@
                     const isAdminPayable = commission.split_with_buyer_id !== null && commission.split_with_buyer_id !== undefined;
                     const tableName = isAdminPayable ? 'admin_payables' : 'buyer_payables';
 
-                    const receiptData = {
+                    const receiptData = isAdminPayable ? {
                         buyer_receipt_data: base64Data,
                         buyer_receipt_filename: filename,
                         buyer_receipt_filetype: filetype,
@@ -4092,7 +4093,13 @@
                         buyer_receipt_uploaded_date: new Date().toISOString(),
                         buyer_paypal_email: paypalEmail,
                         buyer_paypal_transaction_id: txnId,
-                        status: 'paid'
+                        buyer_flagged: false,
+                        status: 'payment_verified'
+                    } : {
+                        payment_proof_url: fullDataUrl,
+                        payment_method: 'paypal',
+                        payment_date: new Date().toISOString(),
+                        status: 'payment_verified'
                     };
 
                     // Update correct table
@@ -4732,7 +4739,7 @@
                     <td style="padding: 12px; font-size: 13px; font-weight: 600; color: #2c3e50;">${comm.type}</td>
                     <td style="padding: 12px; font-size: 13px; color: #4a5568;">${comm.paid_by || 'Admin'}</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${typeof comm.feedback_id === 'string' ? comm.feedback_id.substring(0, 8) : 'N/A'}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 10px; color: #718096; max-width: 250px; word-break: break-all;">${typeof comm.feedback_id === 'string' ? comm.feedback_id : 'N/A'}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="viewReviewerCollectedReceipt('${comm.source}', '${comm.source_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
@@ -5623,13 +5630,12 @@
             }
 
             tbody.innerHTML = data.map(comm => {
-                const feedbackIdShort = comm.feedback_id ? comm.feedback_id.substring(0, 8) : 'N/A';
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;">${comm.type}</td>
                     <td style="padding: 12px;">${comm.paid_by || 'N/A'}</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 10px; color: #718096; max-width: 250px; word-break: break-all;">${comm.feedback_id || 'N/A'}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
@@ -6301,13 +6307,12 @@
             }
 
             tbody.innerHTML = data.map(comm => {
-                const feedbackIdShort = comm.feedback_id ? comm.feedback_id.substring(0, 8) : 'N/A';
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 12px;">${comm.type}</td>
                     <td style="padding: 12px;">${comm.paid_by || 'N/A'}</td>
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.amount || 0).toFixed(2)}</td>
-                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 10px; color: #718096; max-width: 250px; word-break: break-all;">${comm.feedback_id || 'N/A'}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
                         <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
