@@ -7345,13 +7345,6 @@
                     timerCell.style.color = slaTimer.statusColor;
                 }
             });
-            } catch (err) {
-                console.error('[Awaiting] Error:', err);
-                const tbody = document.getElementById('manage-awaiting-table-body');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading data</td></tr>';
-            } finally {
-                isLoadingManageAwaiting = false;
-            }
         }
 
         async function loadManageVerifiedPayouts() {
