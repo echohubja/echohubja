@@ -2596,6 +2596,7 @@
 
             await loadAdminReadyToRequest();
             await loadPendingApprovals();
+            await loadMyPaymentRequests();
 
             if (failCount === 0) {
                 showToast(`✓ ${successCount} commission(s) payment requested!`, 'success');
