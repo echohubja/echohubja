@@ -7769,6 +7769,11 @@
                             receiptData = payout.vendor_receipt_data;
                             receiptFilename = payout.vendor_receipt_filename || 'receipt.pdf';
                         }
+                    } else if (payout.source === 'buyer_payables') {
+                        if (payout.vendor_receipt_data) {
+                            receiptData = payout.vendor_receipt_data;
+                            receiptFilename = payout.vendor_receipt_filename || 'receipt.pdf';
+                        }
                     }
 
                     const viewButton = receiptData
