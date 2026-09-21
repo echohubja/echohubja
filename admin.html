@@ -3038,13 +3038,13 @@
                     console.log('[loadAwaitingReceipts] First admin record created_at:', adminData[0].created_at, typeof adminData[0].created_at);
                 }
 
-                // Query buyer_payables awaiting receipt verification (V9: status='awaiting_reviewer_proof')
+                // Query buyer_payables awaiting receipt verification (V9: status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
                 console.log('[loadAwaitingReceipts] Fetching buyer_payables...');
                 const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
                     .select(`
                         id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
                     `)
-                    .eq('status', 'awaiting_reviewer_proof')
+                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
                     .order('created_at', { ascending: false });
 
                 console.log('[loadAwaitingReceipts] Reviewer data received:', { count: reviewerData?.length, hasError: !!reviewerError });
