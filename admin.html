@@ -2552,9 +2552,9 @@
 
                         successCount++;
                     } else if (commissionType === 'reviewer') {
-                        // Update buyer_payables status from 'pending' to 'payment_requested'
+                        // Update buyer_payables status from 'pending' to 'here_are_people_requesting_for_me_to_pay_them'
                         const { error: updateError } = await db.from('buyer_payables')
-                            .update({ status: 'payment_requested' })
+                            .update({ status: 'here_are_people_requesting_for_me_to_pay_them' })
                             .eq('id', id);
 
                         if (updateError) {
@@ -2736,7 +2736,18 @@
 
                 const adminCommissions = adminData || [];
 
-                if (adminCommissions.length === 0) {
+                // Query buyer_payables for reviewer commissions with status='here_are_people_requesting_for_me_to_pay_them'
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, earning_type, created_at, status
+                    `)
+                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                    .eq('earning_type', 'own_feedback')
+                    .order('created_at', { ascending: false });
+
+                const reviewerCommissions = reviewerError ? [] : (reviewerData || []);
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending payment requests</td></tr>';
                     document.getElementById('my-payment-requests-record-count').textContent = '0 records';
                     return;
@@ -2771,13 +2782,15 @@
                 // Store global data for filtering
                 window.globalMyPaymentRequestsData = {
                     adminCommissions,
+                    reviewerCommissions,
                     vendorMap,
                     buyerMap,
                     vendorInviterMap
                 };
 
-                document.getElementById('metric-my-payment-requests').textContent = adminCommissions.length;
-                document.getElementById('my-payment-requests-record-count').textContent = adminCommissions.length + ' records';
+                const totalRequests = adminCommissions.length + reviewerCommissions.length;
+                document.getElementById('metric-my-payment-requests').textContent = totalRequests;
+                document.getElementById('my-payment-requests-record-count').textContent = totalRequests + ' records';
 
                 // Clear filters
                 document.getElementById('my-payment-requests-vendor-search').value = '';
@@ -2792,17 +2805,18 @@
         }
 
         function filterMyPaymentRequests() {
-            const data = window.globalMyPaymentRequestsData || { adminCommissions: [], vendorMap: {}, buyerMap: {}, vendorInviterMap: {} };
+            const data = window.globalMyPaymentRequestsData || { adminCommissions: [], reviewerCommissions: [], vendorMap: {}, buyerMap: {}, vendorInviterMap: {} };
             const vendorSearch = document.getElementById('my-payment-requests-vendor-search').value.toLowerCase().trim();
             const recipientFilter = document.getElementById('my-payment-requests-recipient-filter').value;
             const dateFrom = document.getElementById('my-payment-requests-date-from').value;
             const dateTo = document.getElementById('my-payment-requests-date-to').value;
 
-            let filteredRecords = data.adminCommissions || [];
+            // Combine admin and reviewer commissions
+            let allRecords = [...(data.adminCommissions || []), ...(data.reviewerCommissions || [])];
 
             // Filter by vendor name
             if (vendorSearch) {
-                filteredRecords = filteredRecords.filter(record => {
+                allRecords = allRecords.filter(record => {
                     const vendor = data.vendorMap[record.vendor_id] || {};
                     return (vendor.name || 'Unknown').toLowerCase().includes(vendorSearch);
                 });
@@ -2810,7 +2824,13 @@
 
             // Filter by recipient type
             if (recipientFilter) {
-                filteredRecords = filteredRecords.filter(record => {
+                allRecords = allRecords.filter(record => {
+                    // For reviewer commissions
+                    if (record.earning_type === 'own_feedback') {
+                        // Reviewer commissions include: reviewers
+                        return recipientFilter === 'Referrer' || recipientFilter === 'Reviewer';
+                    }
+                    // For admin commissions: check split_with_buyer_id
                     if (recipientFilter === 'Admin') return !record.split_with_buyer_id;
                     if (recipientFilter === 'Referrer') return !!record.split_with_buyer_id;
                     return true;
@@ -2820,15 +2840,15 @@
             // Filter by date range
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filteredRecords = filteredRecords.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                allRecords = allRecords.filter(record => new Date(record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filteredRecords = filteredRecords.filter(record => new Date(record.created_at).getTime() <= toDate);
+                allRecords = allRecords.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
-            renderMyPaymentRequestsTable(filteredRecords, data);
+            renderMyPaymentRequestsTable(allRecords, data);
         }
 
         function renderMyPaymentRequestsTable(records, data) {
@@ -2852,7 +2872,12 @@
                     let recipientName = 'Admin';
                     let recipientEmail = 'N/A';
 
-                    if (record.split_with_buyer_id) {
+                    // Handle reviewer commissions (earning_type field present)
+                    if (record.earning_type === 'own_feedback') {
+                        recipientType = 'Reviewer';
+                        recipientName = 'Reviewer';
+                        recipientEmail = 'N/A';
+                    } else if (record.split_with_buyer_id) {
                         recipientType = 'Referrer';
                         const buyer = buyerMap[record.split_with_buyer_id] || {};
                         recipientName = buyer.name || 'Unknown';
