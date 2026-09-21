@@ -2862,7 +2862,7 @@
                     <button class="lifecycle-tab-btn active" onclick="switchManagePayoutsLifecycleTab('incoming')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-incoming-tab">📥 Here are People Requesting for Me to Pay Them</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Here are People I Must Send Payment To</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Here are People Waiting For Me To Upload Proof After Sending Their Payment</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('collected')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-collected-tab">💳 Commissions Successfully Transferred</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('payment-history')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-payment-history-tab">💰 Payment History</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Payments Receipts That Admin Have Taken a Look at</button>
                 </div>
 
@@ -3010,24 +3010,24 @@
                         </div>
                     </div>
 
-                    <!-- COLLECTED SECTION (Tab 5) -->
-                    <div id="manage-collected-section" class="lifecycle-content" style="display: none;">
-                        <h3 style="color: #2c3e50; margin: 0 0 16px 0; font-size: 16px;">Commissions Successfully Transferred</h3>
+                    <!-- PAYMENT HISTORY SECTION (Tab 4) -->
+                    <div id="manage-payment-history-section" class="lifecycle-content" style="display: none;">
+                        <h3 style="color: #2c3e50; margin: 0 0 16px 0; font-size: 16px;">Payment History - All Successful Transfers</h3>
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                 <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                     <tr>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Paid To</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Commission Type</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Recipient Name</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">PayPal Email</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Feedback ID</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Amount</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transferred Date</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Status</th>
-                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Actions</th>
+                                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568;">Amount</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transfer Date</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transaction ID</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Receipt</th>
                                     </tr>
                                 </thead>
-                                <tbody id="manage-collected-table-body">
+                                <tbody id="manage-payment-history-table-body">
                                     <tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
@@ -6702,6 +6702,7 @@
                 document.querySelectorAll('#manage-pending-table-body tr').forEach(row => row.style.display = '');
                 document.querySelectorAll('#manage-awaiting-table-body tr').forEach(row => row.style.display = '');
                 document.querySelectorAll('#manage-verified-table-body tr').forEach(row => row.style.display = '');
+                document.querySelectorAll('#manage-payment-history-table-body tr').forEach(row => row.style.display = '');
                 document.getElementById('lifecycle-search-count').textContent = 'Showing all';
                 return;
             }
@@ -6722,7 +6723,7 @@
             visibleCount += searchInTable(document.getElementById('manage-pending-table-body'));
             visibleCount += searchInTable(document.getElementById('manage-awaiting-table-body'));
             visibleCount += searchInTable(document.getElementById('manage-verified-table-body'));
-            visibleCount += searchInTable(document.getElementById('manage-collected-table-body'));
+            visibleCount += searchInTable(document.getElementById('manage-payment-history-table-body'));
 
             document.getElementById('lifecycle-search-count').textContent = `Found: ${visibleCount}`;
         }
@@ -6733,7 +6734,7 @@
             document.getElementById('manage-pending-tab').classList.toggle('active', tab === 'pending');
             document.getElementById('manage-awaiting-tab').classList.toggle('active', tab === 'awaiting');
             document.getElementById('manage-verified-tab').classList.toggle('active', tab === 'verified');
-            document.getElementById('manage-collected-tab').classList.toggle('active', tab === 'collected');
+            document.getElementById('manage-payment-history-tab').classList.toggle('active', tab === 'payment-history');
 
             // Update button styling
             document.querySelectorAll('.lifecycle-tab-btn').forEach(btn => {
@@ -6746,14 +6747,14 @@
             document.getElementById('manage-pending-section').style.display = tab === 'pending' ? 'block' : 'none';
             document.getElementById('manage-awaiting-section').style.display = tab === 'awaiting' ? 'block' : 'none';
             document.getElementById('manage-verified-section').style.display = tab === 'verified' ? 'block' : 'none';
-            document.getElementById('manage-collected-section').style.display = tab === 'collected' ? 'block' : 'none';
+            document.getElementById('manage-payment-history-section').style.display = tab === 'payment-history' ? 'block' : 'none';
 
             // Load data for the selected tab
             if (tab === 'incoming') loadManageIncomingRequests();
             else if (tab === 'pending') loadManagePendingPayouts();
             else if (tab === 'awaiting') loadManageAwaitingPayouts();
             else if (tab === 'verified') loadManageVerifiedPayouts();
-            else if (tab === 'collected') loadManageCollectedPayouts();
+            else if (tab === 'payment-history') loadManagePaymentHistory();
         }
 
         function toggleManagePendingSelectAll() {
@@ -7361,27 +7362,27 @@
             }
         }
 
-        async function loadManageCollectedPayouts() {
+        async function loadManagePaymentHistory() {
             if (!sbClient || !currentVendor) return;
 
-            const tbody = document.getElementById('manage-collected-table-body');
+            const tbody = document.getElementById('manage-payment-history-table-body');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables with status 'paid' or 'payment_verified' - include receipt fields
+                // Query admin_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof' - include receipt fields
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_data, vendor_receipt_filename, buyer_receipt_data, buyer_receipt_filename')
                     .eq('vendor_id', currentVendor.id)
-                    .in('status', ['paid', 'payment_verified'])
+                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
                     .order('updated_at', { ascending: false });
 
-                // Query buyer_payables with status 'paid' or 'payment_verified'
+                // Query buyer_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
                 const { data: buyerPayouts, error: buyerError } = await sbClient
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, status, updated_at')
                     .eq('vendor_id', currentVendor.id)
-                    .in('status', ['paid', 'payment_verified'])
+                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
                     .order('updated_at', { ascending: false });
 
                 if (adminError) {
@@ -7642,6 +7643,7 @@
                 .eq('id', payoutId)
                 .then(() => {
                     loadManagePendingPayouts();
+                    loadManagePaymentHistory();
                 })
                 .catch(err => {
                     console.error('Error approving payout:', err);
