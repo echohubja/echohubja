@@ -4649,73 +4649,29 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query 1: Direct feedback commissions from buyer_payables where receipt was collected
+                // Query: Reviewer feedback commissions where receipt was collected
                 const { data: buyerPayables } = await db
                     .from('buyer_payables')
-                    .select('id, amount_owed, related_feedback_ids, status, payment_verified_date, created_at, buyer_flagged, vendor_flagged')
+                    .select('id, amount_owed, related_feedback_ids, status, payment_verified_date, created_at, buyer_flagged, vendor_flagged, payment_proof_url')
                     .eq('buyer_id', buyerId)
                     .in('status', ['payment_verified', 'paid'])
                     .order('created_at', { ascending: false });
 
-                // Query 2: Referral payouts from admin_payables where this buyer is the recipient
-                const { data: adminPayables } = await db
-                    .from('admin_payables')
-                    .select('id, vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at, buyer_flagged, split_with_buyer_id')
-                    .eq('split_with_buyer_id', buyerId)
-                    .in('status', ['payment_verified', 'paid'])
-                    .neq('buyer_receipt_data', null)
-                    .order('created_at', { ascending: false });
-
-                // Combine and process data
                 globalReviewerCollectedData = [];
 
-                // Add direct feedback commissions
+                // Add feedback commissions from buyer_payables
                 if (buyerPayables && buyerPayables.length > 0) {
                     buyerPayables.forEach(comm => {
                         globalReviewerCollectedData.push({
-                            type: 'Direct Feedback',
+                            type: 'Feedback Received',
                             id: comm.id,
                             amount: comm.amount_owed,
                             feedback_id: comm.related_feedback_ids?.[0] || 'N/A',
                             collected_date: comm.payment_verified_date || comm.created_at,
                             source: 'buyer_payables',
-                            source_id: comm.id
-                        });
-                    });
-                }
-
-                // Add referral payouts
-                if (adminPayables && adminPayables.length > 0) {
-                    adminPayables.forEach(comm => {
-                        globalReviewerCollectedData.push({
-                            type: 'Referral Payout',
-                            id: comm.id,
-                            amount: comm.buyer_portion,
-                            feedback_id: comm.related_feedback_id || 'N/A',
-                            collected_date: comm.buyer_receipt_uploaded_date || comm.created_at,
-                            source: 'admin_payables',
                             source_id: comm.id,
-                            vendor_id: comm.vendor_id
+                            paid_by: 'Vendor'
                         });
-                    });
-                }
-
-                // Fetch vendor names for referral payouts
-                const vendorIds = [...new Set(globalReviewerCollectedData.filter(d => d.vendor_id).map(d => d.vendor_id))];
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await db
-                        .from('vendors')
-                        .select('id, business_name')
-                        .in('id', vendorIds);
-
-                    const vendorMap = {};
-                    vendors?.forEach(v => vendorMap[v.id] = v.business_name);
-
-                    globalReviewerCollectedData = globalReviewerCollectedData.map(comm => {
-                        if (comm.vendor_id && vendorMap[comm.vendor_id]) {
-                            comm.paid_by = vendorMap[comm.vendor_id];
-                        }
-                        return comm;
                     });
                 }
 
@@ -4779,7 +4735,7 @@
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${typeof comm.feedback_id === 'string' ? comm.feedback_id.substring(0, 8) : 'N/A'}...</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="viewReviewerCollectedReceipt('${comm.source}', '${comm.source_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                        <button onclick="viewReviewerCollectedReceipt('${comm.source}', '${comm.source_id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
                     </td>
                 </tr>
             `).join('');
@@ -4787,38 +4743,15 @@
 
         async function viewReviewerCollectedReceipt(source, recordId) {
             try {
-                let record;
-                if (source === 'buyer_payables') {
-                    const { data } = await db
-                        .from('buyer_payables')
-                        .select('*')
-                        .eq('id', recordId)
-                        .single();
-                    record = data;
-                } else {
-                    const { data } = await db
-                        .from('admin_payables')
-                        .select('*')
-                        .eq('id', recordId)
-                        .single();
-                    record = data;
-                }
+                const { data: record } = await db
+                    .from('buyer_payables')
+                    .select('id, payment_proof_url')
+                    .eq('id', recordId)
+                    .single();
 
-                if (!record) {
-                    alert('Record not found');
-                    return;
-                }
-
-                // Determine which receipt to show
-                let receiptData, receiptFiletype;
-                if (source === 'admin_payables' && record.buyer_receipt_data) {
-                    receiptData = record.buyer_receipt_data;
-                    receiptFiletype = record.buyer_receipt_filetype;
-                } else if (source === 'buyer_payables' && record.payment_proof_url) {
-                    receiptData = record.payment_proof_url;
-                    receiptFiletype = 'image/png';
-                } else {
-                    alert('No receipt available');
+                if (!record || !record.payment_proof_url) {
+                    console.error('Receipt not found for recordId:', recordId);
+                    alert('Receipt not available for this commission');
                     return;
                 }
 
@@ -4826,12 +4759,61 @@
                 const modal = document.getElementById('reviewer-collected-receipt-modal');
                 const receiptContainer = document.getElementById('reviewer-collected-receipt-content');
 
-                if (!modal) {
-                    console.error('Modal not found');
+                if (!modal || !receiptContainer) {
+                    console.error('Modal elements not found');
+                    alert('Receipt display error');
                     return;
                 }
 
-                if (receiptFiletype && receiptFiletype.includes('pdf')) {
+                const receiptUrl = record.payment_proof_url;
+                const isPdf = receiptUrl.toLowerCase().includes('pdf');
+
+                if (isPdf) {
+                    receiptContainer.innerHTML = `<embed src="${receiptUrl}" type="application/pdf" style="width: 100%; height: 100%; border: none;">`;
+                } else {
+                    receiptContainer.innerHTML = `<img src="${receiptUrl}" style="width: 100%; height: auto; border-radius: 8px;">`;
+                }
+
+                modal.classList.add('active');
+            } catch (err) {
+                console.error('Error viewing receipt:', err);
+                alert('Error displaying receipt');
+            }
+        }
+
+        function closeReviewerCollectedReceiptModal() {
+            const modal = document.getElementById('reviewer-collected-receipt-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        async function viewPaymentDetails(commissionId) {
+            try {
+                const { data: record } = await db
+                    .from('admin_payables')
+                    .select('id, buyer_receipt_data, buyer_receipt_filetype')
+                    .eq('id', commissionId)
+                    .single();
+
+                if (!record || !record.buyer_receipt_data) {
+                    console.error('Receipt not found for commissionId:', commissionId);
+                    alert('Receipt not available for this commission');
+                    return;
+                }
+
+                // Display modal
+                const modal = document.getElementById('reviewer-collected-receipt-modal');
+                const receiptContainer = document.getElementById('reviewer-collected-receipt-content');
+
+                if (!modal || !receiptContainer) {
+                    console.error('Modal elements not found');
+                    alert('Receipt display error');
+                    return;
+                }
+
+                const receiptData = record.buyer_receipt_data;
+                const receiptFiletype = record.buyer_receipt_filetype || 'image/png';
+
+                if (receiptFiletype && receiptFiletype.toLowerCase().includes('pdf')) {
                     receiptContainer.innerHTML = `<embed src="data:application/pdf;base64,${receiptData}" type="application/pdf" style="width: 100%; height: 100%; border: none;">`;
                 } else {
                     receiptContainer.innerHTML = `<img src="data:${receiptFiletype};base64,${receiptData}" style="width: 100%; height: auto; border-radius: 8px;">`;
@@ -4840,13 +4822,8 @@
                 modal.classList.add('active');
             } catch (err) {
                 console.error('Error viewing receipt:', err);
-                alert('Error loading receipt');
+                alert('Error displaying receipt');
             }
-        }
-
-        function closeReviewerCollectedReceiptModal() {
-            const modal = document.getElementById('reviewer-collected-receipt-modal');
-            if (modal) modal.classList.remove('active');
         }
 
         // ========== BUYER INVITER APPROVALS ==========
@@ -5531,7 +5508,7 @@
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.buyer_portion || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
                     </td>
                 </tr>
             `;}).join('');
@@ -5543,7 +5520,20 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query: Admin payables where this buyer is the recipient and payment is verified/paid
+                // Step 1: Find buyers this buyer invited
+                const { data: invitedBuyers } = await db
+                    .from('buyers')
+                    .select('id')
+                    .eq('referred_by', buyerId);
+
+                if (!invitedBuyers || invitedBuyers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No collected commissions</td></tr>';
+                    return;
+                }
+
+                const buyerIds = invitedBuyers.map(b => b.id);
+
+                // Step 2: Query admin_payables where this buyer gets a split for commissions from those buyers
                 const { data: adminPayables } = await db
                     .from('admin_payables')
                     .select('id, vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at')
@@ -5557,7 +5547,7 @@
                 if (adminPayables && adminPayables.length > 0) {
                     adminPayables.forEach(comm => {
                         globalBuyerInviterCollectedData.push({
-                            type: 'Referral Payout',
+                            type: 'Buyer Referral',
                             id: comm.id,
                             amount: comm.buyer_portion,
                             feedback_id: comm.related_feedback_id || 'N/A',
@@ -5642,7 +5632,7 @@
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
                     </td>
                 </tr>
             `;}).join('');
@@ -6195,7 +6185,7 @@
                     <td style="padding: 12px; font-weight: 600; color: #10b981;">$${parseFloat(comm.admin_commission || 0).toFixed(2)}</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
                     </td>
                 </tr>
             `; }).join('');
@@ -6207,11 +6197,25 @@
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query: Admin payables where this buyer is the vendor inviter recipient and payment is verified/paid
+                // Step 1: Find vendors this buyer invited
+                const { data: invitedVendors } = await db
+                    .from('vendors')
+                    .select('id')
+                    .eq('referred_by_buyer_id', buyerId);
+
+                if (!invitedVendors || invitedVendors.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No collected commissions</td></tr>';
+                    return;
+                }
+
+                const vendorIds = invitedVendors.map(v => v.id);
+
+                // Step 2: Query admin_payables where this buyer gets a split for those vendors
                 const { data: adminPayables } = await db
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at')
-                    .eq('split_with_vendor_id', buyerId)
+                    .select('id, vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at')
+                    .eq('split_with_buyer_id', buyerId)
+                    .in('vendor_id', vendorIds)
                     .in('status', ['payment_verified', 'paid'])
                     .neq('buyer_receipt_data', null)
                     .order('created_at', { ascending: false });
@@ -6221,7 +6225,7 @@
                 if (adminPayables && adminPayables.length > 0) {
                     adminPayables.forEach(comm => {
                         globalVendorInviterCollectedData.push({
-                            type: 'Referral Payout',
+                            type: 'Vendor Referral',
                             id: comm.id,
                             amount: comm.buyer_portion,
                             feedback_id: comm.related_feedback_id || 'N/A',
@@ -6232,12 +6236,12 @@
                 }
 
                 // Fetch vendor names
-                const vendorIds = [...new Set(globalVendorInviterCollectedData.filter(d => d.vendor_id).map(d => d.vendor_id))];
-                if (vendorIds.length > 0) {
+                const vendorIdsInData = [...new Set(globalVendorInviterCollectedData.filter(d => d.vendor_id).map(d => d.vendor_id))];
+                if (vendorIdsInData.length > 0) {
                     const { data: vendors } = await db
                         .from('vendors')
                         .select('id, business_name')
-                        .in('id', vendorIds);
+                        .in('id', vendorIdsInData);
 
                     const vendorMap = {};
                     vendors?.forEach(v => vendorMap[v.id] = v.business_name);
@@ -6306,7 +6310,7 @@
                     <td style="padding: 12px; font-family: monospace; font-size: 12px;">${feedbackIdShort}...</td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.collected_date).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                        <button onclick="viewPaymentDetails('${comm.id}')" style="background: #1e5aa8; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">View Receipt</button>
                     </td>
                 </tr>
             `;}).join('');
