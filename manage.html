@@ -7483,6 +7483,25 @@
                     }
                 }
 
+                // Fetch vendor inviter details
+                const vendorInviterIds = allPayouts
+                    .filter(p => p.recipientType === 'vendor_inviter' && p.split_with_vendor_id)
+                    .map(p => p.split_with_vendor_id)
+                    .filter(Boolean);
+
+                if (vendorInviterIds.length > 0) {
+                    const { data: vendors } = await sbClient
+                        .from('vendors')
+                        .select('id, business_name as full_name, paypal_email')
+                        .in('id', vendorInviterIds);
+
+                    if (vendors) {
+                        vendors.forEach(v => {
+                            allRecipients[v.id] = v;
+                        });
+                    }
+                }
+
                 // Render table
                 tbody.innerHTML = allPayouts.map(payout => {
                     let fullName = 'N/A';
@@ -7501,8 +7520,9 @@
                         fullName = recipient?.full_name || 'Unknown Buyer Inviter';
                         paypalEmail = recipient?.paypal_email || 'N/A';
                     } else if (payout.recipientType === 'vendor_inviter') {
-                        fullName = 'Vendor Inviter';
-                        paypalEmail = '-';
+                        const recipient = allRecipients[payout.split_with_vendor_id];
+                        fullName = recipient?.full_name || 'Unknown Vendor Inviter';
+                        paypalEmail = recipient?.paypal_email || 'N/A';
                     }
 
                     const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0] || 'N/A';
