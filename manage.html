@@ -7369,30 +7369,40 @@
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
             try {
-                // Query admin_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof' - include receipt fields
+                // Query admin_payables for vendor's own commissions and vendor inviter payouts
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
                     .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_data, vendor_receipt_filename, buyer_receipt_data, buyer_receipt_filename')
-                    .eq('vendor_id', currentVendor.id)
+                    .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_id.eq.${currentVendor.id}`)
                     .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
                     .order('updated_at', { ascending: false });
 
-                // Query buyer_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
-                const { data: buyerPayouts, error: buyerError } = await sbClient
-                    .from('buyer_payables')
-                    .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, status, updated_at')
-                    .eq('vendor_id', currentVendor.id)
-                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
-                    .order('updated_at', { ascending: false });
+                // Query buyer_payables for reviewer payments (buyers who reviewed this vendor's products)
+                // First get feedback IDs for this vendor
+                const { data: vendorInquiries, error: inquiryError } = await sbClient
+                    .from('inquiries')
+                    .select('id')
+                    .eq('vendor_id', currentVendor.id);
+
+                let buyerPayouts = [];
+                if (vendorInquiries && vendorInquiries.length > 0) {
+                    const feedbackIds = vendorInquiries.map(inq => inq.id);
+                    const { data: reviewerData, error: reviewerError } = await sbClient
+                        .from('buyer_payables')
+                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at')
+                        .overlaps('related_feedback_ids', feedbackIds)
+                        .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
+                        .order('updated_at', { ascending: false });
+
+                    if (reviewerData) {
+                        buyerPayouts = reviewerData;
+                    }
+                }
 
                 if (adminError) {
                     console.error('Error loading admin payouts:', adminError);
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
-                }
-
-                if (buyerError) {
-                    console.error('Error loading buyer payouts:', buyerError);
                 }
 
                 // Combine all payouts
@@ -7404,12 +7414,15 @@
                         let recipientType = 'admin';
                         let displayAmount = payout.admin_commission || 0;
 
-                        if (payout.split_with_vendor_id) {
+                        if (payout.split_with_vendor_id && payout.split_with_vendor_id === currentVendor.id) {
                             recipientType = 'vendor_inviter';
                             displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
                         } else if (payout.split_with_buyer_id) {
                             recipientType = 'buyer_inviter';
                             displayAmount = payout.buyer_portion || 0;
+                        } else if (payout.vendor_id === currentVendor.id) {
+                            recipientType = 'admin';
+                            displayAmount = payout.admin_commission || 0;
                         }
 
                         allPayouts.push({
@@ -7421,7 +7434,7 @@
                     });
                 }
 
-                // Process buyer_payables
+                // Process buyer_payables (reviewer payments made by vendor)
                 if (buyerPayouts && buyerPayouts.length > 0) {
                     buyerPayouts.forEach(payout => {
                         allPayouts.push({
@@ -7438,43 +7451,52 @@
                     return;
                 }
 
-                // Fetch recipient details and inquiries
+                // Fetch recipient details
                 const allRecipients = {};
-                const feedbackIds = allPayouts.map(p => p.related_feedback_id || p.related_feedback_ids?.[0]).filter(Boolean);
-                const inquiriesMap = {};
 
-                // Fetch inquiries for feedback details
-                if (feedbackIds.length > 0) {
+                // Collect buyer IDs from buyer_inviters and reviewers
+                const buyerIds = new Set();
+
+                // Buyer inviters need inquiry lookup
+                const buyerInviterFeedbacks = new Set();
+                for (const payout of allPayouts.filter(p => p.recipientType === 'buyer_inviter')) {
+                    if (payout.related_feedback_id) buyerInviterFeedbacks.add(payout.related_feedback_id);
+                }
+
+                // Reviewers are direct buyer IDs
+                for (const payout of allPayouts.filter(p => p.recipientType === 'reviewer')) {
+                    if (payout.buyer_id) buyerIds.add(payout.buyer_id);
+                }
+
+                // Lookup inquiries for buyer_inviters
+                const inquiryToBuyerMap = {};
+                if (buyerInviterFeedbacks.size > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
                         .select('id, buyer_id')
-                        .in('id', feedbackIds);
+                        .in('id', Array.from(buyerInviterFeedbacks));
 
                     if (inquiries) {
                         inquiries.forEach(inq => {
-                            inquiriesMap[inq.id] = inq;
+                            inquiryToBuyerMap[inq.id] = inq.buyer_id;
+                            buyerIds.add(inq.buyer_id);
                         });
                     }
+
+                    // Store inquiry map for rendering
+                    allPayouts.forEach(p => {
+                        if (p.recipientType === 'buyer_inviter' && p.related_feedback_id) {
+                            p._buyerId = inquiryToBuyerMap[p.related_feedback_id];
+                        }
+                    });
                 }
 
-                // Fetch buyer/admin details for recipients
-                const buyerIds = allPayouts
-                    .map(p => {
-                        if (p.recipientType === 'reviewer') return p.vendor_id;
-                        if (p.recipientType === 'admin') return null;
-                        if (p.recipientType === 'buyer_inviter') {
-                            const inquiry = inquiriesMap[p.related_feedback_id];
-                            return inquiry?.buyer_id;
-                        }
-                        return null;
-                    })
-                    .filter(Boolean);
-
-                if (buyerIds.length > 0) {
+                // Fetch all buyer details
+                if (buyerIds.size > 0) {
                     const { data: buyers } = await sbClient
                         .from('buyers')
                         .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
+                        .in('id', Array.from(buyerIds));
 
                     if (buyers) {
                         buyers.forEach(b => {
@@ -7511,12 +7533,11 @@
                         fullName = 'Admin';
                         paypalEmail = '-';
                     } else if (payout.recipientType === 'reviewer') {
-                        const recipient = allRecipients[payout.vendor_id];
+                        const recipient = allRecipients[payout.buyer_id];
                         fullName = recipient?.full_name || 'Unknown Reviewer';
                         paypalEmail = recipient?.paypal_email || 'N/A';
                     } else if (payout.recipientType === 'buyer_inviter') {
-                        const inquiry = inquiriesMap[payout.related_feedback_id];
-                        const recipient = allRecipients[inquiry?.buyer_id];
+                        const recipient = allRecipients[payout._buyerId];
                         fullName = recipient?.full_name || 'Unknown Buyer Inviter';
                         paypalEmail = recipient?.paypal_email || 'N/A';
                     } else if (payout.recipientType === 'vendor_inviter') {
