@@ -3024,11 +3024,12 @@
                                         <th style="padding: 12px; text-align: right; font-weight: 600; color: #4a5568;">Amount</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transfer Date</th>
                                         <th style="padding: 12px; text-align: left; font-weight: 600; color: #4a5568;">Transaction ID</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Status</th>
                                         <th style="padding: 12px; text-align: center; font-weight: 600; color: #4a5568;">Receipt</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manage-payment-history-table-body">
-                                    <tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
+                                    <tr><td colspan="9" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -7505,22 +7506,41 @@
                     }
                 }
 
-                // Fetch vendor inviter details
+                // Fetch vendor inviter details (could be buyer or admin)
                 const vendorInviterIds = allPayouts
                     .filter(p => p.recipientType === 'vendor_inviter' && p.split_with_vendor_id)
                     .map(p => p.split_with_vendor_id)
                     .filter(Boolean);
 
                 if (vendorInviterIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name as full_name, paypal_email')
+                    // Try buyers table first
+                    const { data: buyerInviters } = await sbClient
+                        .from('buyers')
+                        .select('id, full_name, paypal_email')
                         .in('id', vendorInviterIds);
 
-                    if (vendors) {
-                        vendors.forEach(v => {
-                            allRecipients[v.id] = v;
+                    if (buyerInviters) {
+                        buyerInviters.forEach(b => {
+                            allRecipients[b.id] = b;
                         });
+                    }
+
+                    // Find remaining IDs (not in buyers)
+                    const foundIds = new Set(buyerInviters?.map(b => b.id) || []);
+                    const remainingIds = vendorInviterIds.filter(id => !foundIds.has(id));
+
+                    // Try admins table for remaining
+                    if (remainingIds.length > 0) {
+                        const { data: adminInviters } = await sbClient
+                            .from('admins')
+                            .select('id, full_name, paypal_email')
+                            .in('id', remainingIds);
+
+                        if (adminInviters) {
+                            adminInviters.forEach(a => {
+                                allRecipients[a.id] = a;
+                            });
+                        }
                     }
                 }
 
@@ -7547,9 +7567,29 @@
                     }
 
                     const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0] || 'N/A';
-                    const statusBadge = payout.status === 'payment_verified'
-                        ? '<span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Verified</span>'
-                        : '<span style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Paid</span>';
+
+                    // Transaction ID
+                    let txnId = 'Pending';
+                    if (payout.recipientType === 'reviewer') {
+                        txnId = payout.payment_method === 'paypal' ? 'PayPal Transfer' : 'N/A';
+                    } else if (payout.recipientType === 'buyer_inviter') {
+                        txnId = payout.buyer_paypal_transaction_id || 'Pending';
+                    } else if (payout.recipientType === 'vendor_inviter') {
+                        txnId = payout.vendor_paypal_transaction_id || 'Pending';
+                    }
+
+                    // Receipt Status - all 6 statuses
+                    let statusBadge = '';
+                    const statusMap = {
+                        'payment_sent': { bg: '#f59e0b', text: '⏳ Payment Sent' },
+                        'awaiting_buyer_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Buyer Proof' },
+                        'awaiting_vendor_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Vendor Proof' },
+                        'paid': { bg: '#3b82f6', text: '✓ Paid' },
+                        'payment_verified': { bg: '#10b981', text: '✓ Verified' },
+                        'completed': { bg: '#10b981', text: '✓ Completed' }
+                    };
+                    const statusStyle = statusMap[payout.status] || { bg: '#64748b', text: '? Unknown' };
+                    statusBadge = `<span style="background: ${statusStyle.bg}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${statusStyle.text}</span>`;
 
                     // Determine which receipt to display
                     let receiptData = null;
@@ -7574,6 +7614,7 @@
                             <td style="padding: 12px; text-align: left; font-family: monospace; font-size: 12px;">${feedbackId}</td>
                             <td style="padding: 12px; text-align: left; font-weight: 600;">$${(payout.displayAmount || 0).toFixed(2)}</td>
                             <td style="padding: 12px; text-align: left;">${new Date(payout.updated_at).toLocaleDateString()}</td>
+                            <td style="padding: 12px; text-align: left; font-family: monospace; font-size: 11px; color: #0ea5e9;">${txnId}</td>
                             <td style="padding: 12px; text-align: center;">${statusBadge}</td>
                             <td style="padding: 12px; text-align: center;">${viewButton}</td>
                         </tr>
@@ -7595,24 +7636,34 @@
                 z-index: 9999; padding: 20px;
             `;
 
+            const isVerified = preview && preview.length > 0;
+            const verificationStatus = isVerified
+                ? '<div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px; text-align: center;"><p style="margin: 0; color: #15803d; font-weight: 600; font-size: 14px;">✓ Receipt Verified</p><p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin has confirmed receipt payment</p></div>'
+                : '<div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; text-align: center;"><p style="margin: 0; color: #92400e; font-weight: 600; font-size: 14px;">⏳ Pending Verification</p><p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin is reviewing your receipt</p></div>';
+
             modal.innerHTML = `
                 <div style="background: white; border-radius: 12px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;">
                     <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                        <h3 style="margin: 0; color: #1e5aa8; font-size: 18px;">📄 Receipt Verification</h3>
+                        <h3 style="margin: 0; color: #1e40af; font-size: 18px; font-weight: 600;">📄 Receipt Verification</h3>
                         <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
                     </div>
                     <div style="padding: 20px; flex: 1; min-height: 200px;">
-                        <p style="color: #64748b; margin-bottom: 16px; font-size: 14px;"><strong>Filename:</strong> ${filename}</p>
-                        <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px; text-align: center;">
-                            <p style="margin: 0; color: #15803d; font-weight: 600; font-size: 14px;">✓ Receipt Verified</p>
-                            <p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin has confirmed receipt payment</p>
+                        <div style="margin-bottom: 16px;">
+                            <p style="color: #64748b; margin: 0 0 8px 0; font-size: 12px; font-weight: 600; text-transform: uppercase;">File Information</p>
+                            <p style="color: #1e293b; margin: 0; font-size: 14px;"><strong>Filename:</strong> ${filename || 'N/A'}</p>
                         </div>
+                        ${verificationStatus}
                         <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1;">
-                            <p style="margin: 0; color: #4a5568; font-size: 13px; font-family: monospace; word-break: break-all;">Receipt data confirmed in system</p>
+                            <p style="margin: 0; color: #4a5568; font-size: 13px; font-family: monospace; word-break: break-all; max-height: 100px; overflow-y: auto;">Preview: ${preview || 'No receipt data'}</p>
+                        </div>
+                        <div style="margin-top: 12px; padding: 12px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <p style="margin: 0; color: #1e40af; font-size: 12px;">
+                                <strong>Status:</strong> Receipt has been submitted to the system. Admin will review and verify within 24-48 hours.
+                            </p>
                         </div>
                     </div>
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
-                        <button onclick="this.closest('div').parentElement.remove()" style="background: #1e5aa8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%;">Close</button>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%;">Close</button>
                     </div>
                 </div>
             `;
