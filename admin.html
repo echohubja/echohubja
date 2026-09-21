@@ -3470,7 +3470,7 @@
             tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>';
 
             try {
-                // Query admin_payables where status='paid' (both vendor and buyer have uploaded receipts)
+                // Query admin_payables where status='payment_sent' (vendor has uploaded receipt proof)
                 const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
                         id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
@@ -3478,16 +3478,16 @@
                         buyer_paypal_transaction_id, buyer_receipt_data, buyer_receipt_filename,
                         buyer_receipt_filetype, created_at, related_feedback_id
                     `)
-                    .eq('status', 'paid')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
-                // Query buyer_payables where status='paid' (vendor has uploaded receipt proof)
+                // Query buyer_payables where status='payment_sent' (vendor has uploaded receipt proof)
                 const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
                     .select(`
                         id, buyer_id, amount_owed, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype,
                         vendor_paypal_transaction_id, created_at, related_feedback_ids
                     `)
-                    .eq('status', 'paid')
+                    .eq('status', 'payment_sent')
                     .order('created_at', { ascending: false });
 
                 if (adminError) {
