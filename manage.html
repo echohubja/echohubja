@@ -4812,7 +4812,7 @@
             try {
                 const { data: vendor, error: vendorError } = await sbClient
                     .from('vendors')
-                    .select('id, accumulated_balance, commission_threshold, commission')
+                    .select('id, commission_threshold, commission')
                     .eq('id', currentVendor.id)
                     .single();
 
@@ -4826,7 +4826,84 @@
                     return;
                 }
 
-                const accumulated = parseFloat(vendor.accumulated_balance || 0);
+                // Query admin_payables - pending payouts vendor must make
+                const { data: adminPayouts, error: adminError } = await sbClient
+                    .from('admin_payables')
+                    .select('amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id')
+                    .eq('vendor_id', currentVendor.id)
+                    .eq('status', 'pending');
+
+                if (adminError) {
+                    console.error('Admin payables fetch error:', adminError);
+                    return;
+                }
+
+                // Query buyer_payables - reviewer payouts vendor must make
+                const { data: buyerPayoutsRaw, error: buyerError } = await sbClient
+                    .from('buyer_payables')
+                    .select('amount_owed, related_feedback_ids')
+                    .eq('earning_type', 'own_feedback')
+                    .eq('status', 'pending');
+
+                if (buyerError) {
+                    console.error('Buyer payables fetch error:', buyerError);
+                    return;
+                }
+
+                // Filter buyer payouts to current vendor's feedback
+                let buyerPayouts = [];
+                let feedbackIds = [];
+                if (buyerPayoutsRaw && buyerPayoutsRaw.length > 0) {
+                    feedbackIds = buyerPayoutsRaw
+                        .flatMap(bp => bp.related_feedback_ids || [])
+                        .filter(Boolean);
+                }
+
+                if (feedbackIds.length > 0) {
+                    const { data: inquiries } = await sbClient
+                        .from('inquiries')
+                        .select('id, vendor_id')
+                        .in('id', feedbackIds);
+
+                    const vendorFeedbackIds = new Set();
+                    if (inquiries) {
+                        inquiries
+                            .filter(inq => inq.vendor_id === currentVendor.id)
+                            .forEach(inq => vendorFeedbackIds.add(inq.id));
+                    }
+
+                    buyerPayouts = buyerPayoutsRaw.filter(bp =>
+                        bp.related_feedback_ids &&
+                        bp.related_feedback_ids.some(id => vendorFeedbackIds.has(id))
+                    );
+                }
+
+                // Calculate total pending commissions vendor must pay
+                let accumulated = 0;
+
+                // Sum admin_payables portions
+                if (adminPayouts && adminPayouts.length > 0) {
+                    adminPayouts.forEach(payout => {
+                        if (payout.split_with_vendor_id) {
+                            // Vendor inviter - calculate split
+                            accumulated += (payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0));
+                        } else if (payout.split_with_buyer_id) {
+                            // Buyer inviter split
+                            accumulated += (payout.buyer_portion || 0);
+                        } else {
+                            // Admin commission
+                            accumulated += (payout.admin_commission || 0);
+                        }
+                    });
+                }
+
+                // Sum buyer_payables (reviewer payouts)
+                if (buyerPayouts && buyerPayouts.length > 0) {
+                    buyerPayouts.forEach(payout => {
+                        accumulated += (parseFloat(payout.amount_owed) || 0);
+                    });
+                }
+
                 const threshold = parseFloat(vendor.commission_threshold || vendor.commission || 0);
                 const progressPercent = threshold > 0 ? Math.round((accumulated / threshold) * 100) : 0;
                 const capped_percent = Math.min(progressPercent, 100);
@@ -6836,15 +6913,14 @@
                 if (adminPayouts && adminPayouts.length > 0) {
                     adminPayouts.forEach(payout => {
                         let recipientType = 'admin';
-                        let displayAmount = payout.admin_commission || 0;
+                        let displayAmount = payout.amount_owed || 0;
 
                         if (payout.split_with_vendor_id) {
                             recipientType = 'vendor_inviter';
-                            // For vendor inviter, calculate the split amount
-                            displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                            displayAmount = payout.amount_owed || 0;
                         } else if (payout.split_with_buyer_id) {
                             recipientType = 'buyer_inviter';
-                            displayAmount = payout.buyer_portion || 0;
+                            displayAmount = payout.amount_owed || 0;
                         }
 
                         allPayouts.push({
