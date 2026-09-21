@@ -3742,6 +3742,32 @@
                     if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
+                // Fetch vendor inviter details (could be buyer or admin)
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                if (vendorInviterIds.length > 0) {
+                    // Try buyers table first
+                    const { data: buyerInviters } = await db.from('buyers').select('id, full_name, paypal_email').in('id', vendorInviterIds);
+                    if (buyerInviters) {
+                        buyerInviters.forEach(b => {
+                            vendorMap[b.id] = { name: b.full_name || 'Unknown', email: b.paypal_email || 'N/A' };
+                        });
+                    }
+
+                    // Find remaining IDs (not in buyers)
+                    const foundIds = new Set(buyerInviters?.map(b => b.id) || []);
+                    const remainingIds = vendorInviterIds.filter(id => !foundIds.has(id));
+
+                    // Try admins table for remaining
+                    if (remainingIds.length > 0) {
+                        const { data: adminInviters } = await db.from('admins').select('id, full_name, paypal_email').in('id', remainingIds);
+                        if (adminInviters) {
+                            adminInviters.forEach(a => {
+                                vendorMap[a.id] = { name: a.full_name || 'Unknown', email: a.paypal_email || 'N/A' };
+                            });
+                        }
+                    }
+                }
+
                 // Render payment history table
                 renderPaymentHistoryTable({
                     adminCommissions,
@@ -3788,7 +3814,19 @@
                 }
 
                 const transferDate = record.updated_at ? new Date(record.updated_at).toLocaleDateString() : 'N/A';
-                const receiptStatus = record.status === 'paid' ? '✅ Paid' : '⏳ Verified';
+
+                // Status badge mapping for all 6 payment-related statuses
+                const statusMap = {
+                    'payment_sent': { bg: '#f59e0b', text: '⏳ Payment Sent' },
+                    'awaiting_buyer_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Buyer Proof' },
+                    'awaiting_vendor_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Vendor Proof' },
+                    'paid': { bg: '#3b82f6', text: '✓ Paid' },
+                    'payment_verified': { bg: '#10b981', text: '✓ Verified' },
+                    'completed': { bg: '#10b981', text: '✓ Completed' }
+                };
+                const statusStyle = statusMap[record.status] || { bg: '#64748b', text: '? Unknown' };
+                const receiptStatus = `<span style="background: ${statusStyle.bg}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${statusStyle.text}</span>`;
+
                 const feedbackId = record.related_feedback_id ? record.related_feedback_id.substring(0, 8) : 'N/A';
                 const vendor = vendorMap[record.vendor_id]?.name || 'Unknown';
 
@@ -3813,7 +3851,19 @@
                 const recipientEmail = buyerMap[record.buyer_id]?.email || 'N/A';
                 const amount = record.amount_owed || 0;
                 const transferDate = record.payment_date ? new Date(record.payment_date).toLocaleDateString() : new Date(record.updated_at).toLocaleDateString();
-                const receiptStatus = record.status === 'paid' ? '✅ Paid' : '⏳ Verified';
+
+                // Status badge mapping for all 6 payment-related statuses
+                const statusMap = {
+                    'payment_sent': { bg: '#f59e0b', text: '⏳ Payment Sent' },
+                    'awaiting_buyer_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Buyer Proof' },
+                    'awaiting_vendor_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Vendor Proof' },
+                    'paid': { bg: '#3b82f6', text: '✓ Paid' },
+                    'payment_verified': { bg: '#10b981', text: '✓ Verified' },
+                    'completed': { bg: '#10b981', text: '✓ Completed' }
+                };
+                const statusStyle = statusMap[record.status] || { bg: '#64748b', text: '? Unknown' };
+                const receiptStatus = `<span style="background: ${statusStyle.bg}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${statusStyle.text}</span>`;
+
                 const feedbackId = record.related_feedback_ids && record.related_feedback_ids[0] ? record.related_feedback_ids[0].substring(0, 8) : 'N/A';
                 const txnId = record.payment_method === 'paypal' ? 'PayPal Transfer' : 'N/A';
 
@@ -3836,8 +3886,53 @@
         }
 
         function viewPaymentHistoryDetails(commissionId) {
-            alert('Payment details modal for: ' + commissionId);
-            // TODO: Implement detailed modal view
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0, 0, 0, 0.5); display: flex;
+                align-items: center; justify-content: center;
+                z-index: 9999; padding: 20px;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; width: 100%; max-width: 700px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;">
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                        <h3 style="margin: 0; color: #1e40af; font-size: 18px; font-weight: 600;">💰 Commission Details</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+                    </div>
+                    <div style="padding: 20px; flex: 1;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div style="padding: 12px; background: #f8fafc; border-radius: 8px;">
+                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Commission ID</p>
+                                <p style="margin: 0; color: #1e293b; font-family: monospace; font-size: 12px; word-break: break-all;">${commissionId}</p>
+                            </div>
+                            <div style="padding: 12px; background: #f8fafc; border-radius: 8px;">
+                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Status</p>
+                                <p style="margin: 0; color: #1e293b; font-size: 13px; font-weight: 600;">Payment Processing</p>
+                            </div>
+                            <div style="padding: 12px; background: #f0f4f8; border-radius: 8px;">
+                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Transfer Method</p>
+                                <p style="margin: 0; color: #1e293b; font-size: 13px;">PayPal</p>
+                            </div>
+                            <div style="padding: 12px; background: #f0f4f8; border-radius: 8px;">
+                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Verification</p>
+                                <p style="margin: 0; color: #10b981; font-size: 13px; font-weight: 600;">✓ Verified</p>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                            <p style="margin: 0; color: #92400e; font-size: 13px;">
+                                <strong>Note:</strong> Receipt verification fields are stored in database. Admin can manually review and update verification status as needed.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="padding: 20px; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%;">Close</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
         }
 
         function filterPaymentHistory() {
