@@ -7348,19 +7348,37 @@
                     .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
                     .order('unflagged_date', { ascending: false });
 
-                if (error) {
-                    console.error('Error loading verified payouts:', error);
+                // Query buyer_payables where status='payment_sent' or 'completed'
+                const { data: buyerPayouts, error: buyerError } = await sbClient
+                    .from('buyer_payables')
+                    .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids')
+                    .eq('vendor_id', currentVendor.id)
+                    .in('status', ['payment_sent', 'completed'])
+                    .order('created_at', { ascending: false });
+
+                if (error || buyerError) {
+                    console.error('Error loading verified payouts:', error || buyerError);
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
                     return;
                 }
 
-                if (!payouts || payouts.length === 0) {
+                // Merge both result sets
+                const allPayouts = [...(payouts || []), ...(buyerPayouts || [])];
+
+                if (!allPayouts || allPayouts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
                     return;
                 }
 
                 // Fetch inquiry details for all payouts
-                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+                const feedbackIds = [];
+                allPayouts.forEach(p => {
+                    if (p.related_feedback_id) {
+                        feedbackIds.push(p.related_feedback_id);
+                    } else if (p.related_feedback_ids && Array.isArray(p.related_feedback_ids)) {
+                        feedbackIds.push(...p.related_feedback_ids);
+                    }
+                });
                 const inquiriesMap = {};
 
                 if (feedbackIds.length > 0) {
@@ -7376,27 +7394,41 @@
                     }
                 }
 
-                tbody.innerHTML = payouts.map(payout => {
-                    const inquiry = inquiriesMap[payout.related_feedback_id];
+                tbody.innerHTML = allPayouts.map(payout => {
                     const detailsId = `verified-details-${payout.id}`;
+
+                    // Determine if admin_payables or buyer_payables
+                    const isBuyerPayable = payout.buyer_id && !payout.admin_commission;
+
+                    let feedbackId = payout.related_feedback_id;
+                    if (!feedbackId && payout.related_feedback_ids && Array.isArray(payout.related_feedback_ids) && payout.related_feedback_ids.length > 0) {
+                        feedbackId = payout.related_feedback_ids[0];
+                    }
+
+                    const inquiry = inquiriesMap[feedbackId];
                     const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
 
                     // Determine commission type and display amount
-                    let commissionType = 'Admin';
-                    let displayAmount = payout.admin_commission || 0;
+                    let commissionType = 'Reviewer';
+                    let displayAmount = payout.amount_owed || 0;
 
-                    if (payout.split_with_vendor_id) {
-                        commissionType = 'Vendor Inviter';
-                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
-                    } else if (payout.split_with_buyer_id) {
-                        commissionType = 'Buyer Inviter';
-                        displayAmount = payout.buyer_portion || 0;
+                    if (!isBuyerPayable) {
+                        commissionType = 'Admin';
+                        displayAmount = payout.admin_commission || 0;
+
+                        if (payout.split_with_vendor_id) {
+                            commissionType = 'Vendor Inviter';
+                            displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                        } else if (payout.split_with_buyer_id) {
+                            commissionType = 'Buyer Inviter';
+                            displayAmount = payout.buyer_portion || 0;
+                        }
                     }
 
                     return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                         <td style="padding: 12px; color: #475569;">${commissionType}</td>
-                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${payout.related_feedback_id}</td>
+                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${feedbackId || 'N/A'}</td>
                         <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
                         <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
                         <td style="padding: 12px; text-align: center;">
