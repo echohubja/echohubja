@@ -482,6 +482,7 @@
             <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">🔍 Seller Proof Pending</button>
             <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Under Review</button>
             <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Admin Have Verified</button>
+            <button onclick="switchLifecycleTab('payment-history')" id="lifecycle-tab-payment-history" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">💰 Payment History</button>
         </div>
 
         <!-- READY TO REQUEST SECTION -->
@@ -705,6 +706,52 @@
                     </thead>
                     <tbody id="verified-body" class="divide-y divide-gray-100">
                         <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading verified payments...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAYMENT HISTORY SECTION (Tab 6) -->
+        <div id="lifecycle-payment-history" class="lifecycle-section hidden">
+            <h3 class="text-md font-bold text-blue-700 mb-3">Payment History - Complete Transfer Record</h3>
+            <p class="text-xs text-gray-500 mb-4">View all successfully transferred payments with transfer dates and receipt verification status.</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="payment-history-search" oninput="filterPaymentHistory()" placeholder="Search by vendor, recipient, or feedback ID..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+
+                <select id="payment-history-type-filter" onchange="filterPaymentHistory()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">All Commission Types</option>
+                    <option value="reviewer">Reviewer</option>
+                    <option value="buyer_inviter">Buyer Inviter</option>
+                    <option value="vendor_inviter">Vendor Inviter</option>
+                </select>
+
+                <input type="date" id="payment-history-date-from" oninput="filterPaymentHistory()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="payment-history-date-to" oninput="filterPaymentHistory()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1">
+                    <span id="payment-history-record-count" class="text-xs bg-blue-100 text-blue-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-blue-50 text-blue-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">Commission Type</th>
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Recipient</th>
+                            <th class="p-2.5">Email</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Transfer Date</th>
+                            <th class="p-2.5">Transaction ID</th>
+                            <th class="p-2.5">Receipt Status</th>
+                            <th class="p-2.5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payment-history-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="9" class="p-4 text-center text-gray-500">Loading payment history...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1984,6 +2031,9 @@
                 } else if (tabName === 'verified') {
                     activeTab.style.borderBottomColor = '#16a34a';
                     activeTab.style.color = '#15803d';
+                } else if (tabName === 'payment-history') {
+                    activeTab.style.borderBottomColor = '#3b82f6';
+                    activeTab.style.color = '#1e40af';
                 }
             }
 
@@ -1993,6 +2043,7 @@
             else if (tabName === 'awaiting') loadAwaitingReceipts();
             else if (tabName === 'verification') loadReceiptVerifications();
             else if (tabName === 'verified') loadVerifiedPayments();
+            else if (tabName === 'payment-history') loadAdminPaymentHistory();
         }
 
         // LIFECYCLE HUB DATA LOADING
@@ -3626,6 +3677,174 @@
             tbody.innerHTML = rows;
         }
 
+        // PAYMENT HISTORY SECTION (Tab 6)
+        async function loadAdminPaymentHistory() {
+            const tbody = document.getElementById('payment-history-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Loading payment history...</td></tr>';
+
+            try {
+                // Query admin_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
+                        admin_commission, buyer_portion, related_feedback_id,
+                        created_at, updated_at, vendor_receipt_uploaded_date, vendor_paypal_transaction_id,
+                        buyer_receipt_uploaded_date, buyer_paypal_transaction_id, status
+                    `)
+                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
+                    .order('updated_at', { ascending: false });
+
+                // Query buyer_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
+                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
+                    .select(`
+                        id, buyer_id, amount_owed, earning_type, status, created_at, updated_at,
+                        related_feedback_ids, payment_date, payment_method
+                    `)
+                    .in('status', ['paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
+                    .order('updated_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
+                    return;
+                }
+
+                const adminCommissions = adminData || [];
+                const reviewerCommissions = reviewerData || [];
+
+                if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No payment history yet</td></tr>';
+                    document.getElementById('payment-history-record-count').textContent = '0 records';
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
+                const vendorMap = {};
+                if (vendors) {
+                    vendors.forEach(v => {
+                        vendorMap[v.id] = v.business_name || 'Unknown';
+                    });
+                }
+
+                // Fetch buyer details
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
+                const buyerMap = {};
+                if (allBuyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
+                    if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                }
+
+                // Render payment history table
+                renderPaymentHistoryTable({
+                    adminCommissions,
+                    reviewerCommissions,
+                    vendorMap,
+                    buyerMap
+                });
+
+                document.getElementById('payment-history-record-count').textContent = `${adminCommissions.length + reviewerCommissions.length} records`;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        function renderPaymentHistoryTable(data) {
+            const tbody = document.getElementById('payment-history-body');
+            const adminCommissions = data.adminCommissions || [];
+            const reviewerCommissions = data.reviewerCommissions || [];
+            const vendorMap = data.vendorMap || {};
+            const buyerMap = data.buyerMap || {};
+
+            let rows = '';
+
+            // Admin commissions (Buyer Inviter, Vendor Inviter)
+            adminCommissions.forEach(record => {
+                let commissionType = 'Admin';
+                let recipientName = 'Admin System';
+                let recipientEmail = 'N/A';
+                let amount = record.admin_commission || 0;
+                let txnId = '';
+
+                if (record.split_with_vendor_id) {
+                    commissionType = 'Vendor Inviter';
+                    recipientName = vendorMap[record.split_with_vendor_id] || 'Unknown Vendor';
+                    amount = (record.amount_owed || 0) - (record.admin_commission || 0) - (record.buyer_portion || 0);
+                    txnId = record.vendor_paypal_transaction_id || 'Pending';
+                } else if (record.split_with_buyer_id) {
+                    commissionType = 'Buyer Inviter';
+                    recipientName = buyerMap[record.split_with_buyer_id]?.name || 'Unknown Buyer';
+                    recipientEmail = buyerMap[record.split_with_buyer_id]?.email || 'N/A';
+                    amount = record.buyer_portion || 0;
+                    txnId = record.buyer_paypal_transaction_id || 'Pending';
+                }
+
+                const transferDate = record.updated_at ? new Date(record.updated_at).toLocaleDateString() : 'N/A';
+                const receiptStatus = record.status === 'paid' ? '✅ Paid' : '⏳ Verified';
+                const feedbackId = record.related_feedback_id ? record.related_feedback_id.substring(0, 8) : 'N/A';
+                const vendor = vendorMap[record.vendor_id] || 'Unknown';
+
+                rows += `
+                    <tr class="border-b">
+                        <td class="p-2.5 text-xs">${commissionType}</td>
+                        <td class="p-2.5 text-xs font-semibold">${vendor}</td>
+                        <td class="p-2.5 text-xs">${recipientName}</td>
+                        <td class="p-2.5 text-xs text-gray-600">${recipientEmail}</td>
+                        <td class="p-2.5 text-xs text-right font-semibold">$${amount.toFixed(2)}</td>
+                        <td class="p-2.5 text-xs">${transferDate}</td>
+                        <td class="p-2.5 text-xs font-mono text-blue-600">${txnId}</td>
+                        <td class="p-2.5 text-xs">${receiptStatus}</td>
+                        <td class="p-2.5 text-center"><button onclick="viewPaymentHistoryDetails('${record.id}')" class="text-blue-600 hover:underline text-xs">Details</button></td>
+                    </tr>
+                `;
+            });
+
+            // Reviewer commissions
+            reviewerCommissions.forEach(record => {
+                const recipientName = buyerMap[record.buyer_id]?.name || 'Unknown';
+                const recipientEmail = buyerMap[record.buyer_id]?.email || 'N/A';
+                const amount = record.amount_owed || 0;
+                const transferDate = record.payment_date ? new Date(record.payment_date).toLocaleDateString() : new Date(record.updated_at).toLocaleDateString();
+                const receiptStatus = record.status === 'paid' ? '✅ Paid' : '⏳ Verified';
+                const feedbackId = record.related_feedback_ids && record.related_feedback_ids[0] ? record.related_feedback_ids[0].substring(0, 8) : 'N/A';
+                const txnId = record.payment_method === 'paypal' ? 'PayPal Transfer' : 'N/A';
+
+                rows += `
+                    <tr class="border-b">
+                        <td class="p-2.5 text-xs">Reviewer</td>
+                        <td class="p-2.5 text-xs font-semibold">N/A</td>
+                        <td class="p-2.5 text-xs font-semibold">${recipientName}</td>
+                        <td class="p-2.5 text-xs text-gray-600">${recipientEmail}</td>
+                        <td class="p-2.5 text-xs text-right font-semibold">$${amount.toFixed(2)}</td>
+                        <td class="p-2.5 text-xs">${transferDate}</td>
+                        <td class="p-2.5 text-xs font-mono text-blue-600">${txnId}</td>
+                        <td class="p-2.5 text-xs">${receiptStatus}</td>
+                        <td class="p-2.5 text-center"><button onclick="viewPaymentHistoryDetails('${record.id}')" class="text-blue-600 hover:underline text-xs">Details</button></td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = rows || '<tr><td colspan="9" class="p-4 text-center text-gray-500">No payment history</td></tr>';
+        }
+
+        function viewPaymentHistoryDetails(commissionId) {
+            alert('Payment details modal for: ' + commissionId);
+            // TODO: Implement detailed modal view
+        }
+
+        function filterPaymentHistory() {
+            // Placeholder for future filter implementation
+            // This would handle filtering by:
+            // - Commission Type (reviewer, buyer_inviter, vendor_inviter)
+            // - Date range
+            // - Search term (vendor, recipient, email, feedback ID)
+        }
+
         // CHECKBOX & SELECTION MANAGEMENT
         function updatePendingSelectionBar() {
             const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
@@ -4124,6 +4343,7 @@
 
                 closeReceiptVerificationModal();
                 await loadReceiptVerifications();
+                await loadAdminPaymentHistory();
                 showToast('✓ Receipt verification approved & balances updated', 'success');
             } catch (err) {
                 console.error('Error approving verification:', err);
