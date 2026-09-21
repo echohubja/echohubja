@@ -2863,7 +2863,7 @@
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('pending')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-pending-tab">⏳ Here are People I Must Send Payment To</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('awaiting')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-awaiting-tab">📤 Here are People Waiting For Me To Upload Proof After Sending Their Payment</button>
                     <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('payment-history')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-payment-history-tab">💰 Payment History</button>
-                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Payments Receipts That Admin Have Taken a Look at</button>
+                    <button class="lifecycle-tab-btn" onclick="switchManagePayoutsLifecycleTab('verified')" style="display: none; padding: 12px 20px; border: none; background: none; color: #4a5568; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;" id="manage-verified-tab">✅ Payments Receipts That Admin Have Taken a Look at</button>
                 </div>
 
                 <!-- Payout Subsections Container -->
@@ -7592,7 +7592,7 @@
                             displayAmount = payout.buyer_portion || 0;
                         } else if (payout.vendor_id === currentVendor.id) {
                             recipientType = 'admin';
-                            displayAmount = payout.admin_commission || 0;
+                            displayAmount = payout.amount_owed || 0;
                         }
 
                         allPayouts.push({
