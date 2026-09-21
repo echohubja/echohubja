@@ -452,7 +452,7 @@
         </div>
 
         <!-- LIFECYCLE STATUS METRICS -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
             <div class="bg-green-50 border border-green-200 rounded-lg p-3">
                 <div class="text-[11px] text-green-600 font-semibold uppercase">Tell Vendor To Send Payment</div>
                 <div id="metric-ready-to-request" class="text-xl font-bold text-green-700 mt-0.5">0</div>
@@ -460,6 +460,10 @@
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <div class="text-[11px] text-amber-600 font-semibold uppercase">Vendor Requested To Pay</div>
                 <div id="metric-pending-approvals" class="text-xl font-bold text-amber-700 mt-0.5">0</div>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <div class="text-[11px] text-purple-600 font-semibold uppercase">My Payment Requests Awaiting Vendor</div>
+                <div id="metric-my-payment-requests" class="text-xl font-bold text-purple-700 mt-0.5">0</div>
             </div>
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <div class="text-[11px] text-orange-600 font-semibold uppercase">Seller Proof Pending</div>
@@ -479,6 +483,7 @@
         <div class="flex gap-2 mb-6 border-b">
             <button onclick="switchLifecycleTab('ready')" id="lifecycle-tab-ready" class="lifecycle-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-green-500 text-green-700">Tell Vendor To Send Payment</button>
             <button onclick="switchLifecycleTab('pending')" id="lifecycle-tab-pending" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Vendor Requested To Pay</button>
+            <button onclick="switchLifecycleTab('my-payment-requests')" id="lifecycle-tab-my-payment-requests" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">📋 My Payment Requests Awaiting Vendor Review/Transfer</button>
             <button onclick="switchLifecycleTab('awaiting')" id="lifecycle-tab-awaiting" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">🔍 Seller Proof Pending</button>
             <button onclick="switchLifecycleTab('verification')" id="lifecycle-tab-verification" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Under Review</button>
             <button onclick="switchLifecycleTab('verified')" id="lifecycle-tab-verified" class="lifecycle-tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-600 hover:text-gray-800">Receipts Admin Have Verified</button>
@@ -587,6 +592,49 @@
                     </thead>
                     <tbody id="pending-approvals-body" class="divide-y divide-gray-100">
                         <tr><td colspan="8" class="p-4 text-center text-gray-500">Loading pending approvals...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MY PAYMENT REQUESTS AWAITING VENDOR REVIEW/TRANSFER SECTION -->
+        <div id="lifecycle-my-payment-requests" class="lifecycle-section hidden">
+            <h3 class="text-md font-bold text-purple-700 mb-3">📋 My Payment Requests Awaiting Vendor Review/Transfer</h3>
+            <p class="text-xs text-gray-500 mb-4">Payment requests you've sent to vendors awaiting their approval and transfer initiation. Once approved, vendors will need to upload proof of payment.</p>
+
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                <input type="text" id="my-payment-requests-vendor-search" oninput="filterMyPaymentRequests()" placeholder="Search vendor..." class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500">
+
+                <select id="my-payment-requests-recipient-filter" onchange="filterMyPaymentRequests()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option value="">All Recipients</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Referrer">Referrer</option>
+                </select>
+
+                <input type="date" id="my-payment-requests-date-from" oninput="filterMyPaymentRequests()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500">
+
+                <div class="flex gap-2">
+                    <input type="date" id="my-payment-requests-date-to" oninput="filterMyPaymentRequests()" class="text-xs border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 flex-1">
+                    <span id="my-payment-requests-record-count" class="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-full font-semibold whitespace-nowrap self-center">0 records</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-purple-50 text-purple-700 uppercase tracking-wider border-b">
+                            <th class="p-2.5">Vendor</th>
+                            <th class="p-2.5">Recipient Type</th>
+                            <th class="p-2.5">Recipient</th>
+                            <th class="p-2.5 text-right">Amount</th>
+                            <th class="p-2.5">Request Date</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-center">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-payment-requests-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="7" class="p-4 text-center text-gray-500">Loading payment requests...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1874,6 +1922,9 @@
                 } else if (tabName === 'pending') {
                     activeTab.style.borderBottomColor = '#f59e0b';
                     activeTab.style.color = '#b45309';
+                } else if (tabName === 'my-payment-requests') {
+                    activeTab.style.borderBottomColor = '#a855f7';
+                    activeTab.style.color = '#7e22ce';
                 } else if (tabName === 'awaiting') {
                     activeTab.style.borderBottomColor = '#fb923c';
                     activeTab.style.color = '#92400e';
@@ -1892,6 +1943,7 @@
             // Load data for the selected tab
             if (tabName === 'ready') loadAdminReadyToRequest();
             else if (tabName === 'pending') loadPendingApprovals();
+            else if (tabName === 'my-payment-requests') loadMyPaymentRequests();
             else if (tabName === 'awaiting') loadAwaitingReceipts();
             else if (tabName === 'verification') loadReceiptVerifications();
             else if (tabName === 'verified') loadVerifiedPayments();
@@ -2052,6 +2104,7 @@
         async function refreshCommissionLifecycle() {
             await loadAdminReadyToRequest();
             await loadPendingApprovals();
+            await loadMyPaymentRequests();
             await loadAwaitingReceipts();
             await loadReceiptVerifications();
             await loadVerifiedPayments();
@@ -2463,9 +2516,9 @@
 
                 try {
                     if (commissionType === 'admin') {
-                        // Update admin_payables status from 'pending' to 'payment_requested'
+                        // Update admin_payables status from 'pending' to 'my_payment_requests_awaiting_vendor_review_transfer'
                         const { error: updateError } = await db.from('admin_payables')
-                            .update({ status: 'payment_requested' })
+                            .update({ status: 'my_payment_requests_awaiting_vendor_review_transfer' })
                             .eq('id', id);
 
                         if (updateError) {
@@ -2660,44 +2713,174 @@
             }
         }
 
-        function filterPendingApprovals() {
-            const vendorSearch = document.getElementById('pending-vendor-search').value.toLowerCase().trim();
-            const recipientFilter = document.getElementById('pending-recipient-filter').value;
-            const dateFrom = document.getElementById('pending-date-from').value;
-            const dateTo = document.getElementById('pending-date-to').value;
+        async function loadMyPaymentRequests() {
+            const tbody = document.getElementById('my-payment-requests-body');
+            if (!tbody) return;
 
-            let filteredAdmin = globalPendingData.adminCommissions || [];
-            let filteredReviewer = globalPendingData.reviewerCommissions || [];
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Loading payment requests...</td></tr>';
 
-            // Filter admin commissions
+            try {
+                // Query admin_payables where status='my_payment_requests_awaiting_vendor_review_transfer'
+                const { data: adminData, error: adminError } = await db.from('admin_payables')
+                    .select(`
+                        id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
+                        split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
+                    `)
+                    .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
+                    .order('created_at', { ascending: false });
+
+                if (adminError) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
+                    return;
+                }
+
+                const adminCommissions = adminData || [];
+
+                if (adminCommissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No pending payment requests</td></tr>';
+                    document.getElementById('my-payment-requests-record-count').textContent = '0 records';
+                    return;
+                }
+
+                // Fetch vendor details
+                const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
+                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                const vendorMap = {};
+                if (vendors) {
+                    vendors.forEach(v => {
+                        vendorMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' };
+                    });
+                }
+
+                // Fetch buyer details for split_with_buyer_id
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const buyerMap = {};
+                if (buyerIds.length > 0) {
+                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
+                    if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                }
+
+                // Fetch vendor inviter details
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const vendorInviterMap = {};
+                if (vendorInviterIds.length > 0) {
+                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
+                    if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
+                }
+
+                // Store global data for filtering
+                window.globalMyPaymentRequestsData = {
+                    adminCommissions,
+                    vendorMap,
+                    buyerMap,
+                    vendorInviterMap
+                };
+
+                document.getElementById('metric-my-payment-requests').textContent = adminCommissions.length;
+                document.getElementById('my-payment-requests-record-count').textContent = adminCommissions.length + ' records';
+
+                // Clear filters
+                document.getElementById('my-payment-requests-vendor-search').value = '';
+                document.getElementById('my-payment-requests-recipient-filter').value = '';
+                document.getElementById('my-payment-requests-date-from').value = '';
+                document.getElementById('my-payment-requests-date-to').value = '';
+
+                filterMyPaymentRequests();
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        function filterMyPaymentRequests() {
+            const data = window.globalMyPaymentRequestsData || { adminCommissions: [], vendorMap: {}, buyerMap: {}, vendorInviterMap: {} };
+            const vendorSearch = document.getElementById('my-payment-requests-vendor-search').value.toLowerCase().trim();
+            const recipientFilter = document.getElementById('my-payment-requests-recipient-filter').value;
+            const dateFrom = document.getElementById('my-payment-requests-date-from').value;
+            const dateTo = document.getElementById('my-payment-requests-date-to').value;
+
+            let filteredRecords = data.adminCommissions || [];
+
+            // Filter by vendor name
             if (vendorSearch) {
-                filteredAdmin = filteredAdmin.filter(record => {
-                    const vendorName = (globalPendingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
-                    return vendorName.includes(vendorSearch);
+                filteredRecords = filteredRecords.filter(record => {
+                    const vendor = data.vendorMap[record.vendor_id] || {};
+                    return (vendor.name || 'Unknown').toLowerCase().includes(vendorSearch);
+                });
+            }
+
+            // Filter by recipient type
+            if (recipientFilter) {
+                filteredRecords = filteredRecords.filter(record => {
+                    if (recipientFilter === 'Admin') return !record.split_with_buyer_id;
+                    if (recipientFilter === 'Referrer') return !!record.split_with_buyer_id;
+                    return true;
                 });
             }
 
             // Filter by date range
             if (dateFrom) {
                 const fromDate = new Date(dateFrom).getTime();
-                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
-                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredRecords = filteredRecords.filter(record => new Date(record.created_at).getTime() >= fromDate);
             }
 
             if (dateTo) {
                 const toDate = new Date(dateTo).getTime();
-                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
-                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredRecords = filteredRecords.filter(record => new Date(record.created_at).getTime() <= toDate);
             }
 
-            renderPendingApprovalsTable({
-                adminCommissions: filteredAdmin,
-                reviewerCommissions: filteredReviewer,
-                vendorPaypalMap: globalPendingData.vendorPaypalMap,
-                buyerMap: globalPendingData.buyerMap,
-                vendorInviterMap: globalPendingData.vendorInviterMap,
-                recipientFilter
-            });
+            renderMyPaymentRequestsTable(filteredRecords, data);
+        }
+
+        function renderMyPaymentRequestsTable(records, data) {
+            const tbody = document.getElementById('my-payment-requests-body');
+            const vendorMap = data.vendorMap || {};
+            const buyerMap = data.buyerMap || {};
+            const vendorInviterMap = data.vendorInviterMap || {};
+
+            if (!records || records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No payment requests matching filters</td></tr>';
+                return;
+            }
+
+            const htmlRows = records.map((record, idx) => {
+                try {
+                    const vendor = vendorMap[record.vendor_id] || {};
+                    const createdDate = new Date(record.created_at).toLocaleDateString();
+
+                    // Determine recipient type and display name
+                    let recipientType = 'Admin';
+                    let recipientName = 'Admin';
+                    let recipientEmail = 'N/A';
+
+                    if (record.split_with_buyer_id) {
+                        recipientType = 'Referrer';
+                        const buyer = buyerMap[record.split_with_buyer_id] || {};
+                        recipientName = buyer.name || 'Unknown';
+                        recipientEmail = buyer.email || 'N/A';
+                    }
+
+                    const displayAmount = parseFloat(record.amount_owed || 0);
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-2.5">${escapeHtml(vendor.name || 'Unknown')}</td>
+                            <td class="p-2.5">${escapeHtml(recipientType)}</td>
+                            <td class="p-2.5">${escapeHtml(recipientName)}</td>
+                            <td class="p-2.5 text-right font-semibold">$${displayAmount.toFixed(2)}</td>
+                            <td class="p-2.5">${escapeHtml(createdDate)}</td>
+                            <td class="p-2.5"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Pending Approval</span></td>
+                            <td class="p-2.5 text-center">
+                                <button onclick="viewPaymentRequestDetails('${escapeHtml(record.id)}')" class="text-blue-600 hover:text-blue-800 font-semibold text-xs">View</button>
+                            </td>
+                        </tr>
+                    `;
+                } catch (err) {
+                    console.error('[renderMyPaymentRequestsTable] Error rendering row:', err);
+                    return `<tr><td colspan="7" class="p-4 text-center text-red-500">Error rendering row</td></tr>`;
+                }
+            }).join('');
+
+            tbody.innerHTML = htmlRows;
         }
 
         function renderPendingApprovalsTable(data) {
@@ -2810,7 +2993,7 @@
             }
 
             try {
-                // Query admin_payables awaiting receipt verification (V9: status='pending')
+                // Query admin_payables awaiting receipt verification (V9: status='seller_proof_pending')
                 console.log('[loadAwaitingReceipts] Fetching admin_payables...');
                 const { data: adminData, error: adminError } = await db.from('admin_payables')
                     .select(`
@@ -2818,7 +3001,7 @@
                         created_at, vendor_receipt_uploaded_date, vendor_flagged,
                         buyer_receipt_uploaded_date, buyer_flagged, related_feedback_id
                     `)
-                    .eq('status', 'pending')
+                    .eq('status', 'seller_proof_pending')
                     .order('created_at', { ascending: false });
 
                 console.log('[loadAwaitingReceipts] Admin data received:', { count: adminData?.length, hasError: !!adminError });
