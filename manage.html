@@ -6577,8 +6577,10 @@
 
                 totalEarnings += amount;
 
-                // Only count as pending if status indicates waiting
-                if (PENDING_STATUSES.includes(status)) {
+                // Only count as pending if status indicates waiting AND no receipt uploaded
+                // Receipted items are awaiting admin review, not pending
+                const hasReceipt = ap.vendor_receipt_data || ap.buyer_receipt_data || ap.reviewer_receipt_data || ap.vendor_inviter_receipt_data;
+                if (PENDING_STATUSES.includes(status) && !hasReceipt) {
                     pending += amount;
                 }
             });
@@ -6595,8 +6597,9 @@
 
                 totalEarnings += amount;
 
-                // Only count as pending if status indicates waiting
-                if (PENDING_STATUSES.includes(status)) {
+                // Only count as pending if status indicates waiting AND no receipt uploaded
+                const hasReceipt = bp.vendor_receipt_data;
+                if (PENDING_STATUSES.includes(status) && !hasReceipt) {
                     pending += amount;
                 }
             });
@@ -8514,9 +8517,21 @@
 
             const payoutId = document.getElementById('receipt-upload-modal').dataset.payoutId;
             const recordTable = document.getElementById('receipt-upload-modal').dataset.recordTable || 'admin_payables';
+            const recipientType = document.getElementById('receipt-recipient-type').textContent.toLowerCase() || 'vendor';
             const txId = document.getElementById('receipt-tx-id').value.trim();
             const fileInput = document.getElementById('receipt-file');
             const statusDiv = document.getElementById('receipt-upload-status');
+
+            // Map recipient type to field prefix
+            const fieldMapping = {
+                'vendor': 'vendor',
+                'buyer_inviter': 'buyer',
+                'buyer inviter': 'buyer',
+                'vendor_inviter': 'vendor_inviter',
+                'vendor inviter': 'vendor_inviter',
+                'reviewer': 'reviewer'
+            };
+            const fieldPrefix = fieldMapping[recipientType] || 'vendor';
 
             if (!txId) {
                 statusDiv.textContent = '❌ Transaction ID required';
@@ -8579,19 +8594,22 @@
                     const mimeType = file.type;
 
                     try {
+                        // Build update object based on recipient type
+                        const updateObj = {
+                            [`${fieldPrefix}_paypal_transaction_id`]: txId,
+                            [`${fieldPrefix}_receipt_data`]: base64Data,
+                            [`${fieldPrefix}_receipt_filename`]: file.name,
+                            [`${fieldPrefix}_receipt_filetype`]: mimeType,
+                            [`${fieldPrefix}_receipt_filesize`]: file.size,
+                            [`${fieldPrefix}_receipt_uploaded_date`]: new Date().toISOString(),
+                            [`${fieldPrefix}_flagged`]: false  // Reset flag when receipt uploaded
+                        };
+
                         // Update correct table (admin_payables or buyer_payables) with receipt data
                         // RLS policy will validate vendor_id = auth.uid()
                         const { data, error } = await sbClient
                             .from(recordTable)
-                            .update({
-                                vendor_paypal_transaction_id: txId,
-                                vendor_receipt_data: base64Data,
-                                vendor_receipt_filename: file.name,
-                                vendor_receipt_filetype: mimeType,
-                                vendor_receipt_filesize: file.size,
-                                vendor_receipt_uploaded_date: new Date().toISOString(),
-                                vendor_flagged: false  // Reset flag when receipt uploaded
-                            })
+                            .update(updateObj)
                             .eq('id', payoutId)
                             .select();
 
@@ -8610,11 +8628,11 @@
                             return;
                         }
 
-                        // Create payment_history record (vendor has sent payment)
+                        // Create payment_history record (party has sent payment)
                         const recordData = data[0];
                         const paymentHistoryRecord = {
                             vendor_id: currentVendor.id,
-                            from_type: 'vendor',
+                            from_type: fieldPrefix, // 'vendor', 'buyer', 'vendor_inviter', or 'reviewer'
                             to_type: 'admin',
                             to_id: null, // Admin system receives payment
                             amount: recordData.amount_owed,
@@ -8640,28 +8658,19 @@
                             // Don't fail the upload if payment_history creation fails
                         }
 
-                        // Update status to indicate vendor has uploaded receipt
-                        // For buyer_payables, move to 'payment_sent' status
-                        // For admin_payables referrals, move to 'awaiting_buyer_inviter_proof' or similar
-                        let newStatus = 'payment_sent';
+                        // Update status based on which party uploaded receipt
+                        // Each party has their own payment status field
+                        let statusFieldName = `${fieldPrefix}_payment_status`;
+                        let statusValue = 'payment_sent';
 
-                        if (recordTable === 'admin_payables') {
-                            const buyerInviterPayout = recordData.split_with_buyer_id !== null;
-                            const vendorInviterPayout = recordData.split_with_vendor_id !== null;
+                        // Update the correct status field for the party that uploaded
+                        const statusUpdateObj = {
+                            [statusFieldName]: statusValue
+                        };
 
-                            if (buyerInviterPayout) {
-                                newStatus = 'awaiting_buyer_inviter_proof';
-                            } else if (vendorInviterPayout) {
-                                newStatus = 'awaiting_vendor_inviter_proof';
-                            } else {
-                                newStatus = 'payment_sent';
-                            }
-                        }
-
-                        // Update status
                         const { error: statusError } = await sbClient
                             .from(recordTable)
-                            .update({ status: newStatus })
+                            .update(statusUpdateObj)
                             .eq('id', payoutId);
 
                         if (statusError) {
