@@ -7862,6 +7862,8 @@
                         txnId = payout.buyer_paypal_transaction_id || 'Pending';
                     } else if (payout.recipientType === 'vendor_inviter') {
                         txnId = payout.vendor_paypal_transaction_id || 'Pending';
+                    } else if (payout.recipientType === 'vendor') {
+                        txnId = payout.vendor_paypal_transaction_id || 'Pending';
                     }
 
                     // Receipt Status - all 6 statuses
