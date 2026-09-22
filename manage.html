@@ -3511,6 +3511,7 @@
                 // await loadVendorAlerts(); // DISABLED - alerts system removed (Sep 3, 2026)
                 await initMessagingHub();
                 await loadPayoutDataFromDB();
+                await updatePayoutSummaryCards();  // Update summary cards after loading payout data
                 switchManagePayoutsLifecycleTab('incoming');  // Auto-load first tab on page entry
                 await initPayoutDataPolling();
                 await setupPolling();
@@ -4954,6 +4955,97 @@
 
             } catch (err) {
                 console.error('Error loading earnings data:', err);
+            }
+        }
+
+        async function updatePayoutSummaryCards() {
+            try {
+                if (!sbClient || !currentVendor) return;
+
+                // Pending statuses (all intermediate states)
+                const pendingStatuses = [
+                    'pending',
+                    'vendor_requested',
+                    'payment_requested',
+                    'payment_sent',
+                    'denied',
+                    'here_are_people_requesting_for_me_to_pay_them',
+                    'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment',
+                    'my_payment_requests_awaiting_vendor_review_transfer',
+                    'awaiting_reviewer_proof',
+                    'awaiting_buyer_inviter_proof',
+                    'awaiting_vendor_inviter_proof'
+                ];
+
+                // Paid statuses (completed transactions)
+                const paidStatuses = [
+                    'paid',
+                    'payment_verified',
+                    'collected',
+                    'commissions_successfully_collected'
+                ];
+
+                // Query both tables in parallel
+                const [adminResult, buyerResult] = await Promise.all([
+                    sbClient
+                        .from('admin_payables')
+                        .select('id, amount_owed, admin_commission, buyer_portion, status, vendor_flagged, buyer_flagged')
+                        .eq('vendor_id', currentVendor.id),
+                    sbClient
+                        .from('buyer_payables')
+                        .select('id, amount_owed, status, vendor_flagged, buyer_flagged')
+                        .eq('vendor_id', currentVendor.id)
+                ]);
+
+                let pendingTotal = 0;
+                let paidTotal = 0;
+
+                // Process admin_payables
+                if (adminResult.data) {
+                    adminResult.data.forEach(record => {
+                        // Skip flagged records
+                        if (record.vendor_flagged || record.buyer_flagged) return;
+
+                        if (pendingStatuses.includes(record.status)) {
+                            pendingTotal += parseFloat(record.amount_owed) || 0;
+                        } else if (paidStatuses.includes(record.status)) {
+                            paidTotal += parseFloat(record.amount_owed) || 0;
+                        }
+                    });
+                }
+
+                // Process buyer_payables
+                if (buyerResult.data) {
+                    buyerResult.data.forEach(record => {
+                        // Skip flagged records
+                        if (record.vendor_flagged || record.buyer_flagged) return;
+
+                        if (pendingStatuses.includes(record.status)) {
+                            pendingTotal += parseFloat(record.amount_owed) || 0;
+                        } else if (paidStatuses.includes(record.status)) {
+                            paidTotal += parseFloat(record.amount_owed) || 0;
+                        }
+                    });
+                }
+
+                // Update card display
+                const pendingCard = document.querySelector('[data-card-type="pending-payout"]');
+                const paidCard = document.querySelector('[data-card-type="paid-out"]');
+
+                if (pendingCard) {
+                    const valueEl = pendingCard.querySelector('[data-card-value]');
+                    if (valueEl) valueEl.textContent = `$${pendingTotal.toFixed(2)}`;
+                }
+
+                if (paidCard) {
+                    const valueEl = paidCard.querySelector('[data-card-value]');
+                    if (valueEl) valueEl.textContent = `$${paidTotal.toFixed(2)}`;
+                }
+
+                console.log('Summary cards updated:', { pendingTotal, paidTotal });
+
+            } catch (err) {
+                console.error('Error updating summary cards:', err);
             }
         }
 
@@ -8724,7 +8816,7 @@
                                     await loadEarningsData();
 
                                     // Step 2: Update summary cards immediately
-                                    updatePayoutSummaryCards();
+                                    await updatePayoutSummaryCards();
 
                                     // Step 3: Reload tabs
                                     await loadManageAwaitingPayouts();
