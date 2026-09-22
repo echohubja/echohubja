@@ -2840,20 +2840,20 @@
 
                 <!-- Payout Summary Cards -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <div data-card-type="total-earnings" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Total Earnings</div>
-                        <div data-card-value style="font-size: 28px; font-weight: 700; color: #1e293b;">$0.00</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #1e293b;">$3,847.50</div>
                         <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">All time</div>
                     </div>
-                    <div data-card-type="pending-payout" style="background: white; border: 1px solid #fef3c7; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="background: white; border: 1px solid #fef3c7; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div style="font-size: 12px; font-weight: 600; color: #92400e; text-transform: uppercase; margin-bottom: 8px;">Pending Payout</div>
-                        <div data-card-value style="font-size: 28px; font-weight: 700; color: #b45309;">$0.00</div>
-                        <div data-card-subtitle style="font-size: 11px; color: #d97706; margin-top: 4px;">Threshold: $250.00</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #b45309;">$542.75</div>
+                        <div style="font-size: 11px; color: #d97706; margin-top: 4px;">Threshold: $250.00</div>
                     </div>
-                    <div data-card-type="paid-out" style="background: white; border: 1px solid #dcfce7; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="background: white; border: 1px solid #dcfce7; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div style="font-size: 12px; font-weight: 600; color: #166534; text-transform: uppercase; margin-bottom: 8px;">Paid Out</div>
-                        <div data-card-value style="font-size: 28px; font-weight: 700; color: #16a34a;">$0.00</div>
-                        <div data-card-subtitle style="font-size: 11px; color: #22c55e; margin-top: 4px;">0 payouts</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #16a34a;">$3,304.75</div>
+                        <div style="font-size: 11px; color: #22c55e; margin-top: 4px;">15 payouts</div>
                     </div>
                 </div>
 
@@ -6533,11 +6533,7 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            let totalEarnings = 0;
-            let paidOut = 0;
-            let pending = 0;
-
-            // Status values that represent completed/paid commissions
+            // Map all 15 database status values to PAID or PENDING
             const PAID_STATUSES = [
                 'paid',
                 'payment_verified',
@@ -6545,7 +6541,6 @@
                 'commissions_successfully_collected'
             ];
 
-            // Status values that represent pending/unpaid commissions
             const PENDING_STATUSES = [
                 'pending',
                 'vendor_requested',
@@ -6560,78 +6555,75 @@
                 'awaiting_vendor_inviter_proof'
             ];
 
-            // Helper function to categorize earnings
-            const addEarnings = (amount, status, isFlagged) => {
-                const parsedAmount = parseFloat(amount || 0);
-
-                // Add to total earnings (exclude flagged items)
-                if (!isFlagged) {
-                    totalEarnings += parsedAmount;
-                }
-
-                // Categorize by status
-                if (PAID_STATUSES.includes(status)) {
-                    paidOut += parsedAmount;
-                } else if (PENDING_STATUSES.includes(status)) {
-                    pending += parsedAmount;
-                }
-                // Note: 'flagged' or unknown statuses are counted in totalEarnings but not in pending or paidOut
-            };
+            let totalEarnings = 0;
+            let paidOut = 0;
+            let pending = 0;
 
             // Process all admin_payables records
-            if (data.adminPayables && data.adminPayables.length > 0) {
-                data.adminPayables.forEach((ap) => {
-                    const amount = ap.amount_owed || 0;
-                    const isFlagged = ap.vendor_flagged || ap.buyer_flagged || false;
-                    addEarnings(amount, ap.status, isFlagged);
-                });
+            data.adminPayables.forEach((ap) => {
+                const amount = parseFloat(ap.amount_owed || 0);
+                const status = ap.status || '';
+
+                // Skip flagged items from totals
+                if (ap.vendor_flagged || ap.buyer_flagged) {
+                    return;
+                }
+
+                totalEarnings += amount;
+
+                if (PAID_STATUSES.includes(status)) {
+                    paidOut += amount;
+                } else if (PENDING_STATUSES.includes(status)) {
+                    pending += amount;
+                }
+            });
+
+            // Process buyer_payables (own feedback)
+            data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
+                const amount = parseFloat(bp.amount_owed || 0);
+                const status = bp.status || '';
+
+                // Skip flagged items
+                if (bp.vendor_flagged || bp.buyer_flagged) {
+                    return;
+                }
+
+                totalEarnings += amount;
+
+                if (PAID_STATUSES.includes(status)) {
+                    paidOut += amount;
+                } else if (PENDING_STATUSES.includes(status)) {
+                    pending += amount;
+                }
+            });
+
+            // Update DOM using data attributes (primary method)
+            const totalCard = document.querySelector('[data-card-type="total-earnings"]');
+            const pendingCard = document.querySelector('[data-card-type="pending-payout"]');
+            const paidCard = document.querySelector('[data-card-type="paid-out"]');
+
+            if (totalCard) {
+                const valueEl = totalCard.querySelector('[data-card-value]');
+                if (valueEl) valueEl.textContent = `$${totalEarnings.toFixed(2)}`;
             }
 
-            // Reviewer Payments (from buyer_payables with earning_type='own_feedback')
-            if (data.buyerPayables && data.buyerPayables.length > 0) {
-                data.buyerPayables
-                    .filter(bp => bp.earning_type === 'own_feedback')
-                    .forEach(bp => {
-                        const amount = bp.amount_owed || 0;
-                        const isFlagged = bp.buyer_flagged || false;
-                        addEarnings(amount, bp.status, isFlagged);
-                    });
+            if (pendingCard) {
+                const valueEl = pendingCard.querySelector('[data-card-value]');
+                if (valueEl) valueEl.textContent = `$${pending.toFixed(2)}`;
             }
 
-            // Update DOM - Use data-card-type attributes for reliable targeting
-            const summaryCards = document.querySelectorAll('[data-card-type]');
+            if (paidCard) {
+                const valueEl = paidCard.querySelector('[data-card-value]');
+                if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
+                const subtitleEl = paidCard.querySelector('[data-card-subtitle]');
+                if (subtitleEl) {
+                    const payoutCount = data.adminPayables.filter(ap => PAID_STATUSES.includes(ap.status)).length;
+                    subtitleEl.textContent = `${payoutCount} payouts`;
+                }
+            }
 
-            if (summaryCards.length > 0) {
-                summaryCards.forEach(card => {
-                    const cardType = card.getAttribute('data-card-type');
-                    const valueEl = card.querySelector('[data-card-value]');
-                    const subtitleEl = card.querySelector('[data-card-subtitle]');
-
-                    if (cardType === 'total-earnings' && valueEl) {
-                        valueEl.textContent = `$${totalEarnings.toFixed(2)}`;
-                    } else if (cardType === 'pending-payout' && valueEl) {
-                        valueEl.textContent = `$${pending.toFixed(2)}`;
-                        // Show threshold if available
-                        if (subtitleEl && currentVendor) {
-                            const threshold = currentVendor.commission_threshold || 250;
-                            subtitleEl.textContent = `Threshold: $${threshold.toFixed(2)}`;
-                        }
-                    } else if (cardType === 'paid-out' && valueEl) {
-                        valueEl.textContent = `$${paidOut.toFixed(2)}`;
-                        // Count completed payouts
-                        if (subtitleEl) {
-                            const payoutCount = (data.adminPayables || []).filter(ap =>
-                                PAID_STATUSES.includes(ap.status)
-                            ).length + (data.buyerPayables || []).filter(bp =>
-                                PAID_STATUSES.includes(bp.status)
-                            ).length;
-                            subtitleEl.textContent = `${payoutCount} payouts`;
-                        }
-                    }
-                });
-            } else {
-                // Fallback: try original selector method
-                console.warn('[Payout] Summary cards missing data-card-type attributes. Using fallback selector.');
+            // Fallback: CSS selectors if data attributes missing
+            if (!totalCard || !pendingCard || !paidCard) {
                 const summaryContainer = document.querySelector('div[style*="grid-template-columns: repeat(auto-fit"]');
                 if (summaryContainer) {
                     const cards = Array.from(summaryContainer.children);
@@ -6641,7 +6633,6 @@
 
                         if (label && value) {
                             const labelText = label.textContent.toLowerCase();
-
                             if (labelText.includes('total earnings')) {
                                 value.textContent = `$${totalEarnings.toFixed(2)}`;
                             } else if (labelText.includes('pending payout')) {
@@ -6651,22 +6642,14 @@
                             }
                         }
                     });
-                } else {
-                    console.error('[Payout] ❌ Summary container not found! Neither data-attributes nor style-selector worked.');
                 }
             }
 
             // Update commission-pending metric
-            const commissionPendingEl = document.getElementById('commission-pending');
-            if (commissionPendingEl) {
-                commissionPendingEl.textContent = `$${pending.toFixed(2)}`;
-            }
+            const pendingEl = document.getElementById('commission-pending');
+            if (pendingEl) pendingEl.textContent = `$${pending.toFixed(2)}`;
 
-            console.log('[Payout] Summary Cards Updated:', {
-                totalEarnings: `$${totalEarnings.toFixed(2)}`,
-                pending: `$${pending.toFixed(2)}`,
-                paidOut: `$${paidOut.toFixed(2)}`
-            });
+            console.log('[Payout] Summary cards updated:', { totalEarnings: totalEarnings.toFixed(2), paidOut: paidOut.toFixed(2), pending: pending.toFixed(2) });
         }
 
         function renderPayoutHistoryTable() {
@@ -8663,20 +8646,28 @@
                             statusDiv.style.color = '#059669';
                             statusDiv.style.background = '#d1fae5';
 
-                            // Reload Tab 3 data after successful upload
-                            setTimeout(() => {
-                                closeCommissionModal('receipt-upload-modal');
-                                loadManagePendingPayouts();
+                            // Reload data after 1.5 seconds - proper sequence to update summary cards
+                            setTimeout(async () => {
+                                try {
+                                    // Step 1: Reload earnings data
+                                    await loadEarningsData();
+
+                                    // Step 2: Update summary cards immediately
+                                    updatePayoutSummaryCards();
+
+                                    // Step 3: Reload tabs
+                                    await loadManageAwaitingPayouts();
+                                    await loadManageIncomingRequests();
+
+                                    // Step 4: Close modal
+                                    closeCommissionModal('receipt-upload-modal');
+                                    console.log('✅ Receipt upload complete - all data refreshed');
+                                } catch (err) {
+                                    console.error('Error refreshing data after upload:', err);
+                                    closeCommissionModal('receipt-upload-modal');
+                                }
                             }, 1500);
                         }
-
-                        // Reload data after 1.5 seconds
-                        setTimeout(() => {
-                            closeCommissionModal('receipt-upload-modal');
-                            loadManageAwaitingPayouts();
-                            loadManageIncomingRequests();
-                            loadEarningsData();
-                        }, 1500);
 
                     } catch (err) {
                         console.error('Error uploading receipt:', err);
