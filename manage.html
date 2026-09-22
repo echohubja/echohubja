@@ -7361,166 +7361,164 @@
 
                 const tbody = document.getElementById('manage-verified-table-body');
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
-
-            try {
                 // Query admin_payables where status='payment_sent' or 'completed' or unflagged_date IS NOT NULL
-                console.log('[Tab 4] QUERYING admin_payables with vendor_id:', currentVendor.id);
-                const { data: payouts, error } = await sbClient
-                    .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status')
-                    .eq('vendor_id', currentVendor.id)
-                    .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
-                    .order('unflagged_date', { ascending: false });
+            console.log('[Tab 4] QUERYING admin_payables with vendor_id:', currentVendor.id);
+            const { data: payouts, error } = await sbClient
+                .from('admin_payables')
+                .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status')
+                .eq('vendor_id', currentVendor.id)
+                .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
+                .order('unflagged_date', { ascending: false });
 
-                console.log('[Tab 4] admin_payables RESPONSE:', {
-                    count: payouts?.length,
-                    records: payouts?.map(p => ({ id: p.id, status: p.status, admin_commission: p.admin_commission, amount_owed: p.amount_owed })),
-                    error
-                });
+            console.log('[Tab 4] admin_payables RESPONSE:', {
+                count: payouts?.length,
+                records: payouts?.map(p => ({ id: p.id, status: p.status, admin_commission: p.admin_commission, amount_owed: p.amount_owed })),
+                error
+            });
 
-                // Query buyer_payables where status='payment_sent' or 'completed'
-                console.log('[Tab 4] QUERYING buyer_payables with vendor_id:', currentVendor.id);
-                const { data: buyerPayouts, error: buyerError } = await sbClient
-                    .from('buyer_payables')
-                    .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids')
-                    .eq('vendor_id', currentVendor.id)
-                    .in('status', ['payment_sent', 'completed'])
-                    .order('created_at', { ascending: false });
+            // Query buyer_payables where status='payment_sent' or 'completed'
+            console.log('[Tab 4] QUERYING buyer_payables with vendor_id:', currentVendor.id);
+            const { data: buyerPayouts, error: buyerError } = await sbClient
+                .from('buyer_payables')
+                .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids')
+                .eq('vendor_id', currentVendor.id)
+                .in('status', ['payment_sent', 'completed'])
+                .order('created_at', { ascending: false });
 
-                console.log('[Tab 4] buyer_payables RESPONSE:', {
-                    count: buyerPayouts?.length,
-                    records: buyerPayouts?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
-                    error: buyerError
-                });
+            console.log('[Tab 4] buyer_payables RESPONSE:', {
+                count: buyerPayouts?.length,
+                records: buyerPayouts?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
+                error: buyerError
+            });
 
-                if (error || buyerError) {
-                    console.error('[Tab 4] ERROR loading verified payouts:', error || buyerError);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
-                    return;
+            if (error || buyerError) {
+                console.error('[Tab 4] ERROR loading verified payouts:', error || buyerError);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
+                return;
+            }
+
+            // Merge both result sets
+            const allPayouts = [...(payouts || []), ...(buyerPayouts || [])];
+            console.log('[Tab 4] MERGED payouts:', {
+                totalCount: allPayouts.length,
+                adminCount: payouts?.length || 0,
+                buyerCount: buyerPayouts?.length || 0,
+                summary: allPayouts.map(p => ({ id: p.id, type: p.admin_commission ? 'admin' : 'buyer', amount: p.amount_owed || p.admin_commission }))
+            });
+
+            if (!allPayouts || allPayouts.length === 0) {
+                console.log('[Tab 4] NO PAYOUTS TO DISPLAY');
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
+                return;
+            }
+
+            console.log('[Tab 4] PROCEEDING TO FETCH INQUIRY DETAILS for', allPayouts.length, 'payouts');
+
+            // Fetch inquiry details for all payouts
+            const feedbackIds = [];
+            allPayouts.forEach(p => {
+                if (p.related_feedback_id) {
+                    feedbackIds.push(p.related_feedback_id);
+                } else if (p.related_feedback_ids && Array.isArray(p.related_feedback_ids)) {
+                    feedbackIds.push(...p.related_feedback_ids);
                 }
+            });
+            console.log('[Tab 4] Extracted feedbackIds:', feedbackIds);
+            const inquiriesMap = {};
 
-                // Merge both result sets
-                const allPayouts = [...(payouts || []), ...(buyerPayouts || [])];
-                console.log('[Tab 4] MERGED payouts:', {
-                    totalCount: allPayouts.length,
-                    adminCount: payouts?.length || 0,
-                    buyerCount: buyerPayouts?.length || 0,
-                    summary: allPayouts.map(p => ({ id: p.id, type: p.admin_commission ? 'admin' : 'buyer', amount: p.amount_owed || p.admin_commission }))
-                });
+            if (feedbackIds.length > 0) {
+                console.log('[Tab 4] FETCHING inquiry details for', feedbackIds.length, 'feedback items');
+                const { data: inquiries } = await sbClient
+                    .from('inquiries')
+                    .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                    .in('id', feedbackIds);
 
-                if (!allPayouts || allPayouts.length === 0) {
-                    console.log('[Tab 4] NO PAYOUTS TO DISPLAY');
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No verified payouts</td></tr>';
-                    return;
-                }
+                console.log('[Tab 4] Inquiry fetch result:', { count: inquiries?.length, data: inquiries });
 
-                console.log('[Tab 4] PROCEEDING TO FETCH INQUIRY DETAILS for', allPayouts.length, 'payouts');
-
-                // Fetch inquiry details for all payouts
-                const feedbackIds = [];
-                allPayouts.forEach(p => {
-                    if (p.related_feedback_id) {
-                        feedbackIds.push(p.related_feedback_id);
-                    } else if (p.related_feedback_ids && Array.isArray(p.related_feedback_ids)) {
-                        feedbackIds.push(...p.related_feedback_ids);
-                    }
-                });
-                console.log('[Tab 4] Extracted feedbackIds:', feedbackIds);
-                const inquiriesMap = {};
-
-                if (feedbackIds.length > 0) {
-                    console.log('[Tab 4] FETCHING inquiry details for', feedbackIds.length, 'feedback items');
-                    const { data: inquiries } = await sbClient
-                        .from('inquiries')
-                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
-                        .in('id', feedbackIds);
-
-                    console.log('[Tab 4] Inquiry fetch result:', { count: inquiries?.length, data: inquiries });
-
-                    if (inquiries) {
-                        inquiries.forEach(inq => {
-                            inquiriesMap[inq.id] = inq;
-                        });
-                    }
-                }
-
-                console.log('[Tab 4] RENDERING', allPayouts.length, 'rows to table');
-                tbody.innerHTML = allPayouts.map((payout, index) => {
-                    const detailsId = `verified-details-${payout.id}`;
-
-                    console.log(`[Tab 4] RENDERING ROW ${index + 1}:`, {
-                        id: payout.id,
-                        buyer_id: payout.buyer_id,
-                        vendor_id: payout.vendor_id,
-                        admin_commission: payout.admin_commission,
-                        amount_owed: payout.amount_owed,
-                        split_with_buyer_id: payout.split_with_buyer_id,
-                        split_with_vendor_id: payout.split_with_vendor_id,
-                        keys: Object.keys(payout)
+                if (inquiries) {
+                    inquiries.forEach(inq => {
+                        inquiriesMap[inq.id] = inq;
                     });
+                }
+            }
 
-                    // Determine if admin_payables or buyer_payables
-                    const isBuyerPayable = payout.buyer_id && !payout.admin_commission;
-                    console.log(`[Tab 4] ROW ${index + 1} detection: isBuyerPayable=${isBuyerPayable} (buyer_id=${payout.buyer_id}, admin_commission=${payout.admin_commission})`);
+            console.log('[Tab 4] RENDERING', allPayouts.length, 'rows to table');
+            tbody.innerHTML = allPayouts.map((payout, index) => {
+                const detailsId = `verified-details-${payout.id}`;
 
-                    let feedbackId = payout.related_feedback_id;
-                    if (!feedbackId && payout.related_feedback_ids && Array.isArray(payout.related_feedback_ids) && payout.related_feedback_ids.length > 0) {
-                        feedbackId = payout.related_feedback_ids[0];
+                console.log(`[Tab 4] RENDERING ROW ${index + 1}:`, {
+                    id: payout.id,
+                    buyer_id: payout.buyer_id,
+                    vendor_id: payout.vendor_id,
+                    admin_commission: payout.admin_commission,
+                    amount_owed: payout.amount_owed,
+                    split_with_buyer_id: payout.split_with_buyer_id,
+                    split_with_vendor_id: payout.split_with_vendor_id,
+                    keys: Object.keys(payout)
+                });
+
+                // Determine if admin_payables or buyer_payables
+                const isBuyerPayable = payout.buyer_id && !payout.admin_commission;
+                console.log(`[Tab 4] ROW ${index + 1} detection: isBuyerPayable=${isBuyerPayable} (buyer_id=${payout.buyer_id}, admin_commission=${payout.admin_commission})`);
+
+                let feedbackId = payout.related_feedback_id;
+                if (!feedbackId && payout.related_feedback_ids && Array.isArray(payout.related_feedback_ids) && payout.related_feedback_ids.length > 0) {
+                    feedbackId = payout.related_feedback_ids[0];
+                }
+                console.log(`[Tab 4] ROW ${index + 1} feedbackId: ${feedbackId}`);
+
+                const inquiry = inquiriesMap[feedbackId];
+                const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+
+                // Determine commission type and display amount
+                let commissionType = 'Reviewer';
+                let displayAmount = payout.amount_owed || 0;
+
+                if (!isBuyerPayable) {
+                    commissionType = 'Admin';
+                    displayAmount = payout.admin_commission || 0;
+
+                    if (payout.split_with_vendor_id) {
+                        commissionType = 'Vendor Inviter';
+                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                    } else if (payout.split_with_buyer_id) {
+                        commissionType = 'Buyer Inviter';
+                        displayAmount = payout.buyer_portion || 0;
                     }
-                    console.log(`[Tab 4] ROW ${index + 1} feedbackId: ${feedbackId}`);
+                }
 
-                    const inquiry = inquiriesMap[feedbackId];
-                    const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                console.log(`[Tab 4] ROW ${index + 1} FINAL: type=${commissionType}, amount=$${displayAmount}`);
 
-                    // Determine commission type and display amount
-                    let commissionType = 'Reviewer';
-                    let displayAmount = payout.amount_owed || 0;
-
-                    if (!isBuyerPayable) {
-                        commissionType = 'Admin';
-                        displayAmount = payout.admin_commission || 0;
-
-                        if (payout.split_with_vendor_id) {
-                            commissionType = 'Vendor Inviter';
-                            displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
-                        } else if (payout.split_with_buyer_id) {
-                            commissionType = 'Buyer Inviter';
-                            displayAmount = payout.buyer_portion || 0;
-                        }
-                    }
-
-                    console.log(`[Tab 4] ROW ${index + 1} FINAL: type=${commissionType}, amount=$${displayAmount}`);
-
-                    return `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; color: #475569;">${commissionType}</td>
-                        <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${feedbackId || 'N/A'}</td>
-                        <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
-                        <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="viewManagePayout('${payout.id}')" style="background: #1e5aa8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
-                        </td>
-                    </tr>
-                    <tr id="${detailsId}" style="display: none; background: #f0fdf4; border-bottom: 1px solid #e2e8f0;">
-                        <td colspan="6" style="padding: 16px;">
-                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
-                                <div style="flex: 1;">
-                                    <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
-                                    <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                    ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
-                                </div>
+                return `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; color: #475569;">${commissionType}</td>
+                    <td style="padding: 12px; color: #475569; font-family: monospace; font-size: 12px;">${feedbackId || 'N/A'}</td>
+                    <td style="padding: 12px; color: #16a34a; font-weight: 600;">$${parseFloat(displayAmount).toFixed(2)}</td>
+                    <td style="padding: 12px; color: #718096; font-size: 12px;">${payout.unflagged_date ? new Date(payout.unflagged_date).toLocaleDateString() : 'N/A'}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="document.getElementById('${detailsId}').style.display = document.getElementById('${detailsId}').style.display === 'none' ? 'table-row' : 'none';" style="background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="viewManagePayout('${payout.id}')" style="background: #1e5aa8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+                    </td>
+                </tr>
+                <tr id="${detailsId}" style="display: none; background: #f0fdf4; border-bottom: 1px solid #e2e8f0;">
+                    <td colspan="6" style="padding: 16px;">
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            ${imageData ? `<div><img src="${imageData}" style="max-width: 150px; height: auto; border-radius: 8px; border: 1px solid #cbd5e0;"></div>` : ''}
+                            <div style="flex: 1;">
+                                <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
+                                <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
+                                ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
                             </div>
-                        </td>
-                    </tr>
-                    `;
-                }).join('');
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
 
-                console.log('[Tab 4] TABLE RENDERING COMPLETE - Total rows rendered:', allPayouts.length);
-                console.log('[Tab 4] TABLE BODY HTML LENGTH:', tbody.innerHTML.length);
+            console.log('[Tab 4] TABLE RENDERING COMPLETE - Total rows rendered:', allPayouts.length);
+            console.log('[Tab 4] TABLE BODY HTML LENGTH:', tbody.innerHTML.length);
             } catch (err) {
                 console.error('[Tab 4] UNEXPECTED ERROR:', err);
                 console.error('[Tab 4] ERROR STACK:', err.stack);
