@@ -3030,8 +3030,8 @@
                         <td class="p-2.5 text-xs">${escapeHtml(row.payable_reason || 'Feedback Commission')}</td>
                         <td class="p-2.5">${row.submittedDate}</td>
                         <td class="p-2.5 text-center">
-                            <button onclick="approvePendingCommission('${row.id}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
-                            <button onclick="denyPendingCommission('${row.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
+                            <button onclick="approvePendingCommission('${row.id}', '${row.commissionType}')" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✓</button>
+                            <button onclick="denyPendingCommission('${row.id}', '${row.commissionType}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">✗</button>
                             <button onclick="requestInfoCommission('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition">?</button>
                         </td>
                     </tr>
@@ -4475,7 +4475,7 @@
             }
         }
 
-        async function approvePendingCommission(id) {
+        async function approvePendingCommission(id, commissionType) {
             if (!confirm('Approve this commission?')) return;
 
             showToast('Approving commission...', 'info');
@@ -4485,15 +4485,38 @@
                     throw new Error('Database client not initialized');
                 }
 
-                const { error } = await db
-                    .from('admin_payables')
-                    .update({ status: 'payment_requested' })
-                    .eq('id', id);
+                // CRITICAL: This function handles TWO commission tables - admin_payables (Admin/Buyer/Vendor Inviters) and buyer_payables (Reviewer)
+                // commissionType parameter MUST specify which table to update - handles multi-table commission architecture
 
-                if (error) {
-                    console.error(`Failed to approve ${id}:`, error);
-                    showToast(`Error approving commission: ${error.message}`, 'error');
-                    return;
+                const trimmedType = commissionType ? commissionType.trim() : commissionType;
+
+                // Route update to correct table based on commission type
+                if (trimmedType === 'admin') {
+                    // Admin/Buyer Inviter/Vendor Inviter commission - update admin_payables
+                    const { error } = await db
+                        .from('admin_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', id);
+
+                    if (error) {
+                        console.error(`Failed to approve ${id}:`, error);
+                        showToast(`Error approving commission: ${error.message}`, 'error');
+                        return;
+                    }
+                } else if (trimmedType === 'reviewer') {
+                    // Reviewer commission - update buyer_payables
+                    const { error } = await db
+                        .from('buyer_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', id);
+
+                    if (error) {
+                        console.error(`Failed to approve ${id}:`, error);
+                        showToast(`Error approving commission: ${error.message}`, 'error');
+                        return;
+                    }
+                } else {
+                    throw new Error(`Unknown commission type: ${trimmedType}`);
                 }
 
                 await loadPendingApprovals();
@@ -4505,7 +4528,7 @@
             }
         }
 
-        async function denyPendingCommission(id) {
+        async function denyPendingCommission(id, commissionType) {
             if (!confirm('Deny this commission?')) return;
 
             showToast('Denying commission...', 'info');
@@ -4515,15 +4538,38 @@
                     throw new Error('Database client not initialized');
                 }
 
-                const { error } = await db
-                    .from('admin_payables')
-                    .update({ status: 'denied' })
-                    .eq('id', id);
+                // CRITICAL: This function handles TWO commission tables - admin_payables (Admin/Buyer/Vendor Inviters) and buyer_payables (Reviewer)
+                // commissionType parameter MUST specify which table to update - handles multi-table commission architecture
 
-                if (error) {
-                    console.error(`Failed to deny ${id}:`, error);
-                    showToast(`Error denying commission: ${error.message}`, 'error');
-                    return;
+                const trimmedType = commissionType ? commissionType.trim() : commissionType;
+
+                // Route update to correct table based on commission type
+                if (trimmedType === 'admin') {
+                    // Admin/Buyer Inviter/Vendor Inviter commission - update admin_payables
+                    const { error } = await db
+                        .from('admin_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', id);
+
+                    if (error) {
+                        console.error(`Failed to deny ${id}:`, error);
+                        showToast(`Error denying commission: ${error.message}`, 'error');
+                        return;
+                    }
+                } else if (trimmedType === 'reviewer') {
+                    // Reviewer commission - update buyer_payables
+                    const { error } = await db
+                        .from('buyer_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', id);
+
+                    if (error) {
+                        console.error(`Failed to deny ${id}:`, error);
+                        showToast(`Error denying commission: ${error.message}`, 'error');
+                        return;
+                    }
+                } else {
+                    throw new Error(`Unknown commission type: ${trimmedType}`);
                 }
 
                 await loadPendingApprovals();
