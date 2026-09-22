@@ -7303,7 +7303,7 @@
                     sbClient
                         .from('buyer_payables')
                         .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids')
-                        .eq('status', 'vendor_requested')
+                        .in('status', ['vendor_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
                         .order('created_at', { ascending: false })
                 ]);
 
