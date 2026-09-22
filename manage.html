@@ -7158,6 +7158,8 @@
                 return;
             }
 
+            console.time('[Tab 1] Rendering pending payouts table');
+            console.log('[Tab 1] Starting render of', filtered.length, 'rows');
             tbody.innerHTML = filtered.map(payout => {
                 const detailsId = `details-${payout.id}`;
                 const imageData = payout.inquiry?.image_data ? `data:${payout.inquiry.image_mime};base64,${payout.inquiry.image_data}` : null;
@@ -7191,6 +7193,8 @@
                 </tr>
                 `;
             }).join('');
+            console.timeEnd('[Tab 1] Rendering pending payouts table');
+            console.log('[Tab 1] Rendering complete');
         }
 
         let globalAwaitingPayouts = [];
@@ -7327,6 +7331,8 @@
 
         function renderAwaitingPayoutsTable() {
             const tbody = document.getElementById('manage-awaiting-table-body');
+            console.time('[Tab 2] Rendering awaiting payouts table');
+            console.log('[Tab 2] Starting render of', globalAwaitingPayouts.length, 'rows');
             tbody.innerHTML = globalAwaitingPayouts.map(payout => {
                 const slaTimer = calculateSLATimer(payout.created_at, 'vendor');
                 const detailsId = `awaiting-details-${payout.id}`;
@@ -7401,6 +7407,8 @@
                 ` : ''}
                 `;
             }).join('');
+            console.timeEnd('[Tab 2] Rendering awaiting payouts table');
+            console.log('[Tab 2] Rendering complete');
         }
 
         function refreshAwaitingPayoutsSLATimers() {
@@ -7514,30 +7522,17 @@
                     }
                 }
 
-            console.log('[Tab 4] RENDERING', allPayouts.length, 'rows to table');
+            console.time('[Tab 3] Rendering verified payouts table');
             tbody.innerHTML = allPayouts.map((payout, index) => {
                 const detailsId = `verified-details-${payout.id}`;
 
-                console.log(`[Tab 4] RENDERING ROW ${index + 1}:`, {
-                    id: payout.id,
-                    buyer_id: payout.buyer_id,
-                    vendor_id: payout.vendor_id,
-                    admin_commission: payout.admin_commission,
-                    amount_owed: payout.amount_owed,
-                    split_with_buyer_id: payout.split_with_buyer_id,
-                    split_with_vendor_id: payout.split_with_vendor_id,
-                    keys: Object.keys(payout)
-                });
-
                 // Determine if admin_payables or buyer_payables
                 const isBuyerPayable = payout.buyer_id && !payout.admin_commission;
-                console.log(`[Tab 4] ROW ${index + 1} detection: isBuyerPayable=${isBuyerPayable} (buyer_id=${payout.buyer_id}, admin_commission=${payout.admin_commission})`);
 
                 let feedbackId = payout.related_feedback_id;
                 if (!feedbackId && payout.related_feedback_ids && Array.isArray(payout.related_feedback_ids) && payout.related_feedback_ids.length > 0) {
                     feedbackId = payout.related_feedback_ids[0];
                 }
-                console.log(`[Tab 4] ROW ${index + 1} feedbackId: ${feedbackId}`);
 
                 const inquiry = inquiriesMap[feedbackId];
                 const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
@@ -7558,8 +7553,6 @@
                         displayAmount = payout.buyer_portion || 0;
                     }
                 }
-
-                console.log(`[Tab 4] ROW ${index + 1} FINAL: type=${commissionType}, amount=$${displayAmount}`);
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -7588,9 +7581,7 @@
                 </tr>
                 `;
             }).join('');
-
-            console.log('[Tab 4] TABLE RENDERING COMPLETE - Total rows rendered:', allPayouts.length);
-            console.log('[Tab 4] TABLE BODY HTML LENGTH:', tbody.innerHTML.length);
+            console.timeEnd('[Tab 3] Rendering verified payouts table');
             } catch (err) {
                 console.error('[Tab 4] UNEXPECTED ERROR:', err);
                 console.error('[Tab 4] ERROR STACK:', err.stack);
@@ -7841,6 +7832,8 @@
                 }
 
                 // Render table
+                console.time('[Payment History] Rendering table');
+                console.log('[Payment History] Starting render of', allPayouts.length, 'rows');
                 tbody.innerHTML = allPayouts.map(payout => {
                     let fullName = 'N/A';
                     let paypalEmail = 'N/A';
@@ -7925,6 +7918,8 @@
                         </tr>
                     `;
                 }).join('');
+                console.timeEnd('[Payment History] Rendering table');
+                console.log('[Payment History] Table rendering complete');
             } catch (err) {
                 console.error('Error loading collected payouts:', err);
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
