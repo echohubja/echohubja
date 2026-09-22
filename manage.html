@@ -7032,11 +7032,11 @@
                         .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                         .eq('vendor_id', currentVendor.id)
                         .eq('status', 'pending')
-                        .or(`split_with_buyer_id.is.null,vendor_receipt_uploaded_date.not.is.null`)
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
                         .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
+                        .eq('vendor_id', currentVendor.id)
                         .eq('earning_type', 'own_feedback')
                         .eq('status', 'pending')
                         .order('created_at', { ascending: false })
@@ -7187,7 +7187,7 @@
                     } else if (payout.recipientType === 'reviewer') {
                         const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0];
                         const buyerId = inquiriesByFeedbackId[feedbackId]?.buyer_id;
-                        const reviewer = reviewersMap[buyerId];
+                        const reviewer = buyersMap[buyerId];
                         recipient = { name: reviewer?.full_name || 'N/A', email: reviewer?.paypal_email || 'N/A' };
                     }
 
@@ -7195,7 +7195,7 @@
                     return {
                         ...payout,
                         recipient,
-                        inquiry: inquiriesMap[feedbackId] || {},
+                        inquiry: inquiriesByFeedbackId[feedbackId] || {},
                         feedbackId
                     };
                 });
