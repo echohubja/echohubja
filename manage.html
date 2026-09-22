@@ -7978,186 +7978,184 @@
             console.log('[Incoming] ✓ tbody element found');
 
             tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
+            // Query 1: admin_payables for my_payment_requests_awaiting_vendor_review_transfer status (Admin, Buyer Inviter, Vendor Inviter)
+            const { data: adminRequests, error: adminError } = await sbClient
+                .from('admin_payables')
+                .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
+                .eq('vendor_id', currentVendor.id)
+                .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
+                .order('created_at', { ascending: false });
 
-            try {
-                // Query 1: admin_payables for my_payment_requests_awaiting_vendor_review_transfer status (Admin, Buyer Inviter, Vendor Inviter)
-                const { data: adminRequests, error: adminError } = await sbClient
-                    .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
-                    .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
-                    .order('created_at', { ascending: false });
+            // Query 2: buyer_payables for here_are_people_requesting_for_me_to_pay_them status where earning_type='own_feedback' (Reviewer)
+            const { data: buyerRequests, error: buyerError } = await sbClient
+                .from('buyer_payables')
+                .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
+                .eq('vendor_id', currentVendor.id)
+                .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                .eq('earning_type', 'own_feedback')
+                .order('created_at', { ascending: false });
 
-                // Query 2: buyer_payables for here_are_people_requesting_for_me_to_pay_them status where earning_type='own_feedback' (Reviewer)
-                const { data: buyerRequests, error: buyerError } = await sbClient
-                    .from('buyer_payables')
-                    .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
-                    .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
-                    .eq('earning_type', 'own_feedback')
-                    .order('created_at', { ascending: false });
+            if (adminError) {
+                console.error('[Incoming] ERROR loading admin requests:', adminError);
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading requests</td></tr>';
+                return;
+            }
 
-                if (adminError) {
-                    console.error('[Incoming] ERROR loading admin requests:', adminError);
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #ef4444;">Error loading requests</td></tr>';
-                    return;
-                }
+            if (buyerError) {
+                console.error('[Incoming] Error loading buyer requests:', buyerError);
+            }
 
-                if (buyerError) {
-                    console.error('[Incoming] Error loading buyer requests:', buyerError);
-                }
+            // Combine all requests and add recipient type mapping
+            let allRequests = [];
 
-                // Combine all requests and add recipient type mapping
-                let allRequests = [];
+            // Process admin_payables
+            if (adminRequests && adminRequests.length > 0) {
+                adminRequests.forEach(request => {
+                    let recipientType = 'admin';
+                    let displayAmount = request.admin_commission || 0;
 
-                // Process admin_payables
-                if (adminRequests && adminRequests.length > 0) {
-                    adminRequests.forEach(request => {
-                        let recipientType = 'admin';
-                        let displayAmount = request.admin_commission || 0;
-
-                        if (request.split_with_vendor_id) {
-                            recipientType = 'vendor_inviter';
-                            displayAmount = request.amount_owed - (request.admin_commission || 0) - (request.buyer_portion || 0);
-                        } else if (request.split_with_buyer_id) {
-                            recipientType = 'buyer_inviter';
-                            displayAmount = request.buyer_portion || 0;
-                        }
-
-                        allRequests.push({
-                            ...request,
-                            recipientType,
-                            displayAmount,
-                            source: 'admin_payables'
-                        });
-                    });
-                }
-
-                // Process buyer_payables (Reviewers)
-                if (buyerRequests && buyerRequests.length > 0) {
-                    buyerRequests.forEach(request => {
-                        allRequests.push({
-                            ...request,
-                            recipientType: 'reviewer',
-                            displayAmount: request.amount_owed,
-                            source: 'buyer_payables'
-                        });
-                    });
-                }
-
-                if (allRequests.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No incoming payment requests</td></tr>';
-                    console.log('[Incoming] ✓ No requests found');
-                    console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
-                    return;
-                }
-
-                // Fetch all related data
-                const feedbackIds = allRequests.map(r => r.related_feedback_id || r.related_feedback_ids?.[0]).filter(Boolean);
-                const inquiriesMap = {};
-
-                if (feedbackIds.length > 0) {
-                    const { data: inquiries } = await sbClient
-                        .from('inquiries')
-                        .select('id, message, product_url, image_data, image_mime')
-                        .in('id', feedbackIds);
-
-                    if (inquiries) {
-                        inquiries.forEach(inq => {
-                            inquiriesMap[inq.id] = inq;
-                        });
-                    }
-                }
-
-                // Fetch buyer data (for inviter display)
-                const buyerIds = allRequests
-                    .filter(r => r.split_with_buyer_id)
-                    .map(r => r.split_with_buyer_id)
-                    .filter(Boolean);
-                const buyersMap = {};
-
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', buyerIds);
-
-                    if (buyers) {
-                        buyers.forEach(buyer => {
-                            buyersMap[buyer.id] = buyer;
-                        });
-                    }
-                }
-
-                // Fetch vendor data (for vendor inviter display)
-                const vendorIds = allRequests
-                    .filter(r => r.split_with_vendor_id)
-                    .map(r => r.split_with_vendor_id)
-                    .filter(Boolean);
-                const vendorsMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors } = await sbClient
-                        .from('vendors')
-                        .select('id, business_name, paypal_email')
-                        .in('id', vendorIds);
-
-                    if (vendors) {
-                        vendors.forEach(vendor => {
-                            vendorsMap[vendor.id] = vendor;
-                        });
-                    }
-                }
-
-                // Fetch reviewer data
-                const reviewerIds = allRequests
-                    .filter(r => r.source === 'buyer_payables')
-                    .map(r => r.vendor_id)
-                    .filter(Boolean);
-                const reviewersMap = {};
-
-                if (reviewerIds.length > 0) {
-                    const { data: reviewers } = await sbClient
-                        .from('buyers')
-                        .select('id, full_name, paypal_email')
-                        .in('id', reviewerIds);
-
-                    if (reviewers) {
-                        reviewers.forEach(reviewer => {
-                            reviewersMap[reviewer.id] = reviewer;
-                        });
-                    }
-                }
-
-                // Enrich requests with recipient data and store
-                tab1AllRequests = allRequests.map(request => {
-                    let recipient = { name: 'N/A', email: 'N/A' };
-
-                    if (request.recipientType === 'buyer_inviter') {
-                        const buyer = buyersMap[request.split_with_buyer_id];
-                        recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
-                    } else if (request.recipientType === 'vendor_inviter') {
-                        const vendor = vendorsMap[request.split_with_vendor_id];
-                        recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
-                    } else if (request.recipientType === 'reviewer') {
-                        const reviewer = reviewersMap[request.vendor_id];
-                        recipient = { name: reviewer?.full_name || 'N/A', email: reviewer?.paypal_email || 'N/A' };
+                    if (request.split_with_vendor_id) {
+                        recipientType = 'vendor_inviter';
+                        displayAmount = request.amount_owed - (request.admin_commission || 0) - (request.buyer_portion || 0);
+                    } else if (request.split_with_buyer_id) {
+                        recipientType = 'buyer_inviter';
+                        displayAmount = request.buyer_portion || 0;
                     }
 
-                    const feedbackId = request.related_feedback_id || request.related_feedback_ids?.[0];
-                    return {
+                    allRequests.push({
                         ...request,
-                        recipient,
-                        inquiry: inquiriesMap[feedbackId] || {},
-                        feedbackId
-                    };
+                        recipientType,
+                        displayAmount,
+                        source: 'admin_payables'
+                    });
                 });
+            }
 
-                // Apply current filters and render
-                applyTab1Filters();
+            // Process buyer_payables (Reviewers)
+            if (buyerRequests && buyerRequests.length > 0) {
+                buyerRequests.forEach(request => {
+                    allRequests.push({
+                        ...request,
+                        recipientType: 'reviewer',
+                        displayAmount: request.amount_owed,
+                        source: 'buyer_payables'
+                    });
+                });
+            }
 
-                console.log('[Incoming] ✅ Successfully rendered', allRequests.length, 'rows');
+            if (allRequests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">No incoming payment requests</td></tr>';
+                console.log('[Incoming] ✓ No requests found');
                 console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
+                return;
+            }
+
+            // Fetch all related data
+            const feedbackIds = allRequests.map(r => r.related_feedback_id || r.related_feedback_ids?.[0]).filter(Boolean);
+            const inquiriesMap = {};
+
+            if (feedbackIds.length > 0) {
+                const { data: inquiries } = await sbClient
+                    .from('inquiries')
+                    .select('id, message, product_url, image_data, image_mime')
+                    .in('id', feedbackIds);
+
+                if (inquiries) {
+                    inquiries.forEach(inq => {
+                        inquiriesMap[inq.id] = inq;
+                    });
+                }
+            }
+
+            // Fetch buyer data (for inviter display)
+            const buyerIds = allRequests
+                .filter(r => r.split_with_buyer_id)
+                .map(r => r.split_with_buyer_id)
+                .filter(Boolean);
+            const buyersMap = {};
+
+            if (buyerIds.length > 0) {
+                const { data: buyers } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name, paypal_email')
+                    .in('id', buyerIds);
+
+                if (buyers) {
+                    buyers.forEach(buyer => {
+                        buyersMap[buyer.id] = buyer;
+                    });
+                }
+            }
+
+            // Fetch vendor data (for vendor inviter display)
+            const vendorIds = allRequests
+                .filter(r => r.split_with_vendor_id)
+                .map(r => r.split_with_vendor_id)
+                .filter(Boolean);
+            const vendorsMap = {};
+
+            if (vendorIds.length > 0) {
+                const { data: vendors } = await sbClient
+                    .from('vendors')
+                    .select('id, business_name, paypal_email')
+                    .in('id', vendorIds);
+
+                if (vendors) {
+                    vendors.forEach(vendor => {
+                        vendorsMap[vendor.id] = vendor;
+                    });
+                }
+            }
+
+            // Fetch reviewer data
+            const reviewerIds = allRequests
+                .filter(r => r.source === 'buyer_payables')
+                .map(r => r.vendor_id)
+                .filter(Boolean);
+            const reviewersMap = {};
+
+            if (reviewerIds.length > 0) {
+                const { data: reviewers } = await sbClient
+                    .from('buyers')
+                    .select('id, full_name, paypal_email')
+                    .in('id', reviewerIds);
+
+                if (reviewers) {
+                    reviewers.forEach(reviewer => {
+                        reviewersMap[reviewer.id] = reviewer;
+                    });
+                }
+            }
+
+            // Enrich requests with recipient data and store
+            tab1AllRequests = allRequests.map(request => {
+                let recipient = { name: 'N/A', email: 'N/A' };
+
+                if (request.recipientType === 'buyer_inviter') {
+                    const buyer = buyersMap[request.split_with_buyer_id];
+                    recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
+                } else if (request.recipientType === 'vendor_inviter') {
+                    const vendor = vendorsMap[request.split_with_vendor_id];
+                    recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
+                } else if (request.recipientType === 'reviewer') {
+                    const reviewer = reviewersMap[request.vendor_id];
+                    recipient = { name: reviewer?.full_name || 'N/A', email: reviewer?.paypal_email || 'N/A' };
+                }
+
+                const feedbackId = request.related_feedback_id || request.related_feedback_ids?.[0];
+                return {
+                    ...request,
+                    recipient,
+                    inquiry: inquiriesMap[feedbackId] || {},
+                    feedbackId
+                };
+            });
+
+            // Apply current filters and render
+            applyTab1Filters();
+
+            console.log('[Incoming] ✅ Successfully rendered', allRequests.length, 'rows');
+            console.log('========== END INCOMING PAYMENT REQUESTS DEBUG ==========\n');
 
             } catch (err) {
                 console.error('[Incoming] ❌ CATCH ERROR:', err);
