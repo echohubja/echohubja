@@ -8434,7 +8434,7 @@
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                    .in('status', ['payment_requested', 'here_are_people_requesting_for_me_to_pay_them'])
                     .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false })
             ]);
