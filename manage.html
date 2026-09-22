@@ -2841,7 +2841,7 @@
                 <!-- Payout Summary Cards -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Total Earnings</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Total Commission Owed</div>
                         <div style="font-size: 28px; font-weight: 700; color: #1e293b;">$3,847.50</div>
                         <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">All time</div>
                     </div>
@@ -7608,6 +7608,7 @@
 
                 // ROUND 1: Parallelize admin_payables + vendor inquiries queries
                 console.log('[Payment History] QUERYING admin_payables and inquiries in parallel with vendor_id:', currentVendor.id);
+                console.time('[Payment History] Round 1 Queries');
                 const [adminResult, inquiriesResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
@@ -7620,6 +7621,7 @@
                         .select('id')
                         .eq('vendor_id', currentVendor.id)
                 ]);
+                console.timeEnd('[Payment History] Round 1 Queries');
 
                 const adminPayouts = adminResult.data;
                 const vendorInquiries = inquiriesResult.data;
@@ -7645,6 +7647,7 @@
                 if (vendorInquiries && vendorInquiries.length > 0) {
                     const feedbackIds = vendorInquiries.map(inq => inq.id);
                     console.log('[Payment History] QUERYING buyer_payables with feedback IDs:', feedbackIds.length);
+                    console.time('[Payment History] Round 2 Query');
 
                     const { data: reviewerData, error: reviewerError } = await sbClient
                         .from('buyer_payables')
@@ -7658,6 +7661,7 @@
                         records: reviewerData?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
                         error: reviewerError
                     });
+                    console.timeEnd('[Payment History] Round 2 Query');
 
                     if (reviewerData) {
                         buyerPayouts = reviewerData;
@@ -7734,6 +7738,7 @@
                     .filter(Boolean);
 
                 // ROUND 3: Parallelize inquiries lookup (for buyer_inviters) and vendor inviter lookup
+                console.time('[Payment History] Round 3 Queries');
                 const inquiryToBuyerMap = {};
                 const queries = [];
 
@@ -7762,6 +7767,7 @@
                 }
 
                 const [inqResult, buyerInvitersResult] = await Promise.all(queries);
+                console.timeEnd('[Payment History] Round 3 Queries');
 
                 // Process inquiry results
                 if (inqResult.data) {
@@ -7788,6 +7794,7 @@
                 }
 
                 // ROUND 4: Fetch remaining vendor inviters from admins table + fetch all buyers
+                console.time('[Payment History] Round 4 Queries');
                 const remainingVendorInviterIds = vendorInviterIds.filter(id => !foundVendorInviterIds.has(id));
                 const additionalQueries = [];
 
@@ -7816,6 +7823,7 @@
                 }
 
                 const [buyersResult, adminsResult] = await Promise.all(additionalQueries);
+                console.timeEnd('[Payment History] Round 4 Queries');
 
                 // Process buyers
                 if (buyersResult.data) {
