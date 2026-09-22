@@ -6171,11 +6171,24 @@
 
                 if (bpError) throw bpError;
 
+                // Load payment_history (actual completed payments)
+                const { data: paymentHistory, error: phError } = await sbClient
+                    .from('payment_history')
+                    .select('*')
+                    .eq('vendor_id', currentVendor.id)
+                    .order('created_at', { ascending: false });
+
+                if (phError) {
+                    console.warn('[Payout] Warning loading payment_history:', phError);
+                    // Don't throw - payment_history is optional for display
+                }
+
                 // Store in state (include maps for tooltip data)
                 messagingState.payoutData = {
                     vendorPayables: vendorPayables || [],
                     adminPayables: adminPayables || [],
                     buyerPayables: buyerPayablesFiltered || [],
+                    paymentHistory: paymentHistory || [],
                     buyerNameMap: buyerNameMap,
                     buyerEmailMap: buyerEmailMap,
                     vendorNameMap: vendorNameMap,
@@ -6533,14 +6546,7 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            // Map all 15 database status values to PAID or PENDING
-            const PAID_STATUSES = [
-                'paid',
-                'payment_verified',
-                'collected',
-                'commissions_successfully_collected'
-            ];
-
+            // Map commission status values to PENDING category
             const PENDING_STATUSES = [
                 'pending',
                 'vendor_requested',
@@ -6555,11 +6561,20 @@
                 'awaiting_vendor_inviter_proof'
             ];
 
+            // Payment history status values that represent completed/verified payments
+            const COMPLETED_PAYMENT_STATUSES = [
+                'completed',
+                'paid',
+                'verified',
+                'payment_verified',
+                'received'
+            ];
+
             let totalEarnings = 0;
             let paidOut = 0;
             let pending = 0;
 
-            // Process all admin_payables records
+            // Process all admin_payables records - count toward total earnings and pending
             data.adminPayables.forEach((ap) => {
                 const amount = parseFloat(ap.amount_owed || 0);
                 const status = ap.status || '';
@@ -6571,14 +6586,13 @@
 
                 totalEarnings += amount;
 
-                if (PAID_STATUSES.includes(status)) {
-                    paidOut += amount;
-                } else if (PENDING_STATUSES.includes(status)) {
+                // Only count as pending if status indicates waiting
+                if (PENDING_STATUSES.includes(status)) {
                     pending += amount;
                 }
             });
 
-            // Process buyer_payables (own feedback)
+            // Process buyer_payables (own feedback) - count toward total earnings and pending
             data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
                 const amount = parseFloat(bp.amount_owed || 0);
                 const status = bp.status || '';
@@ -6590,12 +6604,21 @@
 
                 totalEarnings += amount;
 
-                if (PAID_STATUSES.includes(status)) {
-                    paidOut += amount;
-                } else if (PENDING_STATUSES.includes(status)) {
+                // Only count as pending if status indicates waiting
+                if (PENDING_STATUSES.includes(status)) {
                     pending += amount;
                 }
             });
+
+            // Calculate paidOut from payment_history (authoritative source for actual completed payments)
+            if (data.paymentHistory && Array.isArray(data.paymentHistory)) {
+                data.paymentHistory.forEach((ph) => {
+                    // Only count payments with completed/verified status
+                    if (COMPLETED_PAYMENT_STATUSES.includes(ph.status)) {
+                        paidOut += parseFloat(ph.amount || 0);
+                    }
+                });
+            }
 
             // Update DOM using data attributes (primary method)
             const totalCard = document.querySelector('[data-card-type="total-earnings"]');
@@ -6617,7 +6640,8 @@
                 if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
                 const subtitleEl = paidCard.querySelector('[data-card-subtitle]');
                 if (subtitleEl) {
-                    const payoutCount = data.adminPayables.filter(ap => PAID_STATUSES.includes(ap.status)).length;
+                    // Count completed payments from payment_history
+                    const payoutCount = (data.paymentHistory || []).filter(ph => COMPLETED_PAYMENT_STATUSES.includes(ph.status)).length;
                     subtitleEl.textContent = `${payoutCount} payouts`;
                 }
             }
@@ -6649,7 +6673,7 @@
             const pendingEl = document.getElementById('commission-pending');
             if (pendingEl) pendingEl.textContent = `$${pending.toFixed(2)}`;
 
-            console.log('[Payout] Summary cards updated:', { totalEarnings: totalEarnings.toFixed(2), paidOut: paidOut.toFixed(2), pending: pending.toFixed(2) });
+            console.log('[Payout] Summary cards updated (using payment_history for paid-out):', { totalEarnings: totalEarnings.toFixed(2), paidOut: paidOut.toFixed(2), pending: pending.toFixed(2), paymentHistoryRecords: (data.paymentHistory || []).length });
         }
 
         function renderPayoutHistoryTable() {
