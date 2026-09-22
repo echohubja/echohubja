@@ -7041,6 +7041,9 @@
                         .order('created_at', { ascending: false })
                 ]);
 
+                console.log('[Tab 2] Admin payouts:', { count: adminPayouts?.length, records: adminPayouts, error: adminError });
+                console.log('[Tab 2] Buyer payouts RAW:', { count: buyerPayoutsRaw?.length, records: buyerPayoutsRaw, error: buyerError });
+
                 if (adminError || buyerError) {
                     console.error('Error loading payouts:', adminError || buyerError);
                     tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #ef4444;">Error loading payouts</td></tr>';
@@ -7066,6 +7069,8 @@
                         .select('id, message, product_url, image_data, image_mime, vendor_id, buyer_id')
                         .in('id', allFeedbackIds);
 
+                    console.log('[Tab 2] Inquiries fetched:', { count: inquiries?.length, feedbackIds: allFeedbackIds, inquiries });
+
                     if (inquiries) {
                         inquiries.forEach(inq => {
                             inquiriesByFeedbackId[inq.id] = inq;
@@ -7076,10 +7081,17 @@
                 // Filter buyer payouts by current vendor
                 let buyerPayouts = [];
                 if (buyerPayoutsRaw && buyerPayoutsRaw.length > 0) {
+                    console.log('[Tab 2] Filtering buyer payouts - Before filter:', { count: buyerPayoutsRaw.length, records: buyerPayoutsRaw });
+
                     buyerPayouts = buyerPayoutsRaw.filter(bp => {
                         const feedbackId = bp.related_feedback_ids?.[0];
-                        return feedbackId && inquiriesByFeedbackId[feedbackId]?.vendor_id === currentVendor.id;
+                        const inquiry = inquiriesByFeedbackId[feedbackId];
+                        const vendorMatch = inquiry?.vendor_id === currentVendor.id;
+                        console.log('[Tab 2] Filter check for bp:', { bpId: bp.id, feedbackId, inquiry: inquiry?.id, vendorId: inquiry?.vendor_id, currentVendorId: currentVendor.id, match: vendorMatch });
+                        return feedbackId && vendorMatch;
                     });
+
+                    console.log('[Tab 2] Filtered buyer payouts:', { count: buyerPayouts.length, records: buyerPayouts });
                 }
 
                 // Combine all payouts
