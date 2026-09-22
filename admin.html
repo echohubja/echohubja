@@ -2950,6 +2950,57 @@
             tbody.innerHTML = htmlRows;
         }
 
+        function filterPendingApprovals() {
+            const vendorSearch = document.getElementById('pending-vendor-search').value.toLowerCase().trim();
+            const recipientFilter = document.getElementById('pending-recipient-filter').value;
+            const dateFrom = document.getElementById('pending-date-from').value;
+            const dateTo = document.getElementById('pending-date-to').value;
+
+            if (!globalPendingData) return;
+
+            let filteredAdmin = globalPendingData.adminCommissions || [];
+            let filteredReviewer = globalPendingData.reviewerCommissions || [];
+
+            // Filter admin commissions by vendor name
+            if (vendorSearch) {
+                filteredAdmin = filteredAdmin.filter(record => {
+                    const vendorName = (globalPendingVendorMap[record.vendor_id] || 'Unknown').toLowerCase();
+                    return vendorName.includes(vendorSearch);
+                });
+            }
+
+            // Filter by recipient type
+            if (recipientFilter && recipientFilter !== 'all') {
+                filteredAdmin = filteredAdmin.filter(record => {
+                    if (recipientFilter === 'admin') return !record.split_with_buyer_id && !record.split_with_vendor_id;
+                    if (recipientFilter === 'buyer_inviter') return record.split_with_buyer_id;
+                    if (recipientFilter === 'vendor_inviter') return record.split_with_vendor_id;
+                    return true;
+                });
+            }
+
+            // Filter by date range
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom).getTime();
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() >= fromDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo).getTime();
+                filteredAdmin = filteredAdmin.filter(record => new Date(record.created_at).getTime() <= toDate);
+                filteredReviewer = filteredReviewer.filter(record => new Date(record.created_at).getTime() <= toDate);
+            }
+
+            renderPendingApprovalsTable({
+                adminCommissions: filteredAdmin,
+                reviewerCommissions: filteredReviewer,
+                vendorPaypalMap: globalPendingData.vendorPaypalMap,
+                buyerMap: globalPendingData.buyerMap,
+                vendorInviterMap: globalPendingData.vendorInviterMap
+            });
+        }
+
         function renderPendingApprovalsTable(data) {
             const tbody = document.getElementById('pending-approvals-body');
 
