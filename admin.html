@@ -2211,22 +2211,22 @@
             tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Loading...</td></tr>';
 
             try {
-                // Query admin_payables where status='pending'
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
-                        created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id
-                    `)
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
-
-                // Query buyer_payables where status='pending' (reviewer commissions)
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
-                    `)
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
+                // PARALLEL: Fetch admin and reviewer commissions simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
+                            created_at, status, split_with_buyer_id, split_with_vendor_id, related_feedback_id
+                        `)
+                        .eq('status', 'pending')
+                        .order('created_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                        `)
+                        .eq('status', 'pending')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -2240,12 +2240,6 @@
                 const adminCommissions = adminData || [];
                 const reviewerCommissions = reviewerData || [];
 
-                // DEBUG: Log reviewer data
-                console.log('=== REVIEWER DATA ===');
-                console.log('Reviewer records count:', reviewerCommissions.length);
-                console.log('Reviewer data:', reviewerCommissions);
-                console.log('Admin records count:', adminCommissions.length);
-
                 if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No commissions ready to request</td></tr>';
                     document.getElementById('metric-ready-to-request').textContent = '0';
@@ -2254,36 +2248,50 @@
                     return;
                 }
 
-                // Fetch vendor details for admin_payables
+                // Prepare lookups for parallel fetches
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+
+                // PARALLEL: Fetch vendors, buyers, and vendor inviters simultaneously
+                const queries = [];
+                if (vendorIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (allBuyerIds.length > 0) {
+                    queries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (vendorInviterIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+
+                const [vendorsResult, buyersResult, vendorInvitersResult] = await Promise.all(queries);
+
                 globalReadyToRequestVendorMap = {};
                 const globalReadyVendorPaypalMap = {};
-                if (vendors) {
-                    vendors.forEach(v => {
+                if (vendorsResult.data) {
+                    vendorsResult.data.forEach(v => {
                         globalReadyToRequestVendorMap[v.id] = v.business_name || 'Unknown';
                         globalReadyVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
                     });
                 }
 
-                // Fetch buyer details for split_with_buyer_id lookups
-                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
-                // Also fetch reviewer buyer IDs
-                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
-                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
-
                 const globalReadyBuyerMap = {};
-                if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => globalReadyBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                if (buyersResult.data) {
+                    buyersResult.data.forEach(b => globalReadyBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
-                // Fetch vendor inviters for split_with_vendor_id lookups
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const globalReadyVendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => globalReadyVendorInviterMap[v.id] = v.paypal_email || 'N/A');
+                if (vendorInvitersResult.data) {
+                    vendorInvitersResult.data.forEach(v => globalReadyVendorInviterMap[v.id] = v.paypal_email || 'N/A');
                 }
 
                 // Store combined data with metadata
@@ -2625,22 +2633,22 @@
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Loading pending approvals...</td></tr>';
 
             try {
-                // Query admin_payables where status='vendor_requested'
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
-                        split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
-                    `)
-                    .eq('status', 'vendor_requested')
-                    .order('created_at', { ascending: false });
-
-                // Query buyer_payables where status='vendor_requested'
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
-                    `)
-                    .eq('status', 'vendor_requested')
-                    .order('created_at', { ascending: false });
+                // PARALLEL: Fetch admin and reviewer commissions simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
+                            split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
+                        `)
+                        .eq('status', 'vendor_requested')
+                        .order('created_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                        `)
+                        .eq('status', 'vendor_requested')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -2656,35 +2664,50 @@
                     return;
                 }
 
-                // Fetch vendor details
+                // Prepare lookups for parallel fetches
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+
+                // PARALLEL: Fetch vendors, buyers, and vendor inviters simultaneously
+                const queries = [];
+                if (vendorIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (allBuyerIds.length > 0) {
+                    queries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (vendorInviterIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+
+                const [vendorsResult, buyersResult, vendorInvitersResult] = await Promise.all(queries);
+
                 globalPendingVendorMap = {};
                 const globalPendingVendorPaypalMap = {};
-                if (vendors) {
-                    vendors.forEach(v => {
+                if (vendorsResult.data) {
+                    vendorsResult.data.forEach(v => {
                         globalPendingVendorMap[v.id] = v.business_name || 'Unknown';
                         globalPendingVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
                     });
                 }
 
-                // Fetch buyer details for split_with_buyer_id and reviewers
-                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
-                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
-                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
-
                 const globalPendingBuyerMap = {};
-                if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => globalPendingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                if (buyersResult.data) {
+                    buyersResult.data.forEach(b => globalPendingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
-                // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const globalPendingVendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => globalPendingVendorInviterMap[v.id] = v.paypal_email || 'N/A');
+                if (vendorInvitersResult.data) {
+                    vendorInvitersResult.data.forEach(v => globalPendingVendorInviterMap[v.id] = v.paypal_email || 'N/A');
                 }
 
                 globalPendingData = {
@@ -2724,14 +2747,23 @@
             tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Loading payment requests...</td></tr>';
 
             try {
-                // Query admin_payables where status='my_payment_requests_awaiting_vendor_review_transfer'
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
-                        split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
-                    `)
-                    .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
-                    .order('created_at', { ascending: false });
+                // PARALLEL: Fetch admin and reviewer commissions simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, payable_reason, admin_commission, buyer_portion,
+                            split_with_buyer_id, split_with_vendor_id, created_at, status, related_feedback_id
+                        `)
+                        .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
+                        .order('created_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, earning_type, created_at, status
+                        `)
+                        .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
+                        .eq('earning_type', 'own_feedback')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -2739,16 +2771,6 @@
                 }
 
                 const adminCommissions = adminData || [];
-
-                // Query buyer_payables for reviewer commissions with status='here_are_people_requesting_for_me_to_pay_them'
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, earning_type, created_at, status
-                    `)
-                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
-                    .eq('earning_type', 'own_feedback')
-                    .order('created_at', { ascending: false });
-
                 const reviewerCommissions = reviewerError ? [] : (reviewerData || []);
 
                 if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
@@ -2757,30 +2779,46 @@
                     return;
                 }
 
-                // Fetch vendor details
+                // Prepare lookups for parallel fetches
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+
+                // PARALLEL: Fetch vendors, buyers, and vendor inviters simultaneously
+                const queries = [];
+                if (vendorIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (buyerIds.length > 0) {
+                    queries.push(db.from('buyers').select('id, full_name, email').in('id', buyerIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (vendorInviterIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+
+                const [vendorsResult, buyersResult, vendorInvitersResult] = await Promise.all(queries);
+
                 const vendorMap = {};
-                if (vendors) {
-                    vendors.forEach(v => {
+                if (vendorsResult.data) {
+                    vendorsResult.data.forEach(v => {
                         vendorMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' };
                     });
                 }
 
-                // Fetch buyer details for split_with_buyer_id
-                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
                 const buyerMap = {};
-                if (buyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', buyerIds);
-                    if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                if (buyersResult.data) {
+                    buyersResult.data.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
                 }
 
-                // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const vendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
+                if (vendorInvitersResult.data) {
+                    vendorInvitersResult.data.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
                 }
 
                 // Store global data for filtering
@@ -3009,7 +3047,6 @@
         }
 
         async function loadAwaitingReceipts() {
-            console.log('[loadAwaitingReceipts] ===== START =====');
             const tbody = document.getElementById('awaiting-receipts-body');
             if (!tbody) return;
 
@@ -3022,35 +3059,23 @@
             }
 
             try {
-                // Query admin_payables awaiting receipt verification (V9: status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
-                console.log('[loadAwaitingReceipts] Fetching admin_payables...');
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
-                        created_at, vendor_receipt_uploaded_date, vendor_flagged,
-                        buyer_receipt_uploaded_date, buyer_flagged, related_feedback_id
-                    `)
-                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
-                    .order('created_at', { ascending: false });
-
-                console.log('[loadAwaitingReceipts] Admin data received:', { count: adminData?.length, hasError: !!adminError });
-                if (adminData && adminData.length > 0) {
-                    console.log('[loadAwaitingReceipts] First admin record created_at:', adminData[0].created_at, typeof adminData[0].created_at);
-                }
-
-                // Query buyer_payables awaiting receipt verification (V9: status='here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
-                console.log('[loadAwaitingReceipts] Fetching buyer_payables...');
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
-                    `)
-                    .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
-                    .order('created_at', { ascending: false });
-
-                console.log('[loadAwaitingReceipts] Reviewer data received:', { count: reviewerData?.length, hasError: !!reviewerError });
-                if (reviewerData && reviewerData.length > 0) {
-                    console.log('[loadAwaitingReceipts] First reviewer record created_at:', reviewerData[0].created_at, typeof reviewerData[0].created_at);
-                }
+                // PARALLEL: Fetch admin and reviewer commissions simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
+                            created_at, vendor_receipt_uploaded_date, vendor_flagged,
+                            buyer_receipt_uploaded_date, buyer_flagged, related_feedback_id
+                        `)
+                        .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
+                        .order('created_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                        `)
+                        .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -3060,59 +3085,56 @@
                 const adminCommissions = adminData || [];
                 const reviewerCommissions = reviewerData || [];
 
-                // DIAGNOSTIC: Inspect first admin record structure
-                if (adminCommissions.length > 0) {
-                    const firstRec = adminCommissions[0];
-                    console.log('[loadAwaitingReceipts] DIAGNOSTIC - First admin_payables record structure:');
-                    console.log('[loadAwaitingReceipts] Keys:', Object.keys(firstRec));
-                    console.log('[loadAwaitingReceipts] vendor_id value:', firstRec.vendor_id, 'type:', typeof firstRec.vendor_id);
-                    console.log('[loadAwaitingReceipts] Full record:', firstRec);
-                }
-
                 if (adminCommissions.length === 0 && reviewerCommissions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">No pending receipts</td></tr>';
                     document.getElementById('metric-awaiting-receipts').textContent = '0';
                     return;
                 }
 
-                // Fetch vendor details
+                // Prepare lookups for parallel fetches
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                console.log('[loadAwaitingReceipts] Vendor IDs to fetch:', vendorIds, 'count:', vendorIds.length);
-
-                globalAwaitingVendorMap = {};
-                const globalAwaitingVendorPaypalMap = {};
-
-                if (vendorIds.length > 0) {
-                    const { data: vendors, error: vendorError } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
-                    console.log('[loadAwaitingReceipts] Vendor fetch result:', { vendorsCount: vendors?.length, hasError: !!vendorError, error: vendorError?.message });
-                    if (vendors) {
-                        vendors.forEach(v => {
-                            globalAwaitingVendorMap[v.id] = v.business_name || 'Unknown';
-                            globalAwaitingVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
-                            console.log('[loadAwaitingReceipts] Vendor mapped:', v.id, '->', v.business_name);
-                        });
-                    }
-                } else {
-                    console.log('[loadAwaitingReceipts] No vendor IDs found in admin commissions');
-                }
-
-                // Fetch buyer details for split_with_buyer_id and reviewers
                 const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
                 const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
                 const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
 
-                const globalAwaitingBuyerMap = {};
+                // PARALLEL: Fetch vendors, buyers, and vendor inviters simultaneously
+                const queries = [];
+                if (vendorIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
                 if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => globalAwaitingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                    queries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
+                }
+                if (vendorInviterIds.length > 0) {
+                    queries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorInviterIds));
+                } else {
+                    queries.push(Promise.resolve({ data: null }));
                 }
 
-                // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+                const [vendorsResult, buyersResult, vendorInvitersResult] = await Promise.all(queries);
+
+                globalAwaitingVendorMap = {};
+                const globalAwaitingVendorPaypalMap = {};
+                if (vendorsResult.data) {
+                    vendorsResult.data.forEach(v => {
+                        globalAwaitingVendorMap[v.id] = v.business_name || 'Unknown';
+                        globalAwaitingVendorPaypalMap[v.id] = v.paypal_email || 'N/A';
+                    });
+                }
+
+                const globalAwaitingBuyerMap = {};
+                if (buyersResult.data) {
+                    buyersResult.data.forEach(b => globalAwaitingBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
+                }
+
                 const globalAwaitingVendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => globalAwaitingVendorInviterMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' });
+                if (vendorInvitersResult.data) {
+                    vendorInvitersResult.data.forEach(v => globalAwaitingVendorInviterMap[v.id] = { name: v.business_name || 'Unknown', email: v.paypal_email || 'N/A' });
                 }
 
                 globalAwaitingData = {
@@ -3123,23 +3145,14 @@
                     vendorInviterMap: globalAwaitingVendorInviterMap
                 };
 
-                console.log('[loadAwaitingReceipts] globalAwaitingData created:', {
-                    adminCount: adminCommissions.length,
-                    reviewerCount: reviewerCommissions.length
-                });
-
                 // Calculate expanded row count
                 let expandedCount = 0;
-                console.log('[loadAwaitingReceipts] Expanding admin commissions...');
-                adminCommissions.forEach((record, idx) => {
-                    console.log(`[loadAwaitingReceipts] Admin record ${idx} created_at:`, record.created_at, typeof record.created_at);
+                adminCommissions.forEach(record => {
                     const expanded = expandCommissionRecord(record, globalAwaitingVendorInviterMap, globalAwaitingBuyerMap);
-                    console.log(`[loadAwaitingReceipts] Admin record ${idx} expanded to ${expanded.length} rows`);
                     expandedCount += expanded.length;
                 });
                 expandedCount += reviewerCommissions.length;
 
-                console.log('[loadAwaitingReceipts] Total expanded count:', expandedCount);
                 document.getElementById('metric-awaiting-receipts').textContent = expandedCount;
 
                 // Clear filters
@@ -3148,9 +3161,7 @@
                 document.getElementById('awaiting-date-from').value = '';
                 document.getElementById('awaiting-date-to').value = '';
 
-                console.log('[loadAwaitingReceipts] Calling filterAwaitingReceipts...');
                 filterAwaitingReceipts();
-                console.log('[loadAwaitingReceipts] ===== COMPLETE =====');
 
                 // Set up periodic SLA timer refresh (every 60 seconds)
                 adminAwaitingSLAInterval = setInterval(() => {
@@ -3470,25 +3481,23 @@
             tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Loading receipts for verification...</td></tr>';
 
             try {
-                // Query admin_payables where status='payment_sent' (vendor has uploaded receipt proof)
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
-                        vendor_paypal_transaction_id, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype,
-                        buyer_paypal_transaction_id, buyer_receipt_data, buyer_receipt_filename,
-                        buyer_receipt_filetype, created_at, related_feedback_id
-                    `)
-                    .eq('status', 'payment_sent')
-                    .order('created_at', { ascending: false });
-
-                // Query buyer_payables where status='payment_sent' (vendor has uploaded receipt proof)
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, vendor_receipt_data, vendor_receipt_filename, vendor_receipt_filetype,
-                        vendor_paypal_transaction_id, created_at, related_feedback_ids
-                    `)
-                    .eq('status', 'payment_sent')
-                    .order('created_at', { ascending: false });
+                // PARALLEL: Fetch admin_payables and buyer_payables simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id,
+                            vendor_paypal_transaction_id, buyer_paypal_transaction_id,
+                            vendor_flagged, buyer_flagged, created_at, related_feedback_id
+                        `)
+                        .eq('status', 'payment_sent')
+                        .order('created_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, vendor_paypal_transaction_id, created_at, related_feedback_ids
+                        `)
+                        .eq('status', 'payment_sent')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -3503,37 +3512,44 @@
                     return;
                 }
 
-                // Fetch vendor details
+                // Extract IDs for lookups
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name').in('id', vendorIds);
-                const vendorMap = {};
-                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
-
-                // Fetch buyer details for referrer payouts and reviewers
                 const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
                 const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
                 const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+
+                // PARALLEL: Fetch vendor, buyer, and vendor inviter details simultaneously
+                const lookupQueries = [];
+                lookupQueries.push(db.from('vendors').select('id, business_name').in('id', vendorIds));
+                if (allBuyerIds.length > 0) {
+                    lookupQueries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    lookupQueries.push(Promise.resolve({ data: null }));
+                }
+                if (vendorInviterIds.length > 0) {
+                    lookupQueries.push(db.from('vendors').select('id, business_name').in('id', vendorInviterIds));
+                } else {
+                    lookupQueries.push(Promise.resolve({ data: null }));
+                }
+
+                const [{ data: vendors }, { data: buyers }, { data: vendorInviters }] = await Promise.all(lookupQueries);
+
+                const vendorMap = {};
+                if (vendors) vendors.forEach(v => vendorMap[v.id] = v.business_name || 'Unknown');
 
                 const buyerMap = {};
-                if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
-                }
+                if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
 
-                // Fetch vendor inviter details
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const vendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, business_name').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.business_name || 'Unknown');
-                }
+                if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.business_name || 'Unknown');
 
                 // Expand admin records into per-recipient rows
                 const expandedRows = [];
                 adminCommissions.forEach(record => {
                     const commissionId = record.id.substring(0, 8);
-                    const hasVendorReceipt = !!record.vendor_receipt_data;
-                    const hasBuyerReceipt = !!record.buyer_receipt_data;
+                    const hasVendorReceipt = !record.vendor_flagged;
+                    const hasBuyerReceipt = !record.buyer_flagged;
 
                     // Row 1: Admin commission (if any)
                     if (record.admin_commission && parseFloat(record.admin_commission) > 0) {
@@ -3595,7 +3611,8 @@
                 reviewerCommissions.forEach((record, idx) => {
                     try {
                         const commissionId = record.id.substring(0, 8);
-                        const hasVendorReceipt = !!record.vendor_receipt_data;
+                        // For buyer_payables, vendor_flagged indicates if vendor receipt is missing/rejected
+                        const hasVendorReceipt = !record.vendor_flagged;
 
                         expandedRows.push({
                             ...record,
@@ -3659,23 +3676,23 @@
             tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Loading verified payments...</td></tr>';
 
             try {
-                // Query admin_payables where status='payment_verified'
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
-                        admin_commission, buyer_portion, related_feedback_id,
-                        created_at, vendor_receipt_uploaded_date, unflagged_date, status
-                    `)
-                    .eq('status', 'payment_verified')
-                    .order('unflagged_date', { ascending: false });
-
-                // Query buyer_payables where status='payment_verified'
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
-                    `)
-                    .eq('status', 'payment_verified')
-                    .order('created_at', { ascending: false });
+                // PARALLEL: Fetch admin_payables and buyer_payables simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
+                            admin_commission, buyer_portion, related_feedback_id,
+                            created_at, unflagged_date, status
+                        `)
+                        .eq('status', 'payment_verified')
+                        .order('unflagged_date', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, earning_type, status, created_at, related_feedback_ids
+                        `)
+                        .eq('status', 'payment_verified')
+                        .order('created_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -3692,9 +3709,29 @@
                     return;
                 }
 
-                // Fetch vendor details
+                // Extract IDs for lookups
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds);
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
+
+                // PARALLEL: Fetch vendor, vendor inviter, and buyer details simultaneously
+                const lookupQueries = [];
+                lookupQueries.push(db.from('vendors').select('id, business_name, paypal_email').in('id', vendorIds));
+                if (vendorInviterIds.length > 0) {
+                    lookupQueries.push(db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds));
+                } else {
+                    lookupQueries.push(Promise.resolve({ data: null }));
+                }
+                if (allBuyerIds.length > 0) {
+                    lookupQueries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    lookupQueries.push(Promise.resolve({ data: null }));
+                }
+
+                const [{ data: vendors }, { data: vendorInviters }, { data: buyers }] = await Promise.all(lookupQueries);
+
                 globalVerifiedVendorMap = {};
                 const vendorPaypalMap = {};
                 if (vendors) {
@@ -3704,24 +3741,11 @@
                     });
                 }
 
-                // Fetch vendor inviter PayPal emails for split_with_vendor_id lookups
-                const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const vendorInviterMap = {};
-                if (vendorInviterIds.length > 0) {
-                    const { data: vendorInviters } = await db.from('vendors').select('id, paypal_email').in('id', vendorInviterIds);
-                    if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
-                }
-
-                // Fetch buyer details for split_with_buyer_id and reviewers
-                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
-                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
-                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+                if (vendorInviters) vendorInviters.forEach(v => vendorInviterMap[v.id] = v.paypal_email || 'N/A');
 
                 const globalVerifiedBuyerMap = {};
-                if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => globalVerifiedBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
-                }
+                if (buyers) buyers.forEach(b => globalVerifiedBuyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
 
                 globalVerifiedData = {
                     adminCommissions,
@@ -3899,27 +3923,25 @@
             tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Loading payment history...</td></tr>';
 
             try {
-                // Query admin_payables with status 'paid', 'payment_verified', 'completed', 'payment_sent', 'awaiting_buyer_inviter_proof', or 'awaiting_vendor_inviter_proof'
-                const { data: adminData, error: adminError } = await db.from('admin_payables')
-                    .select(`
-                        id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
-                        admin_commission, buyer_portion, related_feedback_id,
-                        created_at, updated_at, vendor_receipt_uploaded_date, vendor_paypal_transaction_id,
-                        buyer_receipt_uploaded_date, buyer_paypal_transaction_id, status
-                    `)
-                    .in('status', ['payment_verified', 'completed'])
-                    .or(`vendor_receipt_data.not.is.null,buyer_receipt_data.not.is.null`)
-                    .order('updated_at', { ascending: false });
-
-                // Query buyer_payables - only show after vendor receipt uploaded and status is final (payment_verified or completed)
-                const { data: reviewerData, error: reviewerError } = await db.from('buyer_payables')
-                    .select(`
-                        id, buyer_id, amount_owed, earning_type, status, created_at, updated_at,
-                        related_feedback_ids, payment_date, payment_method, vendor_receipt_data
-                    `)
-                    .in('status', ['payment_verified', 'completed'])
-                    .not('vendor_receipt_data', 'is', null)
-                    .order('updated_at', { ascending: false });
+                // PARALLEL: Fetch admin_payables and buyer_payables simultaneously
+                const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
+                    db.from('admin_payables')
+                        .select(`
+                            id, vendor_id, amount_owed, split_with_buyer_id, split_with_vendor_id,
+                            admin_commission, buyer_portion, related_feedback_id,
+                            created_at, updated_at, vendor_paypal_transaction_id,
+                            buyer_paypal_transaction_id, status
+                        `)
+                        .in('status', ['payment_verified', 'completed'])
+                        .order('updated_at', { ascending: false }),
+                    db.from('buyer_payables')
+                        .select(`
+                            id, buyer_id, amount_owed, earning_type, status, created_at, updated_at,
+                            related_feedback_ids, payment_date, payment_method
+                        `)
+                        .in('status', ['payment_verified', 'completed'])
+                        .order('updated_at', { ascending: false })
+                ]);
 
                 if (adminError) {
                     tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">Error: ${escapeHtml(adminError.message)}</td></tr>`;
@@ -3935,11 +3957,26 @@
                     return;
                 }
 
-                // Fetch vendor details (including vendor inviters)
+                // Extract IDs for lookups
                 const vendorIds = [...new Set(adminCommissions.map(d => d.vendor_id))];
                 const vendorInviterIds = [...new Set(adminCommissions.filter(d => d.split_with_vendor_id).map(d => d.split_with_vendor_id))];
                 const allVendorIds = [...new Set([...vendorIds, ...vendorInviterIds])];
-                const { data: vendors } = await db.from('vendors').select('id, business_name, paypal_email').in('id', allVendorIds);
+                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
+                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
+                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
+
+                // PARALLEL: Fetch vendors and buyers simultaneously
+                const initialQueries = [
+                    db.from('vendors').select('id, business_name, paypal_email').in('id', allVendorIds)
+                ];
+                if (allBuyerIds.length > 0) {
+                    initialQueries.push(db.from('buyers').select('id, full_name, email').in('id', allBuyerIds));
+                } else {
+                    initialQueries.push(Promise.resolve({ data: null }));
+                }
+
+                const [{ data: vendors }, { data: buyers }] = await Promise.all(initialQueries);
+
                 const vendorMap = {};
                 if (vendors) {
                     vendors.forEach(v => {
@@ -3947,18 +3984,10 @@
                     });
                 }
 
-                // Fetch buyer details
-                const buyerIds = [...new Set(adminCommissions.filter(d => d.split_with_buyer_id).map(d => d.split_with_buyer_id))];
-                const reviewerBuyerIds = [...new Set(reviewerCommissions.map(d => d.buyer_id))];
-                const allBuyerIds = [...new Set([...buyerIds, ...reviewerBuyerIds])];
-
                 const buyerMap = {};
-                if (allBuyerIds.length > 0) {
-                    const { data: buyers } = await db.from('buyers').select('id, full_name, email').in('id', allBuyerIds);
-                    if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
-                }
+                if (buyers) buyers.forEach(b => buyerMap[b.id] = { name: b.full_name || 'Unknown', email: b.email || 'N/A' });
 
-                // Fetch vendor inviter details (could be buyer or admin)
+                // Fetch vendor inviter details (could be buyer or admin) - sequential but necessary since depends on vendor lookups
                 if (vendorInviterIds.length > 0) {
                     // Try buyers table first
                     const { data: buyerInviters } = await db.from('buyers').select('id, full_name, paypal_email').in('id', vendorInviterIds);
