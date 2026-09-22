@@ -7066,7 +7066,7 @@
                 if (allFeedbackIds.length > 0) {
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, product_url, image_data, image_mime, vendor_id, buyer_id')
+                        .select('id, message, product_url, image_data, vendor_id, buyer_id')
                         .in('id', allFeedbackIds);
 
                     console.log('[Tab 2] Inquiries fetched:', { count: inquiries?.length, feedbackIds: allFeedbackIds, inquiries });
@@ -7241,7 +7241,7 @@
             console.log('[Tab 1] Starting render of', filtered.length, 'rows');
             tbody.innerHTML = filtered.map(payout => {
                 const detailsId = `details-${payout.id}`;
-                const imageData = payout.inquiry?.image_data ? `data:${payout.inquiry.image_mime};base64,${payout.inquiry.image_data}` : null;
+                const imageData = payout.inquiry?.image_data ? `data:image/jpeg;base64,${payout.inquiry.image_data}` : null;
                 const recipientTypeDisplay = payout.recipientType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 return `
@@ -7292,19 +7292,18 @@
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
                 // ROUND 1: Parallelize admin_payables + buyer_payables queries
+                // Tab 3: Show commissions where vendor has requested payment and must upload proof
                 const [adminResult, buyerResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
                         .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                         .eq('vendor_id', currentVendor.id)
-                        .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
-                        .is('vendor_receipt_uploaded_date', null)
+                        .eq('status', 'vendor_requested')
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
-                        .select('id, vendor_id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids')
-                        .eq('vendor_id', currentVendor.id)
-                        .eq('status', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment')
+                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids')
+                        .eq('status', 'vendor_requested')
                         .order('created_at', { ascending: false })
                 ]);
 
@@ -7363,7 +7362,7 @@
                     queries.push(
                         sbClient
                             .from('inquiries')
-                            .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                            .select('id, message, product_url, image_data')
                             .in('id', feedbackIds)
                     );
                 } else {
@@ -7438,7 +7437,7 @@
                     // admin_payables record (Admin, Buyer Inviter, or Vendor Inviter)
                     displayAmount = payout.admin_commission || 0;
                     inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
-                    imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                    imageData = inquiry?.image_data ? `data:image/jpeg;base64,${inquiry.image_data}` : null;
 
                     if (payout.split_with_vendor_id) {
                         recipientType = 'Vendor Inviter';
@@ -7478,7 +7477,7 @@
                             <div style="flex: 1;">
                                 <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 6px;">📝 Feedback Message:</div>
                                 <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                ${inquiry?.product_url ? `<div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.product_url}" target="_blank">${inquiry.product_url}</a></div>` : ''}
                             </div>
                         </div>
                     </td>
@@ -7589,7 +7588,7 @@
                     console.log('[Tab 4] FETCHING inquiry details for', feedbackIds.length, 'feedback items');
                     const { data: inquiries } = await sbClient
                         .from('inquiries')
-                        .select('id, message, feedback_product_url, feedback_image_data, feedback_image_mime')
+                        .select('id, message, product_url, image_data')
                         .in('id', feedbackIds);
 
                     console.log('[Tab 4] Inquiry fetch result:', { count: inquiries?.length, data: inquiries });
@@ -7614,7 +7613,7 @@
                 }
 
                 const inquiry = inquiriesMap[feedbackId];
-                const imageData = inquiry?.feedback_image_data ? `data:${inquiry.feedback_image_mime};base64,${inquiry.feedback_image_data}` : null;
+                const imageData = inquiry?.image_data ? `data:image/jpeg;base64,${inquiry.image_data}` : null;
 
                 // Determine commission type and display amount
                 let commissionType = 'Reviewer';
@@ -7653,7 +7652,7 @@
                             <div style="flex: 1;">
                                 <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 6px;">📝 Feedback Message:</div>
                                 <div style="font-size: 12px; color: #2d3748; margin-bottom: 10px; white-space: pre-wrap;">${inquiry?.message || 'N/A'}</div>
-                                ${inquiry?.feedback_product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.feedback_product_url}" target="_blank">${inquiry.feedback_product_url}</a></div>` : ''}
+                                ${inquiry?.product_url ? `<div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🔗 Product URL:</div><div style="font-size: 12px; color: #2563eb; word-break: break-all;"><a href="${inquiry.product_url}" target="_blank">${inquiry.product_url}</a></div>` : ''}
                             </div>
                         </div>
                     </td>
@@ -8005,9 +8004,54 @@
             if (!sbClient || !currentVendor) return;
 
             try {
-                // V9 workflow: No status change needed. Record stays 'pending' until receipt uploaded.
-                // Just notify vendor to upload receipt.
-                showToast('✓ Payment request sent. You have 48 hours to upload receipt.', 'success');
+                // 1. Fetch admin_payables record to check if it's a referral payout
+                const { data: adminPayable, error: fetchErr } = await sbClient
+                    .from('admin_payables')
+                    .select('id, split_with_buyer_id, related_feedback_id, status')
+                    .eq('id', payoutId)
+                    .single();
+
+                if (fetchErr || !adminPayable) {
+                    console.error('Error fetching commission:', fetchErr);
+                    showToast('Commission not found', 'error');
+                    return;
+                }
+
+                // 2. Update admin_payables status: pending → vendor_requested
+                const { error: updateAdminErr } = await sbClient
+                    .from('admin_payables')
+                    .update({ status: 'vendor_requested' })
+                    .eq('id', payoutId);
+
+                if (updateAdminErr) {
+                    console.error('Error updating admin_payables status:', updateAdminErr);
+                    showToast('Error requesting payment. Please try again.', 'error');
+                    return;
+                }
+
+                // 3. If referral payout (split_with_buyer_id IS NOT NULL), update buyer_payables too
+                if (adminPayable.split_with_buyer_id) {
+                    const { data: buyerPayables, error: findErr } = await sbClient
+                        .from('buyer_payables')
+                        .select('id')
+                        .eq('buyer_id', adminPayable.split_with_buyer_id)
+                        .eq('status', 'pending')
+                        .limit(1);
+
+                    if (!findErr && buyerPayables && buyerPayables.length > 0) {
+                        const { error: updateBuyerErr } = await sbClient
+                            .from('buyer_payables')
+                            .update({ status: 'vendor_requested' })
+                            .eq('id', buyerPayables[0].id);
+
+                        if (updateBuyerErr) {
+                            console.error('Warning: Could not update buyer_payables:', updateBuyerErr);
+                            // Don't fail entire operation, just log it
+                        }
+                    }
+                }
+
+                showToast('✓ Payment request sent. Status updated. You have 48 hours to upload receipt.', 'success');
                 await loadManagePendingPayouts();
             } catch (err) {
                 console.error('Error requesting payment:', err);
@@ -8027,12 +8071,66 @@
             if (!sbClient) return;
 
             try {
-                // V9 workflow: No status changes. Records stay 'pending' until receipt uploaded.
-                // Just notify vendor to upload receipts for selected commissions.
-                const successCount = selected.length;
+                let successCount = 0;
+                const failedIds = [];
+
+                // Process each selected commission
+                for (const payoutId of selected) {
+                    try {
+                        // Fetch admin_payables record
+                        const { data: adminPayable, error: fetchErr } = await sbClient
+                            .from('admin_payables')
+                            .select('id, split_with_buyer_id')
+                            .eq('id', payoutId)
+                            .single();
+
+                        if (fetchErr || !adminPayable) {
+                            failedIds.push(payoutId);
+                            continue;
+                        }
+
+                        // Update admin_payables status: pending → vendor_requested
+                        const { error: updateAdminErr } = await sbClient
+                            .from('admin_payables')
+                            .update({ status: 'vendor_requested' })
+                            .eq('id', payoutId);
+
+                        if (updateAdminErr) {
+                            failedIds.push(payoutId);
+                            continue;
+                        }
+
+                        // If referral payout, update buyer_payables too
+                        if (adminPayable.split_with_buyer_id) {
+                            const { data: buyerPayables, error: findErr } = await sbClient
+                                .from('buyer_payables')
+                                .select('id')
+                                .eq('buyer_id', adminPayable.split_with_buyer_id)
+                                .eq('status', 'pending')
+                                .limit(1);
+
+                            if (!findErr && buyerPayables && buyerPayables.length > 0) {
+                                await sbClient
+                                    .from('buyer_payables')
+                                    .update({ status: 'vendor_requested' })
+                                    .eq('id', buyerPayables[0].id);
+                            }
+                        }
+
+                        successCount++;
+                    } catch (itemErr) {
+                        console.error(`Error processing payout ${payoutId}:`, itemErr);
+                        failedIds.push(payoutId);
+                    }
+                }
 
                 if (successCount > 0) {
-                    showToast(`✓ ${successCount} payment request(s) sent. 48-hour timer started.`, 'success');
+                    showToast(`✓ ${successCount} payment request(s) sent. Statuses updated. 48-hour timer started.`, 'success');
+                }
+
+                if (failedIds.length > 0) {
+                    console.error('Failed to process:', failedIds);
+                    showToast(`⚠ ${failedIds.length} commission(s) could not be processed`, 'warning');
                 }
 
                 await loadManagePendingPayouts();
@@ -8195,7 +8293,7 @@
             // PARALLEL: Fetch inquiries, buyers, vendors, and reviewers simultaneously
             const queries = [];
             if (feedbackIds.length > 0) {
-                queries.push(sbClient.from('inquiries').select('id, message, product_url, image_data, image_mime').in('id', feedbackIds));
+                queries.push(sbClient.from('inquiries').select('id, message, product_url, image_data').in('id', feedbackIds));
             } else {
                 queries.push(Promise.resolve({ data: null }));
             }
