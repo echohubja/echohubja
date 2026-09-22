@@ -7459,7 +7459,7 @@
             console.log('[Tab 4] QUERYING admin_payables with vendor_id:', currentVendor.id);
             const { data: payouts, error } = await sbClient
                 .from('admin_payables')
-                .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status')
+                .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status, vendor_paypal_transaction_id, buyer_paypal_transaction_id, vendor_inviter_paypal_transaction_id, reviewer_paypal_transaction_id')
                 .eq('vendor_id', currentVendor.id)
                 .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
                 .order('unflagged_date', { ascending: false });
@@ -7474,7 +7474,7 @@
             console.log('[Tab 4] QUERYING buyer_payables with vendor_id:', currentVendor.id);
             const { data: buyerPayouts, error: buyerError } = await sbClient
                 .from('buyer_payables')
-                .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids')
+                .select('id, buyer_id, vendor_id, amount_owed, status, created_at, related_feedback_ids, vendor_paypal_transaction_id')
                 .eq('vendor_id', currentVendor.id)
                 .in('status', ['payment_sent', 'completed'])
                 .order('created_at', { ascending: false });
@@ -7857,12 +7857,14 @@
                     // Transaction ID
                     let txnId = 'Pending';
                     if (payout.recipientType === 'reviewer') {
-                        txnId = payout.payment_method === 'paypal' ? 'PayPal Transfer' : 'N/A';
+                        txnId = payout.vendor_paypal_transaction_id || 'Pending';
                     } else if (payout.recipientType === 'buyer_inviter') {
                         txnId = payout.buyer_paypal_transaction_id || 'Pending';
                     } else if (payout.recipientType === 'vendor_inviter') {
-                        txnId = payout.vendor_paypal_transaction_id || 'Pending';
+                        txnId = payout.vendor_inviter_paypal_transaction_id || 'Pending';
                     } else if (payout.recipientType === 'vendor') {
+                        txnId = payout.vendor_paypal_transaction_id || 'Pending';
+                    } else if (payout.recipientType === 'admin') {
                         txnId = payout.vendor_paypal_transaction_id || 'Pending';
                     }
 
