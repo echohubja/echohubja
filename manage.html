@@ -6604,13 +6604,26 @@
                 }
             });
 
-            // Calculate paidOut from payment_history (authoritative source for actual completed payments)
-            // All payment_history records represent completed transactions (status tracking in commission records only)
-            if (data.paymentHistory && Array.isArray(data.paymentHistory)) {
-                data.paymentHistory.forEach((ph) => {
-                    paidOut += parseFloat(ph.amount || 0);
-                });
-            }
+            // Calculate paidOut from commissions with receipts uploaded (payment sent by vendor)
+            data.adminPayables.forEach((ap) => {
+                if (ap.vendor_receipt_data || ap.buyer_receipt_data || ap.reviewer_receipt_data || ap.vendor_inviter_receipt_data) {
+                    // Skip flagged items
+                    if (ap.vendor_flagged || ap.buyer_flagged || ap.reviewer_flagged || ap.vendor_inviter_flagged) {
+                        return;
+                    }
+                    paidOut += parseFloat(ap.amount_owed || 0);
+                }
+            });
+
+            data.buyerPayables.forEach((bp) => {
+                if (bp.vendor_receipt_data) {
+                    // Skip flagged items
+                    if (bp.vendor_flagged || bp.buyer_flagged) {
+                        return;
+                    }
+                    paidOut += parseFloat(bp.amount_owed || 0);
+                }
+            });
 
             // Update DOM using data attributes (primary method)
             const totalCard = document.querySelector('[data-card-type="total-earnings"]');
@@ -6632,8 +6645,18 @@
                 if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
                 const subtitleEl = paidCard.querySelector('[data-card-subtitle]');
                 if (subtitleEl) {
-                    // Count all payment_history records (each represents one completed payout)
-                    const payoutCount = (data.paymentHistory || []).length;
+                    // Count commissions with receipts uploaded
+                    let payoutCount = 0;
+                    data.adminPayables.forEach(ap => {
+                        if (ap.vendor_receipt_data || ap.buyer_receipt_data || ap.reviewer_receipt_data || ap.vendor_inviter_receipt_data) {
+                            payoutCount++;
+                        }
+                    });
+                    data.buyerPayables.forEach(bp => {
+                        if (bp.vendor_receipt_data) {
+                            payoutCount++;
+                        }
+                    });
                     subtitleEl.textContent = `${payoutCount} payouts`;
                 }
             }
@@ -6672,22 +6695,36 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            // Use payment_history as authoritative source for completed payouts
+            // Show commissions with receipts uploaded (payment sent by vendor)
             const allPayables = [];
 
-            // Add payment_history records (actual completed payments)
-            if (data.paymentHistory && Array.isArray(data.paymentHistory)) {
-                data.paymentHistory.forEach(ph => {
+            // Add admin_payables with receipts
+            data.adminPayables.forEach(ap => {
+                if (ap.vendor_receipt_data || ap.buyer_receipt_data || ap.reviewer_receipt_data || ap.vendor_inviter_receipt_data) {
                     allPayables.push({
-                        id: ph.id,
-                        amount: ph.amount,
-                        date: ph.payment_date || ph.created_at,
-                        status: 'completed',
-                        method: ph.payment_method || 'PayPal',
-                        type: 'payment'
+                        id: ap.id,
+                        amount: ap.amount_owed,
+                        date: ap.vendor_receipt_uploaded_date || ap.buyer_receipt_uploaded_date || ap.reviewer_receipt_uploaded_date || ap.vendor_inviter_receipt_uploaded_date || ap.created_at,
+                        status: ap.status,
+                        method: 'PayPal',
+                        type: 'admin'
                     });
-                });
-            }
+                }
+            });
+
+            // Add buyer_payables with receipts
+            data.buyerPayables.forEach(bp => {
+                if (bp.vendor_receipt_data) {
+                    allPayables.push({
+                        id: bp.id,
+                        amount: bp.amount_owed,
+                        date: bp.vendor_receipt_uploaded_date || bp.created_at,
+                        status: bp.status,
+                        method: 'PayPal',
+                        type: 'buyer'
+                    });
+                }
+            });
 
             // Sort by date descending
             allPayables.sort((a, b) => new Date(b.date) - new Date(a.date));
