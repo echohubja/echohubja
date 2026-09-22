@@ -7035,8 +7035,7 @@
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
-                        .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
-                        .eq('vendor_id', currentVendor.id)
+                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                         .eq('earning_type', 'own_feedback')
                         .eq('status', 'pending')
                         .order('created_at', { ascending: false })
