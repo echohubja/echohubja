@@ -6561,15 +6561,6 @@
                 'awaiting_vendor_inviter_proof'
             ];
 
-            // Payment history status values that represent completed/verified payments
-            const COMPLETED_PAYMENT_STATUSES = [
-                'completed',
-                'paid',
-                'verified',
-                'payment_verified',
-                'received'
-            ];
-
             let totalEarnings = 0;
             let paidOut = 0;
             let pending = 0;
@@ -6611,12 +6602,10 @@
             });
 
             // Calculate paidOut from payment_history (authoritative source for actual completed payments)
+            // All payment_history records represent completed transactions (status tracking in commission records only)
             if (data.paymentHistory && Array.isArray(data.paymentHistory)) {
                 data.paymentHistory.forEach((ph) => {
-                    // Only count payments with completed/verified status
-                    if (COMPLETED_PAYMENT_STATUSES.includes(ph.status)) {
-                        paidOut += parseFloat(ph.amount || 0);
-                    }
+                    paidOut += parseFloat(ph.amount || 0);
                 });
             }
 
@@ -6640,8 +6629,8 @@
                 if (valueEl) valueEl.textContent = `$${paidOut.toFixed(2)}`;
                 const subtitleEl = paidCard.querySelector('[data-card-subtitle]');
                 if (subtitleEl) {
-                    // Count completed payments from payment_history
-                    const payoutCount = (data.paymentHistory || []).filter(ph => COMPLETED_PAYMENT_STATUSES.includes(ph.status)).length;
+                    // Count all payment_history records (each represents one completed payout)
+                    const payoutCount = (data.paymentHistory || []).length;
                     subtitleEl.textContent = `${payoutCount} payouts`;
                 }
             }
@@ -6680,36 +6669,22 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            // Combine all completed payables
+            // Use payment_history as authoritative source for completed payouts
             const allPayables = [];
 
-            // Add vendor payables
-            data.vendorPayables.forEach(vp => {
-                if (vp.status === 'paid' || vp.status === 'received') {
+            // Add payment_history records (actual completed payments)
+            if (data.paymentHistory && Array.isArray(data.paymentHistory)) {
+                data.paymentHistory.forEach(ph => {
                     allPayables.push({
-                        id: vp.id,
-                        amount: vp.amount_owed,
-                        date: vp.payment_date || vp.created_at,
-                        status: vp.status,
-                        method: vp.payment_method || 'Bank Transfer',
-                        type: 'vendor'
+                        id: ph.id,
+                        amount: ph.amount,
+                        date: ph.payment_date || ph.created_at,
+                        status: 'completed',
+                        method: ph.payment_method || 'PayPal',
+                        type: 'payment'
                     });
-                }
-            });
-
-            // Add admin payables
-            data.adminPayables.forEach(ap => {
-                if (ap.status === 'paid' || ap.status === 'received') {
-                    allPayables.push({
-                        id: ap.id,
-                        amount: ap.admin_commission,
-                        date: ap.created_at,
-                        status: ap.status,
-                        method: 'PayPal',
-                        type: 'admin'
-                    });
-                }
-            });
+                });
+            }
 
             // Sort by date descending
             allPayables.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -8635,10 +8610,39 @@
                             return;
                         }
 
+                        // Create payment_history record (vendor has sent payment)
+                        const recordData = data[0];
+                        const paymentHistoryRecord = {
+                            vendor_id: currentVendor.id,
+                            from_type: 'vendor',
+                            to_type: 'admin',
+                            to_id: null, // Admin system receives payment
+                            amount: recordData.amount_owed,
+                            payment_reason: recordTable === 'admin_payables' ? 'referral_commission' : 'feedback_commission',
+                            related_feedback_id: recordData.related_feedback_id || null,
+                            payment_method: 'paypal',
+                            payment_date: new Date().toISOString()
+                        };
+
+                        // Link to correct payables table
+                        if (recordTable === 'admin_payables') {
+                            paymentHistoryRecord.related_admin_payables_id = payoutId;
+                        } else if (recordTable === 'buyer_payables') {
+                            paymentHistoryRecord.related_buyer_payables_id = payoutId;
+                        }
+
+                        const { error: phError } = await sbClient
+                            .from('payment_history')
+                            .insert(paymentHistoryRecord);
+
+                        if (phError) {
+                            console.error('Warning: Could not create payment_history record:', phError);
+                            // Don't fail the upload if payment_history creation fails
+                        }
+
                         // Update status to indicate vendor has uploaded receipt
                         // For buyer_payables, move to 'payment_sent' status
                         // For admin_payables referrals, move to 'awaiting_buyer_inviter_proof' or similar
-                        const recordData = data[0];
                         let newStatus = 'payment_sent';
 
                         if (recordTable === 'admin_payables') {
