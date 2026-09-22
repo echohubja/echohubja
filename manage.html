@@ -7692,7 +7692,7 @@
                 const [adminResult, inquiriesResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_receipt_data, buyer_receipt_data, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
                         .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_id.eq.${currentVendor.id}`)
                         .in('status', ['payment_sent', 'payment_verified', 'completed']),
                     sbClient
@@ -7730,7 +7730,7 @@
 
                     const { data: reviewerData, error: reviewerError } = await sbClient
                         .from('buyer_payables')
-                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id, vendor_receipt_data, vendor_receipt_filename')
+                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id, vendor_receipt_filename')
                         .overlaps('related_feedback_ids', feedbackIds)
                         .in('status', ['payment_sent', 'payment_verified', 'completed']);
 
@@ -7973,24 +7973,24 @@
                     const statusStyle = statusMap[payout.status] || { bg: '#64748b', text: '? Unknown' };
                     statusBadge = `<span style="background: ${statusStyle.bg}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${statusStyle.text}</span>`;
 
-                    // Determine which receipt to display
-                    let receiptData = null;
+                    // Determine which receipt to display (use filename presence to check if receipt exists)
+                    let hasReceipt = false;
                     let receiptFilename = null;
 
                     if (payout.source === 'admin_payables') {
-                        if (payout.vendor_receipt_data) {
-                            receiptData = payout.vendor_receipt_data;
-                            receiptFilename = payout.vendor_receipt_filename || 'receipt.pdf';
+                        if (payout.vendor_receipt_filename) {
+                            hasReceipt = true;
+                            receiptFilename = payout.vendor_receipt_filename;
                         }
                     } else if (payout.source === 'buyer_payables') {
-                        if (payout.vendor_receipt_data) {
-                            receiptData = payout.vendor_receipt_data;
-                            receiptFilename = payout.vendor_receipt_filename || 'receipt.pdf';
+                        if (payout.vendor_receipt_filename) {
+                            hasReceipt = true;
+                            receiptFilename = payout.vendor_receipt_filename;
                         }
                     }
 
-                    const viewButton = receiptData
-                        ? `<button onclick="viewCollectedReceiptModal('${payout.id}', '${receiptFilename}', '${receiptData.substring(0, 50)}...')" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">👁️ View Receipt</button>`
+                    const viewButton = hasReceipt
+                        ? `<button onclick="fetchAndViewReceipt('${payout.id}', '${payout.source}', '${receiptFilename}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">👁️ View Receipt</button>`
                         : `<span style="color: #64748b; font-size: 12px;">No receipt</span>`;
 
                     return `
@@ -8017,6 +8017,36 @@
             }
         }
 
+        async function fetchAndViewReceipt(payoutId, source, filename) {
+            // Fetch receipt data on-demand when user clicks "View Receipt"
+            try {
+                if (source === 'admin_payables') {
+                    const { data, error } = await sbClient
+                        .from('admin_payables')
+                        .select('vendor_receipt_data')
+                        .eq('id', payoutId)
+                        .single();
+
+                    if (error) throw error;
+                    const receiptData = data?.vendor_receipt_data || '';
+                    viewCollectedReceiptModal(payoutId, filename, receiptData);
+                } else if (source === 'buyer_payables') {
+                    const { data, error } = await sbClient
+                        .from('buyer_payables')
+                        .select('vendor_receipt_data')
+                        .eq('id', payoutId)
+                        .single();
+
+                    if (error) throw error;
+                    const receiptData = data?.vendor_receipt_data || '';
+                    viewCollectedReceiptModal(payoutId, filename, receiptData);
+                }
+            } catch (err) {
+                console.error('Error fetching receipt:', err);
+                showToast('Error loading receipt. Please try again.', 'error');
+            }
+        }
+
         function viewCollectedReceiptModal(payoutId, filename, preview) {
             // Create modal overlay
             const modal = document.createElement('div');
@@ -8036,6 +8066,12 @@
                 ? '<div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px; text-align: center;"><p style="margin: 0; color: #15803d; font-weight: 600; font-size: 14px;">✓ Receipt Verified</p><p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin has confirmed receipt payment</p></div>'
                 : '<div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; text-align: center;"><p style="margin: 0; color: #92400e; font-weight: 600; font-size: 14px;">⏳ Pending Verification</p><p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">Admin is reviewing your receipt</p></div>';
 
+            // Check if preview is a base64 image or text
+            const isImage = preview && (preview.startsWith('data:image') || /^[A-Za-z0-9+/=]{100,}$/.test(preview.substring(0, 100)));
+            const receiptContent = isImage
+                ? `<img src="${preview.startsWith('data:') ? preview : 'data:image/png;base64,' + preview}" style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid #e2e8f0;" alt="Receipt">`
+                : `<p style="margin: 0; color: #4a5568; font-size: 13px; font-family: monospace; word-break: break-all; max-height: 200px; overflow-y: auto;">${preview || 'No receipt data'}</p>`;
+
             modal.innerHTML = `
                 <div style="background: white; border-radius: 12px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;">
                     <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
@@ -8049,7 +8085,7 @@
                         </div>
                         ${verificationStatus}
                         <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1;">
-                            <p style="margin: 0; color: #4a5568; font-size: 13px; font-family: monospace; word-break: break-all; max-height: 100px; overflow-y: auto;">Preview: ${preview || 'No receipt data'}</p>
+                            ${receiptContent}
                         </div>
                         <div style="margin-top: 12px; padding: 12px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <p style="margin: 0; color: #1e40af; font-size: 12px;">
