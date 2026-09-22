@@ -4984,8 +4984,8 @@
                     <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
-                        <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                        <button onclick="approvePayout('${comm.id}', 'admin_payables')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                        <button onclick="denyPayout('${comm.id}', 'admin_payables')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
                     </td>
                 </tr>
             `).join('');
@@ -5806,8 +5806,8 @@
                     <td style="padding: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${comm.status}</span></td>
                     <td style="padding: 12px; font-size: 12px; color: #718096;">${new Date(comm.created_at).toLocaleDateString()}</td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="approvePayout('${comm.id}')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
-                        <button onclick="denyPayout('${comm.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
+                        <button onclick="approvePayout('${comm.id}', 'admin_payables')" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px;">Approve</button>
+                        <button onclick="denyPayout('${comm.id}', 'admin_payables')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Deny</button>
                     </td>
                 </tr>
             `).join('');
@@ -6316,26 +6316,54 @@
         }
 
         // ========== SHARED PAYOUT FUNCTIONS ==========
-        async function approvePayout(commissionId) {
+        async function approvePayout(commissionId, source) {
             try {
+                // CRITICAL: This function handles TWO commission tables - buyer_payables (Reviewer) and admin_payables (Buyer/Vendor Inviters)
+                // Source parameter MUST specify which table to update - handles multi-table commission architecture
                 // Approval means recipient has approved vendor's payment request
                 // Status changes from 'vendor_requested' to 'payment_requested'
                 // Then vendor will upload receipt (status becomes 'payment_sent')
                 // Finally recipient uploads receipt (status becomes 'paid')
-
-                // Update status to payment_requested (recipient approval)
-                const { error: updateError } = await db
-                    .from('buyer_payables')
-                    .update({ status: 'payment_requested' })
-                    .eq('id', commissionId);
-
-                if (updateError) throw updateError;
 
                 // Determine active scenario and switch to awaiting tab
                 const reviewerSection = document.getElementById('reviewer-pending-section');
                 const buyerInviterSection = document.getElementById('buyer-inviter-pending-section');
                 const vendorInviterSection = document.getElementById('vendor-inviter-pending-section');
 
+                let activeSource = source; // Use passed parameter
+                if (!activeSource) {
+                    // Fallback: detect from active section
+                    if (reviewerSection?.style.display !== 'none') {
+                        activeSource = 'buyer_payables';
+                    } else if (buyerInviterSection?.style.display !== 'none') {
+                        activeSource = 'admin_payables';
+                    } else if (vendorInviterSection?.style.display !== 'none') {
+                        activeSource = 'admin_payables';
+                    }
+                }
+
+                // Route update to correct table based on source
+                if (activeSource === 'buyer_payables') {
+                    // Reviewer commission - update buyer_payables
+                    const { error: updateError } = await db
+                        .from('buyer_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', commissionId);
+
+                    if (updateError) throw updateError;
+                } else if (activeSource === 'admin_payables') {
+                    // Buyer Inviter or Vendor Inviter commission - update admin_payables
+                    const { error: updateError } = await db
+                        .from('admin_payables')
+                        .update({ status: 'payment_requested' })
+                        .eq('id', commissionId);
+
+                    if (updateError) throw updateError;
+                } else {
+                    throw new Error(`Unknown commission source: ${activeSource}`);
+                }
+
+                // Switch to awaiting tab based on active section
                 if (reviewerSection?.style.display !== 'none') {
                     switchReviewerLifecycleTab('awaiting');
                 } else if (buyerInviterSection?.style.display !== 'none') {
@@ -6360,14 +6388,49 @@
             }
         }
 
-        async function denyPayout(commissionId) {
+        async function denyPayout(commissionId, source) {
             try {
-                const { error } = await db
-                    .from('buyer_payables')
-                    .update({ status: 'denied' })
-                    .eq('id', commissionId);
+                // CRITICAL: This function handles TWO commission tables - buyer_payables (Reviewer) and admin_payables (Buyer/Vendor Inviters)
+                // Source parameter MUST specify which table to update - handles multi-table commission architecture
 
-                if (error) throw error;
+                // Determine active scenario
+                const reviewerSection = document.getElementById('reviewer-pending-section');
+                const buyerInviterSection = document.getElementById('buyer-inviter-pending-section');
+                const vendorInviterSection = document.getElementById('vendor-inviter-pending-section');
+
+                let activeSource = source; // Use passed parameter
+                if (!activeSource) {
+                    // Fallback: detect from active section
+                    if (reviewerSection?.style.display !== 'none') {
+                        activeSource = 'buyer_payables';
+                    } else if (buyerInviterSection?.style.display !== 'none') {
+                        activeSource = 'admin_payables';
+                    } else if (vendorInviterSection?.style.display !== 'none') {
+                        activeSource = 'admin_payables';
+                    }
+                }
+
+                // Route update to correct table based on source
+                if (activeSource === 'buyer_payables') {
+                    // Reviewer commission - update buyer_payables
+                    const { error } = await db
+                        .from('buyer_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', commissionId);
+
+                    if (error) throw error;
+                } else if (activeSource === 'admin_payables') {
+                    // Buyer Inviter or Vendor Inviter commission - update admin_payables
+                    const { error } = await db
+                        .from('admin_payables')
+                        .update({ status: 'denied' })
+                        .eq('id', commissionId);
+
+                    if (error) throw error;
+                } else {
+                    throw new Error(`Unknown commission source: ${activeSource}`);
+                }
+
                 showToast('Payment request denied', 'success');
                 await loadReviewerPendingApprovals(currentBuyer.id);
                 await loadReviewerPendingRequests(currentBuyer.id);
