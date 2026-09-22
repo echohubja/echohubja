@@ -3511,6 +3511,7 @@
                 // await loadVendorAlerts(); // DISABLED - alerts system removed (Sep 3, 2026)
                 await initMessagingHub();
                 await loadPayoutDataFromDB();
+                switchManagePayoutsLifecycleTab('incoming');  // Auto-load first tab on page entry
                 await initPayoutDataPolling();
                 await setupPolling();
                 await loadVendorNotifications();
