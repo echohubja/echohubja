@@ -7692,7 +7692,7 @@
                 const [adminResult, inquiriesResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_receipt_data, buyer_receipt_data, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
                         .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_id.eq.${currentVendor.id}`)
                         .in('status', ['payment_sent', 'payment_verified', 'completed']),
                     sbClient
@@ -7730,7 +7730,7 @@
 
                     const { data: reviewerData, error: reviewerError } = await sbClient
                         .from('buyer_payables')
-                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id')
+                        .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id, vendor_receipt_data, vendor_receipt_filename')
                         .overlaps('related_feedback_ids', feedbackIds)
                         .in('status', ['payment_sent', 'payment_verified', 'completed']);
 
