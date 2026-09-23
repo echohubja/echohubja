@@ -7221,7 +7221,7 @@
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
-                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids, status')
+                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids, status, vendor_receipt_data, vendor_flagged, buyer_flagged')
                         .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
                         .order('created_at', { ascending: false })
                         // CRITICAL: This query returns ALL buyer_payables because buyer_payables table has no vendor_id column
@@ -7259,7 +7259,12 @@
                 const directBuyerIds = payouts.map(p => p.buyer_id).filter(Boolean);
                 const allBuyerIds = [...new Set([...splitBuyerIds, ...directBuyerIds])];
                 const vendorIds = payouts.map(p => p.split_with_vendor_id).filter(Boolean);
-                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
+
+                // Extract feedback IDs from BOTH admin_payables (related_feedback_id) AND buyer_payables (related_feedback_ids array)
+                const feedbackIds = [...new Set([
+                    ...payouts.map(p => p.related_feedback_id).filter(Boolean),  // admin_payables
+                    ...payouts.flatMap(p => p.related_feedback_ids || [])  // buyer_payables (array)
+                ])];
 
                 globalAwaitingBuyersMap = {};
                 globalAwaitingInquiriesMap = {};
@@ -7292,7 +7297,7 @@
                     queries.push(
                         sbClient
                             .from('inquiries')
-                            .select('id, message, product_url, image_data')
+                            .select('id, vendor_id, message, product_url, image_data')
                             .in('id', feedbackIds)
                     );
                 } else {
