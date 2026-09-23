@@ -9014,17 +9014,27 @@
 
                         const statusUpdateObj = { status: nextStatus };
 
-                        const { error: statusError } = await sbClient
+                        const { data: statusData, error: statusError } = await sbClient
                             .from(recordTable)
                             .update(statusUpdateObj)
-                            .eq('id', payoutId);
+                            .eq('id', payoutId)
+                            .select();
 
                         if (statusError) {
                             console.error('Error updating status:', statusError);
                             statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
                             statusDiv.style.color = '#d97706';
                             statusDiv.style.background = '#fef3c7';
-                        } else {
+                        } else if (statusData && statusData.length > 0) {
+                            console.log('✅ Status update verified:', {
+                                payoutId,
+                                recordTable,
+                                newStatus: statusData[0].status,
+                                expectedStatus: nextStatus
+                            });
+                        }
+
+                        if (!statusError) {
                             statusDiv.textContent = '✅ Receipt uploaded successfully!';
                             statusDiv.style.color = '#059669';
                             statusDiv.style.background = '#d1fae5';
