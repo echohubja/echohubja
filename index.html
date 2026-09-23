@@ -4440,14 +4440,50 @@
                         .in('status', ['payment_sent', 'awaiting_reviewer_proof'])
                         .order('created_at', { ascending: false }),
                     db.from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, amount_owed, admin_commission, buyer_portion, status, created_at, vendor_flagged, buyer_flagged')
+                        .select('id, vendor_id, split_with_buyer_id, amount_owed, admin_commission, buyer_portion, status, created_at, vendor_flagged, buyer_flagged, vendor_receipt_uploaded_date')
                         .eq('split_with_buyer_id', buyerId)
                         .in('status', ['payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'])
                         .order('created_at', { ascending: false })
                 ]);
 
+                // Enrich buyer_payables with vendor_id from related inquiries
+                let enrichedBuyerPayables = [];
+                if (buyerPayables && buyerPayables.length > 0) {
+                    const feedbackIds = buyerPayables.flatMap(r => r.related_feedback_ids || []);
+                    if (feedbackIds.length > 0) {
+                        const { data: inquiries } = await db
+                            .from('inquiries')
+                            .select('id, vendor_id')
+                            .in('id', feedbackIds);
+
+                        const feedbackToVendor = {};
+                        if (inquiries) {
+                            inquiries.forEach(inq => {
+                                feedbackToVendor[inq.id] = inq.vendor_id;
+                            });
+                        }
+
+                        enrichedBuyerPayables = buyerPayables.map(r => ({
+                            ...r,
+                            vendor_id: feedbackToVendor[r.related_feedback_ids?.[0]],
+                            record_type: 'buyer_payables'
+                        }));
+                    } else {
+                        enrichedBuyerPayables = buyerPayables.map(r => ({
+                            ...r,
+                            record_type: 'buyer_payables'
+                        }));
+                    }
+                }
+
+                // Mark admin_payables records for type identification
+                const enrichedAdminPayables = (adminPayables || []).map(r => ({
+                    ...r,
+                    record_type: 'admin_payables'
+                }));
+
                 // Combine both result sets
-                globalReviewerAwaitingData = [...(buyerPayables || []), ...(adminPayables || [])];
+                globalReviewerAwaitingData = [...enrichedBuyerPayables, ...enrichedAdminPayables];
                 globalReviewerAwaitingVendorMap = {};
 
                 if (globalReviewerAwaitingData.length === 0) {
@@ -4519,13 +4555,19 @@
                 const vendorName = globalReviewerAwaitingVendorMap[comm.vendor_id] || 'Unknown Vendor';
                 const transactionDate = new Date(comm.created_at).toLocaleDateString();
 
-                // Calculate T+8h countdown from vendor_receipt_uploaded_date
-                const vendorUploadTime = new Date(comm.vendor_receipt_uploaded_date);
-                const deadline = new Date(vendorUploadTime.getTime() + 8 * 60 * 60 * 1000);
-                const now = new Date();
-                const timeLeft = Math.max(0, deadline - now);
-                const hoursLeft = Math.ceil(timeLeft / (60 * 60 * 1000));
-                const timerColor = hoursLeft <= 2 ? '#ef4444' : '#f59e0b';
+                // Calculate T+8h countdown from vendor_receipt_uploaded_date (only for admin_payables)
+                let timerDisplay = 'Awaiting';
+                let timerColor = '#f59e0b';
+
+                if (comm.vendor_receipt_uploaded_date) {
+                    const vendorUploadTime = new Date(comm.vendor_receipt_uploaded_date);
+                    const deadline = new Date(vendorUploadTime.getTime() + 8 * 60 * 60 * 1000);
+                    const now = new Date();
+                    const timeLeft = Math.max(0, deadline - now);
+                    const hoursLeft = Math.ceil(timeLeft / (60 * 60 * 1000));
+                    timerDisplay = `${hoursLeft}h`;
+                    timerColor = hoursLeft <= 2 ? '#ef4444' : '#f59e0b';
+                }
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -4533,7 +4575,7 @@
                         <td style="padding: 12px;">${vendorName}</td>
                         <td style="padding: 12px; font-weight: 600; color: #8b5cf6;">$${parseFloat(comm.amount_owed || 0).toFixed(2)}</td>
                         <td style="padding: 12px; font-size: 12px; color: #718096;">${transactionDate}</td>
-                        <td style="padding: 12px; text-align: center; color: ${timerColor}; font-weight: 600;">${hoursLeft}h</td>
+                        <td style="padding: 12px; text-align: center; color: ${timerColor}; font-weight: 600;">${timerDisplay}</td>
                         <td style="padding: 12px; text-align: center;">
                             <button onclick="openReviewerReceiptUploadModal('${comm.id}')" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">📤 Upload Receipt</button>
                         </td>
