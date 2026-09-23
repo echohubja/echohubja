@@ -8883,7 +8883,15 @@
                 'vendor inviter': 'vendor_inviter',
                 'reviewer': 'reviewer'
             };
-            const fieldPrefix = fieldMapping[recipientType] || 'vendor';
+            let fieldPrefix = fieldMapping[recipientType] || 'vendor';
+
+            // For buyer_payables, map field prefix to actual columns (only vendor_* and buyer_* exist)
+            if (recordTable === 'buyer_payables') {
+                if (fieldPrefix === 'reviewer') {
+                    fieldPrefix = 'vendor'; // Reviewer proof stored in vendor_* fields
+                }
+                // buyer_inviter and vendor_inviter don't apply to buyer_payables
+            }
 
             if (!txId) {
                 statusDiv.textContent = '❌ Transaction ID required';
