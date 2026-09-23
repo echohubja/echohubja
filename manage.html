@@ -7292,25 +7292,40 @@
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
                 // ROUND 1: Parallelize admin_payables + buyer_payables queries
-                // Tab 3: Show commissions where vendor has requested payment and must upload proof
-                const [adminResult, buyerResult] = await Promise.all([
+                // Tab 3: Show commissions where vendor must upload proof after sending payment
+                console.log('[Tab 3] QUERY STARTING - currentVendor.id:', currentVendor.id);
+                const [adminResult1, adminResult2, buyerResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged, status')
                         .eq('vendor_id', currentVendor.id)
-                        .eq('status', 'vendor_requested')
+                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
+                        .order('created_at', { ascending: false }),
+                    sbClient
+                        .from('admin_payables')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged, status')
+                        .eq('split_with_vendor_id', currentVendor.id)
+                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
-                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids')
-                        .in('status', ['vendor_requested', 'payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
+                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids, status')
+                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
                         .order('created_at', { ascending: false })
                 ]);
 
-                const adminPayouts = adminResult.data;
-                const buyerPayouts = buyerResult.data;
-                const error = adminResult.error || buyerResult.error;
-                const payouts = [...(adminPayouts || []), ...(buyerPayouts || [])];
+                const adminPayouts1 = adminResult1.data || [];
+                const adminPayouts2 = adminResult2.data || [];
+                const buyerPayouts = buyerResult.data || [];
+                const error = adminResult1.error || adminResult2.error || buyerResult.error;
+
+                console.log('[Tab 3] QUERY RESULTS:', {
+                    adminResult1: { count: adminPayouts1.length, error: adminResult1.error, data: adminPayouts1.map(p => ({ id: p.id, vendor_id: p.vendor_id, status: p.status, admin_commission: p.admin_commission })) },
+                    adminResult2: { count: adminPayouts2.length, error: adminResult2.error, data: adminPayouts2.map(p => ({ id: p.id, split_with_vendor_id: p.split_with_vendor_id, status: p.status })) },
+                    buyerResult: { count: buyerPayouts.length, error: buyerResult.error }
+                });
+
+                const payouts = [...adminPayouts1, ...adminPayouts2, ...buyerPayouts];
 
                 if (error) {
                     console.error('Error loading awaiting receipts:', error);
