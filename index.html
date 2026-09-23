@@ -4655,7 +4655,7 @@
                     .from('buyer_payables')
                     .select('id, amount_owed, related_feedback_ids, status, payment_verified_date, created_at, buyer_flagged, vendor_flagged, payment_proof_url')
                     .eq('buyer_id', buyerId)
-                    .in('status', ['payment_verified', 'paid'])
+                    .in('status', ['payment_sent', 'payment_verified', 'paid'])
                     .order('created_at', { ascending: false });
 
                 globalReviewerCollectedData = [];
@@ -5539,7 +5539,7 @@
                     .from('admin_payables')
                     .select('id, vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at')
                     .eq('split_with_buyer_id', buyerId)
-                    .in('status', ['payment_verified', 'paid'])
+                    .in('status', ['payment_sent', 'payment_verified', 'paid'])
                     .neq('buyer_receipt_data', null)
                     .order('created_at', { ascending: false });
 
@@ -6216,7 +6216,7 @@
                     .select('id, vendor_id, buyer_portion, related_feedback_id, status, buyer_receipt_uploaded_date, created_at')
                     .eq('split_with_buyer_id', buyerId)
                     .in('vendor_id', vendorIds)
-                    .in('status', ['payment_verified', 'paid'])
+                    .in('status', ['payment_sent', 'payment_verified', 'paid'])
                     .neq('buyer_receipt_data', null)
                     .order('created_at', { ascending: false });
 
