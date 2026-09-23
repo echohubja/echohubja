@@ -9052,11 +9052,14 @@
                                     // Step 2: Update summary cards immediately
                                     await updatePayoutSummaryCards();
 
-                                    // Step 3: Reload tabs
+                                    // Step 3: Reload payout data (for payment history tab)
+                                    await loadPayoutDataFromDB();
+
+                                    // Step 4: Reload lifecycle tabs
                                     await loadManageAwaitingPayouts();
                                     await loadManageIncomingRequests();
 
-                                    // Step 4: Close modal
+                                    // Step 5: Close modal
                                     closeCommissionModal('receipt-upload-modal');
                                     console.log('✅ Receipt upload complete - all data refreshed');
                                 } catch (err) {
