@@ -7666,10 +7666,10 @@
                         .from('admin_payables')
                         .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
                         .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_id.eq.${currentVendor.id}`)
-                        .in('status', ['payment_sent', 'payment_verified', 'completed']),
+                        .in('status', ['payment_sent', 'payment_verified', 'completed', 'awaiting_reviewer_proof']),
                     sbClient
                         .from('inquiries')
-                        .select('id')
+                        .select('id, vendor_id')
                         .eq('vendor_id', currentVendor.id)
                 ]);
                 console.timeEnd('[Payment History] Round 1 Queries');
@@ -7694,29 +7694,32 @@
                 }
 
                 // ROUND 2: Query buyer_payables (depends on vendorInquiries from Round 1)
+                // CRITICAL: buyer_payables doesn't have vendor_id, so we filter by related_feedback_ids that belong to this vendor
                 let buyerPayouts = [];
-                if (vendorInquiries && vendorInquiries.length > 0) {
-                    const feedbackIds = vendorInquiries.map(inq => inq.id);
-                    console.log('[Payment History] QUERYING buyer_payables with feedback IDs:', feedbackIds.length);
-                    console.time('[Payment History] Round 2 Query');
+                const feedbackIds = (vendorInquiries || []).map(inq => inq.id);
+                console.log('[Payment History] QUERYING buyer_payables with feedback IDs:', feedbackIds.length);
+                console.time('[Payment History] Round 2 Query');
 
+                if (feedbackIds.length > 0) {
                     const { data: reviewerData, error: reviewerError } = await sbClient
                         .from('buyer_payables')
                         .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id, vendor_receipt_filename')
                         .overlaps('related_feedback_ids', feedbackIds)
-                        .in('status', ['payment_sent', 'payment_verified', 'completed']);
+                        .in('status', ['payment_sent', 'payment_verified', 'completed', 'awaiting_reviewer_proof']);
 
                     console.log('[Payment History] buyer_payables RESPONSE:', {
                         count: reviewerData?.length,
                         records: reviewerData?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
                         error: reviewerError
                     });
-                    console.timeEnd('[Payment History] Round 2 Query');
 
                     if (reviewerData) {
                         buyerPayouts = reviewerData;
                     }
+                } else {
+                    console.log('[Payment History] No vendor inquiries found, skipping buyer_payables query');
                 }
+                console.timeEnd('[Payment History] Round 2 Query');
 
                 // Combine all payouts
                 let allPayouts = [];
