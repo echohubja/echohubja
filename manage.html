@@ -6881,10 +6881,11 @@
                 const user = await sbClient.auth.getUser();
                 if (!user.data.user) return;
 
+                // Query notifications - RLS policies handle user filtering
+                // Note: in_app_notifications table uses RLS for access control, not user_id column
                 const { data: notifications, error } = await sbClient
                     .from('in_app_notifications')
                     .select('*')
-                    .eq('user_id', user.data.user.id)
                     .eq('is_read', false)
                     .order('created_at', { ascending: false })
                     .limit(10);
@@ -9051,15 +9052,23 @@
                             // Don't fail the upload if payment_history creation fails
                         }
 
-                        // Update status based on which party uploaded receipt
-                        // Each party has their own payment status field
-                        let statusFieldName = `${fieldPrefix}_payment_status`;
-                        let statusValue = 'payment_sent';
+                        // Determine next status based on recipient type and table
+                        // After vendor uploads proof, status changes to role-specific "awaiting proof" status
+                        let nextStatus = 'payment_sent';
 
-                        // Update the correct status field for the party that uploaded
-                        const statusUpdateObj = {
-                            [statusFieldName]: statusValue
-                        };
+                        if (recordTable === 'admin_payables') {
+                            if (recordData.split_with_buyer_id) {
+                                nextStatus = 'awaiting_buyer_inviter_proof';
+                            } else if (recordData.split_with_vendor_id) {
+                                nextStatus = 'awaiting_vendor_inviter_proof';
+                            } else {
+                                nextStatus = 'payment_sent';
+                            }
+                        } else if (recordTable === 'buyer_payables') {
+                            nextStatus = 'awaiting_reviewer_proof';
+                        }
+
+                        const statusUpdateObj = { status: nextStatus };
 
                         const { error: statusError } = await sbClient
                             .from(recordTable)
