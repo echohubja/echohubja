@@ -3535,7 +3535,7 @@
                 // PARALLEL: Fetch admin_payables and buyer_payables simultaneously
                 // Include all statuses indicating payment sent and awaiting proof verification
                 const paymentSentStatuses = ['payment_sent', 'awaiting_buyer_inviter_proof', 'awaiting_vendor_inviter_proof'];
-                const reviewerAwaitingStatuses = ['payment_sent', 'awaiting_reviewer_proof'];
+                const reviewerAwaitingStatuses = ['payment_sent', 'awaiting_reviewer_proof', 'collected'];
 
                 const [{ data: adminData, error: adminError }, { data: reviewerData, error: reviewerError }] = await Promise.all([
                     db.from('admin_payables')
