@@ -7935,12 +7935,13 @@
                         txnId = payout.vendor_paypal_transaction_id || 'Pending';
                     }
 
-                    // Receipt Status - all 6 statuses
+                    // Receipt Status - all 7 statuses
                     let statusBadge = '';
                     const statusMap = {
                         'payment_sent': { bg: '#f59e0b', text: '⏳ Payment Sent' },
                         'awaiting_buyer_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Buyer Proof' },
                         'awaiting_vendor_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Vendor Proof' },
+                        'awaiting_reviewer_proof': { bg: '#f59e0b', text: '⏳ Awaiting Reviewer Proof' },
                         'paid': { bg: '#3b82f6', text: '✓ Paid' },
                         'payment_verified': { bg: '#10b981', text: '✓ Verified' },
                         'completed': { bg: '#10b981', text: '✓ Completed' }
