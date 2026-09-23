@@ -7451,22 +7451,33 @@
                     // buyer_payables doesn't have feedback data, show minimal info
                 } else {
                     // admin_payables record (Admin, Buyer Inviter, or Vendor Inviter)
-                    displayAmount = payout.admin_commission || 0;
+                    // SMART SPLIT HANDLING: Use admin_commission if populated (indicates split), else use amount_owed (non-split)
+                    // Splits: admin_commission !== null → calculate recipient amounts per split type
+                    // Non-split: admin_commission === null → display full amount_owed
+                    displayAmount = payout.admin_commission !== null ? payout.amount_owed : (payout.amount_owed || 0);
                     inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
                     imageData = inquiry?.image_data ? `data:image/jpeg;base64,${inquiry.image_data}` : null;
 
                     if (payout.split_with_vendor_id) {
                         recipientType = 'Vendor Inviter';
+                        // Vendor inviter gets: amount_owed - admin_commission - buyer_portion
                         displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
                         const vendor = globalAwaitingBuyersMap[payout.split_with_vendor_id];
                         recipientName = vendor?.full_name || 'N/A';
                         recipientEmail = vendor?.paypal_email || 'N/A';
+                        if (payout.admin_commission === null || payout.buyer_portion === null) {
+                            console.warn(`[Tab 3] Vendor Inviter: admin_commission=${payout.admin_commission}, buyer_portion=${payout.buyer_portion}. ID: ${payout.id}`);
+                        }
                     } else if (payout.split_with_buyer_id) {
                         recipientType = 'Buyer Inviter';
+                        // Buyer inviter gets: buyer_portion
                         displayAmount = payout.buyer_portion || 0;
                         const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                         recipientName = buyer?.full_name || 'N/A';
                         recipientEmail = buyer?.paypal_email || 'N/A';
+                        if (payout.buyer_portion === null) {
+                            console.warn(`[Tab 3] Buyer Inviter: buyer_portion is null. ID: ${payout.id}`);
+                        }
                     }
                 }
 
