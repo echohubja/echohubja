@@ -4094,12 +4094,12 @@
                         buyer_paypal_email: paypalEmail,
                         buyer_paypal_transaction_id: txnId,
                         buyer_flagged: false,
-                        status: 'payment_verified'
+                        status: 'collected'
                     } : {
                         payment_proof_url: fullDataUrl,
                         payment_method: 'paypal',
                         payment_date: new Date().toISOString(),
-                        status: 'payment_verified'
+                        status: 'collected'
                     };
 
                     // Update correct table
