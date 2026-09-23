@@ -7321,10 +7321,10 @@
 
                 // CRITICAL FIX (Session 37): Filter buyer_payables to only show records related to current vendor
                 // buyer_payables table has NO vendor_id column, so we must filter by related inquiries
-                const vendorIds = new Set();
+                const currentVendorInquiryIds = new Set();
                 Object.values(globalAwaitingInquiriesMap).forEach(inq => {
                     if (inq.vendor_id === currentVendor.id) {
-                        vendorIds.add(inq.id);
+                        currentVendorInquiryIds.add(inq.id);
                     }
                 });
 
@@ -7336,7 +7336,7 @@
                     }
                     // buyer_payables records: only include if related_feedback_ids contains at least one inquiry belonging to this vendor
                     const feedbackIds = payout.related_feedback_ids || [];
-                    const belongsToVendor = feedbackIds.some(fid => vendorIds.has(fid));
+                    const belongsToVendor = feedbackIds.some(fid => currentVendorInquiryIds.has(fid));
                     if (!belongsToVendor) {
                         console.warn('[Tab 3] Filtering out buyer_payables record not related to current vendor:', {
                             payoutId: payout.id,
