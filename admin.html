@@ -3548,7 +3548,7 @@
                         .order('created_at', { ascending: false }),
                     db.from('buyer_payables')
                         .select(`
-                            id, buyer_id, amount_owed, vendor_paypal_transaction_id, created_at, related_feedback_ids, status, vendor_flagged
+                            id, buyer_id, amount_owed, vendor_paypal_transaction_id, created_at, related_feedback_ids, status, vendor_flagged, payment_proof_url
                         `)
                         .in('status', reviewerAwaitingStatuses)
                         .order('created_at', { ascending: false })
@@ -3668,6 +3668,8 @@
                         const commissionId = record.id.substring(0, 8);
                         // For buyer_payables, vendor_flagged indicates if vendor receipt is missing/rejected
                         const hasVendorReceipt = !record.vendor_flagged;
+                        // Check if reviewer uploaded their receipt (payment_proof_url field)
+                        const hasBuyerReceipt = !!record.payment_proof_url;
 
                         expandedRows.push({
                             ...record,
@@ -3676,7 +3678,7 @@
                             displayAmount: parseFloat(record.amount_owed || 0),
                             commissionId,
                             hasVendorReceipt,
-                            hasBuyerReceipt: true, // Reviewer only needs vendor receipt (proof from vendor to reviewer)
+                            hasBuyerReceipt,
                             rowType: 'reviewer',
                             buyerName: buyerMap[record.buyer_id]?.name || 'Unknown',
                             buyerEmail: buyerMap[record.buyer_id]?.email || 'N/A'
@@ -3697,7 +3699,7 @@
                     const vendorName = row.commissionType === 'reviewer' ? 'N/A' : (vendorMap[row.vendor_id] || 'Unknown');
                     const amount = parseFloat(row.displayAmount).toFixed(2);
                     const vendorReceiptLabel = row.commissionType === 'reviewer' ? 'Vendor Proof' : 'Vendor Receipt';
-                    const buyerReceiptLabel = row.commissionType === 'reviewer' ? 'N/A' : 'Buyer Receipt';
+                    const buyerReceiptLabel = row.commissionType === 'reviewer' ? 'Reviewer Proof' : 'Buyer Receipt';
 
                     return `
                         <tr class="hover:bg-blue-50">
@@ -3708,7 +3710,7 @@
                                 ${row.hasVendorReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>'}
                             </td>
                             <td class="p-2.5 text-center" title="${buyerReceiptLabel}">
-                                ${row.commissionType === 'reviewer' ? '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-semibold">—</span>' : (row.hasBuyerReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>')}
+                                ${row.hasBuyerReceipt ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✓ Uploaded</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">✗ Missing</span>'}
                             </td>
                             <td class="p-2.5 text-center">
                                 <button onclick="openReceiptVerificationModal('${row.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition mr-1">👁️ Review</button>
