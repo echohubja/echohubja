@@ -8953,9 +8953,15 @@
                             [`${fieldPrefix}_receipt_filename`]: file.name,
                             [`${fieldPrefix}_receipt_filetype`]: mimeType,
                             [`${fieldPrefix}_receipt_filesize`]: file.size,
-                            [`${fieldPrefix}_receipt_uploaded_date`]: new Date().toISOString(),
-                            [`${fieldPrefix}_flagged`]: false  // Reset flag when receipt uploaded
+                            [`${fieldPrefix}_receipt_uploaded_date`]: new Date().toISOString()
                         };
+
+                        // For flagging: buyer_payables only has vendor_flagged and buyer_flagged, not field-specific flags
+                        if (recordTable === 'buyer_payables') {
+                            updateObj['vendor_flagged'] = false; // Reviewer upload tracked in vendor_flagged
+                        } else {
+                            updateObj[`${fieldPrefix}_flagged`] = false; // admin_payables uses field-specific flags
+                        }
 
                         // Update correct table (admin_payables or buyer_payables) with receipt data
                         // RLS policy will validate vendor_id = auth.uid()
@@ -8980,35 +8986,7 @@
                             return;
                         }
 
-                        // Create payment_history record (party has sent payment)
-                        const recordData = data[0];
-                        const paymentHistoryRecord = {
-                            vendor_id: currentVendor.id,
-                            from_type: fieldPrefix, // 'vendor', 'buyer', 'vendor_inviter', or 'reviewer'
-                            to_type: 'admin',
-                            to_id: null, // Admin system receives payment
-                            amount: recordData.amount_owed,
-                            payment_reason: recordTable === 'admin_payables' ? 'referral_commission' : 'feedback_commission',
-                            related_feedback_id: recordData.related_feedback_id || null,
-                            payment_method: 'paypal',
-                            payment_date: new Date().toISOString()
-                        };
-
-                        // Link to correct payables table
-                        if (recordTable === 'admin_payables') {
-                            paymentHistoryRecord.related_admin_payables_id = payoutId;
-                        } else if (recordTable === 'buyer_payables') {
-                            paymentHistoryRecord.related_buyer_payables_id = payoutId;
-                        }
-
-                        const { error: phError } = await sbClient
-                            .from('payment_history')
-                            .insert(paymentHistoryRecord);
-
-                        if (phError) {
-                            console.error('Warning: Could not create payment_history record:', phError);
-                            // Don't fail the upload if payment_history creation fails
-                        }
+                        // Note: Removed payment_history table creation (moving away from that approach)
 
                         // Determine next status based on recipient type and table
                         // After vendor uploads proof, status changes to role-specific "awaiting proof" status
@@ -9043,7 +9021,7 @@
                             statusDiv.style.color = '#059669';
                             statusDiv.style.background = '#d1fae5';
 
-                            // Reload data after 1.5 seconds - proper sequence to update summary cards
+                            // Reload data after 1.5 seconds - proper sequence to update lifecycle tabs
                             setTimeout(async () => {
                                 try {
                                     // Step 1: Reload earnings data
@@ -9052,14 +9030,11 @@
                                     // Step 2: Update summary cards immediately
                                     await updatePayoutSummaryCards();
 
-                                    // Step 3: Reload payout data (for payment history tab)
-                                    await loadPayoutDataFromDB();
-
-                                    // Step 4: Reload lifecycle tabs
+                                    // Step 3: Reload lifecycle tabs
                                     await loadManageAwaitingPayouts();
                                     await loadManageIncomingRequests();
 
-                                    // Step 5: Close modal
+                                    // Step 4: Close modal
                                     closeCommissionModal('receipt-upload-modal');
                                     console.log('✅ Receipt upload complete - all data refreshed');
                                 } catch (err) {
