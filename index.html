@@ -4695,9 +4695,9 @@
                 // Query: Reviewer feedback commissions where receipt was collected
                 const { data: buyerPayables } = await db
                     .from('buyer_payables')
-                    .select('id, amount_owed, related_feedback_ids, status, payment_verified_date, created_at, buyer_flagged, vendor_flagged, payment_proof_url')
+                    .select('id, amount_owed, related_feedback_ids, status, payment_verified_date, created_at')
                     .eq('buyer_id', buyerId)
-                    .in('status', ['payment_verified', 'paid'])
+                    .in('status', ['collected', 'payment_verified', 'paid'])
                     .order('created_at', { ascending: false });
 
                 globalReviewerCollectedData = [];
