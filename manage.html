@@ -4833,7 +4833,7 @@
                 // Query admin_payables - pending payouts vendor must make
                 const { data: adminPayouts, error: adminError } = await sbClient
                     .from('admin_payables')
-                    .select('amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_id')
+                    .select('amount_owed, admin_commission, buyer_portion, split_with_buyer_id, split_with_vendor_inviter_id')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'pending');
 
@@ -4888,7 +4888,7 @@
                 // Sum admin_payables portions
                 if (adminPayouts && adminPayouts.length > 0) {
                     adminPayouts.forEach(payout => {
-                        if (payout.split_with_vendor_id) {
+                        if (payout.split_with_vendor_inviter_id) {
                             // Vendor inviter - calculate split
                             accumulated += (payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0));
                         } else if (payout.split_with_buyer_id) {
@@ -4955,6 +4955,97 @@
 
             } catch (err) {
                 console.error('Error loading earnings data:', err);
+            }
+        }
+
+        async function updatePayoutSummaryCards() {
+            try {
+                if (!sbClient || !currentVendor) return;
+
+                // Pending statuses (all intermediate states)
+                const pendingStatuses = [
+                    'pending',
+                    'vendor_requested',
+                    'payment_requested',
+                    'payment_sent',
+                    'denied',
+                    'here_are_people_requesting_for_me_to_pay_them',
+                    'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment',
+                    'my_payment_requests_awaiting_vendor_review_transfer',
+                    'awaiting_reviewer_proof',
+                    'awaiting_buyer_inviter_proof',
+                    'awaiting_vendor_inviter_proof'
+                ];
+
+                // Paid statuses (completed transactions)
+                const paidStatuses = [
+                    'paid',
+                    'payment_verified',
+                    'collected',
+                    'commissions_successfully_collected'
+                ];
+
+                // Query both tables in parallel
+                const [adminResult, buyerResult] = await Promise.all([
+                    sbClient
+                        .from('admin_payables')
+                        .select('id, amount_owed, admin_commission, buyer_portion, status, vendor_flagged, buyer_flagged')
+                        .eq('vendor_id', currentVendor.id),
+                    sbClient
+                        .from('buyer_payables')
+                        .select('id, amount_owed, status, vendor_flagged, buyer_flagged')
+                        .eq('vendor_id', currentVendor.id)
+                ]);
+
+                let pendingTotal = 0;
+                let paidTotal = 0;
+
+                // Process admin_payables
+                if (adminResult.data) {
+                    adminResult.data.forEach(record => {
+                        // Skip flagged records
+                        if (record.vendor_flagged || record.buyer_flagged) return;
+
+                        if (pendingStatuses.includes(record.status)) {
+                            pendingTotal += parseFloat(record.amount_owed) || 0;
+                        } else if (paidStatuses.includes(record.status)) {
+                            paidTotal += parseFloat(record.amount_owed) || 0;
+                        }
+                    });
+                }
+
+                // Process buyer_payables
+                if (buyerResult.data) {
+                    buyerResult.data.forEach(record => {
+                        // Skip flagged records
+                        if (record.vendor_flagged || record.buyer_flagged) return;
+
+                        if (pendingStatuses.includes(record.status)) {
+                            pendingTotal += parseFloat(record.amount_owed) || 0;
+                        } else if (paidStatuses.includes(record.status)) {
+                            paidTotal += parseFloat(record.amount_owed) || 0;
+                        }
+                    });
+                }
+
+                // Update card display
+                const pendingCard = document.querySelector('[data-card-type="pending-payout"]');
+                const paidCard = document.querySelector('[data-card-type="paid-out"]');
+
+                if (pendingCard) {
+                    const valueEl = pendingCard.querySelector('[data-card-value]');
+                    if (valueEl) valueEl.textContent = `$${pendingTotal.toFixed(2)}`;
+                }
+
+                if (paidCard) {
+                    const valueEl = paidCard.querySelector('[data-card-value]');
+                    if (valueEl) valueEl.textContent = `$${paidTotal.toFixed(2)}`;
+                }
+
+                console.log('Summary cards updated:', { pendingTotal, paidTotal });
+
+            } catch (err) {
+                console.error('Error updating summary cards:', err);
             }
         }
 
@@ -6069,7 +6160,7 @@
                     .select(`
                         *,
                         buyer:split_with_buyer_id (id, full_name, email, paypal_email),
-                        inviter_vendor:split_with_vendor_id (id, full_name, email, paypal_email)
+                        inviter_vendor:split_with_vendor_inviter_id (id, full_name, email, paypal_email)
                     `)
                     .eq('vendor_id', currentVendor.id)
                     .order('created_at', { ascending: false });
@@ -6543,63 +6634,61 @@
             const data = messagingState.payoutData;
             if (!data) return;
 
-            // EXACT 4 pending statuses that represent "not yet sent" commission pipeline
+            // Map commission status values to PENDING category
             const PENDING_STATUSES = [
                 'pending',
                 'vendor_requested',
+                'payment_requested',
+                'payment_sent',
+                'denied',
+                'here_are_people_requesting_for_me_to_pay_them',
+                'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment',
                 'my_payment_requests_awaiting_vendor_review_transfer',
-                'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'
+                'awaiting_reviewer_proof',
+                'awaiting_buyer_inviter_proof',
+                'awaiting_vendor_inviter_proof'
             ];
 
             let totalEarnings = 0;
             let paidOut = 0;
             let pending = 0;
 
-            // ===== ADMIN PAYABLES PROCESSING =====
-            // Includes: Admin Commission + Referrer Portion + Vendor Inviter
+            // Process all admin_payables records - count toward total earnings and pending
             data.adminPayables.forEach((ap) => {
                 const amount = parseFloat(ap.amount_owed || 0);
-                const status = (ap.status || '').toLowerCase().trim();
+                const status = ap.status || '';
 
-                // Skip flagged items
+                // Skip flagged items from totals
                 if (ap.vendor_flagged || ap.buyer_flagged) {
-                    console.log(`[Payout] Skipping flagged admin_payable: ${ap.id}, vendor_flagged=${ap.vendor_flagged}, buyer_flagged=${ap.buyer_flagged}`);
                     return;
                 }
 
                 totalEarnings += amount;
 
-                // Count as pending if in pending status AND no receipt uploaded
+                // Only count as pending if status indicates waiting AND no receipt uploaded
+                // Receipted items are awaiting admin review, not pending
                 const hasReceipt = ap.vendor_receipt_data || ap.buyer_receipt_data || ap.reviewer_receipt_data || ap.vendor_inviter_receipt_data;
                 if (PENDING_STATUSES.includes(status) && !hasReceipt) {
                     pending += amount;
-                    console.log(`[Payout] Counted admin_payable as pending: $${amount.toFixed(2)}, status=${status}`);
-                } else {
-                    console.log(`[Payout] Skipped admin_payable: $${amount.toFixed(2)}, status=${status}, hasReceipt=${hasReceipt}, isPendingStatus=${PENDING_STATUSES.includes(status)}`);
                 }
             });
 
-            // ===== BUYER PAYABLES PROCESSING =====
-            // Includes: Reviewer Commission (own_feedback earning type)
+            // Process buyer_payables (own feedback) - count toward total earnings and pending
             data.buyerPayables.filter(bp => bp.earning_type === 'own_feedback').forEach(bp => {
                 const amount = parseFloat(bp.amount_owed || 0);
-                const status = (bp.status || '').toLowerCase().trim();
+                const status = bp.status || '';
 
                 // Skip flagged items
                 if (bp.vendor_flagged || bp.buyer_flagged) {
-                    console.log(`[Payout] Skipping flagged buyer_payable: ${bp.id}, vendor_flagged=${bp.vendor_flagged}, buyer_flagged=${bp.buyer_flagged}`);
                     return;
                 }
 
                 totalEarnings += amount;
 
-                // Count as pending if in pending status AND no receipt uploaded
+                // Only count as pending if status indicates waiting AND no receipt uploaded
                 const hasReceipt = bp.vendor_receipt_data;
                 if (PENDING_STATUSES.includes(status) && !hasReceipt) {
                     pending += amount;
-                    console.log(`[Payout] Counted buyer_payable (own_feedback) as pending: $${amount.toFixed(2)}, status=${status}`);
-                } else {
-                    console.log(`[Payout] Skipped buyer_payable: $${amount.toFixed(2)}, status=${status}, hasReceipt=${hasReceipt}, isPendingStatus=${PENDING_STATUSES.includes(status)}`);
                 }
             });
 
@@ -6792,11 +6881,10 @@
                 const user = await sbClient.auth.getUser();
                 if (!user.data.user) return;
 
-                // Query notifications - RLS policies handle user filtering
-                // Note: in_app_notifications table uses RLS for access control, not user_id column
                 const { data: notifications, error } = await sbClient
                     .from('in_app_notifications')
                     .select('*')
+                    .eq('user_id', user.data.user.id)
                     .eq('is_read', false)
                     .order('created_at', { ascending: false })
                     .limit(10);
@@ -6941,7 +7029,7 @@
                 const [{ data: adminPayouts, error: adminError }, { data: buyerPayoutsRaw, error: buyerError }] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_inviter_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_flagged, buyer_flagged')
                         .eq('vendor_id', currentVendor.id)
                         .eq('status', 'pending')
                         .order('created_at', { ascending: false }),
@@ -7001,7 +7089,7 @@
                     adminPayouts.forEach(payout => {
                         let recipientType = 'admin';
                         let displayAmount = payout.amount_owed || 0;
-                        if (payout.split_with_vendor_id) {
+                        if (payout.split_with_vendor_inviter_id) {
                             recipientType = 'vendor_inviter';
                         } else if (payout.split_with_buyer_id) {
                             recipientType = 'buyer_inviter';
@@ -7037,7 +7125,7 @@
 
                 allPayouts.forEach(p => {
                     if (p.split_with_buyer_id) buyerIds.add(p.split_with_buyer_id);
-                    if (p.split_with_vendor_id) vendorIds.add(p.split_with_vendor_id);
+                    if (p.split_with_vendor_inviter_id) vendorIds.add(p.split_with_vendor_inviter_id);
                     if (p.source === 'buyer_payables') {
                         const feedbackId = p.related_feedback_ids?.[0];
                         const buyerId = inquiriesByFeedbackId[feedbackId]?.buyer_id;
@@ -7093,7 +7181,7 @@
                         const buyer = buyersMap[payout.split_with_buyer_id];
                         recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
                     } else if (payout.recipientType === 'vendor_inviter') {
-                        const vendor = vendorsMap[payout.split_with_vendor_id];
+                        const vendor = vendorsMap[payout.split_with_vendor_inviter_id];
                         recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
                     } else if (payout.recipientType === 'reviewer') {
                         const feedbackId = payout.related_feedback_id || payout.related_feedback_ids?.[0];
@@ -7204,43 +7292,25 @@
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #718096;">Loading...</td></tr>';
 
                 // ROUND 1: Parallelize admin_payables + buyer_payables queries
-                // Tab 3: Show commissions where vendor must upload proof after sending payment
-                console.log('[Tab 3] QUERY STARTING - currentVendor.id:', currentVendor.id);
-                const [adminResult1, adminResult2, buyerResult] = await Promise.all([
+                // Tab 3: Show commissions where vendor has requested payment and must upload proof
+                const [adminResult, buyerResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged, status')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_inviter_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged')
                         .eq('vendor_id', currentVendor.id)
-                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
-                        .order('created_at', { ascending: false }),
-                    sbClient
-                        .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, vendor_receipt_uploaded_date, vendor_flagged, buyer_flagged, status')
-                        .eq('split_with_vendor_id', currentVendor.id)
-                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
+                        .eq('status', 'vendor_requested')
                         .order('created_at', { ascending: false }),
                     sbClient
                         .from('buyer_payables')
-                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids, status, vendor_receipt_data, vendor_flagged, buyer_flagged')
-                        .in('status', ['payment_requested', 'here_are_people_waiting_for_me_to_upload_proof_after_sending_their_payment'])
+                        .select('id, buyer_id, amount_owed, earning_type, created_at, payment_date, related_feedback_ids')
+                        .eq('status', 'vendor_requested')
                         .order('created_at', { ascending: false })
-                        // CRITICAL: This query returns ALL buyer_payables because buyer_payables table has no vendor_id column
-                        // Filter happens in ROUND 2 below after fetching inquiries to match vendor_id
-                        // See line 7448+ for client-side vendor filtering logic
                 ]);
 
-                const adminPayouts1 = adminResult1.data || [];
-                const adminPayouts2 = adminResult2.data || [];
-                const buyerPayouts = buyerResult.data || [];
-                const error = adminResult1.error || adminResult2.error || buyerResult.error;
-
-                console.log('[Tab 3] QUERY RESULTS:', {
-                    adminResult1: { count: adminPayouts1.length, error: adminResult1.error, data: adminPayouts1.map(p => ({ id: p.id, vendor_id: p.vendor_id, status: p.status, admin_commission: p.admin_commission })) },
-                    adminResult2: { count: adminPayouts2.length, error: adminResult2.error, data: adminPayouts2.map(p => ({ id: p.id, split_with_vendor_id: p.split_with_vendor_id, status: p.status })) },
-                    buyerResult: { count: buyerPayouts.length, error: buyerResult.error }
-                });
-
-                const payouts = [...adminPayouts1, ...adminPayouts2, ...buyerPayouts];
+                const adminPayouts = adminResult.data;
+                const buyerPayouts = buyerResult.data;
+                const error = adminResult.error || buyerResult.error;
+                const payouts = [...(adminPayouts || []), ...(buyerPayouts || [])];
 
                 if (error) {
                     console.error('Error loading awaiting receipts:', error);
@@ -7258,13 +7328,8 @@
                 const splitBuyerIds = payouts.map(p => p.split_with_buyer_id).filter(Boolean);
                 const directBuyerIds = payouts.map(p => p.buyer_id).filter(Boolean);
                 const allBuyerIds = [...new Set([...splitBuyerIds, ...directBuyerIds])];
-                const vendorIds = payouts.map(p => p.split_with_vendor_id).filter(Boolean);
-
-                // Extract feedback IDs from BOTH admin_payables (related_feedback_id) AND buyer_payables (related_feedback_ids array)
-                const feedbackIds = [...new Set([
-                    ...payouts.map(p => p.related_feedback_id).filter(Boolean),  // admin_payables
-                    ...payouts.flatMap(p => p.related_feedback_ids || [])  // buyer_payables (array)
-                ])];
+                const vendorIds = payouts.map(p => p.split_with_vendor_inviter_id).filter(Boolean);
+                const feedbackIds = payouts.map(p => p.related_feedback_id).filter(Boolean);
 
                 globalAwaitingBuyersMap = {};
                 globalAwaitingInquiriesMap = {};
@@ -7297,7 +7362,7 @@
                     queries.push(
                         sbClient
                             .from('inquiries')
-                            .select('id, vendor_id, message, product_url, image_data')
+                            .select('id, message, product_url, image_data')
                             .in('id', feedbackIds)
                     );
                 } else {
@@ -7324,36 +7389,8 @@
                     });
                 }
 
-                // CRITICAL FIX (Session 37): Filter buyer_payables to only show records related to current vendor
-                // buyer_payables table has NO vendor_id column, so we must filter by related inquiries
-                const currentVendorInquiryIds = new Set();
-                Object.values(globalAwaitingInquiriesMap).forEach(inq => {
-                    if (inq.vendor_id === currentVendor.id) {
-                        currentVendorInquiryIds.add(inq.id);
-                    }
-                });
-
-                const filteredPayouts = payouts.filter(payout => {
-                    const isBuyerPayable = payout.buyer_id && !payout.split_with_buyer_id;
-                    if (!isBuyerPayable) {
-                        // admin_payables records always pass (already filtered by vendor_id or split_with_vendor_id)
-                        return true;
-                    }
-                    // buyer_payables records: only include if related_feedback_ids contains at least one inquiry belonging to this vendor
-                    const feedbackIds = payout.related_feedback_ids || [];
-                    const belongsToVendor = feedbackIds.some(fid => currentVendorInquiryIds.has(fid));
-                    if (!belongsToVendor) {
-                        console.warn('[Tab 3] Filtering out buyer_payables record not related to current vendor:', {
-                            payoutId: payout.id,
-                            feedbackIds,
-                            vendorId: currentVendor.id
-                        });
-                    }
-                    return belongsToVendor;
-                });
-
                 // Store data globally for SLA timer refresh
-                globalAwaitingPayouts = filteredPayouts;
+                globalAwaitingPayouts = payouts;
                 renderAwaitingPayoutsTable();
 
                 // Clear existing interval
@@ -7398,39 +7435,28 @@
                     // buyer_payables doesn't have feedback data, show minimal info
                 } else {
                     // admin_payables record (Admin, Buyer Inviter, or Vendor Inviter)
-                    // SMART SPLIT HANDLING: Use admin_commission if populated (indicates split), else use amount_owed (non-split)
-                    // Splits: admin_commission !== null → calculate recipient amounts per split type
-                    // Non-split: admin_commission === null → display full amount_owed
-                    displayAmount = payout.admin_commission !== null ? payout.amount_owed : (payout.amount_owed || 0);
+                    displayAmount = payout.admin_commission || 0;
                     inquiry = globalAwaitingInquiriesMap[payout.related_feedback_id];
                     imageData = inquiry?.image_data ? `data:image/jpeg;base64,${inquiry.image_data}` : null;
 
-                    if (payout.split_with_vendor_id) {
-                        recipientType = 'Vendor Inviter';
-                        // Vendor inviter gets: amount_owed - admin_commission - buyer_portion
-                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
-                        const vendor = globalAwaitingBuyersMap[payout.split_with_vendor_id];
-                        recipientName = vendor?.full_name || 'N/A';
-                        recipientEmail = vendor?.paypal_email || 'N/A';
-                        if (payout.admin_commission === null || payout.buyer_portion === null) {
-                            console.warn(`[Tab 3] Vendor Inviter: admin_commission=${payout.admin_commission}, buyer_portion=${payout.buyer_portion}. ID: ${payout.id}`);
-                        }
-                    } else if (payout.split_with_buyer_id) {
+                    if (payout.split_with_vendor_inviter_id) {
                         recipientType = 'Buyer Inviter';
-                        // Buyer inviter gets: buyer_portion
+                        displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
+                        const buyer = globalAwaitingBuyersMap[payout.split_with_vendor_inviter_id];
+                        recipientName = buyer?.full_name || 'N/A';
+                        recipientEmail = buyer?.paypal_email || 'N/A';
+                    } else if (payout.split_with_buyer_id) {
+                        recipientType = 'Vendor Inviter';
                         displayAmount = payout.buyer_portion || 0;
                         const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                         recipientName = buyer?.full_name || 'N/A';
                         recipientEmail = buyer?.paypal_email || 'N/A';
-                        if (payout.buyer_portion === null) {
-                            console.warn(`[Tab 3] Buyer Inviter: buyer_portion is null. ID: ${payout.id}`);
-                        }
                     }
                 }
 
                 return `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}" data-source="${isBuyerPayable ? 'buyer_payables' : 'admin_payables'}"></td>
+                    <td style="padding: 12px;"><input type="checkbox" class="payout-checkbox" data-payout-id="${payout.id}"></td>
                     <td style="padding: 12px; color: #475569;">${recipientType}</td>
                     <td style="padding: 12px; color: #475569;">${recipientName}</td>
                     <td style="padding: 12px; color: #475569;">${recipientEmail}</td>
@@ -7494,7 +7520,7 @@
                 const [adminResult, buyerResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status, vendor_paypal_transaction_id, buyer_paypal_transaction_id, vendor_inviter_paypal_transaction_id, reviewer_paypal_transaction_id')
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_inviter_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, unflagged_date, status, vendor_paypal_transaction_id, buyer_paypal_transaction_id, vendor_inviter_paypal_transaction_id, reviewer_paypal_transaction_id')
                         .eq('vendor_id', currentVendor.id)
                         .or(`status.eq.payment_sent,status.eq.completed,unflagged_date.not.is.null`)
                         .order('unflagged_date', { ascending: false }),
@@ -7597,7 +7623,7 @@
                     commissionType = 'Admin';
                     displayAmount = payout.admin_commission || 0;
 
-                    if (payout.split_with_vendor_id) {
+                    if (payout.split_with_vendor_inviter_id) {
                         commissionType = 'Vendor Inviter';
                         displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
                     } else if (payout.split_with_buyer_id) {
@@ -7664,12 +7690,12 @@
                 const [adminResult, inquiriesResult] = await Promise.all([
                     sbClient
                         .from('admin_payables')
-                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
-                        .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_id.eq.${currentVendor.id}`)
-                        .in('status', ['payment_sent', 'payment_verified', 'completed', 'awaiting_reviewer_proof']),
+                        .select('id, vendor_id, split_with_buyer_id, split_with_vendor_inviter_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, status, updated_at, vendor_receipt_filename, buyer_receipt_filename, vendor_paypal_transaction_id, buyer_paypal_transaction_id, reviewer_paypal_transaction_id, vendor_inviter_paypal_transaction_id')
+                        .or(`vendor_id.eq.${currentVendor.id},split_with_vendor_inviter_id.eq.${currentVendor.id}`)
+                        .in('status', ['payment_sent', 'payment_verified', 'completed']),
                     sbClient
                         .from('inquiries')
-                        .select('id, vendor_id')
+                        .select('id')
                         .eq('vendor_id', currentVendor.id)
                 ]);
                 console.timeEnd('[Payment History] Round 1 Queries');
@@ -7681,7 +7707,7 @@
 
                 console.log('[Payment History] admin_payables RESPONSE:', {
                     count: adminPayouts?.length,
-                    records: adminPayouts?.map(p => ({ id: p.id, status: p.status, vendor_id: p.vendor_id, split_with_vendor_id: p.split_with_vendor_id })),
+                    records: adminPayouts?.map(p => ({ id: p.id, status: p.status, vendor_id: p.vendor_id, split_with_vendor_inviter_id: p.split_with_vendor_inviter_id })),
                     error: adminError
                 });
 
@@ -7694,32 +7720,29 @@
                 }
 
                 // ROUND 2: Query buyer_payables (depends on vendorInquiries from Round 1)
-                // CRITICAL: buyer_payables doesn't have vendor_id, so we filter by related_feedback_ids that belong to this vendor
                 let buyerPayouts = [];
-                const feedbackIds = (vendorInquiries || []).map(inq => inq.id);
-                console.log('[Payment History] QUERYING buyer_payables with feedback IDs:', feedbackIds.length);
-                console.time('[Payment History] Round 2 Query');
+                if (vendorInquiries && vendorInquiries.length > 0) {
+                    const feedbackIds = vendorInquiries.map(inq => inq.id);
+                    console.log('[Payment History] QUERYING buyer_payables with feedback IDs:', feedbackIds.length);
+                    console.time('[Payment History] Round 2 Query');
 
-                if (feedbackIds.length > 0) {
                     const { data: reviewerData, error: reviewerError } = await sbClient
                         .from('buyer_payables')
                         .select('id, buyer_id, amount_owed, related_feedback_ids, earning_type, status, updated_at, vendor_paypal_transaction_id, vendor_receipt_filename')
                         .overlaps('related_feedback_ids', feedbackIds)
-                        .in('status', ['payment_sent', 'payment_verified', 'completed', 'awaiting_reviewer_proof']);
+                        .in('status', ['payment_sent', 'payment_verified', 'completed']);
 
                     console.log('[Payment History] buyer_payables RESPONSE:', {
                         count: reviewerData?.length,
                         records: reviewerData?.map(p => ({ id: p.id, status: p.status, amount_owed: p.amount_owed })),
                         error: reviewerError
                     });
+                    console.timeEnd('[Payment History] Round 2 Query');
 
                     if (reviewerData) {
                         buyerPayouts = reviewerData;
                     }
-                } else {
-                    console.log('[Payment History] No vendor inquiries found, skipping buyer_payables query');
                 }
-                console.timeEnd('[Payment History] Round 2 Query');
 
                 // Combine all payouts
                 let allPayouts = [];
@@ -7730,7 +7753,7 @@
                         let recipientType = 'admin';
                         let displayAmount = payout.admin_commission || 0;
 
-                        if (payout.split_with_vendor_id && payout.split_with_vendor_id === currentVendor.id) {
+                        if (payout.split_with_vendor_inviter_id && payout.split_with_vendor_inviter_id === currentVendor.id) {
                             recipientType = 'vendor_inviter';
                             displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
                         } else if (payout.split_with_buyer_id) {
@@ -7789,8 +7812,8 @@
 
                 // Vendor inviter IDs for separate lookup
                 const vendorInviterIds = allPayouts
-                    .filter(p => p.recipientType === 'vendor_inviter' && p.split_with_vendor_id)
-                    .map(p => p.split_with_vendor_id)
+                    .filter(p => p.recipientType === 'vendor_inviter' && p.split_with_vendor_inviter_id)
+                    .map(p => p.split_with_vendor_inviter_id)
                     .filter(Boolean);
 
                 // ROUND 3: Parallelize inquiries lookup (for buyer_inviters) and vendor inviter lookup
@@ -7914,7 +7937,7 @@
                         fullName = recipient?.full_name || 'Unknown Buyer Inviter';
                         paypalEmail = recipient?.paypal_email || 'N/A';
                     } else if (payout.recipientType === 'vendor_inviter') {
-                        const recipient = allRecipients[payout.split_with_vendor_id];
+                        const recipient = allRecipients[payout.split_with_vendor_inviter_id];
                         fullName = recipient?.full_name || 'Unknown Vendor Inviter';
                         paypalEmail = recipient?.paypal_email || 'N/A';
                     }
@@ -7935,13 +7958,12 @@
                         txnId = payout.vendor_paypal_transaction_id || 'Pending';
                     }
 
-                    // Receipt Status - all 7 statuses
+                    // Receipt Status - all 6 statuses
                     let statusBadge = '';
                     const statusMap = {
                         'payment_sent': { bg: '#f59e0b', text: '⏳ Payment Sent' },
                         'awaiting_buyer_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Buyer Proof' },
                         'awaiting_vendor_inviter_proof': { bg: '#f59e0b', text: '⏳ Awaiting Vendor Proof' },
-                        'awaiting_reviewer_proof': { bg: '#f59e0b', text: '⏳ Awaiting Reviewer Proof' },
                         'paid': { bg: '#3b82f6', text: '✓ Paid' },
                         'payment_verified': { bg: '#10b981', text: '✓ Verified' },
                         'completed': { bg: '#10b981', text: '✓ Completed' }
@@ -8404,7 +8426,7 @@
             const [{ data: adminRequests, error: adminError }, { data: buyerRequests, error: buyerError }] = await Promise.all([
                 sbClient
                     .from('admin_payables')
-                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
+                    .select('id, vendor_id, split_with_buyer_id, split_with_vendor_inviter_id, admin_commission, buyer_portion, amount_owed, related_feedback_id, created_at, status')
                     .eq('vendor_id', currentVendor.id)
                     .eq('status', 'my_payment_requests_awaiting_vendor_review_transfer')
                     .order('created_at', { ascending: false }),
@@ -8412,7 +8434,7 @@
                     .from('buyer_payables')
                     .select('id, vendor_id, amount_owed, related_feedback_ids, earning_type, created_at, status')
                     .eq('vendor_id', currentVendor.id)
-                    .in('status', ['payment_requested', 'here_are_people_requesting_for_me_to_pay_them'])
+                    .eq('status', 'here_are_people_requesting_for_me_to_pay_them')
                     .eq('earning_type', 'own_feedback')
                     .order('created_at', { ascending: false })
             ]);
@@ -8436,7 +8458,7 @@
                     let recipientType = 'admin';
                     let displayAmount = request.admin_commission || 0;
 
-                    if (request.split_with_vendor_id) {
+                    if (request.split_with_vendor_inviter_id) {
                         recipientType = 'vendor_inviter';
                         displayAmount = request.amount_owed - (request.admin_commission || 0) - (request.buyer_portion || 0);
                     } else if (request.split_with_buyer_id) {
@@ -8479,8 +8501,8 @@
                 .map(r => r.split_with_buyer_id)
                 .filter(Boolean);
             const vendorIds = allRequests
-                .filter(r => r.split_with_vendor_id)
-                .map(r => r.split_with_vendor_id)
+                .filter(r => r.split_with_vendor_inviter_id)
+                .map(r => r.split_with_vendor_inviter_id)
                 .filter(Boolean);
             const reviewerIds = allRequests
                 .filter(r => r.source === 'buyer_payables')
@@ -8548,7 +8570,7 @@
                     const buyer = buyersMap[request.split_with_buyer_id];
                     recipient = { name: buyer?.full_name || 'N/A', email: buyer?.paypal_email || 'N/A' };
                 } else if (request.recipientType === 'vendor_inviter') {
-                    const vendor = vendorsMap[request.split_with_vendor_id];
+                    const vendor = vendorsMap[request.split_with_vendor_inviter_id];
                     recipient = { name: vendor?.business_name || 'N/A', email: vendor?.paypal_email || 'N/A' };
                 } else if (request.recipientType === 'reviewer') {
                     const reviewer = reviewersMap[request.vendor_id];
@@ -8887,15 +8909,7 @@
                 'vendor inviter': 'vendor_inviter',
                 'reviewer': 'reviewer'
             };
-            let fieldPrefix = fieldMapping[recipientType] || 'vendor';
-
-            // For buyer_payables, map field prefix to actual columns (only vendor_* and buyer_* exist)
-            if (recordTable === 'buyer_payables') {
-                if (fieldPrefix === 'reviewer') {
-                    fieldPrefix = 'vendor'; // Reviewer proof stored in vendor_* fields
-                }
-                // buyer_inviter and vendor_inviter don't apply to buyer_payables
-            }
+            const fieldPrefix = fieldMapping[recipientType] || 'vendor';
 
             if (!txId) {
                 statusDiv.textContent = '❌ Transaction ID required';
@@ -8965,15 +8979,9 @@
                             [`${fieldPrefix}_receipt_filename`]: file.name,
                             [`${fieldPrefix}_receipt_filetype`]: mimeType,
                             [`${fieldPrefix}_receipt_filesize`]: file.size,
-                            [`${fieldPrefix}_receipt_uploaded_date`]: new Date().toISOString()
+                            [`${fieldPrefix}_receipt_uploaded_date`]: new Date().toISOString(),
+                            [`${fieldPrefix}_flagged`]: false  // Reset flag when receipt uploaded
                         };
-
-                        // For flagging: buyer_payables only has vendor_flagged and buyer_flagged, not field-specific flags
-                        if (recordTable === 'buyer_payables') {
-                            updateObj['vendor_flagged'] = false; // Reviewer upload tracked in vendor_flagged
-                        } else {
-                            updateObj[`${fieldPrefix}_flagged`] = false; // admin_payables uses field-specific flags
-                        }
 
                         // Update correct table (admin_payables or buyer_payables) with receipt data
                         // RLS policy will validate vendor_id = auth.uid()
@@ -8998,52 +9006,62 @@
                             return;
                         }
 
-                        // Note: Removed payment_history table creation (moving away from that approach)
+                        // Create payment_history record (party has sent payment)
+                        const recordData = data[0];
+                        const paymentHistoryRecord = {
+                            vendor_id: currentVendor.id,
+                            from_type: fieldPrefix, // 'vendor', 'buyer', 'vendor_inviter', or 'reviewer'
+                            to_type: 'admin',
+                            to_id: null, // Admin system receives payment
+                            amount: recordData.amount_owed,
+                            payment_reason: recordTable === 'admin_payables' ? 'referral_commission' : 'feedback_commission',
+                            related_feedback_id: recordData.related_feedback_id || null,
+                            payment_method: 'paypal',
+                            payment_date: new Date().toISOString()
+                        };
 
-                        // Determine next status based on recipient type and table
-                        // After vendor uploads proof, status changes to role-specific "awaiting proof" status
-                        let nextStatus = 'payment_sent';
-
+                        // Link to correct payables table
                         if (recordTable === 'admin_payables') {
-                            if (recordData.split_with_buyer_id) {
-                                nextStatus = 'awaiting_buyer_inviter_proof';
-                            } else if (recordData.split_with_vendor_id) {
-                                nextStatus = 'awaiting_vendor_inviter_proof';
-                            } else {
-                                nextStatus = 'payment_sent';
-                            }
+                            paymentHistoryRecord.related_admin_payables_id = payoutId;
                         } else if (recordTable === 'buyer_payables') {
-                            nextStatus = 'awaiting_reviewer_proof';
+                            paymentHistoryRecord.related_buyer_payables_id = payoutId;
                         }
 
-                        const statusUpdateObj = { status: nextStatus };
+                        const { error: phError } = await sbClient
+                            .from('payment_history')
+                            .insert(paymentHistoryRecord);
 
-                        const { data: statusData, error: statusError } = await sbClient
+                        if (phError) {
+                            console.error('Warning: Could not create payment_history record:', phError);
+                            // Don't fail the upload if payment_history creation fails
+                        }
+
+                        // Update status based on which party uploaded receipt
+                        // Each party has their own payment status field
+                        let statusFieldName = `${fieldPrefix}_payment_status`;
+                        let statusValue = 'payment_sent';
+
+                        // Update the correct status field for the party that uploaded
+                        const statusUpdateObj = {
+                            [statusFieldName]: statusValue
+                        };
+
+                        const { error: statusError } = await sbClient
                             .from(recordTable)
                             .update(statusUpdateObj)
-                            .eq('id', payoutId)
-                            .select();
+                            .eq('id', payoutId);
 
                         if (statusError) {
                             console.error('Error updating status:', statusError);
                             statusDiv.textContent = '⚠️ Receipt uploaded but status update failed. Refreshing...';
                             statusDiv.style.color = '#d97706';
                             statusDiv.style.background = '#fef3c7';
-                        } else if (statusData && statusData.length > 0) {
-                            console.log('✅ Status update verified:', {
-                                payoutId,
-                                recordTable,
-                                newStatus: statusData[0].status,
-                                expectedStatus: nextStatus
-                            });
-                        }
-
-                        if (!statusError) {
+                        } else {
                             statusDiv.textContent = '✅ Receipt uploaded successfully!';
                             statusDiv.style.color = '#059669';
                             statusDiv.style.background = '#d1fae5';
 
-                            // Reload data after 1.5 seconds - proper sequence to update lifecycle tabs
+                            // Reload data after 1.5 seconds - proper sequence to update summary cards
                             setTimeout(async () => {
                                 try {
                                     // Step 1: Reload earnings data
@@ -9052,7 +9070,7 @@
                                     // Step 2: Update summary cards immediately
                                     await updatePayoutSummaryCards();
 
-                                    // Step 3: Reload lifecycle tabs
+                                    // Step 3: Reload tabs
                                     await loadManageAwaitingPayouts();
                                     await loadManageIncomingRequests();
 
