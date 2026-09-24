@@ -7440,13 +7440,13 @@
                     imageData = inquiry?.image_data ? `data:image/jpeg;base64,${inquiry.image_data}` : null;
 
                     if (payout.split_with_vendor_inviter_id) {
-                        recipientType = 'Buyer Inviter';
+                        recipientType = 'Vendor Inviter';
                         displayAmount = payout.amount_owed - (payout.admin_commission || 0) - (payout.buyer_portion || 0);
                         const buyer = globalAwaitingBuyersMap[payout.split_with_vendor_inviter_id];
                         recipientName = buyer?.full_name || 'N/A';
                         recipientEmail = buyer?.paypal_email || 'N/A';
                     } else if (payout.split_with_buyer_id) {
-                        recipientType = 'Vendor Inviter';
+                        recipientType = 'Buyer Inviter';
                         displayAmount = payout.buyer_portion || 0;
                         const buyer = globalAwaitingBuyersMap[payout.split_with_buyer_id];
                         recipientName = buyer?.full_name || 'N/A';
