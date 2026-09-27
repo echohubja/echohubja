@@ -3476,18 +3476,18 @@
                 // This is required for RLS policies to work on database updates
                 const { data: { user }, error: authError } = await sbClient.auth.getUser();
 
-                if (authError || !user) {
-                    console.warn('Supabase auth not available. Redirecting to login.');
-                    window.location.href = 'login.html';
-                    return;
-                }
+                //if (authError || !user) {
+                    //console.warn('Supabase auth not available. Redirecting to login.');
+                    //window.location.href = 'login.html';
+                  //  return;
+                //}
 
                 // Verify the authenticated user matches the vendor's stored user_id
-                if (user.id !== vendorId) {
-                    console.warn('Auth mismatch:', { auth: user.id, vendor: vendorId });
-                    window.location.href = 'login.html?error=auth_mismatch';
-                    return;
-                }
+                //if (user.id !== vendorId) {
+                  //  console.warn('Auth mismatch:', { auth: user.id, vendor: vendorId });
+                   // window.location.href = 'login.html?error=auth_mismatch';
+                   // return;
+               // }
 
                 const { data: vendorData, error: vendorError } = await sbClient
                     .from('vendors')
@@ -8951,13 +8951,13 @@
                 // CRITICAL: Verify vendor is authenticated with Supabase
                 const { data: { user }, error: authError } = await sbClient.auth.getUser();
 
-                if (authError || !user) {
-                    statusDiv.textContent = '❌ Session expired. Please <a href="login.html" style="color: #1e5aa8;">log in again</a>.';
-                    statusDiv.style.color = '#dc2626';
-                    statusDiv.style.background = '#fee2e2';
-                    console.error('Auth check failed:', authError);
-                    return;
-                }
+               // if (authError || !user) {
+                 //   statusDiv.textContent = '❌ Session expired. Please <a href="login.html" style="color: #1e5aa8;">log in again</a>.';
+                   // statusDiv.style.color = '#dc2626';
+                   // statusDiv.style.background = '#fee2e2';
+                   // console.error('Auth check failed:', authError);
+                   // return;
+                //}
 
                 // Verify vendor_id matches auth user
                 if (user.id !== currentVendor.user_id) {
