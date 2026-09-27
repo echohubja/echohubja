@@ -3431,13 +3431,18 @@
         async function initSupabaseClient() {
             return new Promise((resolve) => {
                 const checkInterval = setInterval(() => {
-                    if (window.supabase) {
-                        clearInterval(checkInterval);
-                        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        window.db = sbClient;
-                        resolve();
-                    }
-                }, 10);
+    if (window.supabase) {
+        clearInterval(checkInterval);
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false
+            }
+        });
+        window.db = sbClient;
+        resolve();
+    }
+}, 10);
                 // Timeout after 5 seconds to prevent infinite wait
                 setTimeout(() => {
                     clearInterval(checkInterval);
